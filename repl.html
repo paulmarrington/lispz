@@ -1,0 +1,23 @@
+<html>
+<head>
+<title>LISPz</title>
+<script src="lispz.js"></script>
+<script>
+  repl = function() {
+    source = document.getElementById('yalc').value;
+    js = lispz.compile(source);
+    document.getElementById('js').value = js;
+  }
+</script>
+<body>
+<form action="javascript:repl()">
+<textarea id="yalc" cols="80" rows="16">
+(macro a (b c) [c b])
+(a 2 console.log)
+</textarea>
+<br>
+<textarea id="js" cols="80" rows="16"></textarea>
+<br>
+<input type="submit" value="Compile">
+</form>
+
