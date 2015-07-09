@@ -12,8 +12,8 @@
 <body>
 <form action="javascript:repl()">
 <textarea id="yalc" cols="80" rows="16">
-(macro a (b c) [c b])
-(a 2 console.log)
+(macro swap (a b) b a)
+(swap (+ 3 c) console.log)
 </textarea>
 <br>
 <textarea id="js" cols="80" rows="16"></textarea>
