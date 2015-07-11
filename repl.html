@@ -7,16 +7,21 @@
     source = document.getElementById('yalc').value;
     js = lispz.compile(source);
     document.getElementById('js').value = js;
+    document.getElementById('output').value = eval(js);
   }
 </script>
 <body>
 <form action="javascript:repl()">
-<textarea id="yalc" cols="80" rows="16">
-(macro swap (a b) b a)
+<textarea id="yalc" cols="40" rows="16">
+(var a 12 c 33)
+(+ 1 a (- 3 1))
+(macro swap (a b) (b a))
 (swap (+ 3 c) console.log)
+((lambda (x) (+ 1 x)) 2)
 </textarea>
+<textarea id="js" cols="40" rows="16"></textarea>
 <br>
-<textarea id="js" cols="80" rows="16"></textarea>
+<textarea id="output" cols="80" rows="16"></textarea>
 <br>
 <input type="submit" value="Compile">
 </form>
