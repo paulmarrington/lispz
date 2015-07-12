@@ -1,0 +1,5 @@
+(var dom-append! (lambda(element dom-element)
+  ((document.querySelector element).appendChild whatever)
+))
+
+(var dom-element (lambda(tag-name attributes) ()))

@@ -11,18 +11,15 @@
   }
 </script>
 <body>
+<div style="position:absolute;bottom:-18px;right:0;">
 <form action="javascript:repl()">
-<textarea id="yalc" cols="40" rows="16">
-(var a 12 c 33)
-(+ 1 a (- 3 1))
-(macro swap (a b) (b a))
-(swap (+ 3 c) console.log)
-((lambda (x) (+ 1 x)) 2)
+<textarea id="yalc" cols="38" rows="8">
 </textarea>
-<textarea id="js" cols="40" rows="16"></textarea>
+<textarea id="js" cols="38" rows="8">
+</textarea>
 <br>
-<textarea id="output" cols="80" rows="16"></textarea>
+<textarea id="output" cols="80" rows="8"></textarea>
 <br>
-<input type="submit" value="Compile">
+<input style="position: absolute; right: 16px; bottom: 22px;" type="submit" value="Compile">
 </form>
-
+</div>

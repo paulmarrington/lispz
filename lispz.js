@@ -1,4 +1,5 @@
 // why empty list is '[' then slice it off to jsify it
+// ((test a).b c)
 var lispz = function() {
     var alias;
     // characters that are not space separated atoms (n becomes linefeed in regex)
@@ -18,7 +19,7 @@ var lispz = function() {
     var list2js = function(env, list) {
         return env.list2js[list[0]](env, list)
     };
-    // processing pairs of list elements - use with bind
+    // processing pairs of list elements
     var pairs = function(env, fore, tween, aft) {
         return function(env, list) {
             var el = [];
@@ -39,7 +40,7 @@ var lispz = function() {
         return env.list2js[list[1][1]](env, list.slice(1))
       }
       var params = lists2list(env, list.slice(2))
-      return " " + list2js(env, list[1]) + "(" + params.join(',') + ');'
+      return " " + list2js(env, list[1]) + "(" + params.join(',') + ')'
     };
     // Take symbols javascript doesn't recognise and convert
     replacements = {
@@ -116,8 +117,9 @@ var lispz = function() {
             '[': function(env, list) { // list of atoms (array)
                 return '[' + lists2list(env, list.slice(1)).join(',') + ']'
               },
-            '{': pairs(env, '{', ':', '}'), // {a:1,b:2}
+            '{': pairs(env, '({', ':', '})'), // {a:1,b:2}
             'var': pairs(env, 'var ', '=', ';\n'), // var a=1,b=2;
+            'set!': pairs(env, ' ', '=', '\n'), // var a=1,b=2;
             'lambda': lambda2js, 'macro': build_macro, 'alias': alias,
             'atom': function(env, list) { return jsify(list[1]) },
             'raw': function(env, list) { return list[1] }
@@ -140,8 +142,8 @@ var lispz = function() {
     alias(env, "and,&&,or,||,is,==,isnt,!=,not,!".split(','));
     // generate javascript from lispz
     var compile = function(source) {
-        env.tkre.lastIndex = 0;
-        env.source = source;
+        env.tkre.lastIndex = 0; env.list = ['[']; env.stack = [];
+        env.line_number = 1; env.source = source;
         while (next_atom(env)) {
             if (!env.skip) {
               env.atom2list(env);
@@ -150,9 +152,6 @@ var lispz = function() {
             }
         };
         js = lists2list(env,env.list.slice(1)).join('');
-        env.list = ['['];
-        env.stack = [];
-        env.line_number = 1;
         return js;
     };
     return { compile: compile }
