@@ -1,12 +1,11 @@
-// why empty list is '[' then slice it off to jsify it
-// ((test a).b c)
 var lispz = function() {
     var alias;
     // characters that are not space separated atoms (n becomes linefeed in regex)
-    var delimiters = "(){}[];'`|n".split('');
-    var not_delimiters = delimiters.join("\\");
-    delimiters = delimiters.join('|\\')
-        // Keep state stack for when we start a new inner list ()[]{}
+    var delims = "(){}[];'`|n".split('');
+    var not_delims = delims.join("\\");
+    delims = delims.join('|\\')
+    var stringRE = "'{1,2}.*?'{1,2}|" + '".*?[^\\\\]"|""|';
+    // Keep state stack for when we start a new inner list ()[]{}
     var push_state = function(env) {
         env.stack.push(env.list);
         env.list = [env.atom]
@@ -42,6 +41,10 @@ var lispz = function() {
       var params = lists2list(env, list.slice(2))
       return " " + list2js(env, list[1]) + "(" + params.join(',') + ')'
     };
+    // Convert (js parameters) to javascript
+    params2js = function(env, list) {
+      return lists2list(env, list.slice(1)).join('');
+    }
     // Take symbols javascript doesn't recognise and convert
     replacements = {
         '!': "$bang$", '#': "$hash$", '%': "$percent$", '&': "$ampersand",
@@ -51,14 +54,16 @@ var lispz = function() {
         '^': "$caret$", '~': "$tilde$"
     }
     var jsify = function(atom) {
-        return atom.replace(/\W/g, function(symbol) {
-            var rep = replacements[symbol];
-            return rep ? rep : symbol
-        })
+      var last = atom.length - 1;
+      if (atom[0] === "'" && atom[last] === "'") atom = atom.slice(1,last);
+      return atom.replace(/\W/g, function(symbol) {
+          var rep = replacements[symbol];
+          return rep ? rep : symbol
+      })
     };
     // pull function params from a list
     var list2params = function(list) {
-        return list.slice(1).map(function(p) { return jsify(p[1]) });
+        return list.slice(1).map(function(p, i) { return jsify(p[1]) });
     };
     // convert a list to a function definition
     var lambda2js = function(env, list) {
@@ -74,7 +79,7 @@ var lispz = function() {
     // convert an atom to a simple list
     var atom2list = function(env) {
       if (env.delimiter[env.atom]) {
-          env.delimiter[env.atom](env)
+        env.delimiter[env.atom](env)
       } else {
         env.list.push(["atom", env.atom])
       }
@@ -85,8 +90,15 @@ var lispz = function() {
       var macro_params = {}, body = list.slice(3);
       list2params(list[2]).forEach(function(p, i) { macro_params[p] = i + 1 })
       var clone = function(macro_body, replacements) {
-        if ((macro_body[0] === "atom") && macro_params[macro_body[1]]) {
-          return replacements[macro_params[macro_body[1]]]
+        if (macro_body[0] === "atom") {
+          var is_ref = (macro_body[1][0] === '*'); // *rest
+          var name = is_ref ? macro_body[1].slice(1) : macro_body[1];
+          if (macro_params[name]) { // replace with param or list of rest
+            if (!is_ref) return replacements[macro_params[name]];
+            macro_body = replacements.slice(macro_params[name]);
+            macro_body.unshift("[");
+            return macro_body;
+          }
         }
         return macro_body.map(function(element){
           if (element instanceof Array) { return clone(element, replacements); }
@@ -94,22 +106,27 @@ var lispz = function() {
         })
       }
       env.list2js[macro_name] = function(env, replacements) {
-        return lists2list(env, clone(body, replacements)).join();
+        return lists2list(env, clone(body, replacements)).join('');
       }
       return '';
     };
+    // put raw javascript at end of last atom
+    var append_raw = function(env, raw) {
+      var list = env.list.length ? env.list : env.stack[env.stack.length - 1];
+      list.push(["raw", raw]);
+    }
     // Environment under which a lispz command executes
     var env = {
         line_number: 1, skip: false, atom: "", stack: [], list: ['['],
         lambda2js: lambda2js, atom2list: atom2list,
         // We find atoms using this regex - fast in a good js system
-        tkre: new RegExp('(".*?[^\\\\]"|""|\\' + delimiters + "|[^\\s" + not_delimiters + "]+)", 'g'),
+        tkre: new RegExp('(' + stringRE + '\\' + delims + "|[^\\s" + not_delims + "]+)", 'g'),
         // Called for delimiters when they are found in the input stream
         delimiter: { // start gathering a list or performing other delimiter function
             '(': push_state, '[': push_state, '{': push_state,
             ')': pop_state, ']': pop_state, '}': pop_state,
             ';': function(env) { env.skip = true },
-            '\n': function(env) { env.list.push(["raw"," //#"+(env.line_number++)+"\n"]) }
+            '\n': function(env) { append_raw(env, " //#"+(env.line_number++)+"\n") }
         },
         // called for closing delimiters when encountered in the stream
         list2js: { // process a list once gathered.
@@ -122,7 +139,8 @@ var lispz = function() {
             'set!': pairs(env, ' ', '=', '\n'), // var a=1,b=2;
             'lambda': lambda2js, 'macro': build_macro, 'alias': alias,
             'atom': function(env, list) { return jsify(list[1]) },
-            'raw': function(env, list) { return list[1] }
+            'raw': function(env, list) { return list[1] },
+            'js': params2js
         },
         alias: {}
     };
@@ -142,17 +160,17 @@ var lispz = function() {
     alias(env, "and,&&,or,||,is,==,isnt,!=,not,!".split(','));
     // generate javascript from lispz
     var compile = function(source) {
-        env.tkre.lastIndex = 0; env.list = ['[']; env.stack = [];
-        env.line_number = 1; env.source = source;
-        while (next_atom(env)) {
-            if (!env.skip) {
-              env.atom2list(env);
-            } else if (env.atom === '\n') {
-              env.skip = false;
-            }
-        };
-        js = lists2list(env,env.list.slice(1)).join('');
-        return js;
+      env.tkre.lastIndex = 0; env.list = ['[']; env.stack = [];
+      env.line_number = 1; env.source = source;
+      while (next_atom(env)) {
+          if (!env.skip) {
+            env.atom2list(env);
+          } else if (env.atom === '\n') {
+            env.skip = false;
+          }
+      };
+      js = lists2list(env,env.list.slice(1)).join('');
+      return js;
     };
-    return { compile: compile }
+    return { compile: compile, env: env }
 }()

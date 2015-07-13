@@ -7,6 +7,7 @@
     source = document.getElementById('yalc').value;
     js = lispz.compile(source);
     document.getElementById('js').value = js;
+    console.log(lispz.env.list);
     document.getElementById('output').value = eval(js);
   }
 </script>
@@ -14,6 +15,8 @@
 <div style="position:absolute;bottom:-18px;right:0;">
 <form action="javascript:repl()">
 <textarea id="yalc" cols="38" rows="8">
+(macro array (list) (js '[' *list ']'))
+(array 1 2 3 4)
 </textarea>
 <textarea id="js" cols="38" rows="8">
 </textarea>
