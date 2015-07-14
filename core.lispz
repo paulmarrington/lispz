@@ -1,2 +1,11 @@
+;; {a 1 b 2 c (+3 2)}
+(macro '{'    (list) (.pairs *list '({'   ':' ')}'))
+
+;; (var a 3 b 5 c (+3 2))
+(macro var  (list) (.pairs *list 'var ' '=' ';'))
+
+;; (set! a 3 b 5 c (+ 3 2))
+(macro set! (list) (.pairs *list ' '    '=' ' '))
+
 ;; (attribute b of {a:1, b:2})
 (macro attribute (key of dict) (js dict '[' key ']'))

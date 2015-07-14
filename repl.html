@@ -3,26 +3,33 @@
 <title>LISPz</title>
 <script src="lispz.js"></script>
 <script>
-  repl = function() {
+  repl = function(run) {
     source = document.getElementById('yalc').value;
     js = lispz.compile(source);
     document.getElementById('js').value = js;
     console.log(lispz.env.list);
-    document.getElementById('output').value = eval(js);
+    if (run) {
+      document.getElementById('output').value = eval(js);
+    }
   }
 </script>
 <body>
 <div style="position:absolute;bottom:-18px;right:0;">
-<form action="javascript:repl()">
-<textarea id="yalc" cols="38" rows="8">
-(macro array (list) (js '[' *list ']'))
-(array 1 2 3 4)
-</textarea>
-<textarea id="js" cols="38" rows="8">
+<textarea id="yalc" cols="80" rows="8">
+;; (attribute b of {a:1, b:2})
+(macro '{'  (list) (.pairs *list '({'   ':' '})'))
+(macro var  (list) (.pairs *list 'var ' '=' ';\n'))
+(macro set! (list) (.pairs *list ' '    '=' '\n'))
+(macro attribute (key of dict) (js dict '[' key ']'))
+{a 1 b 2 c (+ 3 2)}
+(var a 1 b 2 c (+ 3 2))
+</textarea><br>
+<textarea id="js" cols="80" rows="8">
 </textarea>
 <br>
 <textarea id="output" cols="80" rows="8"></textarea>
-<br>
-<input style="position: absolute; right: 16px; bottom: 22px;" type="submit" value="Compile">
-</form>
+<div style="position: absolute; right: 16px; bottom: 7px;">
+  <button  onclick="javascript:repl(false)">Compile</button>
+  <button  onclick="javascript:repl(true)">Run</button>
+</div>
 </div>

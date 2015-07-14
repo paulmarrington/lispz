@@ -1,5 +1,7 @@
+// load core.lispz
+// convert lambda, alias, etc to lispz in core
 var lispz = function() {
-    var alias;
+    var alias, load;
     // characters that are not space separated atoms (n becomes linefeed in regex)
     var delims = "(){}[];'`|n".split('');
     var not_delims = delims.join("\\");
@@ -19,15 +21,14 @@ var lispz = function() {
         return env.list2js[list[0]](env, list)
     };
     // processing pairs of list elements
-    var pairs = function(env, fore, tween, aft) {
-        return function(env, list) {
-            var el = [];
-            for (var i = 1, l = list.length; i < l; i += 2) {
-                el.push(list2js(env, list[i]) + tween + list2js(env, list[i + 1]))
-            };
-            return fore + el.join(',') + aft
-        }
-    };
+    pairs = function(env, list) {
+      var el = [], pairs = list[1], fore = list2js(env, list[2]);
+      var tween = list2js(env, list[3]), aft = list2js(env, list[4]);
+      for (var i = 1, l = pairs.length; i < l; i += 2) {
+          el.push(list2js(env, pairs[i]) + tween + list2js(env, pairs[i + 1]))
+      };
+      return fore + el.join(',') + aft
+    }
     // Convert a list of lists to a list of js fragments
     var lists2list = function(env, lists) {
       return lists.map(function(list) { return list2js(env, list) })
@@ -55,7 +56,8 @@ var lispz = function() {
     }
     var jsify = function(atom) {
       var last = atom.length - 1;
-      if (atom[0] === "'" && atom[last] === "'") atom = atom.slice(1,last);
+      if (atom[0] === '"' && atom[last] === '"') return atom;
+      if (atom[0] === "'" && atom[last] === "'") return atom.slice(1,last);
       return atom.replace(/\W/g, function(symbol) {
           var rep = replacements[symbol];
           return rep ? rep : symbol
@@ -118,7 +120,6 @@ var lispz = function() {
     // Environment under which a lispz command executes
     var env = {
         line_number: 1, skip: false, atom: "", stack: [], list: ['['],
-        lambda2js: lambda2js, atom2list: atom2list,
         // We find atoms using this regex - fast in a good js system
         tkre: new RegExp('(' + stringRE + '\\' + delims + "|[^\\s" + not_delims + "]+)", 'g'),
         // Called for delimiters when they are found in the input stream
@@ -134,13 +135,10 @@ var lispz = function() {
             '[': function(env, list) { // list of atoms (array)
                 return '[' + lists2list(env, list.slice(1)).join(',') + ']'
               },
-            '{': pairs(env, '({', ':', '})'), // {a:1,b:2}
-            'var': pairs(env, 'var ', '=', ';\n'), // var a=1,b=2;
-            'set!': pairs(env, ' ', '=', '\n'), // var a=1,b=2;
             'lambda': lambda2js, 'macro': build_macro, 'alias': alias,
             'atom': function(env, list) { return jsify(list[1]) },
             'raw': function(env, list) { return list[1] },
-            'js': params2js
+            'js': params2js, ".pairs": pairs
         },
         alias: {}
     };
@@ -164,7 +162,7 @@ var lispz = function() {
       env.line_number = 1; env.source = source;
       while (next_atom(env)) {
           if (!env.skip) {
-            env.atom2list(env);
+            atom2list(env);
           } else if (env.atom === '\n') {
             env.skip = false;
           }
@@ -172,5 +170,19 @@ var lispz = function() {
       js = lists2list(env,env.list.slice(1)).join('');
       return js;
     };
-    return { compile: compile, env: env }
+    // lispz script loader
+    if (window) {
+      load = function(url, on_loaded) {
+        var script = document.createElement("script");
+        script.type = "text/lispz";
+        script.onerror = function (err) {
+          throw new URIError("The script " + err.target.src + " is not accessible.");
+        }
+        script.onload = function() { eval(compile(script.textContent)); }
+        document.head.appendChild(script);
+        script.src = url + '.lispz';
+      };
+    }
+    load('core');
+    return { compile:compile, env:env, load:load}
 }()
