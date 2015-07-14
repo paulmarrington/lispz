@@ -83,7 +83,7 @@ var lispz = function() {
       if (env.delimiter[env.atom]) {
         env.delimiter[env.atom](env)
       } else {
-        env.list.push(["atom", env.atom])
+        env.list.push([".atom", env.atom])
       }
     };
     // Create a lambda that expands a named macro
@@ -92,7 +92,7 @@ var lispz = function() {
       var macro_params = {}, body = list.slice(3);
       list2params(list[2]).forEach(function(p, i) { macro_params[p] = i + 1 })
       var clone = function(macro_body, replacements) {
-        if (macro_body[0] === "atom") {
+        if (macro_body[0] === ".atom") {
           var is_ref = (macro_body[1][0] === '*'); // *rest
           var name = is_ref ? macro_body[1].slice(1) : macro_body[1];
           if (macro_params[name]) { // replace with param or list of rest
@@ -115,7 +115,7 @@ var lispz = function() {
     // put raw javascript at end of last atom
     var append_raw = function(env, raw) {
       var list = env.list.length ? env.list : env.stack[env.stack.length - 1];
-      list.push(["raw", raw]);
+      list.push([".raw", raw]);
     }
     // Environment under which a lispz command executes
     var env = {
@@ -133,12 +133,12 @@ var lispz = function() {
         list2js: { // process a list once gathered.
             '(': call2js,
             '[': function(env, list) { // list of atoms (array)
-                return '[' + lists2list(env, list.slice(1)).join(',') + ']'
-              },
+                   return '[' + lists2list(env, list.slice(1)).join(',') + ']'
+                 },
             'lambda': lambda2js, 'macro': build_macro, 'alias': alias,
-            'atom': function(env, list) { return jsify(list[1]) },
-            'raw': function(env, list) { return list[1] },
-            'js': params2js, ".pairs": pairs
+            '.atom': function(env, list) { return jsify(list[1]) },
+            '.raw': function(env, list) { return list[1] },
+            '.js': params2js, ".pairs": pairs
         },
         alias: {}
     };
