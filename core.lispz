@@ -9,3 +9,6 @@
 
 ;; (attribute b of {a:1, b:2})
 (macro attribute (key of dict) (js dict '[' key ']'))
+
+;; sleep for specified time before continuing operations
+(macro sleep (ms) (setTimeout (.async) ms)))

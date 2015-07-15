@@ -16,13 +16,8 @@
 <body>
 <div style="position:absolute;bottom:-18px;right:0;">
 <textarea id="yalc" cols="80" rows="8">
-;; (attribute b of {a:1, b:2})
-(macro '{'  (list) (.pairs *list '({'   ':' '})'))
-(macro var  (list) (.pairs *list 'var ' '=' ';\n'))
-(macro set! (list) (.pairs *list ' '    '=' '\n'))
-(macro attribute (key of dict) (js dict '[' key ']'))
-{a 1 b 2 c (+ 3 2)}
-(var a 1 b 2 c (+ 3 2))
+(async sleep (ms) (setTimeout .callback ms))
+(program (sleep 1000) (console.log "slept") (console.log "again"))
 </textarea><br>
 <textarea id="js" cols="80" rows="8">
 </textarea>

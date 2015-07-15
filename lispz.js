@@ -87,15 +87,16 @@ var lispz = function() {
       }
     };
     // Create a lambda that expands a named macro
-    var build_macro = function(env, list) {
+    var build_macro = function(env, list, async) {
       var macro_name = list2js(env, list[1]);
-      var macro_params = {}, body = list.slice(3);
+      var macro_params = {".callback":list[2].length}, body = list.slice(3);
       list2params(list[2]).forEach(function(p, i) { macro_params[p] = i + 1 })
       var clone = function(macro_body, replacements) {
         if (macro_body[0] === ".atom") {
           var is_ref = (macro_body[1][0] === '*'); // *rest
           var name = is_ref ? macro_body[1].slice(1) : macro_body[1];
           if (macro_params[name]) { // replace with param or list of rest
+            if (name === ".callback") async = true;
             if (!is_ref) return replacements[macro_params[name]];
             macro_body = replacements.slice(macro_params[name]);
             macro_body.unshift("[");
@@ -108,6 +109,10 @@ var lispz = function() {
         })
       }
       env.list2js[macro_name] = function(env, replacements) {
+        if (async) {
+          callback = [".raw", "/*cb*/"]//["lambda"].concat(rest)
+          replacements = replacements.concat([callback]);
+        }
         return lists2list(env, clone(body, replacements)).join('');
       }
       return '';
@@ -135,10 +140,11 @@ var lispz = function() {
             '[': function(env, list) { // list of atoms (array)
                    return '[' + lists2list(env, list.slice(1)).join(',') + ']'
                  },
-            'lambda': lambda2js, 'macro': build_macro, 'alias': alias,
+            'lambda': lambda2js, 'macro': build_macro,
+            'async': function(env, list) { return build_macro(env, list, true) },
             '.atom': function(env, list) { return jsify(list[1]) },
             '.raw': function(env, list) { return list[1] },
-            '.js': params2js, ".pairs": pairs
+            '.js': params2js, ".pairs": pairs, 'alias': alias
         },
         alias: {}
     };

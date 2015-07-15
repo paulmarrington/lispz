@@ -9,9 +9,10 @@ function program() {
   }, 1000)
 }
 
-.async: function(env, list) {
+async = function(env, list) {
   env.in_callback = true;
-  var aft = parent_list.slice(parent_position + 1)
+  var params = list[1];
+  var body = parent_list.slice(parent_position + 1);
   parent_abort = true;
-  return lambda2js(env, [["("]].append(aft))
+  return lambda2js(env, ["("].push(params, body));
 }
