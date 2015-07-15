@@ -1,5 +1,6 @@
 // load core.lispz
 // convert lambda, alias, etc to lispz in core
+// (args a b c) ==> var a = arguments[1], ...;
 var lispz = function() {
     var alias, load;
     // characters that are not space separated atoms (n becomes linefeed in regex)
@@ -18,7 +19,7 @@ var lispz = function() {
     };
     // when a list is closed we process it given the opening command/type
     var list2js = function(env, list) {
-        return env.list2js[list[0]](env, list)
+      return env.list2js[list[0]](env, list)
     };
     // processing pairs of list elements
     pairs = function(env, list) {
@@ -31,7 +32,10 @@ var lispz = function() {
     }
     // Convert a list of lists to a list of js fragments
     var lists2list = function(env, lists) {
-      return lists.map(function(list) { return list2js(env, list) })
+      return lists.map(function(list, index, parent) {
+        env.parent = parent; env.parent_index = index;
+        return list2js(env, list);
+      }).filter(function(a) { return a && a.length });
     };
     // convert a list to a javascript call
     var call2js = function(env, list) {
@@ -65,12 +69,12 @@ var lispz = function() {
     };
     // pull function params from a list
     var list2params = function(list) {
-        return list.slice(1).map(function(p, i) { return jsify(p[1]) });
+      return list.slice(1).map(function(p, i) { return jsify(p[1]) });
     };
     // convert a list to a function definition
     var lambda2js = function(env, list) {
-        return "(function(" + list2params(list[1]).join(',') + "){return " +
-            lists2list(env, list.slice(2)).join(",") + "})"
+      return "(function(" + list2params(list[1]).join(',') + "){return " +
+          lists2list(env, list.slice(2)).join(",") + "})"
     };
     // retrieve the next atom from the input stream. Returns false on no more
     var next_atom = function(env) {
@@ -110,7 +114,8 @@ var lispz = function() {
       }
       env.list2js[macro_name] = function(env, replacements) {
         if (async) {
-          callback = [".raw", "/*cb*/"]//["lambda"].concat(rest)
+          callback = ["lambda", ["("]].concat(env.parent.slice(++env.parent_index));
+          env.parent.length = env.parent_index;
           replacements = replacements.concat([callback]);
         }
         return lists2list(env, clone(body, replacements)).join('');
