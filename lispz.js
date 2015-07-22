@@ -1,7 +1,3 @@
-// load core.lispz
-// convert lambda, alias, etc to lispz in core
-// (args a b c) ==> var a = arguments[1], ...;
-// scoped name as in cond.else
 var lispz = function() {
     var alias, load;
     // characters that are not space separated atoms (n becomes linefeed in regex)
@@ -16,14 +12,21 @@ var lispz = function() {
     };
     var pop_state = function(env) {
         var list = env.list;
-        (env.list = env.stack.pop()).push(list);
+        if (env.stack.length) return (env.list = env.stack.pop()).push(list);
+        return console.log("Too many closing braces on line "+env.line_number);
     };
     // when a list is closed we process it given the opening command/type
     var list2js = function(env, list) {
       return env.list2js[list[0]](env, list)
     };
     // processing pairs of list elements
-    pairs = function(env, list) {
+    var pairs = function(env, fore, tween, aft) {
+      return function(env, list) {
+        return dot_pairs(env, ["", list, ['.atom',fore], ['.atom',tween], ['.atom',aft]]);
+      }
+    };
+    // processing pairs of list elements
+    var dot_pairs = function(env, list) {
       var el = [], pairs = list[1], fore = list2js(env, list[2]);
       var tween = list2js(env, list[3]), aft = list2js(env, list[4]);
       for (var i = 1, l = pairs.length; i < l; i += 2) {
@@ -146,11 +149,12 @@ var lispz = function() {
             '[': function(env, list) { // list of atoms (array)
                    return '[' + lists2list(env, list.slice(1)).join(',') + ']'
                  },
+            '{': pairs(env, '({', ':', '})'), // {a:1,b:2}
             'lambda': lambda2js, 'macro': build_macro,
             'async': function(env, list) { return build_macro(env, list, true) },
             '.atom': function(env, list) { return jsify(list[1]) },
             '.raw': function(env, list) { return list[1] },
-            '.js': params2js, ".pairs": pairs, 'alias': alias
+            '.js': params2js, ".pairs": dot_pairs, 'alias': alias
         },
         alias: {}
     };
@@ -173,30 +177,31 @@ var lispz = function() {
       env.tkre.lastIndex = 0; env.list = ['[']; env.stack = [];
       env.line_number = 1; env.source = source;
       while (next_atom(env)) {
-          if (!env.skip) {
+         if (!env.skip) {
             atom2list(env);
           } else if (env.atom === '\n') {
-            env.skip = false;
+            env.skip = false; env.line_number++;
           }
       };
       js = lists2list(env,env.list.slice(1)).join('');
       return js;
     };
-    // lispz script loader
+    // lispz script loader (needed now to get core.lispz)
     var load_cache = {};
-    load = function(url, callback) {
-      if (load_cache[url] !== undefined) return callback(load_cache[url]);
-      var script = document.createElement("script");
-      script.type = "application/lispz";
-      script.onerror = function (err) {
-        callback("The script " + err.target.src + " is not accessible.");
+    load = function(uri, callback) {
+      if (load_cache[uri] !== undefined) return callback(load_cache[uri]);
+
+      var req = new XMLHttpRequest();
+      req.open("GET", uri+".lispz", true);
+      req.onerror = function (err) {
+        callback("The script " + uri + " is not accessible.");
       }
-      script.onload = function() {
-        callback(null, load_cache[url] = eval(compile(script.textContent)));
+      req.onload = function() {
+        if (req.status != 200) return req.error(req.statusText);
+        callback(null, load_cache[uri] = new Function(env, compile(req.responseText)));
       }
-      document.head.appendChild(script);
-      script.src = url  + '.lispz';
+      req.send();
     };
-    window.onload = function(){ load('core') }
+    //window.onload = function(){ load('core') }
     return { compile:compile, env:env, load:load}
 }()
