@@ -1,6 +1,7 @@
 // load core.lispz
 // convert lambda, alias, etc to lispz in core
 // (args a b c) ==> var a = arguments[1], ...;
+// scoped name as in cond.else
 var lispz = function() {
     var alias, load;
     // characters that are not space separated atoms (n becomes linefeed in regex)
@@ -182,18 +183,20 @@ var lispz = function() {
       return js;
     };
     // lispz script loader
-    if (window) {
-      load = function(url, on_loaded) {
-        var script = document.createElement("script");
-        script.type = "text/lispz";
-        script.onerror = function (err) {
-          throw new URIError("The script " + err.target.src + " is not accessible.");
-        }
-        script.onload = function() { eval(compile(script.textContent)); }
-        document.head.appendChild(script);
-        script.src = url + '.lispz';
-      };
-    }
-    load('core');
+    var load_cache = {};
+    load = function(url, callback) {
+      if (load_cache[url] !== undefined) return callback(load_cache[url]);
+      var script = document.createElement("script");
+      script.type = "application/lispz";
+      script.onerror = function (err) {
+        callback("The script " + err.target.src + " is not accessible.");
+      }
+      script.onload = function() {
+        callback(null, load_cache[url] = eval(compile(script.textContent)));
+      }
+      document.head.appendChild(script);
+      script.src = url  + '.lispz';
+    };
+    window.onload = function(){ load('core') }
     return { compile:compile, env:env, load:load}
 }()
