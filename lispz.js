@@ -1,7 +1,6 @@
 var lispz = function() {
-    var alias, load;
     // characters that are not space separated atoms (n becomes linefeed in regex)
-    var delims = "(){}[];'`|n".split('');
+    var delims = "(){}[]'n".split('');
     var not_delims = delims.join("\\");
     delims = delims.join('|\\')
     var stringRE = "'{1,2}.*?'{1,2}|" + '".*?[^\\\\]"|""|';
@@ -18,12 +17,6 @@ var lispz = function() {
     // when a list is closed we process it given the opening command/type
     var list2js = function(env, list) {
       return env.list2js[list[0]](env, list)
-    };
-    // processing pairs of list elements
-    var pairs = function(env, fore, tween, aft) {
-      return function(env, list) {
-        return dot_pairs(env, ["", list, ['.atom',fore], ['.atom',tween], ['.atom',aft]]);
-      }
     };
     // processing pairs of list elements
     var dot_pairs = function(env, list) {
@@ -48,7 +41,7 @@ var lispz = function() {
         return env.list2js[list[1][1]](env, list.slice(1))
       }
       var params = lists2list(env, list.slice(2))
-      return " " + list2js(env, list[1]) + "(" + params.join(',') + ')'
+      return " __at__=" + list2js(env, list[1]) + "(" + params.join(',') + ')\n'
     };
     // Convert (js parameters) to javascript
     params2js = function(env, list) {
@@ -77,8 +70,8 @@ var lispz = function() {
     };
     // convert a list to a function definition
     var lambda2js = function(env, list) {
-      return "(function(" + list2params(list[1]).join(',') + "){return " +
-          lists2list(env, list.slice(2)).join(",") + "})"
+      return "(function(" + list2params(list[1]).join(',') + "){" +
+          lists2list(env, list.slice(2)).join(" ") + "})"
     };
     // retrieve the next atom from the input stream. Returns false on no more
     var next_atom = function(env) {
@@ -91,6 +84,7 @@ var lispz = function() {
       if (env.delimiter[env.atom]) {
         env.delimiter[env.atom](env)
       } else {
+        if (env.atom[0] == '@') env.atom = "__at__." + env.atom.slice(1);
         env.list.push([".atom", env.atom])
       }
     };
@@ -116,31 +110,40 @@ var lispz = function() {
           return element;
         })
       }
-      env.list2js[macro_name] = function(env, replacements) {
-        if (async) {
-          callback = ["lambda", ["("]].concat(env.parent.slice(++env.parent_index));
+      if (async) {
+        env.list2js[macro_name] = function(env, replacements) {
+          callback = ["lambda", ["(",[".atom","__at__"]]];
+          callback = callback.concat(env.parent.slice(++env.parent_index));
           env.parent.length = env.parent_index;
           replacements = replacements.concat([callback]);
+          return lists2list(env, clone(body, replacements)).join('');
         }
-        return lists2list(env, clone(body, replacements)).join('');
+      } else {
+        env.list2js[macro_name] = function(env, replacements) {
+          return lists2list(env, clone(body, replacements)).join('');
+        }
       }
       return '';
+    };
+    // use a different name for a lambdas, such as and for &&
+    var alias = function(env, list) {
+        for (var i = 1, l = list.length; i < l; i += 2)
+          env.alias[list[i][1]] = list[i + 1][1]
     };
     // put raw javascript at end of last atom
     var append_raw = function(env, raw) {
       var list = env.list.length ? env.list : env.stack[env.stack.length - 1];
       list.push([".raw", raw]);
-    }
+    };
     // Environment under which a lispz command executes
     var env = {
-        line_number: 1, skip: false, atom: "", stack: [], list: ['['],
+        line_number: 1, atom: "", stack: [], list: ['['],
         // We find atoms using this regex - fast in a good js system
-        tkre: new RegExp('(' + stringRE + '\\' + delims + "|[^\\s" + not_delims + "]+)", 'g'),
+        tkre: new RegExp('('+stringRE+'\\'+delims+"|[^\\s"+not_delims+"]+)", 'g'),
         // Called for delimiters when they are found in the input stream
         delimiter: { // start gathering a list or performing other delimiter function
             '(': push_state, '[': push_state, '{': push_state,
             ')': pop_state, ']': pop_state, '}': pop_state,
-            ';': function(env) { env.skip = true },
             '\n': function(env) { append_raw(env, " //#"+(env.line_number++)+"\n") }
         },
         // called for closing delimiters when encountered in the stream
@@ -149,7 +152,6 @@ var lispz = function() {
             '[': function(env, list) { // list of atoms (array)
                    return '[' + lists2list(env, list.slice(1)).join(',') + ']'
                  },
-            '{': pairs(env, '({', ':', '})'), // {a:1,b:2}
             'lambda': lambda2js, 'macro': build_macro,
             'async': function(env, list) { return build_macro(env, list, true) },
             '.atom': function(env, list) { return jsify(list[1]) },
@@ -165,30 +167,20 @@ var lispz = function() {
                 return '(' + lists2list(env, list.slice(1)).join(op) + ')'
             }
         })
-    }
+    };
     binop("+,-,*,/,&&,||,==,===,<=,>=,!=".split(','));
-    // use a different name for a lambdas, such as and for &&
-    var alias = function(env, list) {
-        for (var i = 0, l = list.length; i < l; i += 2) env.alias[list[i]] = list[i + 1]
-    }
-    alias(env, "and,&&,or,||,is,==,isnt,!=,not,!".split(','));
     // generate javascript from lispz
     var compile = function(source) {
       env.tkre.lastIndex = 0; env.list = ['[']; env.stack = [];
       env.line_number = 1; env.source = source;
-      while (next_atom(env)) {
-         if (!env.skip) {
-            atom2list(env);
-          } else if (env.atom === '\n') {
-            env.skip = false; env.line_number++;
-          }
-      };
+      while (next_atom(env)) atom2list(env);
       js = lists2list(env,env.list.slice(1)).join('');
       return js;
     };
     // lispz script loader (needed now to get core.lispz)
     var load_cache = {};
     load = function(uri, callback) {
+      if (!callback) callback = function(){return {}};
       if (load_cache[uri] !== undefined) return callback(load_cache[uri]);
 
       var req = new XMLHttpRequest();
@@ -198,10 +190,11 @@ var lispz = function() {
       }
       req.onload = function() {
         if (req.status != 200) return req.error(req.statusText);
-        callback(null, load_cache[uri] = new Function(env, compile(req.responseText)));
+        var js = "var __at__;\n"+compile(req.responseText);
+        callback(null, load_cache[uri] = (new Function(js))());
       }
       req.send();
     };
-    //window.onload = function(){ load('core') }
-    return { compile:compile, env:env, load:load}
+    window.onload = function(){ load('core') }
+    return { compile:compile, env:env, load:load }
 }()

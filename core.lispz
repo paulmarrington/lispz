@@ -1,14 +1,20 @@
-;; {a 1 b 2 c (+3 2)}
-(macro '{'    (list) (.pairs *list '({'   ':' ')}'))
+" example: {a 1 b 2 c (+3 2)} "
+(macro '{'  (list) (.pairs *list '({'   ':' '})'))
 
-;; (var a 3 b 5 c (+3 2))
+" example: (var a 3 b 5 c (+3 2)) "
 (macro var  (list) (.pairs *list 'var ' '=' ';'))
 
-;; (set! a 3 b 5 c (+ 3 2))
+" example: (set! a 3 b 5 c (+ 3 2)) "
 (macro set! (list) (.pairs *list ' '    '=' ' '))
 
-;; (attribute b of {a:1, b:2})
+" example: (attribute b of {a 1 b 2}) "
 (macro attribute (key of dict) (js dict '[' key ']'))
 
-;; sleep for specified time before continuing operations
-(macro sleep (ms) (setTimeout (.async) ms)))
+" example: sleep for specified time before continuing operations "
+(async sleep (ms) (setTimeout .callback ms))
+
+" example: Nicer words for some esoteric javascript/java symbols "
+(alias and &&  or ||  is ==  isnt !=  not !  export return)
+
+"can't use export here as it is yet to be compiled"
+return {} 
