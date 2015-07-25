@@ -1,5 +1,7 @@
-" example: {a 1 b 2 c (+3 2)} "
-(macro '{'  (list) (.pairs *list '({'   ':' '})'))
+" example: {a b c : (+ 3 2)} "
+(macro '{'  (list) (.dict *list))
+
+(macro reduce (array, start, reducer) (.js array '.reduce(' reducer ',' start))
 
 " example: (var a 3 b 5 c (+3 2)) "
 (macro var  (list) (.pairs *list 'var ' '=' ';'))
@@ -8,13 +10,16 @@
 (macro set! (list) (.pairs *list ' '    '=' ' '))
 
 " example: (attribute b of {a 1 b 2}) "
-(macro attribute (key of dict) (js dict '[' key ']'))
+(macro attribute (key of dict) (.js dict '[' key ']'))
 
 " example: sleep for specified time before continuing operations "
 (async sleep (ms) (setTimeout .callback ms))
 
 " example: Nicer words for some esoteric javascript/java symbols "
-(alias and &&  or ||  is ==  isnt !=  not !  export return)
+(alias and &&  or ||  is ==  isnt !=  not !)
+
+" lispz uses export to return data from function or module "
+(macro export (list) (.js 'return' list))
 
 "can't use export here as it is yet to be compiled"
 return {} 

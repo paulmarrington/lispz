@@ -9,15 +9,15 @@
     document.getElementById('js').value = js;
     console.log(lispz.env.list);
     if (run) {
-      document.getElementById('output').value = eval(js);
+      document.getElementById('output').value = lispz.run(source);
     }
   }
 </script>
 <body>
 <div style="position:absolute;bottom:-18px;right:0;">
 <textarea id="yalc" cols="80" rows="8">
-(async sleep (ms) (setTimeout .callback ms))
-(sleep 1000) (console.log "slept") (console.log "again")
+(var a 1 b 2 d 4)
+(export { a b c: (+ 1 2) d })
 </textarea><br>
 <textarea id="js" cols="80" rows="8">
 </textarea>

@@ -1,9 +1,9 @@
 var lispz = function() {
     // characters that are not space separated atoms (n becomes linefeed in regex)
-    var delims = "(){}[]'n".split('');
+    var delims = "(){}[]n".split('');
     var not_delims = delims.join("\\");
     delims = delims.join('|\\')
-    var stringRE = "'{1,2}.*?'{1,2}|" + '".*?[^\\\\]"|""|';
+    var stringRE = "'{1,2}[\\s\\S]*?'{1,2}|" + '"[\\s\\S]*?[^\\\\]"|""|';
     // Keep state stack for when we start a new inner list ()[]{}
     var push_state = function(env) {
         env.stack.push(env.list);
@@ -26,6 +26,19 @@ var lispz = function() {
           el.push(list2js(env, pairs[i]) + tween + list2js(env, pairs[i + 1]))
       };
       return fore + el.join(',') + aft
+    }
+    // A dictionary can be a symbol table or k-value pair
+    var dot_dict = function(env, list) {
+      var dict = [], kvp = list[1];
+      for (var i = 1, l = kvp.length; i < l; i++) {
+        var key = (kvp[i][0] == ".atom") ? kvp[i][1] : list2js(env, kvp[i]);
+        if (key.slice(-1) === ":") {
+          dict.push(key.slice(0, -1)+":"+list2js(env, kvp[++i]));
+        } else {
+          dict.push(key+":"+key);
+        }
+      }
+      return "{" + dict.join(',') + "}";
     }
     // Convert a list of lists to a list of js fragments
     var lists2list = function(env, lists) {
@@ -54,10 +67,24 @@ var lispz = function() {
         ':': "$colon$", ';': "$semicolon$", '<': "$less$", '=': "$equal",
         '>': "$greater$", '?': "$question$", '@': "$at$", '\\': "$slosh$",
         '^': "$caret$", '~': "$tilde$"
-    }
+    };
+    // modify strings with new lines to look like a js string
+    var multiline = function(atom) {
+      var lines = atom.split(/\r*\n/g);
+      if (lines.length > 3 && !lines[0].length && lines[1][0] == ' ') {
+        lines = lines.slice(1);
+        var spaces = lines[0].search(/\S|$/);
+        for (var i = 0, l = lines.length; i < l; i++) {
+          if (lines[i].slice(0, spaces).trim().length == 0)
+            lines[i] = lines[i].slice(spaces);
+        }
+      }
+      return '"'+lines.join('\\n')+'"';
+    };
+    // Account for "strings" and "symbols" and convert rest to something js-y
     var jsify = function(atom) {
       var last = atom.length - 1;
-      if (atom[0] === '"' && atom[last] === '"') return atom;
+      if (atom[0] === '"' && atom[last] === '"') return multiline(atom.slice(1,last));
       if (atom[0] === "'" && atom[last] === "'") return atom.slice(1,last);
       return atom.replace(/\W/g, function(symbol) {
           var rep = replacements[symbol];
@@ -156,7 +183,7 @@ var lispz = function() {
             'async': function(env, list) { return build_macro(env, list, true) },
             '.atom': function(env, list) { return jsify(list[1]) },
             '.raw': function(env, list) { return list[1] },
-            '.js': params2js, ".pairs": dot_pairs, 'alias': alias
+            '.js': params2js, ".pairs": dot_pairs, ".dict": dot_dict, 'alias': alias
         },
         alias: {}
     };
@@ -177,6 +204,11 @@ var lispz = function() {
       js = lists2list(env,env.list.slice(1)).join('');
       return js;
     };
+    // To run a lispz statement, wrap it in a function
+    var run = function(script) {
+      var js = "var __at__;\n"+compile(script);
+      return (new Function(js))();
+    }
     // lispz script loader (needed now to get core.lispz)
     var load_cache = {};
     load = function(uri, callback) {
@@ -191,10 +223,10 @@ var lispz = function() {
       req.onload = function() {
         if (req.status != 200) return req.error(req.statusText);
         var js = "var __at__;\n"+compile(req.responseText);
-        callback(null, load_cache[uri] = (new Function(js))());
+        callback(null, load_cache[uri] = run(req.responseText));
       }
       req.send();
     };
     window.onload = function(){ load('core') }
-    return { compile:compile, env:env, load:load }
+    return { compile:compile, env:env, load:load, run:run }
 }()
