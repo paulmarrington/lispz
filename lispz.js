@@ -61,7 +61,7 @@ var lispz = function() {
       }
       var params = lists2list(env, list.slice(2)), func = list2js(env, list[1]);
       if (func.length)
-        return func + "(" + params.join(',') + ')\n'
+        return "$$=" + func + "(" + params.join(',') + ')\n'
       else // caused by the likes of .js
         return params.join('\n');
     };
@@ -120,6 +120,7 @@ var lispz = function() {
     };
     // convert an atom to a simple list
     var atom2list = function(env) {
+      if (env.atom[0] === '@') env.atom = "$$." + env.atom.slice(1);
       if (env.delimiter[env.atom]) {
         env.delimiter[env.atom](env)
       } else {
