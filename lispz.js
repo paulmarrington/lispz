@@ -107,8 +107,10 @@ var lispz = function() {
     };
     // convert a list to a function definition
     var lambda2js = function(env, list) {
+      var statements = lists2list(env, list.slice(2));
+      if (statements.length == 1) statements.unshift('return');
       return "function(" + list2params(list[1]).join(',') + "){" +
-          lists2list(env, list.slice(2)).join(" ") + "}"
+          statements.join(" ") + "}"
     };
     // retrieve the next atom from the input stream. Returns false on no more
     var next_atom = function(env) {
@@ -193,8 +195,9 @@ var lispz = function() {
       env.tkre.lastIndex = 0; env.list = ['[']; env.stack = [];
       env.line_number = 1; env.source = source;
       while (next_atom(env)) atom2list(env);
-      js = lists2list(env,env.list.slice(1)).join('');
-      return js;
+      js = lists2list(env,env.list.slice(1));
+      if (js.length == 1) js.unshift("return ");
+      return js.join('');
     };
     // To run a lispz statement, wrap it in a function
     var run = function(script) { return (new Function(compile(script)))(); }
