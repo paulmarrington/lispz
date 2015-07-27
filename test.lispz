@@ -1,18 +1,2 @@
-(program (sleep 1000) (console.log "slept") (console.log "again"))
-
-(macro sleep (ms) (setTimeout (.async) ms)))
-
-function program() {
-  setTimeout(function() {
-    console.log("slept")
-    console.log("again")
-  }, 1000)
-}
-
-async = function(env, list) {
-  env.in_callback = true;
-  var params = list[1];
-  var body = parent_list.slice(parent_position + 1);
-  parent_abort = true;
-  return lambda2js(env, ["("].push(params, body));
-}
+(console.log "test loaded")
+(export {a: "a imported"})

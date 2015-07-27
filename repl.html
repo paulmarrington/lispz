@@ -13,16 +13,25 @@
     }
   }
 </script>
+<script type="text/lispz">
+  (console.log "lispz loaded")
+</script>
 <body>
 <div style="position:absolute;bottom:-18px;right:0;">
 <textarea id="yalc" cols="80" rows="8">
-(var a 1 b 2 d 4)
-(export { a b c: (+ 1 2) d })
+(macro requires (modules on_ready) (lispz.load modules
+  (lambda () (.requires modules) **on_ready)))
+
+(requires ["test" "blat"]
+  (console.log test))
+
+(export "Done")
 </textarea><br>
 <textarea id="js" cols="80" rows="8">
 </textarea>
 <br>
-<textarea id="output" cols="80" rows="8"></textarea>
+<textarea id="output" cols="80" rows="8">
+</textarea>
 <div style="position: absolute; right: 16px; bottom: 7px;">
   <button  onclick="javascript:repl(false)">Compile</button>
   <button  onclick="javascript:repl(true)">Run</button>
