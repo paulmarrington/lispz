@@ -19,11 +19,10 @@
 <body>
 <div style="position:absolute;bottom:-18px;right:0;">
 <textarea id="yalc" cols="80" rows="8">
-(macro requires (modules on_ready) (lispz.load modules
-  (lambda () (.requires modules) **on_ready)))
-
-(requires ["test" "blat"]
-  (console.log test))
+(var a 1)
+(cond (< a 1) (console.log "first")
+      (< a 2) (console.log "second")
+      (else)  (console.log "third"))
 
 (export "Done")
 </textarea><br>

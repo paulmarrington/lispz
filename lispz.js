@@ -21,11 +21,12 @@ var lispz = function() {
     // processing pairs of list elements
     var dot_pairs = function(env, list) {
       var el = [], pairs = list[1], fore = list2js(env, list[2]);
-      var tween = list2js(env, list[3]), aft = list2js(env, list[4]);
+      var tween = list2js(env, list[3]), sep = list2js(env, list[4]);
+      var aft = list2js(env, list[5]);
       for (var i = 1, l = pairs.length; i < l; i += 2) {
           el.push(list2js(env, pairs[i]) + tween + list2js(env, pairs[i + 1]))
       };
-      return fore + el.join(',') + aft
+      return fore + el.join(sep) + aft
     }
     // A dictionary can be a symbol table or k-value pair
     var dot_dict = function(env, list) {
@@ -190,7 +191,7 @@ var lispz = function() {
             }
         })
     };
-    binop("+,-,*,/,&&,||,==,===,<=,>=,!=".split(','));
+    binop("+,-,*,/,&&,||,==,===,<=,>=,!=,<,>,^".split(','));
     // generate javascript from lispz
     var compile = function(source) {
       env.tkre.lastIndex = 0; env.list = ['[']; env.stack = [];

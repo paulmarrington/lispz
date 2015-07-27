@@ -2,10 +2,10 @@
 (macro '{'  (list) (.dict *list))
 
 ### example: (var a 3 b 5 c (+3 2)) ###
-(macro var  (list) (.pairs *list 'var ' '=' ';'))
+(macro var  (list) (.pairs *list 'var ' '=' ',' ';'))
 
 ### example: (set! a 3 b 5 c (+ 3 2)) ###
-(macro set! (list) (.pairs *list ' '    '=' ' '))
+(macro set! (list) (.pairs *list ' '    '=' ',' ' '))
 
 ### example: (attribute b of {a 1 b 2}) ###
 (macro attribute (key of dict) (.js dict '[' key ']'))
@@ -19,3 +19,7 @@
 ### module import ###
 (macro requires (modules on_ready) (lispz.load modules
   (lambda () (.requires modules) **on_ready)))
+
+### conditional processing ###
+(macro cond (list) (.pairs *list 'switch(true){case ' ':' ';break;case ' '}'))
+(macro else () 'true')
