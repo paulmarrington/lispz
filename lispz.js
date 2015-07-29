@@ -1,6 +1,6 @@
 var lispz = function() {
     // characters that are not space separated atoms (n becomes linefeed in regex)
-    var delims = "(){}[]".split('');
+    var delims = "(){}[]".split(''), compile, parse, env, globals = {};
     var not_delims = delims.join("\\");
     delims = delims.join('|\\')
     var stringRE = "'{1,2}[\\s\\S]*?'{1,2}|" + '"[\\s\\S]*?[^\\\\]"|""|' + "###+.*?###+|";
@@ -61,8 +61,10 @@ var lispz = function() {
         return env.list2js[list[1][1]](env, list.slice(1))
       }
       var params = lists2list(env, list.slice(2)), func = list2js(env, list[1]);
-      if (func.length)
-        return "$$=" + func + "(" + params.join(',') + ')\n'
+      if (globals[func])
+        return "$$=lispz.globals." + func + "(" + params.join(',') + ')\n';
+      else if (func.length)
+        return "$$=" + func + "(" + params.join(',') + ')\n';
       else // caused by the likes of .js
         return params.join('\n');
     };
@@ -129,7 +131,7 @@ var lispz = function() {
       }
     };
     // Create a lambda that expands a named macro
-    var build_macro = function(env, list) {
+    var macro = function(env, list) {
       var macro_name = list2js(env, list[1]);
       var macro_params = {}, body = list.slice(3);
       list2params(list[2]).forEach(function(p, i) { macro_params[p] = i + 1 })
@@ -154,6 +156,12 @@ var lispz = function() {
       }
       return '';
     };
+    var macro2 = function(env, list) {
+      //var params = list2params(list[1]);
+      parse(eval(lists2list(env, list.slice(2)).join('\n')));
+      //var func = new Function(params.join(','), body);
+      return lambda2js(env, ["(",list[1]].concat(env.list));
+    };
     // use a different name for a lambdas, such as and for &&
     var alias = function(env, list) {
         for (var i = 1, l = list.length; i < l; i += 2)
@@ -176,7 +184,7 @@ var lispz = function() {
                    return '[' + lists2list(env, list.slice(1)).join(',') + ']' },
             '.list': function(env, list) {
                        return lists2list(env, list.slice(1)).join(' '); },
-            'lambda': lambda2js, 'macro': build_macro,
+            'lambda': lambda2js, 'macro': macro, 'macro2': macro2,
             '.atom': function(env, list) { return jsify(list[1]) },
             '.js': params2js, ".pairs": dot_pairs, ".dict": dot_dict, 'alias': alias,
             '.requires': dot_requires
@@ -192,12 +200,17 @@ var lispz = function() {
         })
     };
     binop("+,-,*,/,&&,||,==,===,<=,>=,!=,<,>,^".split(','));
+    // parse the source into a s-tree
+    var parse = function(source) {
+      env.tkre.lastIndex = 0; env.list = ['[']; env.stack = [];
+      env.line_number = 1; env.source = source.toString();
+      while (next_atom(env)) atom2list(env);
+      env.list = env.list.slice(1);
+    }
     // generate javascript from lispz
     var compile = function(source) {
-      env.tkre.lastIndex = 0; env.list = ['[']; env.stack = [];
-      env.line_number = 1; env.source = source;
-      while (next_atom(env)) atom2list(env);
-      js = lists2list(env,env.list.slice(1));
+      parse(source);
+      js = lists2list(env,env.list);
       if (js.length == 1) js.unshift("return ");
       return js.join('');
     };
@@ -235,5 +248,5 @@ var lispz = function() {
       for (var i = 0, l = scripts.length; i < l; i++)
         if (scripts[i].type == "text/lispz") run(scripts[i].innerHTML);
     };
-    return { compile:compile, env:env, load:load, run:run, cache:cache }
+    return { compile:compile, env:env, load:load, run:run, cache:cache, globals:globals };
 }()

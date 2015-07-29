@@ -1,0 +1,3 @@
+(var riot-cdn "https://cdn.jsdelivr.net/g/riot@2.2(riot.min.js+compiler.min.js)")
+
+(dom-append! "head" (dom-element script src riot-cdn))

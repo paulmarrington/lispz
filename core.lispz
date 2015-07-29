@@ -4,6 +4,9 @@
 ### example: (var a 3 b 5 c (+3 2)) ###
 (macro var  (list) (.pairs *list 'var ' '=' ',' ';'))
 
+### example: (global a 3) ###
+(macro global (name, value) (.js 'lispz.globals.' name '=' value))
+
 ### example: (set! a 3 b 5 c (+ 3 2)) ###
 (macro set! (list) (.pairs *list ' '    '=' ',' ' '))
 
