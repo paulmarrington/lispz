@@ -12,14 +12,10 @@
     }
   }
 </script>
-<script type="text/lispz">
-  (console.log "lispz loaded")
-</script>
 <body>
 <div style="position:absolute;bottom:-18px;right:0;">
 <textarea id="yalc" cols="80" rows="8">
-(macro swap (a b) (b a))
-(swap 12 console.log)
+(lispz.parsers.push [['/^###.*###$/' (lambda[])]])
 </textarea><br>
 <textarea id="js" cols="80" rows="8">
 </textarea>
@@ -31,3 +27,7 @@
   <button  onclick="javascript:repl(true)">Run</button>
 </div>
 </div>
+<pre>
+</pre>
+</body>
+</html>

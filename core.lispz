@@ -1,0 +1,17 @@
+(macro lambda [params *body] (join ' ' '(function(' params '){' *body '})'))
+(macro eval [params *body] (lambda [params, *body])'(' params ')'))
+(macro export [value] (join ' ' '0;return ' value))
+(lispz.parsers.push [['/^###.*###$/' (lambda[])]])
+
+### We can't have more exotic names without converting them for Javascript consumption ###
+(var specials "!#%&*+-/:;<=>?@\\^~" repls "bhpaslmdcewqgutkri" spec_dict {})
+  (eval (specials.forEach (lambda [key idx] (join 'spec_dict[' key ']=repls[' key ']')))))
+(var specRE (eval [specials] (specials.split()) (@.join "|") (new RegExp @ 'g')))
+(lispz.post_processors.push (lambda [atom] (export (atom.replace specRE
+  (lambda [match] (export (join 'spec_dict[' match ']')))))))
+
+### Pure functional programming wants immutability - but we live in an impure world ###
+(macro set! [name value] (join name '=' value ';'))
+
+### Strings are multi-line - make them js consumable ###
+(lispz.parsers.push [['/^".*"$/' (lambda [env] (set! env.atom, (env.atom.replace '/\r*\n/', "\\n"))))
