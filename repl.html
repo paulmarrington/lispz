@@ -15,7 +15,7 @@
 <body>
 <div style="position:absolute;bottom:-18px;right:0;">
 <textarea id="yalc" cols="80" rows="8">
-(lispz.parsers.push [['/^###.*###$/' (lambda[])]])
+(set! asdf 12)
 </textarea><br>
 <textarea id="js" cols="80" rows="8">
 </textarea>
@@ -28,6 +28,11 @@
 </div>
 </div>
 <pre>
+### Pure functional programming wants immutability - but we live in an impure world ###
+(macro set! [name value] (join name '=' value ';'))
+
+### Strings are multi-line - make them js consumable ###
+(lispz.parsers.push [['/^".*"$/' (lambda [env] (set! env.atom, (env.atom.replace '/\r*\n/', "\\n"))))
 </pre>
 </body>
 </html>
