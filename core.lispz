@@ -1,7 +1,19 @@
 /*** Supporting function definition ***/
-(macro lambda [params *body] (join '' '(function(' params '){' *body '})'))
-(macro eval [params *body] (lambda [params, *body])'(' params ')')
-(macro export [value] (join ' ' '0;return ' value))
+(macro lambda [params *body] (join '(function(' params '){' *body '})'))
+(macro do [*body] *body)
+(macro export [value] (join ' 0;return ' value))
 
 /*** Pure functional programming wants immutability - but we live in an impure world ***/
-(macro set! [name value] (join '' name '=' value ';'))
+(macro set! [name value] (join name '=' value ';'))
+
+/*** Operators ***/
+(macro ! [value] (join '(!(' value '))'))
+
+/*** Convenience tests ***/
+(macro empty? [list] (! list.length))
+
+/*** List manipulation ***/
+(macro first [list] (join list '[0]'))
+(macro rest [list] (join list '.slice(1)'))
+
+/*** Strings are multi-line - make them js consumable ***/
