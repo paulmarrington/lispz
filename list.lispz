@@ -1,0 +1,3 @@
+(global 'for-pairs' [pairs action] (empty? pairs (return))
+  (action (first pairs) (first (rest pairs)))
+  (for-pairs (rest (rest pairs)) action))

@@ -1,5 +1,6 @@
 /*** Supporting function definition ***/
 (macro lambda [params *body] (join '(function(' params '){' *body '})'))
+(macro global [name params *body] (join 'lispz.macros["' name '"]=(function(' params '){' *body '})'))
 (macro do [*body] *body)
 (macro export [value] (join ' 0;return ' value))
 
@@ -7,13 +8,16 @@
 (macro set! [name value] (join name '=' value ';'))
 
 /*** Operators ***/
-(macro ! [value] (join '(!(' value '))'))
+(macro not [value] (join '(!(' value '))'))
 
 /*** Convenience tests ***/
-(macro empty? [list] (! list.length))
+(macro empty? [list] (not list.length))
 
 /*** List manipulation ***/
 (macro first [list] (join list '[0]'))
 (macro rest [list] (join list '.slice(1)'))
+(global 'for-pairs' [pairs action] (empty? pairs (return))
+  (action (first pairs) (first (rest pairs)))
+  (for-pairs (rest (rest pairs)) action))
 
 /*** Strings are multi-line - make them js consumable ***/
