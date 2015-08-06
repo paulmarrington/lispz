@@ -6,10 +6,10 @@
 
 /*** Pure functional programming wants immutability - but we live in an impure world ***/
 (macro set! [name value] (join name '=' value ';'))
+(macro var  (*list) (join 'var ' (#pairs *list '=' ',') ';'))
 
 /*** Operators ***/
 (macro not [value] (join '(!(' value '))'))
-(macro var  (*list) (join 'var ' (#pairs *list '=' ',') ';'))
 
 /*** Convenience tests ***/
 (macro empty? [list] (not list.length))
@@ -17,5 +17,3 @@
 /*** List manipulation ***/
 (macro first [list] (join list '[0]'))
 (macro rest [list] (join list '.slice(1)'))
-
-/*** Strings are multi-line - make them js consumable ***/

@@ -61,9 +61,12 @@ var lispz = function() {
     }
     return el.join(ast_to_js(sep))
   },
+  binop_to_js = function(op) {
+    macros[op] = function(list) { return '(' + slice.call(arguments).map(ast_to_js).join(op) + ')' }
+  },
   macros = {
     '(': call_to_js, '[': array_to_js, '{': dict_to_js, macro: macro_to_js, join: join_to_js,
-    '#pairs': pairs_to_js
+    '#pairs': pairs_to_js, '#binop': binop_to_js
   },
   parsers = [
     [/^(\(|\{|\[)$/, function(env) {
@@ -133,5 +136,8 @@ if (window) window.onload = function() {
   load(['core'], function() {})
 }
 //######################### Script Loader ####################################//
+// add all standard binary operations (+, -, etc)
+"+,-,*,/,&&,||,==,===,<=,>=,!=,<,>,^".split(',').forEach(binop_to_js)
+
 return { compile: compile, run: run, parsers: parsers, load: load, macros: macros }
 }()
