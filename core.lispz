@@ -9,6 +9,7 @@
 
 /*** Operators ***/
 (macro not [value] (join '(!(' value '))'))
+(macro var  (*list) (join 'var ' (#pairs *list '=' ',') ';'))
 
 /*** Convenience tests ***/
 (macro empty? [list] (not list.length))
@@ -16,8 +17,5 @@
 /*** List manipulation ***/
 (macro first [list] (join list '[0]'))
 (macro rest [list] (join list '.slice(1)'))
-(global 'for-pairs' [pairs action] (empty? pairs (return))
-  (action (first pairs) (first (rest pairs)))
-  (for-pairs (rest (rest pairs)) action))
 
 /*** Strings are multi-line - make them js consumable ***/

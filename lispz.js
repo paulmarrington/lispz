@@ -5,13 +5,18 @@ var lispz = function() {
   tkre = new RegExp('(' + stringRE + '\\' + delims + "|[^\\s" + not_delims + "]+)", 'g'),
   opens = new Set("({["), closes = new Set(")}]"), ast_to_js, slice = [].slice,
   jsify = function(atom) {
-    return /^'.*'$/.test(atom) ? atom.slice(1, -1) : /^"(?:.|\r*\n)*"$/.test(atom)
-      ? atom.replace(/\r*\n/g, '\\n') : atom.replace(/\W/g, function(c) {
+    if (/^'.*'$/.test(atom)) return atom.slice(1, -1)
+    if (/^"(?:.|\r*\n)*"$/.test(atom)) return atom.replace(/\r*\n/g, '\\n')
+    switch (atom[0]) {
+      case '.': return (atom.length > 1) ? "$$"+atom : "$$"
+      case '@': return (atom.length > 1) ? "this."+atom.slice(1) : "this"
+      default:  return atom.replace(/\W/g, function(c) {
         var t = "bhpalmcewqgutkri"["!#%&+-:;<=>?@\\^~".indexOf(c)]; return t ? ("$"+t+"$") : c })
+    }
   },
   call_to_js = function(params, body) {
     return (macros[params]) ? macros[params].apply(lispz, slice.call(arguments, 1)) :
-      ast_to_js(params) + '(' + slice.call(arguments, 1).map(ast_to_js).join(',') + ')'
+      '$$=' + ast_to_js(params) + '(' + slice.call(arguments, 1).map(ast_to_js).join(',') + ')'
   },
   macro_to_js = function(name, pnames, body) {
     body = slice.call(arguments, 2)
@@ -33,6 +38,18 @@ var lispz = function() {
     var js = its.map(ast_to_js).join(',')
     return (its.length === 1 && its[0][0] === '[') ? "[" + js + "]" : js
   },
+  // A dictionary can be a symbol table or k-value pair
+  dict_to_js = function(kvp) {
+    var dict = []; kvp = slice.call(arguments)
+    for (var key, i = 1, l = kvp.length; i < l; i++) {
+      if ((key = kvp[i]).slice(-1)[0] === ":") {
+        dict.push(key.slice(0, -1)[0]+":"+ast_to_js(kvp[++i]));
+      } else {
+        dict.push(key+":"+key);
+      }
+    }
+    return "{" + dict.join(',') + "}";
+  },
   join_to_js = function(parts) {
     return slice.call(arguments).map(ast_to_js).join('')
   },
@@ -45,7 +62,8 @@ var lispz = function() {
     return el.join(ast_to_js(sep))
   },
   macros = {
-    '(': call_to_js, '[': array_to_js, macro: macro_to_js, join: join_to_js, '#pairs': pairs_to_js
+    '(': call_to_js, '[': array_to_js, '{': dict_to_js, macro: macro_to_js, join: join_to_js,
+    '#pairs': pairs_to_js
   },
   parsers = [
     [/^(\(|\{|\[)$/, function(env) {
