@@ -41,7 +41,7 @@ var lispz = function() {
   // A dictionary can be a symbol table or k-value pair
   dict_to_js = function(kvp) {
     var dict = []; kvp = slice.call(arguments)
-    for (var key, i = 1, l = kvp.length; i < l; i++) {
+    for (var key, i = 0, l = kvp.length; i < l; i++) {
       if ((key = kvp[i]).slice(-1)[0] === ":") {
         dict.push(key.slice(0, -1)[0]+":"+ast_to_js(kvp[++i]));
       } else {
@@ -63,10 +63,6 @@ var lispz = function() {
   },
   binop_to_js = function(op) {
     macros[op] = function(list) { return '(' + slice.call(arguments).map(ast_to_js).join(op) + ')' }
-  },
-  macros = {
-    '(': call_to_js, '[': array_to_js, '{': dict_to_js, macro: macro_to_js, join: join_to_js,
-    '#pairs': pairs_to_js, '#binop': binop_to_js
   },
   parsers = [
     [/^(\(|\{|\[)$/, function(env) {
@@ -116,28 +112,37 @@ var lispz = function() {
       })
     }
     req.onload = function() {
-      return (req.status != 200) ? req.onerror(req.statusText) : done(run(req.responseText))
+      return (req.status != 200) ? req.onerror(req.statusText) : done(
+        (new Function(compile(req.responseText)))())
     }
     req.send()
   },
   load = function(uri_list, callback) {
-    if (!callback) callback = function() {
-      return {}
-    }
-    var outstanding = uri_list.length,
-      uris = uri_list.slice()
-    var next_uri = function() {
-      if (uris.length) load_one(uris.shift(), next_uri)
-      if (!outstanding--) callback()
+    var uris = uri_list.split(','), outstanding = uris.length
+    next_uri = function() {
+      if (uris.length) load_one(uris.shift().trim(), next_uri)
+      if (!outstanding-- && callback) callback()
     }
     next_uri()
+  },
+  // Special to set variables loaded with requires
+  requires_to_js = function(list) {
+    return 'var ' + list.slice(1,-1).split(',').map(function(module) {
+      var name = module.trim().split('/').pop()
+      return name + '=lispz.cache["' + name + '"]'
+    }) + '\n'
   }
-if (window) window.onload = function() {
-  load(['core'], function() {})
-}
-//######################### Script Loader ####################################//
-// add all standard binary operations (+, -, etc)
-"+,-,*,/,&&,||,==,===,<=,>=,!=,<,>,^".split(',').forEach(binop_to_js)
+  if (window) window.onload = function() {
+    load('core', function() {})
+  }
+  //######################### Script Loader ####################################//
+  var macros = {
+    '(': call_to_js, '[': array_to_js, '{': dict_to_js, macro: macro_to_js, join: join_to_js,
+    '#pairs': pairs_to_js, '#binop': binop_to_js, '#requires': requires_to_js
+  }
 
-return { compile: compile, run: run, parsers: parsers, load: load, macros: macros }
+  // add all standard binary operations (+, -, etc)
+  "+,-,*,/,&&,||,==,===,<=,>=,!=,<,>,^".split(',').forEach(binop_to_js)
+
+  return { compile: compile, run: run, parsers: parsers, load: load, macros: macros, cache: cache }
 }()

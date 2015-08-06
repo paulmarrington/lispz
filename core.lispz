@@ -17,3 +17,7 @@
 /*** List manipulation ***/
 (macro first [list] (join list '[0]'))
 (macro rest [list] (join list '.slice(1)'))
+
+/*** module import ***/
+(macro requires [modules *on_ready] (lispz.load modules
+  (lambda [] (#requires modules) *on_ready)))
