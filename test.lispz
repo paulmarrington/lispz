@@ -1,2 +1,0 @@
-(console.log "test loaded")
-(export {a: "a imported"})

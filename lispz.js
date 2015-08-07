@@ -29,7 +29,7 @@ var lispz = function() {
       var expand = function(ast) {
         return (ast instanceof Array) ? ast.map(expand) : args[ast] || ast
       }
-      return ast_to_js(expand((body.length > 1) ? ["["].concat(body, "]") : body[0]))
+      return ast_to_js(expand((body.length > 1) ? ["["].concat(body) : body[0]))
     }
     return '""'
   },
@@ -140,7 +140,6 @@ var lispz = function() {
     '(': call_to_js, '[': array_to_js, '{': dict_to_js, macro: macro_to_js, join: join_to_js,
     '#pairs': pairs_to_js, '#binop': binop_to_js, '#requires': requires_to_js
   }
-
   // add all standard binary operations (+, -, etc)
   "+,-,*,/,&&,||,==,===,<=,>=,!=,<,>,^".split(',').forEach(binop_to_js)
 

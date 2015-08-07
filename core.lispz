@@ -8,6 +8,9 @@
 (macro set! [name value] (join name '=' value ';'))
 (macro var  (*list) (join 'var ' (#pairs *list '=' ',') ';'))
 
+/*** Retrieval - can be used for objects and arrays ***/
+(macro get [dict key] (join dict '[' key ']'))
+
 /*** Operators ***/
 (macro not [value] (join '(!(' value '))'))
 
@@ -15,14 +18,14 @@
 (macro empty? [list] (not list.length))
 (macro cond [*list] (join 'switch(true){case ' (#pairs *list  ':' ';break;case ') '}'))
 (macro else [] 'true')
+// Javascript does not (yet) have tail recursion - it is scheduled for 2016
+(macro while [test body] (join 'while(' test '){' body '}'))
 
 /*** List manipulation ***/
 (macro first [list] (join list '[0]'))
 (macro rest [list] (join list '.slice(1)'))
+(macro for-each-attribute [obj action] (Object.keys obj)(.forEach (lambda [k] (action k (get obj k)))))
 
 /*** module import ***/
 (macro requires [modules *on_ready] (lispz.load modules
   (lambda [] (#requires modules) *on_ready)))
-
-/*** Javascript does not (yet) have tail recursion - it is scheduled for 2016 ***/
-(macro while [test body] (join 'while(' test '){' body '}'))

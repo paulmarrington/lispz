@@ -1,5 +1,8 @@
-(var append! (lambda(parent element)
+(var append! (lambda [parent element]
   ((document.querySelector parent).appendChild element)
 ))
 
-(var element (lambda(tag-name attributes) ()))
+(var element (lambda [tag-name attributes] (var element (document.createElement tag-name))
+  (for-each-attribute attributes element.setAttribute)))
+
+export {append! element}
