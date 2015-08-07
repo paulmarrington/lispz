@@ -11,8 +11,10 @@
 /*** Operators ***/
 (macro not [value] (join '(!(' value '))'))
 
-/*** Convenience tests ***/
+/*** conditional processing ***/
 (macro empty? [list] (not list.length))
+(macro cond [*list] (join 'switch(true){case ' (#pairs *list  ':' ';break;case ') '}'))
+(macro else [] 'true')
 
 /*** List manipulation ***/
 (macro first [list] (join list '[0]'))
@@ -21,3 +23,6 @@
 /*** module import ***/
 (macro requires [modules *on_ready] (lispz.load modules
   (lambda [] (#requires modules) *on_ready)))
+
+/*** Javascript does not (yet) have tail recursion - it is scheduled for 2016 ***/
+(macro while [test body] (join 'while(' test '){' body '}'))
