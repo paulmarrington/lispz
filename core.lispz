@@ -2,7 +2,7 @@
 (macro lambda [params *body] (join '(function(' params '){' *body '})'))
 (macro global [name params *body] (join 'lispz.macros["' name '"]=(function(' params '){' *body '})'))
 (macro do [*body] *body)
-(macro export [value] (join ' 0;return ' value))
+(macro export [value] (join 'return ' value '\n'))
 
 /*** Pure functional programming wants immutability - but we live in an impure world ***/
 (macro set! [name value] (join name '=' value ';'))
@@ -16,6 +16,7 @@
 
 /*** conditional processing ***/
 (macro empty? [list] (not list.length))
+(macro defined? [field] (!== field undefined))
 (macro cond [*list] (join 'switch(true){case ' (#pairs *list  ':' ';break;case ') '}'))
 (macro else [] 'true')
 // Javascript does not (yet) have tail recursion - it is scheduled for 2016
@@ -27,5 +28,5 @@
 (macro for-each-attribute [obj action] (Object.keys obj)(.forEach (lambda [k] (action k (get obj k)))))
 
 /*** module import ***/
-(macro requires [modules *on_ready] (lispz.load modules
+(macro using [modules *on_ready] (lispz.load modules
   (lambda [] (#requires modules) *on_ready)))

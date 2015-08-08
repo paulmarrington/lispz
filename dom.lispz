@@ -5,4 +5,4 @@
 (var element (lambda [tag-name attributes] (var element (document.createElement tag-name))
   (for-each-attribute attributes element.setAttribute)))
 
-export {append! element}
+(export {append! element})
