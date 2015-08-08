@@ -8,6 +8,7 @@ var lispz = function() {
     if (/^'.*'$/.test(atom)) return atom.slice(1, -1).replace(/\\n/g, '\n')
     if (/^"(?:.|\r*\n)*"$/.test(atom)) return atom.replace(/\r*\n/g, '\\n')
     switch (atom[0]) {
+      //case '.': return atom
       case '.': return (atom.length > 1) ? "__"+atom : "__"
       case '@': return (atom.length > 1) ? "this."+atom.slice(1) : "this"
       default:  return atom.replace(/\W/g, function(c) {
@@ -46,15 +47,16 @@ var lispz = function() {
     var dict = []; kvp = slice.call(arguments)
     for (var key, i = 0, l = kvp.length; i < l; i++) {
       if ((key = kvp[i]).slice(-1)[0] === ":") {
-        dict.push("'"+key.slice(0, -1)[0]+"':"+ast_to_js(kvp[++i]));
+        dict.push("'"+ast_to_js(key.slice(0, -1)[0])+"':"+ast_to_js(kvp[++i]));
       } else {
-        dict.push("'"+key+"':"+ast_to_js(key));
+        dict.push("'"+ast_to_js(key)+"':"+ast_to_js(key));
       }
     }
     return "{" + dict.join(',') + "}";
   },
-  join_to_js = function(parts) {
-    return slice.call(arguments).map(ast_to_js).join('')
+  join_to_js = function(sep, parts) {
+    parts = slice.call((arguments.length > 2) ? arguments : parts, 1)
+    return parts.map(ast_to_js).join(ast_to_js(sep))
   },
   // processing pairs of list elements
   pairs_to_js = function(pairs, tween, sep) {
@@ -142,7 +144,7 @@ var lispz = function() {
   }
   //######################### Script Loader ####################################//
   var macros = {
-    '(': call_to_js, '[': array_to_js, '{': dict_to_js, 'macro': macro_to_js, 'join': join_to_js,
+    '(': call_to_js, '[': array_to_js, '{': dict_to_js, 'macro': macro_to_js, '#join': join_to_js,
     '#pairs': pairs_to_js, '#binop': binop_to_js, '#requires': requires_to_js, 'list': list_to_js
   }
   // add all standard binary operations (+, -, etc)

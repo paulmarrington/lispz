@@ -1,30 +1,30 @@
 /*** Supporting function definition ***/
-(macro lambda [params *body] (join '(function(' params '){' *body '})'))
-(macro global [name params *body] (join 'lispz.macros["' name '"]=(function(' params '){' *body '})'))
+(macro lambda [params *body] (#join '' '(function(' params '){' *body '})'))
+(macro global [name params *body] (#join '' 'lispz.macros["' name '"]=(function(' params '){' *body '})'))
 (macro do [*body] *body)
-(macro return [value] (join 'return ' value '\n'))
+(macro return [value] (#join '' 'return ' value '\n'))
 
 /*** Pure functional programming wants immutability - but we live in an impure world ***/
-(macro set! [name value] (join name '=' value ';'))
-(macro var  (*list) (join 'var ' (#pairs *list '=' ',') ';'))
+(macro set! [name value] (#join '' name '=' value ';'))
+(macro var  (*list) (#join '' 'var ' (#pairs *list '=' ',') ';'))
 
 /*** Retrieval - can be used for objects and arrays ***/
-(macro get [dict key] (join dict '[' key ']'))
+(macro get [dict *key] (#join '' dict '[' (#join '][' *key) ']'))
 
 /*** Operators ***/
-(macro not [value] (join '(!(' value '))'))
+(macro not [value] (#join '' '(!(' value '))'))
 
 /*** conditional processing ***/
 (macro empty? [list] (not list.length))
 (macro defined? [field] (!== field undefined))
-(macro cond [*list] (join 'switch(true){case ' (#pairs *list  ':' ';break;case ') '}'))
+(macro cond [*list] (#join '' 'switch(true){case ' (#pairs *list  ':' ';break;case ') '}'))
 (macro else [] 'true')
 // Javascript does not (yet) have tail recursion - it is scheduled for 2016
-(macro while [test body] (join 'while(' test '){' body '}'))
+(macro while [test body] (#join '' 'while(' test '){' body '}'))
 
 /*** List manipulation ***/
-(macro first [list] (join list '[0]'))
-(macro rest [list] (join list '.slice(1)'))
+(macro first [list] (#join '' list '[0]'))
+(macro rest [list] (#join '' list '.slice(1)'))
 (macro for-each-attribute [obj action] (Object.keys obj)(.forEach (lambda [k] (action k (get obj k)))))
 
 /*** module import ***/
@@ -32,5 +32,5 @@
   (lambda [] (#requires modules) *on_ready)))
 
 /*** Modules must export to continue processing ***/
-(macro export [exports] (join '__module_ready__(' exports ')'))
+(macro export [exports] (#join '' '__module_ready__(' exports ')'))
 (export {})

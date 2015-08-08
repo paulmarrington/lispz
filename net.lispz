@@ -1,7 +1,7 @@
 /*** Load packages from CDN and other web sources - listing them when possible ***/
 (using "dom"
   (var http-request (lambda [uri method on-loaded]
-    (join 'lispz.http_request(' uri ',' method ',' on-loaded ')')))
+    (#join '' 'lispz.http_request(' uri ',' method ',' on-loaded ')')))
 
   (var json-request (lambda [uri on-loaded]
     (http-request uri "GET" (lambda [response]
@@ -9,7 +9,8 @@
             (else)                   (on-loaded response))))))
 
   (var cdnjs-latest (lambda [pkg on-loaded]
-    (json-request (+ "http://api.cdnjs.com/libraries?search=" pkg) on-loaded)))
+    (json-request (+ "http://api.cdnjs.com/libraries?search=" pkg) 
+      (lambda [json] (on-loaded (get json.results 0 "latest"))))))
   (var cdnjs-assets (lambda [pkg fields on-loaded]
     (json-request (+ "http://api.cdnjs.com/libraries?fields=assets&search=" pkg) on-loaded)))
 
