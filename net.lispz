@@ -10,8 +10,8 @@
 
   (var cdnjs-latest (lambda [pkg on-loaded]
     (json-request (+ "http://api.cdnjs.com/libraries?search=" pkg) on-loaded)))
-  (var cdnjs-api (lambda [pkg fields on-loaded]
+  (var cdnjs-assets (lambda [pkg fields on-loaded]
     (json-request (+ "http://api.cdnjs.com/libraries?fields=assets&search=" pkg) on-loaded)))
 
-  (export {json-request cdnjs-list})
+  (export {json-request cdnjs-assets cdnjs-latest})
 )

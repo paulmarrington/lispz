@@ -113,18 +113,20 @@ var lispz = function() {
     req.send()
   },
   cache = {},
-  load_one = function(uri, callback) {
-    if (cache[uri] !== undefined) return callback(cache[uri])
+  load_one = function(uri, on_ready) {
+    if (cache[uri] !== undefined) return on_ready(cache[uri])
     http_request(uri + ".lispz", 'GET', function(response) {
-      response = response.text ? (new Function(compile(response.text))()) : null;
-      callback(cache[uri.split('/').pop()] = cache[uri] = response)
+      var name = uri.split('/').pop()
+      if (!response.text) return on_ready(response) // probably an error
+      var module = new Function('__module_ready__', compile(response.text))
+      module(function(exports) { on_ready(cache[name] = cache[uri] = exports) })
     })
   },
-  load = function(uri_list, callback) {
+  load = function(uri_list, on_all_ready) {
     var uris = uri_list.split(','), outstanding = uris.length
     next_uri = function() {
       if (uris.length) load_one(uris.shift().trim(), next_uri)
-      if (!outstanding-- && callback) callback()
+      if (!outstanding-- && on_all_ready) on_all_ready()
     }
     next_uri()
   },

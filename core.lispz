@@ -2,7 +2,7 @@
 (macro lambda [params *body] (join '(function(' params '){' *body '})'))
 (macro global [name params *body] (join 'lispz.macros["' name '"]=(function(' params '){' *body '})'))
 (macro do [*body] *body)
-(macro export [value] (join 'return ' value '\n'))
+(macro return [value] (join 'return ' value '\n'))
 
 /*** Pure functional programming wants immutability - but we live in an impure world ***/
 (macro set! [name value] (join name '=' value ';'))
@@ -30,3 +30,7 @@
 /*** module import ***/
 (macro using [modules *on_ready] (lispz.load modules
   (lambda [] (#requires modules) *on_ready)))
+
+/*** Modules must export to continue processing ***/
+(macro export [exports] (join '__module_ready__(' exports ')'))
+(export {})
