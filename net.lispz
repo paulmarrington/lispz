@@ -1,5 +1,10 @@
 /*** Load packages from CDN and other web sources - listing them when possible ***/
 (using "dom"
+  (var script (lambda [uri] (var el (dom.element "script" {type: "text/javascript"}))
+    (el.addEventListener "load" (lambda [] (lispz.events.emit "dom.script.loaded" uri)))
+    (el.addEventListener "error" (lambda [] (lispz.events.emit "dom.script.failed" uri)))
+    (dom.append! "head" el) (set! el.src uri) (return el) ))
+
   (var http-request (lambda [uri method on-loaded]
     (#join '' 'lispz.http_request(' uri ',' method ',' on-loaded ')')))
 
@@ -14,5 +19,5 @@
   (var cdnjs-assets (lambda [pkg fields on-loaded]
     (json-request (+ "http://api.cdnjs.com/libraries?fields=assets&search=" pkg) on-loaded)))
 
-  (export {json-request cdnjs-assets cdnjs-latest})
+  (export {script json-request cdnjs-assets cdnjs-latest})
 )

@@ -8,16 +8,18 @@ var lispz = function() {
     if (/^'.*'$/.test(atom)) return atom.slice(1, -1).replace(/\\n/g, '\n')
     if (/^"(?:.|\r*\n)*"$/.test(atom)) return atom.replace(/\r*\n/g, '\\n')
     switch (atom[0]) {
-      //case '.': return atom
       case '.': return (atom.length > 1) ? "__"+atom : "__"
       case '@': return (atom.length > 1) ? "this."+atom.slice(1) : "this"
       default:  return atom.replace(/\W/g, function(c) {
         var t = "$hpal_cewqgutkri"["!#%&+-:;<=>?@\\^~".indexOf(c)]; return t ? ("_"+t+"_") : c })
     }
   },
-  call_to_js = function(params, body) {
-    return (macros[params]) ? macros[params].apply(lispz, slice.call(arguments, 1)) :
-      '__=' + ast_to_js(params) + '(' + slice.call(arguments, 1).map(ast_to_js).join(',') + ')'
+  call_to_js = function(func, params) {
+    params = slice.call(arguments, 1)
+    if (macros[func]) return macros[func].apply(lispz, params)
+    func = ast_to_js(func)
+    if (params[0] && params[0][0] === '.') func += params.shift()
+    return '__=' + func + '(' + params.map(ast_to_js).join(',') + ')'
   },
   macro_to_js = function(name, pnames, body) {
     body = slice.call(arguments, 2)
@@ -47,7 +49,7 @@ var lispz = function() {
     var dict = []; kvp = slice.call(arguments)
     for (var key, i = 0, l = kvp.length; i < l; i++) {
       if ((key = kvp[i]).slice(-1)[0] === ":") {
-        dict.push("'"+ast_to_js(key.slice(0, -1)[0])+"':"+ast_to_js(kvp[++i]));
+        dict.push("'"+ast_to_js(key.slice(0, -1))+"':"+ast_to_js(kvp[++i]));
       } else {
         dict.push("'"+ast_to_js(key)+"':"+ast_to_js(key));
       }
@@ -142,14 +144,20 @@ var lispz = function() {
   if (window) window.onload = function() {
     load('core', function() {})
   }
-  //######################### Script Loader ####################################//
+  //#########################    Helpers    ####################################//
+  var clone = function (obj) {
+       var target = {};
+       for (var i in obj) if (obj.hasOwnProperty(i)) target[i] = obj[i];
+       return target;
+      }
+  //#########################   Interface   ####################################//
   var macros = {
     '(': call_to_js, '[': array_to_js, '{': dict_to_js, 'macro': macro_to_js, '#join': join_to_js,
     '#pairs': pairs_to_js, '#binop': binop_to_js, '#requires': requires_to_js, 'list': list_to_js
   }
   // add all standard binary operations (+, -, etc)
-  "+,-,*,/,&&,||,==,===,<=,>=,!=,!==,<,>,^".split(',').forEach(binop_to_js)
+  "+,-,*,/,&&,||,==,===,<=,>=,!=,!==,<,>,^,%".split(',').forEach(binop_to_js)
 
   return { compile: compile, run: run, parsers: parsers, load: load, macros: macros, cache: cache,
-           http_request: http_request}
+           http_request: http_request, clone: clone}
 }()

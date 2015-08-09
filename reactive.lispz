@@ -1,0 +1,34 @@
+/*** Streams / ReactiveX / FRP / Promise / Events basics - more in rx.lispz ***/
+
+(macro observer [] ((lambda []
+  (var obs {observer: (lambda []) completed: (lambda []) error: (lambda[])})
+  (set! obs.root obs) (return obs))))
+
+(macro timeout [ms] ((lambda [] (var r (observer))
+  (setTimeout (lambda [] (r.observer)) ms) (return r))))
+
+(macro observe [action obs *body] ((lambda []
+  (var parent __) (var r { root: parent.root observer: (lambda []) }) (var act (lambda obs *body))
+    (set! parent.observer (lambda obs (var rc (act obs)) (action r rc) (return rc)))
+  (return r))))
+
+(macro map [obs *body] (observe (lambda [r rc] (r.observer rc)) obs *body))
+(macro filter [obs *body] (observe (lambda [r rc] (cond rc (r.observer obs))) obs *body))
+(macro for-each [obs *body] (observe (lambda [r rc] (r.observer obs)) obs *body))
+(macro then [obs *body] (for-each obs *body))
+
+(macro on-completion [*body] ((lambda []
+  (var parent __) (set! parent.root.completed (lambda [] *body)) (return parent))))
+(macro on-error [*body] ((lambda []
+  (var parent __) (set! parent.root.error (lambda [] *body)) (return parent))))
+
+(macro observe-array [array] ((lambda []
+  (var a ([array].slice)) (var r (observer)) (var once (lambda [] (yield
+  (cond (> a.length 0) (once (r.observer (a.shift))) (else) (r.completed))
+  ))) (once) (return r))))
+
+(macro observe-dom [target event-name] ((lambda [] (var r (observer))
+  (target .addEventListener event-name (lambda [event] (r.observer event)))
+  (return r))))
+
+(export {})

@@ -17,7 +17,7 @@
 /*** conditional processing ***/
 (macro empty? [list] (not list.length))
 (macro defined? [field] (!== field undefined))
-(macro cond [*list] (#join '' 'switch(true){case ' (#pairs *list  ':' ';break;case ') '}'))
+(macro cond [*list] (#join '' 'switch(false){case !' (#pairs *list  ':' ';break;case !') '}'))
 (macro else [] 'true')
 // Javascript does not (yet) have tail recursion - it is scheduled for 2016
 (macro while [test body] (#join '' 'while(' test '){' body '}'))
@@ -34,3 +34,7 @@
 /*** Modules must export to continue processing ***/
 (macro export [exports] (#join '' '__module_ready__(' exports ')'))
 (export {})
+
+(macro yield [*body] (setTimeout (lambda [] *body) 0))
+
+(using "reactive")
