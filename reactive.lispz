@@ -3,9 +3,7 @@
 (macro observer [] ((lambda []
   (var obs {observer: (lambda []) completed: (lambda []) error: (lambda[])})
   (set! obs.root obs) (return obs))))
-
-(macro timeout [ms] ((lambda [] (var r (observer))
-  (setTimeout (lambda [] (r.observer)) ms) (return r))))
+(macro observable [] __)
 
 (macro observe [action obs *body] ((lambda []
   (var parent __) (var r { root: parent.root observer: (lambda []) }) (var act (lambda obs *body))
@@ -17,18 +15,22 @@
 (macro for-each [obs *body] (observe (lambda [r rc] (r.observer obs)) obs *body))
 (macro then [obs *body] (for-each obs *body))
 
+// bridge must be the end of the road - unless it returns another observable
+(macro bridge [obs *body] (observe (lambda [r rc] (r.observer rc)) obs *body))
+
 (macro on-completion [*body] ((lambda []
   (var parent __) (set! parent.root.completed (lambda [] *body)) (return parent))))
 (macro on-error [*body] ((lambda []
   (var parent __) (set! parent.root.error (lambda [] *body)) (return parent))))
 
-(macro observe-array [array] ((lambda []
+(macro array.observe [array] ((lambda []
   (var a ([array].slice)) (var r (observer)) (var once (lambda [] (yield
   (cond (> a.length 0) (once (r.observer (a.shift))) (else) (r.completed))
   ))) (once) (return r))))
 
-(macro observe-dom [target event-name] ((lambda [] (var r (observer))
-  (target .addEventListener event-name (lambda [event] (r.observer event)))
-  (return r))))
+(macro callback.observe [fn-builder] (return ((lambda [] (var r (observer))
+  (fn-builder (lambda [event] (r.observer event))) (return r)))))
+
+(macro timeout.observe [ms] (callback.observe (lambda [cb] (setTimeout cb ms))))
 
 (export {})

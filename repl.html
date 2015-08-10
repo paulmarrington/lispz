@@ -16,8 +16,11 @@
 <div style="position:absolute;bottom:-18px;right:0;">
 	
 <textarea id="yalc" cols="80" rows="8">
-(observe-dom document "click")
-(for-each [event] (console.log event))
+(using "net"
+(net.cdnjs-latest "riot")
+(bridge [uri] (return (net.script (uri.replace '/riot.min.js$/' "riot+compiler.js"))))
+(then [] (console.log "LOADED"))
+)
 </textarea><br>
 <textarea id="js" cols="80" rows="8">
 </textarea>

@@ -5,4 +5,8 @@
 (var element (lambda [tag-name attributes] (var element (document.createElement tag-name))
   (for-each-attribute attributes element.setAttribute) (return element)))
 
-(export {append! element})
+(var observe (lambda [target event-name] (var r (observer))
+  (target .addEventListener event-name (lambda [event] (r.observer event)))
+  (return r)))
+
+(export {append! element observe})

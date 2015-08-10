@@ -34,7 +34,7 @@ var lispz = function() {
       }
       return ast_to_js(expand((body.length > 1) ? ["list"].concat(body) : body[0]))
     }
-    return '""'
+    return "/*macro "+name+"*/"
   },
   array_to_js = function(its) {
     var js_array = (arguments.length === 1 && arguments[0][0] === '[')

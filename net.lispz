@@ -1,23 +1,27 @@
 /*** Load packages from CDN and other web sources - listing them when possible ***/
 (using "dom"
-  (var script (lambda [uri] (var el (dom.element "script" {type: "text/javascript"}))
-    (el.addEventListener "load" (lambda [] (lispz.events.emit "dom.script.loaded" uri)))
-    (el.addEventListener "error" (lambda [] (lispz.events.emit "dom.script.failed" uri)))
-    (dom.append! "head" el) (set! el.src uri) (return el) ))
+  // script is an observable on load event
+  (var script (lambda [uri]
+    (var el (dom.element "script" {type: "text/javascript"}))
+    (dom.append! "head" el)
+    (var observer (dom.observe el "load"))
+    (set! el.src uri) (return observer) ))
 
-  (var http-request (lambda [uri method on-loaded]
-    (#join '' 'lispz.http_request(' uri ',' method ',' on-loaded ')')))
+  (var http-request (lambda [uri method] (callback.observe (lambda [cb]
+      (#join '' 'lispz.http_request(' uri ',' method ',' cb ')')))))
 
-  (var json-request (lambda [uri on-loaded]
-    (http-request uri "GET" (lambda [response]
-      (cond (defined? response.text) (on-loaded (JSON.parse response.text))
-            (else)                   (on-loaded response))))))
+  (var json-request (lambda [uri]
+    (http-request uri "GET")
+    (return (map [response]
+      (cond (defined? response.text) (return (JSON.parse response.text))
+            (else)                   (return response))))))
 
-  (var cdnjs-latest (lambda [pkg on-loaded]
-    (json-request (+ "http://api.cdnjs.com/libraries?search=" pkg) 
-      (lambda [json] (on-loaded (get json.results 0 "latest"))))))
-  (var cdnjs-assets (lambda [pkg fields on-loaded]
-    (json-request (+ "http://api.cdnjs.com/libraries?fields=assets&search=" pkg) on-loaded)))
+  (var cdnjs-latest (lambda [pkg]
+    (json-request (+ "http://api.cdnjs.com/libraries?search=" pkg)) 
+    (return (map [json] (return (get json.results 0 "latest"))))))
 
-  (export {script json-request cdnjs-assets cdnjs-latest})
+  (var cdnjs-assets (lambda [pkg fields] (return
+    (json-request (+ "http://api.cdnjs.com/libraries?fields=assets&search=" pkg)))))
+
+  (export {script http-request json-request cdnjs-assets cdnjs-latest})
 )
