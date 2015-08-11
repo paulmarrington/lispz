@@ -4,7 +4,9 @@
   /*** Load RIOT from the CDN and continue normally once all is done ***/
   (net.cdnjs-latest "riot")
   (on-error [error] (alert (+ "CDNJS ERROR loading RIOT\n" error)))
-  (bridge [uri] (return (net.script (uri.replace '/riot.min.js$/' "riot+compiler.js"))))
-  (on-error [error] (alert (+ "CDNJS ERROR loading RIOT\n" error)))
-  (then [] (export {compile}))
+  (then [uri]
+    (net.script (uri.replace '/riot.min.js$/' "riot+compiler.js"))
+    (then [] (console.log "AFTER 2000"))
+    (on-error [error] (alert (+ "CDNJS ERROR loading RIOT\n" error)))
+    (then [] (export {compile})))
 )

@@ -18,11 +18,8 @@
 <div style="position:absolute;bottom:-18px;right:0;">
 	
 <textarea id="yalc" cols="80" rows="8">
-(using "observe"
-(observe.timeout 1000)
-(then [] (console.log "FIRST"))
-(delay 1000)
-(then [] (console.log "SECOND"))
+(using "riot"
+  (console.log (riot.compile "<my-tag> <h3>Tag layout</h3> <inner-tag /> </my-tag>"))
 )
 </textarea><br>
 <textarea id="js" cols="80" rows="8">
@@ -37,9 +34,6 @@
 </div>
 
 <pre>
-(using "riot"
-  (console.log (riot.compile "<my-tag> <h3>Tag layout</h3> <inner-tag /> </my-tag>"))
-)
 </pre>
 
 </body>

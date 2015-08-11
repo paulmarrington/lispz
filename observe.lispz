@@ -16,9 +16,6 @@
 (macro then [obs *body] (for-each obs *body))
 (macro delay [ms] (observe (lambda [r rc] (setTimeout (lambda [] (r.observer rc)) ms)) [resp] (return resp)))
 
-// bridge must be the end of the road - unless it returns another observable
-(macro bridge [obs *body] (observe (lambda [r rc] (r.observer rc)) obs *body))
-
 (macro on-completion [*body] ((lambda []
   (var parent __) (set! parent.root.completed (lambda [] *body)) (return parent))))
   

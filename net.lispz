@@ -1,12 +1,14 @@
 /*** Load packages from CDN and other web sources - listing them when possible ***/
-(using "dom"
+(using "dom,observe"
   // script is an observable on load event
   (var script (lambda [uri]
     (var el (dom.element "script" {type: "text/javascript"}))
     (dom.append! "head" el)
     (var observer (dom.observe el "load"))
     (dom.error-listener el observer)
-    (set! el.src uri) (return observer) ))
+    (set! el.src uri)
+    (with observer)
+    (return (delay 20))))
 
   (var http-request (lambda [uri method] (observe.callback (lambda [cb]
       (lispz.http_request uri method cb)))))
