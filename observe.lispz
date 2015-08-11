@@ -14,6 +14,7 @@
 (macro filter [obs *body] (observe (lambda [r rc] (cond rc (r.observer obs))) obs *body))
 (macro for-each [obs *body] (observe (lambda [r rc] (r.observer obs)) obs *body))
 (macro then [obs *body] (for-each obs *body))
+(macro delay [ms] (observe (lambda [r rc] (setTimeout (lambda [] (r.observer rc)) ms)) [resp] (return resp)))
 
 // bridge must be the end of the road - unless it returns another observable
 (macro bridge [obs *body] (observe (lambda [r rc] (r.observer rc)) obs *body))
@@ -24,14 +25,14 @@
 (macro on-error [*body] ((lambda []
   (var parent __) (set! parent.root.error (lambda [] *body)) (return parent))))
 
-(macro array.observe [array] ((lambda []
+(macro observe.array [array] ((lambda []
   (var a ([array].slice)) (var r (observer)) (var once (lambda [] (yield
   (cond (> a.length 0) (once (r.observer (a.shift))) (else) (r.completed))
   ))) (once) (return r))))
 
-(macro callback.observe [fn-builder] (return ((lambda [] (var r (observer))
+(macro observe.callback [fn-builder] (return ((lambda [] (var r (observer))
   (fn-builder (lambda [event] (r.observer event))) (return r)))))
 
-(macro timeout.observe [ms] (callback.observe (lambda [cb] (setTimeout cb ms))))
+(var timeout (lambda [ms] (observe.callback (lambda [cb] (setTimeout cb ms)))))
 
-(export {})
+(export {timeout})

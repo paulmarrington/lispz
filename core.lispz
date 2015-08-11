@@ -37,4 +37,4 @@
 
 (macro yield [*body] (setTimeout (lambda [] *body) 0))
 
-(using "reactive")
+(using "observe")

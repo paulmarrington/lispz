@@ -8,8 +8,8 @@
     (dom.error-listener el observer)
     (set! el.src uri) (return observer) ))
 
-  (var http-request (lambda [uri method] (callback.observe (lambda [cb]
-      (#join '' 'lispz.http_request(' uri ',' method ',' cb ')')))))
+  (var http-request (lambda [uri method] (observe.callback (lambda [cb]
+      (lispz.http_request uri method cb)))))
 
   (var json-request (lambda [uri]
     (http-request uri "GET")
