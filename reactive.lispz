@@ -20,6 +20,7 @@
 
 (macro on-completion [*body] ((lambda []
   (var parent __) (set! parent.root.completed (lambda [] *body)) (return parent))))
+  
 (macro on-error [*body] ((lambda []
   (var parent __) (set! parent.root.error (lambda [] *body)) (return parent))))
 

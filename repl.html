@@ -18,7 +18,9 @@
 <textarea id="yalc" cols="80" rows="8">
 (using "net"
 (net.cdnjs-latest "riot")
+(on-error [error] (console.log "CDNJS ERROR" error))
 (bridge [uri] (return (net.script (uri.replace '/riot.min.js$/' "riot+compiler.js"))))
+(on-error [error] (console.log "SCRIPT ERROR" error))
 (then [] (console.log "LOADED"))
 )
 </textarea><br>

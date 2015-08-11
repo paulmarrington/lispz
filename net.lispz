@@ -5,6 +5,7 @@
     (var el (dom.element "script" {type: "text/javascript"}))
     (dom.append! "head" el)
     (var observer (dom.observe el "load"))
+    (dom.error-listener el observer)
     (set! el.src uri) (return observer) ))
 
   (var http-request (lambda [uri method] (callback.observe (lambda [cb]
@@ -12,9 +13,10 @@
 
   (var json-request (lambda [uri]
     (http-request uri "GET")
-    (return (map [response]
-      (cond (defined? response.text) (return (JSON.parse response.text))
-            (else)                   (return response))))))
+    (filter [response]
+      (cond (defined? response.text)  (return true)
+            (else)                    (do (@error response) (return false))))
+    (return (map [response] (return (JSON.parse response.text))))))
 
   (var cdnjs-latest (lambda [pkg]
     (json-request (+ "http://api.cdnjs.com/libraries?search=" pkg)) 

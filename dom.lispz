@@ -9,4 +9,8 @@
   (target .addEventListener event-name (lambda [event] (r.observer event)))
   (return r)))
 
-(export {append! element observe})
+(var error-listener (lambda [target r]
+  (target .addEventListener "error" (lambda [event] (r.error event)))
+  (return r)))
+
+(export {append! element observe error-listener})
