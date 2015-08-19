@@ -6,7 +6,6 @@
   (on-error [error] (alert (+ "CDNJS ERROR loading RIOT\n" error)))
   (then [uri]
     (net.script (uri.replace '/riot.min.js$/' "riot+compiler.js"))
-    (then [] (console.log "AFTER 2000"))
     (on-error [error] (alert (+ "CDNJS ERROR loading RIOT\n" error)))
     (then [] (export {compile})))
 )

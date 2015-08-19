@@ -37,5 +37,3 @@
 
 (macro yield [*body] (setTimeout (lambda [] *body) 0))
 (macro with [withers] (set! __ withers))
-
-(using "observe")

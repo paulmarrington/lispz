@@ -3,7 +3,7 @@ var lispz = function() {
   not_delims = delims.join("\\"), delims = delims.join('|\\'),
   stringRE = "'[\\s\\S]*?'|" + '"[\\s\\S]*?[^\\\\]"|""|/\\*(?:.|\\r*\\n)*?\\*/|//.*?\\r*\\n|',
   tkre = new RegExp('(' + stringRE + '\\' + delims + "|[^\\s" + not_delims + "]+)", 'g'),
-  opens = new Set("({["), closes = new Set(")}]"), ast_to_js, slice = [].slice,
+  opens = new Set("({["), closes = new Set(")}]"), ast_to_js, slice = [].slice, contexts = [],
   jsify = function(atom) {
     if (/^'.*'$/.test(atom)) return atom.slice(1, -1).replace(/\\n/g, '\n')
     if (/^"(?:.|\r*\n)*"$/.test(atom)) return atom.replace(/\r*\n/g, '\\n')
@@ -32,7 +32,9 @@ var lispz = function() {
       var expand = function(ast) {
         return (ast instanceof Array) ? ast.map(expand) : args[ast] || ast
       }
+      contexts.unshift(name)
       return ast_to_js(expand((body.length > 1) ? ["list"].concat(body) : body[0]))
+      contexts.shift()
     }
     return "/*macro "+name+"*/"
   },
@@ -94,8 +96,13 @@ var lispz = function() {
     return env.ast
   },
   ast_to_js = function(ast) {
-    return (ast instanceof Array) ? macros[ast[0]] ?
-      macros[ast[0]].apply(this, ast.slice(1)) : list_to_js(ast) : jsify(ast)
+    //return (ast instanceof Array) ? macros[ast[0]] ?
+    //  macros[ast[0]].apply(this, ast.slice(1)) : list_to_js(ast) : jsify(ast)
+    if (!(ast instanceof Array)) return jsify(ast)
+    var name = ast[0]
+    contexts.some(function(pre){if (macros[pre+'.'+name]) {name = pre+'.'+name; return true}})
+    return macros[name] ? macros[name].apply(this, ast.slice(1)) : list_to_js(ast)
+    
   },
   compile = function(source) {
     return parse_to_ast(source).map(ast_to_js).join('\n')
@@ -104,6 +111,7 @@ var lispz = function() {
     return parse_to_ast(source).map(ast_to_js).map(eval)
   },
   //######################### Script Loader ####################################//
+  cache = {}, manifest = [],
   http_request = function(uri, type, callback) {
     var req = new XMLHttpRequest()
     req.open(type, uri, true)
@@ -111,12 +119,12 @@ var lispz = function() {
       callback({ uri: uri, error: err })
     }
     req.onload = function() {
+      manifest.push(req.responseURL)
       if (req.status === 200) callback({ uri:uri, text: req.responseText })
       else                    req.onerror(req.statusText) 
     }
     req.send()
   },
-  cache = {},
   load_one = function(uri, on_ready) {
     if (cache[uri] !== undefined) return on_ready(cache[uri])
     http_request(uri + ".lispz", 'GET', function(response) {
@@ -142,14 +150,15 @@ var lispz = function() {
     }) + ';'
   }
   if (window) window.onload = function() {
-    load('core', function() {})
+    var q = document.querySelector('script[src*="lispz.js"]').getAttribute('src').split('#')
+    load((q.length == 1) ? "core,observe" : "core,observe," + q.pop())
   }
   //#########################    Helpers    ####################################//
   var clone = function (obj) {
-       var target = {};
-       for (var i in obj) if (obj.hasOwnProperty(i)) target[i] = obj[i];
-       return target;
-      }
+    var target = {};
+    for (var i in obj) if (obj.hasOwnProperty(i)) target[i] = obj[i];
+    return target;
+  }
   //#########################   Interface   ####################################//
   var macros = {
     '(': call_to_js, '[': array_to_js, '{': dict_to_js, 'macro': macro_to_js, '#join': join_to_js,
@@ -159,5 +168,5 @@ var lispz = function() {
   "+,-,*,/,&&,||,==,===,<=,>=,!=,!==,<,>,^,%".split(',').forEach(binop_to_js)
 
   return { compile: compile, run: run, parsers: parsers, load: load, macros: macros, cache: cache,
-           http_request: http_request, clone: clone}
+           http_request: http_request, clone: clone, manifest: manifest}
 }()
