@@ -1,7 +1,7 @@
 /*** Supporting function definition ***/
 (macro lambda [params *body] (#join '' '(function(' params '){' *body '})'))
 (macro global [name params *body] (#join '' 'lispz.macros["' name '"]=(function(' params '){' *body '})'))
-(macro closure [params *body] (#join '' '(function(' params '){' *body '})(' params ')'))
+(macro closure [params *body] (#join '(function(' params '){' *body '})(' params ')'))
 (macro do [*body] *body)
 (macro return [value] (#join '' 'return ' value '\n'))
 

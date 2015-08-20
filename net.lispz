@@ -17,7 +17,7 @@
     (http-request uri "GET")
     (filter [response]
       (cond (defined? response.text)  (return true)
-            (else)                    (do (@error response) (return false))))
+            (else)                    (do (error response) (return false))))
     (return (map [response] (return (JSON.parse response.text))))))
 
   (var cdnjs-latest (lambda [pkg]

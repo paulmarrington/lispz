@@ -1,0 +1,39 @@
+<html manifest="repl.cache-manifest">
+<head>
+<title>LISPz</title>
+<script src="lispz.js"></script>
+<script>
+  repl = function(run) {
+    source = document.getElementById('yalc').value;
+    js = lispz.compile(source);
+    document.getElementById('js').value = js;
+    if (run) {
+      document.getElementById('output').value = lispz.run(source);
+    }
+  }
+</script>
+<body>
+<div style="position:absolute;bottom:-18px;right:0;">
+	
+<textarea id="yalc" cols="80" rows="8">
+(observe
+  (array [1 2 3])
+  (for-each [el] (console.log el))
+)
+</textarea><br>
+<textarea id="js" cols="80" rows="8">
+</textarea>
+<br>
+<textarea id="output" cols="80" rows="8">
+</textarea>
+<div style="position: absolute; right: 16px; bottom: 0px;">
+  <button  onclick="javascript:repl(false)">Compile</button>
+  <button  onclick="javascript:repl(true)">Run</button>
+</div>
+</div>
+
+<pre>
+</pre>
+
+</body>
+</html>

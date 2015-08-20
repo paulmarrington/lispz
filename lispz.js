@@ -16,6 +16,7 @@ var lispz = function() {
   },
   call_to_js = function(func, params) {
     params = slice.call(arguments, 1)
+    contexts.some(function(pre){if (macros[pre+'.'+func]) {func = pre+'.'+func; return true}})
     if (macros[func]) return macros[func].apply(lispz, params)
     func = ast_to_js(func)
     if (params[0] && params[0][0] === '.') func += params.shift()
@@ -96,13 +97,8 @@ var lispz = function() {
     return env.ast
   },
   ast_to_js = function(ast) {
-    //return (ast instanceof Array) ? macros[ast[0]] ?
-    //  macros[ast[0]].apply(this, ast.slice(1)) : list_to_js(ast) : jsify(ast)
-    if (!(ast instanceof Array)) return jsify(ast)
-    var name = ast[0]
-    contexts.some(function(pre){if (macros[pre+'.'+name]) {name = pre+'.'+name; return true}})
-    return macros[name] ? macros[name].apply(this, ast.slice(1)) : list_to_js(ast)
-    
+    return (ast instanceof Array) ? macros[ast[0]] ?
+      macros[ast[0]].apply(this, ast.slice(1)) : list_to_js(ast) : jsify(ast)
   },
   compile = function(source) {
     return parse_to_ast(source).map(ast_to_js).join('\n')

@@ -1,4 +1,5 @@
 (using  "net"
+(observe
   (var compile (lambda [html] (return (riot.compile html))))
 
   /*** Load RIOT from the CDN and continue normally once all is done ***/
@@ -8,4 +9,4 @@
     (net.script (uri.replace '/riot.min.js$/' "riot+compiler.js"))
     (on-error [error] (alert (+ "CDNJS ERROR loading RIOT\n" error)))
     (then [] (export {compile})))
-)
+))
