@@ -1,9 +1,0 @@
-(using  "net"
-  /*** Load jquery from the CDN and continue normally once all is done ***/
-  (net.cdnjs-latest "jquery")
-  (on-error [error] (alert (+ "CDNJS ERROR loading jquery\n" error)))
-  (then [uri]
-    (net.script uri)
-    (on-error [error] (alert (+ "CDNJS ERROR loading jquery\n" error)))
-    (then [] (export {jquery: $})))
-)

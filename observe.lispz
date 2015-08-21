@@ -1,9 +1,19 @@
 /*** Streams / ReactiveX / FRP / Promise / Events basics - more in rx.lispz ***/
+/*
+ * For namespacing. (observer (array [1 2 3]) (map [entry] ...))
+ */
 (macro observe [*body] *body)
-
-(macro observable [] ((lambda (var root {observer: (lambda [])})
-  (set! root.root root)))
-)
+/*
+ * Creates a promise-like object for observables - being the first in the observer chain.
+ * Has to point back to itself to mimic the observer promises. Runs a function that return
+ * the promise for full (dis)closure.
+ */
+(macro observable [] (
+  (lambda []
+    (var root {observer: (lambda [])})
+    (set! root.root root)
+    (return root))
+))
 
 (macro #observe [action it *body] ((lambda []
   (var parent __)

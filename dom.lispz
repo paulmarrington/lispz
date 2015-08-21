@@ -5,12 +5,14 @@
 (var element (lambda [tag-name attributes] (var element (document.createElement tag-name))
   (for-each-attribute attributes element.setAttribute) (return element)))
 
-(var observe (lambda [target event-name] (var r (observer))
-  (target .addEventListener event-name (lambda [event] (r.observer event)))
-  (return r)))
+/*(var observe (lambda [target event-name] (var root (observable))
+  (target .addEventListener event-name (lambda [event] (root.observer event)))
+  (return root)))*/
+(var observe (lambda [target event-name] (observe.callback (lambda [cb]
+  (target .addEventListener event-name cb)))))
 
 (var error-listener (lambda [target r]
-  (target .addEventListener "error" (lambda [event] (r.error event)))
+  (target .addEventListener "error" (lambda [event] (r.root.error event)))
   (return r)))
 
 (export {append! element observe error-listener})
