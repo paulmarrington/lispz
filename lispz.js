@@ -1,9 +1,10 @@
 var lispz = function() {
-  var delims = "(){}[]".split(''), // characters that are not space separated atoms
+  var delims = "(){}[]n".split(''), // characters that are not space separated atoms
   not_delims = delims.join("\\"), delims = delims.join('|\\'),
   stringRE = "'[\\s\\S]*?'|" + '"[\\s\\S]*?[^\\\\]"|""|/\\*(?:.|\\r*\\n)*?\\*/|//.*?\\r*\\n|',
   tkre = new RegExp('(' + stringRE + '\\' + delims + "|[^\\s" + not_delims + "]+)", 'g'),
   opens = new Set("({["), closes = new Set(")}]"), ast_to_js, slice = [].slice, contexts = [],
+  module_stack = [], line_number = 1, module_name = "boot",
   jsify = function(atom) {
     if (/^'.*'$/.test(atom)) return atom.slice(1, -1).replace(/\\n/g, '\n')
     if (/^"(?:.|\r*\n)*"$/.test(atom)) return atom.replace(/\r*\n/g, '\\n')
@@ -74,14 +75,32 @@ var lispz = function() {
   binop_to_js = function(op) {
     macros[op] = function(list) { return '(' + slice.call(arguments).map(ast_to_js).join(op) + ')' }
   },
+  /*
+   * When there was a new-line in the source, we inject it into the prior non-atom
+   * if possible. Now we are generating JavaScript we find and process it. This is
+   * because comments can't have their own atom or they will screw up argument lists.
+   */
+  eol_to_js = function(module_name, line_number, ast) {
+    return ast_to_js(slice.call(arguments, 2)) + "//#" + module_name + ":" + line_number + "\n"
+  },
   parsers = [
     [/^(\(|\{|\[)$/, function(env) {
       env.stack.push(env.node)
       env.node = [env.atom]
     }],
-    [/^(\)|\}|\])$/, function(e) {
-      var f = e.node;
-      (e.node = e.stack.pop()).push(f)
+    [/^(\)|\}|\])$/, function(env) {
+      var f = env.node;
+      (env.node = env.stack.pop()).push(f)
+    }],
+    /*
+     * Record line number for JS comment. Can't add a new element,
+     * so only do it if last compiled is not an atom.
+     */
+    [/^\n$/, function(env) {
+      if (!env.node.length) return
+      var atom = env.node[env.node.length - 1]
+      if (!(atom instanceof Array)) return
+      atom.unshift('\n',module_name, line_number++)
     }]
   ],
   parse_to_ast = function(source) {
@@ -100,11 +119,17 @@ var lispz = function() {
     return (ast instanceof Array) ? macros[ast[0]] ?
       macros[ast[0]].apply(this, ast.slice(1)) : list_to_js(ast) : jsify(ast)
   },
-  compile = function(source) {
-    return parse_to_ast(source).map(ast_to_js).join('\n')
+  compile = function(name, source) {
+    module_stack.push(module_name, line_number)
+    module_name = name
+    line_number = 1
+    var js = parse_to_ast(source).map(ast_to_js)
+    line_number = module_stack.pop()
+    module_name = module_stack.pop()
+    return js
   },
-  run = function(source) {
-    return parse_to_ast(source).map(ast_to_js).map(eval)
+  run = function(name, source) {
+    return compile(name, source).map(eval)
   },
   //######################### Script Loader ####################################//
   cache = {}, manifest = [],
@@ -126,7 +151,7 @@ var lispz = function() {
     http_request(uri + ".lispz", 'GET', function(response) {
       var name = uri.split('/').pop()
       if (!response.text) return on_ready(response) // probably an error
-      var module = new Function('__module_ready__', compile(response.text))
+      var module = new Function('__module_ready__', compile(uri, response.text).join('\n'))
       module(function(exports) { on_ready(cache[name] = cache[uri] = exports) })
     })
   },
@@ -158,7 +183,8 @@ var lispz = function() {
   //#########################   Interface   ####################################//
   var macros = {
     '(': call_to_js, '[': array_to_js, '{': dict_to_js, 'macro': macro_to_js, '#join': join_to_js,
-    '#pairs': pairs_to_js, '#binop': binop_to_js, '#requires': requires_to_js, 'list': list_to_js
+    '#pairs': pairs_to_js, '#binop': binop_to_js, '#requires': requires_to_js, 'list': list_to_js,
+    '\n': eol_to_js
   }
   // add all standard binary operations (+, -, etc)
   "+,-,*,/,&&,||,==,===,<=,>=,!=,!==,<,>,^,%".split(',').forEach(binop_to_js)

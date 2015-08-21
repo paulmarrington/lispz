@@ -5,10 +5,10 @@
 <script>
   repl = function(run) {
     source = document.getElementById('yalc').value;
-    js = lispz.compile(source);
+    js = lispz.compile('repl', source).join('/n');
     document.getElementById('js').value = js;
     if (run) {
-      document.getElementById('output').value = lispz.run(source);
+      document.getElementById('output').value = lispz.run('repl', source);
     }
   }
 </script>
