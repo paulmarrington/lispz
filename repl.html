@@ -8,7 +8,8 @@
     js = lispz.compile('repl', source).join('/n');
     document.getElementById('js').value = js;
     if (run) {
-      document.getElementById('output').value = lispz.run('repl', source);
+      //document.getElementById('output').value = 
+      lispz.run('repl', source);
     }
   }
 </script>

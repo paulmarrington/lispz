@@ -1,46 +1,79 @@
 /*** Streams / ReactiveX / FRP / Promise / Events basics - more in rx.lispz ***/
 /*
- * For namespacing. (observer (array [1 2 3]) (map [entry] ...))
+ * For namespacing. (observe (array [1 2 3]) (map [entry] ...))
  */
 (macro observe [*body] *body)
 /*
  * Creates a promise-like object for observables - being the first in the observer chain.
  * Has to point back to itself to mimic the observer promises. Runs a function that return
- * the promise for full (dis)closure.
+ * the promise for full (dis)closure. It also sets a local variable called observable
+ * to the promise. Any entry in the stream can call observer.root.error or
+ * observer.root.complete for out-of-stream signals.
  */
-(macro observable [] (
-  (lambda []
-    (var root {observer: (lambda [])})
+(macro observable []
+  (var observable ((lambda []
+    (var root {announce: (lambda []) error: (lambda []) complete: (lambda [])})
     (set! root.root root)
     (return root))
+  ))
+  (var last_observer observable next_observer observable)
+)
+
+(macro observer [] (var observer __))
+
+(macro #observe [tell #observe#args *body] ((lambda []
+  (var last_observer __)
+  (var next_observer {
+    announce: (lambda [])
+    root:     last_observer.root
+    parent: last_observer })
+  (var act (lambda #observe#args *body))
+  (set! last_observer.announce (lambda #observe#args
+    (var #observe#response (act #observe#args))
+    (tell next_observer #observe#response)
+    (return #observe#response)))
+  (return next_observer))))
+
+(macro observe.map [map#args *body] (#observe
+  (lambda [next_observer map#response] (next_observer.announce map#response))
+  map#args *body
 ))
-
-(macro #observe [action it *body] ((lambda []
-  (var parent __)
-  (var r { observer: (lambda []) root: parent.root })
-  (var act (lambda it *body))
-  (set! parent.observer (lambda it (var rc (act it)) (action r rc) (return rc)))
-  (return r))))
-
-(macro observe.map [it *body] (#observe (lambda [r rc] (r.observer rc)) it *body))
-(macro observe.filter [it *body] (#observe (lambda [r rc] (cond rc (r.observer it))) it *body))
-(macro observe.for-each [it *body] (#observe (lambda [r rc] (r.observer it)) it *body))
-(macro observe.then [it *body] (for-each it *body))
-(macro observe.delay [ms] (#observe (lambda [r rc] (setTimeout (lambda [] (r.observer rc)) ms)) [resp] (return resp)))
+(macro observe.filter [filter#args *body] (#observe
+  (lambda [next_observer filter#response]
+    (cond filter#response (next_observer.announce filter#args)))
+  filter#args *body
+))
+(macro observe.for-each [for-each#args *body] (#observe
+  (lambda [next_observer for-each#response] (next_observer.announce for-each#args))
+  for-each#args *body
+))
+(macro observe.then [then#args *body] (for-each then#args *body))
+(macro observe.delay [ms] (#observe
+  (lambda [next_observer response]
+    (setTimeout (lambda [] (next_observer.announce response)) ms)) [resp]
+    (return resp)
+))
+/*
+ * Send an error that will be forwarded to any out-of-band error responder
+ */
+(macro observe.error [*data] (last_observer.root.error *data))
 
 (macro observe.on-completion [*body] ((lambda []
   (var parent __) (set! parent.root.completed (lambda [] *body)) (return parent))))
   
 (macro observe.on-error [*body] ((lambda []
-  (var parent __) (set! parent.root.error (lambda [] *body)) (return parent))))
+  (var parent __) (set! parent.root.error (lambda [] *body)) (return parent)
+)))
 
-(macro observe.array [array] ((lambda [] (var root (observable))
+(macro observe.array [array] ((lambda [] (observable)
   (var a ([array].slice)) (var once (lambda [] (yield
-  (cond (> a.length 0) (once (root.observer (a.shift))) (else) (r.completed))
-  ))) (once) (return root))))
+    (cond
+      (> a.length 0) (once (observable.announce (a.shift)))
+      (else)        (observable.completed))
+  ))) (once) (return observable))))
 
-(macro observe.callback [fn-builder] (return ((lambda [] (var root (observable))
-  (fn-builder (lambda [event] (root.observer event))) (return root)))))
+(macro observe.callback [fn-builder] (return ((lambda [] (observable)
+  (fn-builder (lambda [event] (observable.announce event))) (return observable)))))
 
 (macro observe.timeout (observe.callback (lambda [cb] (setTimeout cb ms))))
 

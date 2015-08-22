@@ -2,7 +2,6 @@
 (macro lambda [params *body] (#join '' '(function(' params '){' *body '})'))
 (macro global [name params *body] (#join '' 'lispz.macros["' name '"]=(function(' params '){' *body '})'))
 (macro closure [params *body] (#join '' '(function(' params '){' *body '})(' params ')'))
-(macro do [*body] *body)
 (macro return [value] (#join '' 'return ' value '\n'))
 
 /*** Pure functional programming wants immutability - but we live in an impure world ***/
@@ -38,3 +37,11 @@
 
 (macro yield [*body] (setTimeout (lambda [] *body) 0))
 (macro with [withers] (set! __ withers))
+/*
+ * Observers and similar sequences rely on the return value of
+ * one operation to be available for the next. If we need to do
+ * something between then then we need to keep that return value
+ * for later.
+ */
+(macro aside [*body] (var ___ __) *body (set! __ ___))
+(macro do [*body] (aside *body))

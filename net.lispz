@@ -1,31 +1,35 @@
 /*** Load packages from CDN and other web sources - listing them when possible ***/
 (using "dom,observe"
   // script is an observable on load event
-  (var script (lambda [uri]
+  (var script (lambda [uri] (observe
     (var el (dom.element "script" {type: "text/javascript"}))
     (dom.append! "head" el)
-    (var observer (dom.observe el "load"))
-    (dom.error-listener el observer)
-    (set! el.src uri)
-    (with observer)
-    (return (delay 20))))
+    (dom.observe el "load")
+    (dom.error-listener el)
+      (aside (set! el.src uri))
+    (return (delay 20)))))
 
   (var http-request (lambda [uri method] (observe.callback (lambda [cb]
-      (lispz.http_request uri method cb)))))
+    (lispz.http_request uri method cb)))))
 
   (var json-request (lambda [uri]
-    (http-request uri "GET")
-    (filter [response]
-      (cond (defined? response.text)  (return true)
-            (else)                    (do (error response) (return false))))
-    (return (map [response] (return (JSON.parse response.text))))))
+    (observe
+      (http-request uri "GET")
+      (filter [response]
+        (cond (defined? response.text)  (return true)
+              (else)                    (do (error response) (return false))))
+      (return (map [response] (return (JSON.parse response.text))))
+    )
+  ))
 
   (var cdnjs-latest (lambda [pkg]
-    (json-request (+ "http://api.cdnjs.com/libraries?search=" pkg)) 
-    (return (map [json] (return (get
-        (json.results.filter (lambda [item] (return (=== item.name pkg))))
-      0 "latest"))
-  ))))
+    (observe
+      (json-request (+ "http://api.cdnjs.com/libraries?search=" pkg)) 
+      (return (map [json] (return (get
+          (json.results.filter (lambda [item] (return (=== item.name pkg))))
+        0 "latest"))))
+    )
+  ))
 
   (var cdnjs-assets (lambda [pkg fields] (return
     (json-request (+ "http://api.cdnjs.com/libraries?fields=assets&search=" pkg)))))

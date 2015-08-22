@@ -4,7 +4,7 @@ var lispz = function() {
   stringRE = "'[\\s\\S]*?'|" + '"[\\s\\S]*?[^\\\\]"|""|/\\*(?:.|\\r*\\n)*?\\*/|//.*?\\r*\\n|',
   tkre = new RegExp('(' + stringRE + '\\' + delims + "|[^\\s" + not_delims + "]+)", 'g'),
   opens = new Set("({["), closes = new Set(")}]"), ast_to_js, slice = [].slice, contexts = [],
-  module_stack = [], line_number = 1, module_name = "boot",
+  module = {line:0, name:"boot"},
   jsify = function(atom) {
     if (/^'.*'$/.test(atom)) return atom.slice(1, -1).replace(/\\n/g, '\n')
     if (/^"(?:.|\r*\n)*"$/.test(atom)) return atom.replace(/\r*\n/g, '\\n')
@@ -35,8 +35,9 @@ var lispz = function() {
         return (ast instanceof Array) ? ast.map(expand) : args[ast] || ast
       }
       contexts.unshift(name)
-      return ast_to_js(expand((body.length > 1) ? ["list"].concat(body) : body[0]))
+      var js = ast_to_js(expand((body.length > 1) ? ["list"].concat(body) : body[0]))
       contexts.shift()
+      return js
     }
     return "/*macro "+name+"*/"
   },
@@ -52,10 +53,10 @@ var lispz = function() {
   dict_to_js = function(kvp) {
     var dict = []; kvp = slice.call(arguments)
     for (var key, i = 0, l = kvp.length; i < l; i++) {
-      if ((key = kvp[i]).slice(-1)[0] === ":") {
-        dict.push("'"+ast_to_js(key.slice(0, -1))+"':"+ast_to_js(kvp[++i]));
+      if ((key = kvp[i])[kvp[i].length - 1] === ":") {
+        dict.push("'"+jsify(key.slice(0, -1))+"':"+ast_to_js(kvp[++i]));
       } else {
-        dict.push("'"+ast_to_js(key)+"':"+ast_to_js(key));
+        dict.push("'"+jsify(key)+"':"+ast_to_js(key));
       }
     }
     return "{" + dict.join(',') + "}";
@@ -80,8 +81,9 @@ var lispz = function() {
    * if possible. Now we are generating JavaScript we find and process it. This is
    * because comments can't have their own atom or they will screw up argument lists.
    */
-  eol_to_js = function(module_name, line_number, ast) {
-    return ast_to_js(slice.call(arguments, 2)) + "//#" + module_name + ":" + line_number + "\n"
+  eol_to_js = function(name, number, ast) {
+    module = {name:name, line:number}
+    return ast_to_js(slice.call(arguments, 2)) + "//#" + name + ":" + number + "\n"
   },
   parsers = [
     [/^(\(|\{|\[)$/, function(env) {
@@ -100,7 +102,7 @@ var lispz = function() {
       if (!env.node.length) return
       var atom = env.node[env.node.length - 1]
       if (!(atom instanceof Array)) return
-      atom.unshift('\n',module_name, line_number++)
+      atom.unshift('\n', module.name, module.line)
     }]
   ],
   parse_to_ast = function(source) {
@@ -108,6 +110,7 @@ var lispz = function() {
     env.node = env.ast
     tkre.lastIndex = 0
     while ((env.atom = tkre.exec(source.toString())) && (env.atom = env.atom[1])) {
+      module.line += (env.atom.match(/\n/g) || []).length
       if (!parsers.some(function(parser) {
           if (!parser[0].test(env.atom)) return false
           parser[1](env)
@@ -120,13 +123,17 @@ var lispz = function() {
       macros[ast[0]].apply(this, ast.slice(1)) : list_to_js(ast) : jsify(ast)
   },
   compile = function(name, source) {
-    module_stack.push(module_name, line_number)
-    module_name = name
-    line_number = 1
-    var js = parse_to_ast(source).map(ast_to_js)
-    line_number = module_stack.pop()
-    module_name = module_stack.pop()
-    return js
+    try {
+      var last_module = module
+      module = {name:name, line:0}
+      var js = parse_to_ast(source).map(ast_to_js)
+      module = last_module
+      return js
+    } catch (err) {
+      var errloc = module.name+".lispz:"+module.line
+      console.log(errloc, err)
+      return ['throw "compile error for ' + errloc + " -- " + err.message + '"\n']
+    }
   },
   run = function(name, source) {
     return compile(name, source).map(eval)
