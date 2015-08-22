@@ -11,6 +11,7 @@
  * observer.root.complete for out-of-stream signals.
  */
 (macro observable []
+  (cond (defined? observer) (return observer))
   (var observable ((lambda []
     (var root {announce: (lambda []) error: (lambda []) complete: (lambda [])})
     (set! root.root root)
@@ -76,5 +77,10 @@
   (fn-builder (lambda [event] (observable.announce event))) (return observable)))))
 
 (macro observe.timeout (observe.callback (lambda [cb] (setTimeout cb ms))))
+/*
+ * Bridge an observable into yet another observer in an existing chain.
+ * Use as in (then [params] (bridge (an-observable params)))
+ */
+(macro bridge [*body] (observer) *body (with observer))
 
 (export {})

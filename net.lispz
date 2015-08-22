@@ -35,13 +35,14 @@
     (json-request (+ "http://api.cdnjs.com/libraries?fields=assets&search=" pkg)))))
   
   /*** Load package from the CDN and continue normally once all is done ***/
-  /*(var cdnjs-load (lambda [pkg]
-    (net.cdnjs-latest pkg)
-    (on-error [error] (alert (+ "CDNJS ERROR loading " pkg "\n" error)))
-    (then [uri] **** change to bridge so in one stream ***
-      (net.script uri)
+  (var cdnjs-load (lambda [pkg]
+    (observe
+      (cdnjs-latest pkg)
       (on-error [error] (alert (+ "CDNJS ERROR loading " pkg "\n" error)))
-      (then [] (export {})))))*/
+      (then [uri] (bridge (script uri)))
+      (then [] (export {}))
+    )
+  ))
 
-  (export {script http-request json-request cdnjs-assets cdnjs-latest})
+  (export {script http-request json-request cdnjs-assets cdnjs-latest cdnjs-load})
 )
