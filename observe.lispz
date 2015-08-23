@@ -1,66 +1,92 @@
-/*** Streams / ReactiveX / FRP / Promise / Events basics - more in rx.lispz ***/
-/*
- * For namespacing. (observe (array [1 2 3]) (map [entry] ...))
- */
+### Streams / ReactiveX / FRP / Promise / Events basics - more in rx.lispz ###
+###
+# For namespacing. (observe (array [1 2 3]) (map [entry] ...))
+###
 (macro observe [*body] *body)
-/*
- * Creates a promise-like object for observables - being the first in the observer chain.
- * Has to point back to itself to mimic the observer promises. Runs a function that return
- * the promise for full (dis)closure. It also sets a local variable called observable
- * to the promise. Any entry in the stream can call observer.root.error or
- * observer.root.complete for out-of-stream signals.
- */
+###
+# Creates a promise-like object for observables - being the first in the observer chain.
+# Has to point back to itself to mimic the observer promises. Runs a function that return
+# the promise for full (dis)closure. It also sets a local variable called observable
+# to the promise. Any entry in the stream can call observer.root.error or
+# observer.root.complete for out-of-stream signals.
+###
 (macro observable []
-  (cond (defined? observer) (return observer))
-  (var observable ((lambda []
-    (var root {announce: (lambda []) error: (lambda []) complete: (lambda [])})
-    (set! root.root root)
-    (return root))
-  ))
-  (var last_observer observable next_observer observable)
+  (cond
+    ## We are bridging if inside a #observer already - so use the observer created
+    (defined? next#observer) (var observable next#observer)
+    (else)                   (var observable ((lambda []
+        (var root {announce: (lambda []) error: (lambda []) complete: (lambda [])})
+        (set! root.root root)
+        (return root))
+      ))
+  )
 )
 
 (macro observer [] (var observer __))
 
 (macro #observe [tell #observe#args *body] ((lambda []
-  (var last_observer __)
-  (var next_observer {
+  (var last#observer __)
+  (var next#observer {
     announce: (lambda [])
-    root:     last_observer.root
-    parent: last_observer })
+    root:     last#observer.root
+    parent: last#observer })
   (var act (lambda #observe#args *body))
-  (set! last_observer.announce (lambda #observe#args
+  (set! last#observer.announce (lambda #observe#args
     (var #observe#response (act #observe#args))
-    (tell next_observer #observe#response)
+    (tell next#observer #observe#response)
     (return #observe#response)))
-  (return next_observer))))
+  (return next#observer))))
+###
+# Bridge an observable into yet another observer in an existing chain.
+# Use as in (then [params] (bridge (an-observable params)))
+###
+(macro observe.bridge [bridge#args *body] (#observe (lambda[]) bridge#args *body))
 
 (macro observe.map [map#args *body] (#observe
-  (lambda [next_observer map#response] (next_observer.announce map#response))
+  (lambda [next#observer map#response] (next#observer.announce map#response))
   map#args *body
 ))
 (macro observe.filter [filter#args *body] (#observe
-  (lambda [next_observer filter#response]
-    (cond filter#response (next_observer.announce filter#args)))
+  (lambda [next#observer filter#response]
+    (cond filter#response (next#observer.announce filter#args)))
   filter#args *body
 ))
 (macro observe.for-each [for-each#args *body] (#observe
-  (lambda [next_observer for-each#response] (next_observer.announce for-each#args))
+  (lambda [next#observer for-each#response] (next#observer.announce for-each#args))
   for-each#args *body
 ))
-(macro observe.then [then#args *body] (for-each then#args *body))
+(macro observe.then [then#args *body] (observe.for-each then#args *body))
 (macro observe.delay [ms] (#observe
-  (lambda [next_observer response]
-    (setTimeout (lambda [] (next_observer.announce response)) ms)) [resp]
+  (lambda [next#observer response]
+    (setTimeout (lambda [] (next#observer.announce response)) ms)) [resp]
     (return resp)
 ))
-/*
- * Send an error that will be forwarded to any out-of-band error responder
- */
-(macro observe.error [*data] (last_observer.root.error *data))
+###
+# Only return the first item that matches a test is sent down the line.
+# (contain) is use so that any modifications to the message counter remains
+# local - allowing (first) to be reentrant.
+###
+(macro observe.first [first#args *first#body]
+  (contain []
+    (var message#count 0)
+    (return (#observe
+      (lambda [next#observer first#response]
+        (cond (and first#response (is message#count 0)) (do
+	  (next#observer.announce first#args)
+          (set! message#count (+ message#count 1))
+	))
+      )
+      first#args *first#body
+    ))
+  )
+)
+###
+# Send an error that will be forwarded to any out-of-band error responder
+###
+(macro observe.error [*data] (last#observer.root.error *data))
 
 (macro observe.on-completion [*body] ((lambda []
-  (var parent __) (set! parent.root.completed (lambda [] *body)) (return parent))))
+  (var parent __) (set! parent.root.complete (lambda [] *body)) (return parent))))
   
 (macro observe.on-error [*body] ((lambda []
   (var parent __) (set! parent.root.error (lambda [] *body)) (return parent)
@@ -70,17 +96,12 @@
   (var a ([array].slice)) (var once (lambda [] (yield
     (cond
       (> a.length 0) (once (observable.announce (a.shift)))
-      (else)        (observable.completed))
+      (else)        (observable.root.complete))
   ))) (once) (return observable))))
 
 (macro observe.callback [fn-builder] (return ((lambda [] (observable)
   (fn-builder (lambda [event] (observable.announce event))) (return observable)))))
 
 (macro observe.timeout (observe.callback (lambda [cb] (setTimeout cb ms))))
-/*
- * Bridge an observable into yet another observer in an existing chain.
- * Use as in (then [params] (bridge (an-observable params)))
- */
-(macro bridge [*body] (observer) *body (with observer))
 
 (export {})

@@ -1,16 +1,19 @@
 var lispz = function() {
   var delims = "(){}[]n".split(''), // characters that are not space separated atoms
   not_delims = delims.join("\\"), delims = delims.join('|\\'),
-  stringRE = "'[\\s\\S]*?'|" + '"[\\s\\S]*?[^\\\\]"|""|/\\*(?:.|\\r*\\n)*?\\*/|//.*?\\r*\\n|',
+  stringRE = "'[\\s\\S]*?'|" + '"[\\s\\S]*?[^\\\\]"|""|' +
+    '###+(?:.|\\r*\\n)*?###+|' + '##\\s+.*?\\r*\\n|',
   tkre = new RegExp('(' + stringRE + '\\' + delims + "|[^\\s" + not_delims + "]+)", 'g'),
   opens = new Set("({["), closes = new Set(")}]"), ast_to_js, slice = [].slice, contexts = [],
-  module = {line:0, name:"boot"},
+  module = {line:0, name:"boot"}, modules = {},
+  synonyms = {not:'!',and:'&&',or:'||',is:'===',isnt:'!=='},
   jsify = function(atom) {
     if (/^'.*'$/.test(atom)) return atom.slice(1, -1).replace(/\\n/g, '\n')
     if (/^"(?:.|\r*\n)*"$/.test(atom)) return atom.replace(/\r*\n/g, '\\n')
     switch (atom[0]) {
       case '.': return (atom.length > 1) ? "__"+atom : "__"
       case '@': return (atom.length > 1) ? "this."+atom.slice(1) : "this"
+      case '-': return atom
       default:  return atom.replace(/\W/g, function(c) {
         var t = "$hpal_cewqgutkri"["!#%&+-:;<=>?@\\^~".indexOf(c)]; return t ? ("_"+t+"_") : c })
     }
@@ -18,6 +21,7 @@ var lispz = function() {
   call_to_js = function(func, params) {
     params = slice.call(arguments, 1)
     contexts.some(function(pre){if (macros[pre+'.'+func]) {func = pre+'.'+func; return true}})
+    if (synonyms[func]) func = synonyms[func]
     if (macros[func]) return macros[func].apply(lispz, params)
     func = ast_to_js(func)
     if (params[0] && params[0][0] === '.') func += params.shift()
@@ -25,6 +29,7 @@ var lispz = function() {
   },
   macro_to_js = function(name, pnames, body) {
     body = slice.call(arguments, 2)
+    if (pnames[0] === "\n") pnames = pnames.slice(3) // drop line number component
     macros[name] = function(pvalues) {
       pvalues = slice.call(arguments)
       var args = {}
@@ -105,13 +110,16 @@ var lispz = function() {
       atom.unshift('\n', module.name, module.line)
     }]
   ],
+  comment = function(atom) {
+    return atom[0] === "#" && atom[1] === "#" && (atom[2] === '#' || atom[2] == ' ')
+  },
   parse_to_ast = function(source) {
     var env = { ast: [], stack: [] }
     env.node = env.ast
     tkre.lastIndex = 0
     while ((env.atom = tkre.exec(source.toString())) && (env.atom = env.atom[1])) {
       module.line += (env.atom.match(/\n/g) || []).length
-      if (!parsers.some(function(parser) {
+      if (!comment(env.atom) && !parsers.some(function(parser) {
           if (!parser[0].test(env.atom)) return false
           parser[1](env)
           return true
@@ -158,8 +166,9 @@ var lispz = function() {
     http_request(uri + ".lispz", 'GET', function(response) {
       var name = uri.split('/').pop()
       if (!response.text) return on_ready(response) // probably an error
-      var module = new Function('__module_ready__', compile(uri, response.text).join('\n'))
-      module(function(exports) { on_ready(cache[name] = cache[uri] = exports) })
+      var js = compile(uri, response.text).join('\n') + "//# sourceURL=" + name + ".lispz\n"
+      modules[uri] = new Function('__module_ready__', js)
+      modules[uri](function(exports) { on_ready(cache[name] = cache[uri] = exports) })
     })
   },
   load = function(uri_list, on_all_ready) {
@@ -197,5 +206,6 @@ var lispz = function() {
   "+,-,*,/,&&,||,==,===,<=,>=,!=,!==,<,>,^,%".split(',').forEach(binop_to_js)
 
   return { compile: compile, run: run, parsers: parsers, load: load, macros: macros, cache: cache,
-           http_request: http_request, clone: clone, manifest: manifest}
+           http_request: http_request, clone: clone, manifest: manifest, modules: modules,
+           synonyms: synonyms}
 }()

@@ -1,47 +1,55 @@
-/*** Supporting function definition ***/
+### Supporting function definition ###
 (macro lambda [params *body] (#join '' '(function(' params '){' *body '})'))
 (macro global [name params *body] (#join '' 'lispz.macros["' name '"]=(function(' params '){' *body '})'))
 (macro closure [params *body] (#join '' '(function(' params '){' *body '})(' params ')'))
 (macro return [value] (#join '' 'return ' value '\n'))
 
-/*** Pure functional programming wants immutability - but we live in an impure world ***/
+### Pure functional programming wants immutability - but we live in an impure world ###
 (macro set! [name value] (#join '' name '=' value ';'))
 (macro var  (*list) (#join '' 'var ' (#pairs *list '=' ',') ';'))
 
-/*** Retrieval - can be used for objects and arrays ***/
+### Retrieval - can be used for objects and arrays ###
 (macro get [dict *key] (#join '' dict '[' (#join '][' *key) ']'))
 
-/*** Operators ***/
+### Operators ###
 (macro not [value] (#join '' '(!(' value '))'))
 
-/*** conditional processing ***/
+### conditional processing ###
 (macro empty? [list] (not list.length))
 (macro defined? [field] (!== (typeof field) "undefined"))
 (macro cond [*list] (#join '' 'switch(false){case !' (#pairs *list  ':' ';break;case !') '}'))
 (macro else [] 'true')
-// Javascript does not (yet) have tail recursion - it is scheduled for 2016
+(macro contains [str substr] (isnt -1 (str .indexOf substr)))
+## Javascript does not (yet) have tail recursion - it is scheduled for 2016
 (macro while [test body] (#join '' 'while(' test '){' body '}'))
 
-/*** List manipulation ***/
+### List manipulation ###
 (macro first [list] (#join '' list '[0]'))
 (macro rest [list] (#join '' list '.slice(1)'))
 (macro for-each-attribute [obj action] (Object.keys obj)(.forEach (lambda [k] (action k (get obj k)))))
 
-/*** module import ***/
+### module import ###
 (macro using [modules *on_ready] (lispz.load modules
   (lambda [] (#requires modules) *on_ready)))
 
-/*** Modules must export to continue processing ***/
+### Modules must export to continue processing ###
 (macro export [exports] (#join '' '__module_ready__(' exports ')'))
 (export {})
 
 (macro yield [*body] (setTimeout (lambda [] *body) 0))
 (macro with [withers] (set! __ withers))
-/*
- * Observers and similar sequences rely on the return value of
- * one operation to be available for the next. If we need to do
- * something between then then we need to keep that return value
- * for later.
- */
+###
+# Observers and similar sequences rely on the return value of
+# one operation to be available for the next. If we need to do
+# something between then then we need to keep that return value
+# for later.
+###
 (macro aside [*body] (var ___ __) *body (set! __ ___))
-(macro do [*body] (aside *body))
+(macro do [*body] *body)
+###
+# Use contain to contain state changes. Any var inside a contain can be changed
+# no matter how many times the contain is calle concurrently. It is also allows
+# the passing in of variables that are effectively copied and cannot be changed
+# from outside.
+###
+(macro contain [contain#args *contain#body] ((lambda contain#args *contain#body) contain#args))

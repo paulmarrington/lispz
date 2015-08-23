@@ -1,6 +1,6 @@
-/*** Load packages from CDN and other web sources - listing them when possible ***/
+### Load packages from CDN and other web sources - listing them when possible ###
 (using "dom,observe"
-  // script is an observable on load event
+  ## script is an observable on load event
   (var script (lambda [uri] (observe
     (var el (dom.element "script" {type: "text/javascript"}))
     (dom.append! "head" el)
@@ -22,6 +22,15 @@
     )
   ))
 
+  (var #cdnjs (lambda [query pkg]
+    (observe
+      (json-request (+ "http://api.cdnjs.com/libraries?" query pkg)) 
+      (return (map [json] (return (get
+          (json.results.filter (lambda [item] (return (=== item.name pkg))))
+        0 "latest"))))
+    )
+  ))
+
   (var cdnjs-latest (lambda [pkg]
     (observe
       (json-request (+ "http://api.cdnjs.com/libraries?search=" pkg)) 
@@ -34,12 +43,12 @@
   (var cdnjs-assets (lambda [pkg fields] (return
     (json-request (+ "http://api.cdnjs.com/libraries?fields=assets&search=" pkg)))))
   
-  /*** Load package from the CDN and continue normally once all is done ***/
+  ### Load package from the CDN and continue normally once all is done ###
   (var cdnjs-load (lambda [pkg]
     (observe
       (cdnjs-latest pkg)
       (on-error [error] (alert (+ "CDNJS ERROR loading " pkg "\n" error)))
-      (then [uri] (bridge (script uri)))
+      (bridge [uri] (script uri))
       (then [] (export {}))
     )
   ))

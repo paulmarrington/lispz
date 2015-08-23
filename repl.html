@@ -13,17 +13,32 @@
   }
 </script>
 <body>
-<div style="position:absolute;bottom:-18px;right:0;">
+<div>
 	
 <textarea id="yalc" cols="80" rows="8">
-(using "jquery")
+(using "net"
+  (var #cdnjs (lambda [query pkg]
+    (observe
+      (net.json-request (+ "http://api.cdnjs.com/libraries?" query pkg)) 
+      (then [json]
+        (array json.results)
+        (first [metadata] (return (=== metadata.name pkg)))
+        (then [metadata]
+          (array metadata.assets)
+	  (first [asset] (return (contains asset.version "alpha")))
+        )
+      )
+    )
+  ))
+  (#cdnjs "fields=assets&search=" "twitter-bootstrap")
+)
 </textarea><br>
 <textarea id="js" cols="80" rows="8">
 </textarea>
 <br>
 <textarea id="output" cols="80" rows="8">
 </textarea>
-<div style="position: absolute; right: 16px; bottom: 0px;">
+<div>
   <button  onclick="javascript:repl(false)">Compile</button>
   <button  onclick="javascript:repl(true)">Run</button>
 </div>
