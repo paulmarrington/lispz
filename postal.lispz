@@ -1,0 +1,34 @@
+(var exchange (lambda [address]
+  (cond
+    (not (get lispz.exchange address))
+      (set! (get lispz.exchange address) [[]])
+  )
+  (return lispz.exchange[address])
+))
+## remove a recipient from all attached addresses
+(var remove (lambda [recipient]
+  (set! (get lispz.exchange recipient.address)
+    ((exchange address).filter (lambda [possibility]
+      (return (isnt recipient possibility))
+    ))
+  )
+))
+(var send (lambda [address packet]
+  ## take a copy so that it does not change during processing
+  (((post.exchange address).slice).forEach (lambda [recipient]
+    (yield ## reduce callback depth and stop freezes
+      (cond recipient.once (remove recipient))
+      (recipient.reply (recipient.listener packet))
+    )
+  ))
+))
+(var default-recipient {address: "" once: true
+                        listener: (lambda) reply: (lambda)})
+                        
+(var expect (lambda [envelope]
+  ((exchange envelope.address).append
+    (merge default-recipient envelope)
+  )
+))
+
+(export {remove send expect})

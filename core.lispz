@@ -1,5 +1,6 @@
 ### Supporting function definition ###
 (macro lambda [params *body] (#join '' '(function(' params '){' *body '})'))
+(macro *arguments [from] ([[]].slice.call arguments from))
 (macro global [name params *body] (#join '' 'lispz.macros["' name '"]=(function(' params '){' *body '})'))
 (macro closure [params *body] (#join '' '(function(' params '){' *body '})(' params ')'))
 (macro return [value] (#join '' 'return ' value '\n'))
@@ -53,3 +54,16 @@
 # from outside.
 ###
 (macro contain [contain#args *contain#body] ((lambda contain#args *contain#body) contain#args))
+###
+# There is often need to merge multiple dictionaries together to create a new
+# combined one.
+###
+(global merge [dictionaries]
+  (var merged {})
+  ((*arguments 0).forEach (lambda [dictionary]
+    ((Object.keys dictionary).forEach (lambda [key]
+      (set! (get merged key) (get dictionary key))
+    ))
+  ))
+  (return merged)
+)

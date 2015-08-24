@@ -139,13 +139,11 @@ var lispz = function() {
       return js
     } catch (err) {
       var errloc = module.name+".lispz:"+module.line
-      console.log(errloc, err)
+      console.log(errloc, err.message)
       return ['throw "compile error for ' + errloc + " -- " + err.message + '"\n']
     }
   },
-  run = function(name, source) {
-    return compile(name, source).map(eval)
-  },
+  run = function(name, source) { return compile(name, source).map(eval) },
   //######################### Script Loader ####################################//
   cache = {}, manifest = [],
   http_request = function(uri, type, callback) {

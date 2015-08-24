@@ -24,10 +24,15 @@
 
   (var #cdnjs (lambda [query pkg]
     (observe
-      (json-request (+ "http://api.cdnjs.com/libraries?" query pkg)) 
-      (return (map [json] (return (get
-          (json.results.filter (lambda [item] (return (=== item.name pkg))))
-        0 "latest"))))
+      (net.json-request (+ "http://api.cdnjs.com/libraries?" query pkg)) 
+      (then [json]
+        (array json.results)
+        (first [metadata] (return (=== metadata.name pkg)))
+        (then [metadata]
+          (array metadata.assets)
+	  (first [asset] (return (contains asset.version "alpha")))
+        )
+      )
     )
   ))
 
