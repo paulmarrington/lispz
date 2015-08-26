@@ -1,62 +1,56 @@
 ### Load packages from CDN and other web sources - listing them when possible ###
-(using "dom,observe"
-  ## script is an observable on load event
-  (var script (lambda [uri] (observe
+(using "dom"
+  (var script (lambda [uri next-step=>]
     (var el (dom.element "script" {type: "text/javascript"}))
     (dom.append! "head" el)
-    (dom.observe el "load")
-    (dom.error-listener el)
-      (aside (set! el.src uri))
-    (return (delay 20)))))
+    (el.addEventListener "load"  (=> [evt] (delay 20 (next-step=> evt))))
+    (el.addEventListener "error" (=> [evt] (throw evt)))
+    (set! el.src uri)
+  ))
 
-  (var http-request (lambda [uri method] (observe.callback (lambda [cb]
-    (lispz.http_request uri method cb)))))
+  (var css (lambda [uri]
+    (var el (dom.element "link" {type: "text/css" rel: "stylesheet" href: uri}))
+    (dom.append! "head" el)
+  ))
 
-  (var json-request (lambda [uri]
-    (observe
-      (http-request uri "GET")
-      (filter [response]
-        (cond (defined? response.text)  (return true)
-              (else)                    (do (error response) (return false))))
-      (return (map [response] (return (JSON.parse response.text))))
+  (var json-request (lambda [uri next-step=>]
+    (lispz.http_request uri "GET"
+      (=> [response] (next-step=> (JSON.parse response.text)))
     )
   ))
 
-  (var #cdnjs (lambda [query pkg]
-    (observe
-      (net.json-request (+ "http://api.cdnjs.com/libraries?" query pkg)) 
-      (then [json]
-        (array json.results)
-        (first [metadata] (return (=== metadata.name pkg)))
-        (then [metadata]
-          (array metadata.assets)
-	  (first [asset] (return (contains asset.version "alpha")))
+  (var #cdnjs (lambda [query pkg next-step=>]
+    (json-request (+ "http://api.cdnjs.com/libraries?" query pkg) (=> [json]
+      (@filtered (json.results.filter (=> [it] (return (=== it.name pkg)))) 0)
+      (next-step=> (get @filtered 0))
+    ))
+  ))
+
+  ###
+  # returns an array of filtered full paths to files to upload
+  ###
+  (var cdnjs-assets (lambda [pkg exclude next-step=>]
+    (#cdnjs "fields=assets&search=" pkg (=> [item]
+      (@asset null)
+      (item.assets.some (=> [it] (@asset it) (return (not (contains it.version "alpha")))))
+      (@asset.base (+ (((item.latest.split "/").slice 0 -2).join "/") "/" @asset.version "/"))
+      (@asset.files (this.asset.files.filter (=> [file] (return (not (exclude.test file))))))
+      (next-step=> @asset)
+    ))
+  ))
+
+  (var cdnjs-load (lambda [pkg exclude next-step=>]
+    (cdnjs-assets pkg exclude (=> [asset]
+      (sequential asset.files (=> [file next-file=>]
+        (@ext (last (file.split ".")))
+	(@file (+ asset.base file))
+        (cond
+          (is @ext "js")   (script @file next-file=>)
+          (is @ext "css")  (do (css    @file) (next-file=>))
         )
-      )
-    )
+      ) next-step=>)
+    ))
   ))
 
-  (var cdnjs-latest (lambda [pkg]
-    (observe
-      (json-request (+ "http://api.cdnjs.com/libraries?search=" pkg)) 
-      (return (map [json] (return (get
-          (json.results.filter (lambda [item] (return (=== item.name pkg))))
-        0 "latest"))))
-    )
-  ))
-
-  (var cdnjs-assets (lambda [pkg fields] (return
-    (json-request (+ "http://api.cdnjs.com/libraries?fields=assets&search=" pkg)))))
-  
-  ### Load package from the CDN and continue normally once all is done ###
-  (var cdnjs-load (lambda [pkg]
-    (observe
-      (cdnjs-latest pkg)
-      (on-error [error] (alert (+ "CDNJS ERROR loading " pkg "\n" error)))
-      (bridge [uri] (script uri))
-      (then [] (export {}))
-    )
-  ))
-
-  (export {script http-request json-request cdnjs-assets cdnjs-latest cdnjs-load})
+  (export {script css json-request cdnjs-assets cdnjs-load})
 )

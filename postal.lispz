@@ -1,3 +1,5 @@
+(set! lisp.exchange {})
+
 (var exchange (lambda [address]
   (cond
     (not (get lispz.exchange address))

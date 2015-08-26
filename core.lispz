@@ -1,7 +1,12 @@
 ### Supporting function definition ###
-(macro lambda [params *body] (#join '' '(function(' params '){' *body '})'))
+(macro lambda [params *body] (#join '' '(function(' params '){' *body '}).bind({})'))
+(macro =>     [params *body] (#join '' '(function(' params '){' *body '}).bind(this)'))
 (macro *arguments [from] ([[]].slice.call arguments from))
-(macro global [name params *body] (#join '' 'lispz.macros["' name '"]=(function(' params '){' *body '})'))
+(macro global [name params *body] (#join '' 'lispz.macros["' name
+    '"]=(function(){return (function(' params '){' *body '}).apply({},arguments)})'))
+(macro global [name value]
+  (#join '' 'lispz.globals.' name '=' value)
+  (macro name [&params] (#join '' 'lispz.globals.' name '(' &params ')')))
 (macro closure [params *body] (#join '' '(function(' params '){' *body '})(' params ')'))
 (macro return [value] (#join '' 'return ' value '\n'))
 
@@ -13,7 +18,7 @@
 (macro get [dict *key] (#join '' dict '[' (#join '][' *key) ']'))
 
 ### Operators ###
-(macro not [value] (#join '' '(!(' value '))'))
+(macro not [value] (#join '' '!(' value ')'))
 
 ### conditional processing ###
 (macro empty? [list] (not list.length))
@@ -25,8 +30,9 @@
 (macro while [test body] (#join '' 'while(' test '){' body '}'))
 
 ### List manipulation ###
-(macro first [list] (#join '' list '[0]'))
-(macro rest [list] (#join '' list '.slice(1)'))
+(macro first [list] (get list 0))
+(macro rest [list] (list .slice 1))
+(macro last [list] (get (list .slice -1) 0))
 (macro for-each-attribute [obj action] (Object.keys obj)(.forEach (lambda [k] (action k (get obj k)))))
 
 ### module import ###
@@ -37,19 +43,12 @@
 (macro export [exports] (#join '' '__module_ready__(' exports ')'))
 (export {})
 
-(macro yield [*body] (setTimeout (lambda [] *body) 0))
-(macro with [withers] (set! __ withers))
-###
-# Observers and similar sequences rely on the return value of
-# one operation to be available for the next. If we need to do
-# something between then then we need to keep that return value
-# for later.
-###
-(macro aside [*body] (var ___ __) *body (set! __ ___))
+(macro delay [ms *body] (setTimeout (=> [] *body) ms))
+(macro yield [*body] (delay 0 *body))
 (macro do [*body] *body)
 ###
 # Use contain to contain state changes. Any var inside a contain can be changed
-# no matter how many times the contain is calle concurrently. It is also allows
+# no matter how many times the contain is called concurrently. It is also allows
 # the passing in of variables that are effectively copied and cannot be changed
 # from outside.
 ###
@@ -58,7 +57,7 @@
 # There is often need to merge multiple dictionaries together to create a new
 # combined one.
 ###
-(global merge [dictionaries]
+(global merge (lambda [dictionaries]
   (var merged {})
   ((*arguments 0).forEach (lambda [dictionary]
     ((Object.keys dictionary).forEach (lambda [key]
@@ -66,4 +65,14 @@
     ))
   ))
   (return merged)
-)
+))
+###
+# Execute a list of asynchronous functions one after anothr
+###
+(global sequential (lambda [list for-each=> on-complete=>]
+  (@list (list.slice))
+  (var each=> (=> []
+    (cond (not @list.length) (return (on-complete=>)))
+    (for-each=> (this.list.shift) each=>)
+  ))(each=>)
+))

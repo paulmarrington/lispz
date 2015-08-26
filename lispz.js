@@ -5,13 +5,13 @@ var lispz = function() {
     '###+(?:.|\\r*\\n)*?###+|' + '##\\s+.*?\\r*\\n|',
   tkre = new RegExp('(' + stringRE + '\\' + delims + "|[^\\s" + not_delims + "]+)", 'g'),
   opens = new Set("({["), closes = new Set(")}]"), ast_to_js, slice = [].slice, contexts = [],
-  module = {line:0, name:"boot"}, modules = {},
-  synonyms = {not:'!',and:'&&',or:'||',is:'===',isnt:'!=='},
+  module = {line:0, name:"boot"}, modules = {}, globals = {},
+  synonyms = {and:'&&',or:'||',is:'===',isnt:'!=='},
   jsify = function(atom) {
     if (/^'.*'$/.test(atom)) return atom.slice(1, -1).replace(/\\n/g, '\n')
     if (/^"(?:.|\r*\n)*"$/.test(atom)) return atom.replace(/\r*\n/g, '\\n')
     switch (atom[0]) {
-      case '.': return (atom.length > 1) ? "__"+atom : "__"
+      //case '.': return (atom.length > 1) ? "__"+atom : "__"
       case '@': return (atom.length > 1) ? "this."+atom.slice(1) : "this"
       case '-': return atom
       default:  return atom.replace(/\W/g, function(c) {
@@ -19,13 +19,15 @@ var lispz = function() {
     }
   },
   call_to_js = function(func, params) {
+    var selfish = (func[0] === "@")
     params = slice.call(arguments, 1)
     contexts.some(function(pre){if (macros[pre+'.'+func]) {func = pre+'.'+func; return true}})
     if (synonyms[func]) func = synonyms[func]
     if (macros[func]) return macros[func].apply(lispz, params)
     func = ast_to_js(func)
     if (params[0] && params[0][0] === '.') func += params.shift()
-    return '__=' + func + '(' + params.map(ast_to_js).join(',') + ')'
+    if (selfish) return func + "=" + ast_to_js(params[0]) + ';'
+    return func + '(' + params.map(ast_to_js).join(',') + ')'
   },
   macro_to_js = function(name, pnames, body) {
     body = slice.call(arguments, 2)
@@ -34,7 +36,8 @@ var lispz = function() {
       pvalues = slice.call(arguments)
       var args = {}
       pnames.slice(1).forEach(function(pname, i) {
-        args[pname] = (pname[0] === '*') ? ["list"].concat(pvalues.slice(i)) : pvalues[i]
+        args[pname] = (pname[0] === '*') ? ["list"].concat(pvalues.slice(i)) :
+                      (pname[0] === '&') ? ["["].concat(pvalues.slice(i)) : pvalues[i]
       })
       var expand = function(ast) {
         return (ast instanceof Array) ? ast.map(expand) : args[ast] || ast
@@ -73,6 +76,7 @@ var lispz = function() {
   // processing pairs of list elements
   pairs_to_js = function(pairs, tween, sep) {
     var el = [], tween = ast_to_js(tween);
+    if (!(pairs.length % 2)) throw {message:"Unmatched pairs"}
     for (var i = 1, l = pairs.length; i < l; i += 2) {
         el.push(ast_to_js(pairs[i]) + tween + ast_to_js(pairs[i + 1]))
     }
@@ -113,6 +117,11 @@ var lispz = function() {
   comment = function(atom) {
     return atom[0] === "#" && atom[1] === "#" && (atom[2] === '#' || atom[2] == ' ')
   },
+  compile_error = function(msg, data) {
+    var errloc = module.name+".lispz:"+module.line
+    console.log(errloc, msg, data)
+    return ['throw "compile error for ' + errloc + " -- " + msg + '"\n']
+  },
   parse_to_ast = function(source) {
     var env = { ast: [], stack: [] }
     env.node = env.ast
@@ -124,6 +133,7 @@ var lispz = function() {
           parser[1](env)
           return true
         })) { env.node.push(env.atom); } }
+    if (env.stack.length != 0) return compile_error("missing close brace", env)
     return env.ast
   },
   ast_to_js = function(ast) {
@@ -137,11 +147,7 @@ var lispz = function() {
       var js = parse_to_ast(source).map(ast_to_js)
       module = last_module
       return js
-    } catch (err) {
-      var errloc = module.name+".lispz:"+module.line
-      console.log(errloc, err.message)
-      return ['throw "compile error for ' + errloc + " -- " + err.message + '"\n']
-    }
+    } catch (err) { return compile_error(err.message, "") }
   },
   run = function(name, source) { return compile(name, source).map(eval) },
   //######################### Script Loader ####################################//
@@ -186,7 +192,7 @@ var lispz = function() {
   }
   if (window) window.onload = function() {
     var q = document.querySelector('script[src*="lispz.js"]').getAttribute('src').split('#')
-    load((q.length == 1) ? "core,observe" : "core,observe," + q.pop())
+    load((q.length == 1) ? "core" : "core," + q.pop())
   }
   //#########################    Helpers    ####################################//
   var clone = function (obj) {
@@ -205,5 +211,5 @@ var lispz = function() {
 
   return { compile: compile, run: run, parsers: parsers, load: load, macros: macros, cache: cache,
            http_request: http_request, clone: clone, manifest: manifest, modules: modules,
-           synonyms: synonyms}
+           synonyms: synonyms, globals: globals}
 }()
