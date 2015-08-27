@@ -16,9 +16,8 @@
 <div>
 	
 <textarea id="yalc" cols="80" rows="8">
-(using "net,jquery"
-  (console.log "loading bootstrap...")
-  (net.cdnjs-load "twitter-bootstrap" '/\.map$|\.min\.|npm.js$/' (=> [assets] (console.log assets)))
+(using "net,bootstrap"
+  (bootstrap.bootswatch)
 )
 </textarea><br>
 <textarea id="js" cols="80" rows="8">

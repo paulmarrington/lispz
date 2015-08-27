@@ -76,3 +76,7 @@
     (for-each=> (this.list.shift) each=>)
   ))(each=>)
 ))
+###
+# Return a random integer between 0 and the range given
+###
+(global random (lambda [range] (return (Math.floor (* (Math.random) range)))))
