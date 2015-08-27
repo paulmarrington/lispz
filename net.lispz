@@ -33,7 +33,7 @@
     (#cdnjs "fields=assets&search=" pkg (=> [item]
       (@asset null)
       (item.assets.some (=> [it] (@asset it) (return (not (contains it.version "alpha")))))
-      (@asset.base (+ (((item.latest.split "/").slice 0 -2).join "/") "/" @asset.version "/"))
+      (@asset.base (+ "https://cdnjs.cloudflare.com/ajax/libs/" pkg "/" @asset.version "/"))
       (@asset.files (this.asset.files.filter (=> [file] (return (not (exclude.test file))))))
       (next-step=> @asset)
     ))
@@ -44,9 +44,11 @@
       (sequential asset.files (=> [file next-file=>]
         (@ext (last (file.split ".")))
 	(@file (+ asset.base file))
+	(lispz.manifest.push @file)
         (cond
           (is @ext "js")   (script @file next-file=>)
           (is @ext "css")  (do (css    @file) (next-file=>))
+	  (else)           (next-file=>)
         )
       ) next-step=>)
     ))

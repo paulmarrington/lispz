@@ -18,7 +18,7 @@
 (var send (lambda [address packet]
   ## take a copy so that it does not change during processing
   (((post.exchange address).slice).forEach (lambda [recipient]
-    (yield ## reduce callback depth and stop freezes
+    (yield ## reduce callback depth and stop UI freezes
       (cond recipient.once (remove recipient))
       (recipient.reply (recipient.listener packet))
     )

@@ -1,9 +1,4 @@
 (using  "net,jquery"
 (observe
   ### Load Bootstrap from the CDN and continue normally once all is done ###
-  (net.cdnjs-latest "twitter-bootstrap")
-  (on-error [error] (alert (+ "CDNJS ERROR loading Bootstrap\n" error)))
-  (then [uri] (bridge
-    (net.script (uri.replace '/riot.min.js$/' "riot+compiler.js")))
-  (then [] (export {compile})))
-))
+  (net.cdnjs-load "twitter-bootstrap" '/\.map$|\.min\.|npm.js$/' (=> [] (export {})))

@@ -11,9 +11,8 @@ var lispz = function() {
     if (/^'.*'$/.test(atom)) return atom.slice(1, -1).replace(/\\n/g, '\n')
     if (/^"(?:.|\r*\n)*"$/.test(atom)) return atom.replace(/\r*\n/g, '\\n')
     switch (atom[0]) {
-      //case '.': return (atom.length > 1) ? "__"+atom : "__"
-      case '@': return (atom.length > 1) ? "this."+atom.slice(1) : "this"
-      case '-': return atom
+      case '@': return (atom.length > 1) ? "this."+jsify(atom.slice(1)) : "this"
+      case '-': return atom // unary minus or negative number
       default:  return atom.replace(/\W/g, function(c) {
         var t = "$hpal_cewqgutkri"["!#%&+-:;<=>?@\\^~".indexOf(c)]; return t ? ("_"+t+"_") : c })
     }
@@ -176,10 +175,10 @@ var lispz = function() {
     })
   },
   load = function(uri_list, on_all_ready) {
-    var uris = uri_list.split(','), outstanding = uris.length
+    var uris = uri_list.split(',')
     next_uri = function() {
       if (uris.length) load_one(uris.shift().trim(), next_uri)
-      if (!outstanding-- && on_all_ready) on_all_ready()
+      else if (on_all_ready) on_all_ready()
     }
     next_uri()
   },
