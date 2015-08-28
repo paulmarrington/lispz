@@ -12,3 +12,7 @@ If the Lisp syntax scares you, just remember that change encourages learning. In
 Lispz inherits real macros from Lisp. With macros that use the underlying language you can create new domain specific languages to meet any need.
 
 Lispz uses the power of closures from JavaScript to capture variables that can change to the function currently running.
+
+Lispz includes a simple module system to provide name-spacing and separation of conserns.
+
+Lispz has tools for single-page applications - including the recording and generation of cache manifests for performant and off-line applications.
