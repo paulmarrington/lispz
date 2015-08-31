@@ -18,14 +18,14 @@ var lispz = function() {
     }
   },
   call_to_js = function(func, params) {
-    var selfish = (func[0] === "@")
+    var selfish = (func[0] === "@" && func[func.length - 1] === ':')
     params = slice.call(arguments, 1)
     contexts.some(function(pre){if (macros[pre+'.'+func]) {func = pre+'.'+func; return true}})
     if (synonyms[func]) func = synonyms[func]
     if (macros[func]) return macros[func].apply(lispz, params)
-    func = ast_to_js(func)
+    func = ast_to_js(selfish ? func.slice(0, -1) : func)
     if (params[0] && params[0][0] === '.') func += params.shift()
-    if (selfish) return func + "=" + ast_to_js(params[0]) + ';'
+    if (selfish) return func + "=" + ast_to_js(params[0]) + '\n'
     return func + '(' + params.map(ast_to_js).join(',') + ')'
   },
   macro_to_js = function(name, pnames, body) {
@@ -33,6 +33,7 @@ var lispz = function() {
     if (pnames[0] === "\n") pnames = pnames.slice(3) // drop line number component
     macros[name] = function(pvalues) {
       pvalues = slice.call(arguments)
+      if (pvalues[0] === "\n") pvalues = pvalues.slice(3) // drop line number component
       var args = {}
       pnames.slice(1).forEach(function(pname, i) {
         args[pname] = (pname[0] === '*') ? ["list"].concat(pvalues.slice(i)) :
@@ -63,7 +64,8 @@ var lispz = function() {
       if ((key = kvp[i])[kvp[i].length - 1] === ":") {
         dict.push("'"+jsify(key.slice(0, -1))+"':"+ast_to_js(kvp[++i]));
       } else {
-        dict.push("'"+jsify(key)+"':"+ast_to_js(key));
+        var kk = (key[0] === "@") ? key.slice(1) : key
+        dict.push("'"+jsify(kk)+"':"+ast_to_js(key));
       }
     }
     return "{" + dict.join(',') + "}";
@@ -71,6 +73,9 @@ var lispz = function() {
   join_to_js = function(sep, parts) {
     parts = slice.call((arguments.length > 2) ? arguments : parts, 1)
     return parts.map(ast_to_js).join(ast_to_js(sep))
+  },
+  immediate_to_js = function() {
+    return slice.call(arguments).map(ast_to_js).map(eval)
   },
   // processing pairs of list elements
   pairs_to_js = function(pairs, tween, sep) {
@@ -119,7 +124,8 @@ var lispz = function() {
   compile_error = function(msg, data) {
     var errloc = module.name+".lispz:"+module.line
     console.log(errloc, msg, data)
-    return ['throw "compile error for ' + errloc + " -- " + msg + '"\n']
+    return ['throw "compile error for ' + errloc.replace(/["\n]/g," ") +
+            " -- " + msg.replace(/"/g,"'") + '"\n']
   },
   parse_to_ast = function(source) {
     var env = { ast: [], stack: [] }
@@ -150,7 +156,7 @@ var lispz = function() {
   },
   run = function(name, source) { return compile(name, source).map(eval) },
   //######################### Script Loader ####################################//
-  cache = {}, manifest = [],
+  cache = {}, manifest = [], pending = {},
   http_request = function(uri, type, callback) {
     var req = new XMLHttpRequest()
     req.open(type, uri, true)
@@ -166,17 +172,25 @@ var lispz = function() {
   },
   load_one = function(uri, on_ready) {
     if (cache[uri] !== undefined) return on_ready(cache[uri])
+    if (pending[uri]) return pending[uri].push(on_ready)
+    pending[uri] = [on_ready]
     http_request(uri + ".lispz", 'GET', function(response) {
       var name = uri.split('/').pop()
       if (!response.text) return on_ready(response) // probably an error
-      var js = compile(uri, response.text).join('\n') + "//# sourceURL=" + name + ".lispz\n"
+      var js = compile(uri, response.text).join('\n') +
+        "//# sourceURL=" + name + ".lispz\n"
       modules[uri] = new Function('__module_ready__', js)
-      modules[uri](function(exports) { on_ready(cache[name] = cache[uri] = exports) })
+      modules[uri](function(exports) {
+        cache[name] = cache[uri] = exports
+        var on_readies = pending[uri]
+        delete pending[uri]
+        on_readies.forEach(function(call_module) {call_module(exports)})
+      })
     })
   },
   load = function(uri_list, on_all_ready) {
     var uris = uri_list.split(',')
-    next_uri = function() {
+    var next_uri = function() {
       if (uris.length) load_one(uris.shift().trim(), next_uri)
       else if (on_all_ready) on_all_ready()
     }
@@ -191,7 +205,10 @@ var lispz = function() {
   }
   if (window) window.onload = function() {
     var q = document.querySelector('script[src*="lispz.js"]').getAttribute('src').split('#')
-    load((q.length == 1) ? "core" : "core," + q.pop())
+    load((q.length == 1) ? "core" : "core," + q.pop(), function() {
+      slice.call(document.querySelectorAll('script[type="text/lispz"]')).forEach(
+        function (script) { run("script", script.textContent) })
+    })
   }
   //#########################    Helpers    ####################################//
   var clone = function (obj) {
@@ -203,12 +220,12 @@ var lispz = function() {
   var macros = {
     '(': call_to_js, '[': array_to_js, '{': dict_to_js, 'macro': macro_to_js, '#join': join_to_js,
     '#pairs': pairs_to_js, '#binop': binop_to_js, '#requires': requires_to_js, 'list': list_to_js,
-    '\n': eol_to_js
+    '\n': eol_to_js, 'immediate': immediate_to_js
   }
   // add all standard binary operations (+, -, etc)
   "+,-,*,/,&&,||,==,===,<=,>=,!=,!==,<,>,^,%".split(',').forEach(binop_to_js)
 
   return { compile: compile, run: run, parsers: parsers, load: load, macros: macros, cache: cache,
            http_request: http_request, clone: clone, manifest: manifest, modules: modules,
-           synonyms: synonyms, globals: globals}
+           synonyms: synonyms, globals: globals }
 }()

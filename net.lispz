@@ -13,15 +13,17 @@
     (dom.append! "head" el)
   ))
 
+  (var http-get (lambda [uri next-step=>]
+    (lispz.http_request uri "GET" next-step=>)
+  ))
+
   (var json-request (lambda [uri next-step=>]
-    (lispz.http_request uri "GET"
-      (=> [response] (next-step=> (JSON.parse response.text)))
-    )
+    (http-get uri (=> [response] (next-step=> (JSON.parse response.text))))
   ))
 
   (var #cdnjs (lambda [query pkg next-step=>]
     (json-request (+ "http://api.cdnjs.com/libraries?" query pkg) (=> [json]
-      (@filtered (json.results.filter (=> [it] (return (=== it.name pkg)))) 0)
+      (@filtered: (json.results.filter (=> [it] (return (=== it.name pkg)))) 0)
       (next-step=> (get @filtered 0))
     ))
   ))
@@ -31,10 +33,10 @@
   ###
   (var cdnjs-assets (lambda [pkg exclude next-step=>]
     (#cdnjs "fields=assets&search=" pkg (=> [item]
-      (@asset null)
-      (item.assets.some (=> [it] (@asset it) (return (not (contains it.version "alpha")))))
-      (@asset.base (+ "https://cdnjs.cloudflare.com/ajax/libs/" pkg "/" @asset.version "/"))
-      (@asset.files (this.asset.files.filter (=> [file] (return (not (exclude.test file))))))
+      (@asset: null)
+      (item.assets.some (=> [it] (@asset: it) (return (not (contains it.version "alpha")))))
+      (@asset.base: (+ "https://cdnjs.cloudflare.com/ajax/libs/" pkg "/" @asset.version "/"))
+      (@asset.files: (this.asset.files.filter (=> [file] (return (not (exclude.test file))))))
       (next-step=> @asset)
     ))
   ))
@@ -42,17 +44,17 @@
   (var cdnjs-load (lambda [pkg exclude next-step=>]
     (cdnjs-assets pkg exclude (=> [asset]
       (sequential asset.files (=> [file next-file=>]
-        (@ext (last (file.split ".")))
-	(@file (+ asset.base file))
-	(lispz.manifest.push @file)
+        (@ext: (last (file.split ".")))
+	      (@file: (+ asset.base file))
+	      (lispz.manifest.push @file)
         (cond
           (is @ext "js")   (script @file next-file=>)
-          (is @ext "css")  (do (css    @file) (next-file=>))
-	  (else)           (next-file=>)
+          (is @ext "css")  (do (css @file) (next-file=>))
+	        (else)           (next-file=>)
         )
       ) next-step=>)
     ))
   ))
 
-  (export {script css json-request cdnjs-assets cdnjs-load})
+  (export {script css http-get json-request cdnjs-assets cdnjs-load})
 )

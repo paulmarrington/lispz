@@ -1,0 +1,33 @@
+(var store {})
+
+(var exchange (lambda [address]
+  (@envelope: (get store address))
+  (cond (not @envelope)
+    (return (set! (get store address) [[]])))
+  (return @envelope)
+))
+## remove a recipient from all attached addresses
+(var remove (lambda [recipient]
+  (set! (get exchange address)
+    ((exchange address).filter (lambda [possibility]
+      (return (isnt recipient possibility))
+    ))
+  )
+))
+(var send (lambda [address packet reply=>]
+  ## take a copy so that it does not change during processing
+  (((exchange address).slice).forEach (lambda [recipient]
+    (set! recipient.last_packet packet) 
+    (yield (reply=> (recipient.listener=> packet)))
+    (countdown? recipient.limit (=> [](remove recipient)))
+  ))
+))
+(var expect (lambda [address listener=>]
+  ((exchange address).append {limit: 1 listener=>})
+  (cond recipient.packet (listener=> recipient.last_packet))
+))
+(var listen (lambda [address listener=>]
+  ((exchange address).push {limit: -1 listener=>})
+))
+
+(export {exchange send expect listen})

@@ -1,11 +1,11 @@
-(set! lisp.exchange {})
+(var store {})
 
 (var exchange (lambda [address]
-  (cond
-    (not (get lispz.exchange address))
-      (set! (get lispz.exchange address) [[]])
-  )
-  (return lispz.exchange[address])
+  (cond (not (get store address)) (clear-exchange address))
+  (return (get store address))
+))
+(var clear-exchange (lambda [address]
+  (set! (get store address) [[]])
 ))
 ## remove a recipient from all attached addresses
 (var remove (lambda [recipient]
@@ -15,22 +15,34 @@
     ))
   )
 ))
-(var send (lambda [address packet]
+(var send (lambda [address packet reply=>]
   ## take a copy so that it does not change during processing
-  (((post.exchange address).slice).forEach (lambda [recipient]
-    (yield ## reduce callback depth and stop UI freezes
-      (cond recipient.once (remove recipient))
-      (recipient.reply (recipient.listener packet))
-    )
+  (((exchange address).slice).forEach (=> [recipient]
+    (yield (reply=> (recipient.listener packet)))
+    (countdown? recipient.count (=> [] (remove recipient)))
   ))
 ))
-(var default-recipient {address: "" once: true
-                        listener: (lambda) reply: (lambda)})
+
+(var default-recipient {address: "dead-letter" count: 1 listener: (lambda)})
                         
 (var expect (lambda [envelope]
-  ((exchange envelope.address).append
-    (merge default-recipient envelope)
-  )
+  ((exchange envelope.address).push (merge default-recipient envelope))
 ))
 
-(export {remove send expect})
+(var service (lambda [address server]
+  ((exchange address).push {address count: -1 listener: server})
+))
+(debug "RESET PACKAGES")
+(var packages {})
+
+(var send-package (lambda [address data]
+  (set! (get packages address) data)
+  (send address data (=>))
+))
+(var expect-package (lambda [address listener]
+  (service address (=> [] (listener (get packages address))))
+(debug (get packages address))
+  (cond (get packages address) (listener=> (get packages address)))
+))
+
+(export {remove send expect ask: send service send-package expect-package})

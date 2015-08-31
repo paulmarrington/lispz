@@ -1,0 +1,10 @@
+CACHE MANIFEST
+http://localhost:2020/lispz/riot.lispz
+http://localhost:2020/lispz/net.lispz
+http://localhost:2020/lispz/dom.lispz
+http://api.cdnjs.com/libraries?fields=assets&search=riot
+https://cdnjs.cloudflare.com/ajax/libs/riot/2.2.4/riot+compiler.js
+http://localhost:2020/lispz/lispz-repl.riot.html
+
+NETWORK:
+*
