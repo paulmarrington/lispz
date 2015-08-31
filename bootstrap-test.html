@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html manifesto=bootstrap.cache-manifest>
+  <head>
+    <title>Bootstrap Test Canvas</title>
+  <body>
+    <panel>This is a plain panel</panel>
+    
+    <panel heading="Panel heading" footer="Panel footer"
+      context=warning menu=test-menu>
+      This is a panel with simple heading and footer
+    </panel>
+    
+    <lispz-repl class=riot></lispz-repl>
+    <script src=/lispz/lispz.js#riot,bootstrap></script>
+    <script id=test_code type="text/lispz">
+      (using "message"
+        (message.send "test-menu" [[
+          { header: "Heading 1" }
+          { title: "Item 1" link: "#" }
+          { divider: true }
+          { title: "item 2" disabled: true }
+        ]] (=>))
+      )
+    </script>
+  </body>
+</html>

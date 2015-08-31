@@ -1,0 +1,43 @@
+<lispz-repl>
+  <div id=lispz_repl_div class={ hidden:hidden }>
+    <input type=text name=usings autocomplete=on size=20
+      placeholder="(package-list (* to reload))">
+    <input type=text name=code autocomplete=on size=50
+      placeholder="(Lispz code - enter to execute)">
+  </div>
+  <style>
+    lispz-repl {position: absolute; bottom: 0;}
+    lispz-repl .hidden {display: none}
+  </style>
+  <script type=text/lispz>
+      (@hidden: true)
+      (@run: (=> []
+        (@source: (((@usings.value.split ",").map (=> [pkg]
+          (@pkg: pkg)
+          (cond (is (first pkg) "*") (do
+            (@pkg: (slice pkg 1))
+            (delete (get lispz.cache @pkg))
+            (delete (get lispz.cache (last (this.pkg.split "/"))))
+          ))
+          (return @pkg)
+        )).join ","))
+        (cond
+          @source (@source: (+ "(using \"" @source "\" " @code.value ")"))
+          (else)  (@source: @code.value)
+        )
+        (console.log (lispz.run "lispz-repl" @source))
+        (@code.select)
+      ))
+      
+      (@toggle-show-repl: (=> []
+        (@hidden: (not @hidden)) (@update)
+        (@code.focus) (@code.select)
+      ))
+
+      (document.body.addEventListener "keydown" (=> [ev] (cond
+        (and ev.altKey ev.shiftKey (is ev.keyCode 82)) (@toggle-show-repl)
+      )))
+      (this.code.addEventListener "keypress"
+        (=> [ev] (cond (is ev.keyCode 13) (@run) )))
+  </script>
+</lispz-repl>

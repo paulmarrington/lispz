@@ -1,4 +1,4 @@
-(using  "net,jquery"
+(using  "dom,net,jquery,riot"
   (var bootswatch-themes [[ "cerulean" "cosmo" "cyborg" "darkly" "flatly" "journal"
                             "lumen" "paper" "readable" "sandstone" "simplex" "slate"
                             "spacelab" "superhero" "united" "yeti" ]])
@@ -7,12 +7,18 @@
   # Loads a bootswatch theme to make the page look different. If no theme is provided, a
   # random one is selected.
   ###
-  (var bootswatch (lambda [theme] (@theme theme)
-    (cond (not (defined? theme)) (@theme (get bootswatch-themes (random bootswatch-themes.length))))
+  (var bootswatch (lambda [theme] (@theme: theme)
+    (cond (not (defined? theme)) (@theme: (get bootswatch-themes (random bootswatch-themes.length))))
     (net.css (+ "https://bootswatch.com/" @theme "/bootstrap.css"))
   ))
-
+  
   ### Load Bootstrap from the CDN and continue normally once all is done ###
   (net.cdnjs-load "twitter-bootstrap" '/\.map$|\.min\.|npm.js$/' (=> []
-  (export { bootswatch-themes bootswatch })))
+    (dom.append! "head" (dom.element "meta"
+      {name: "viewport" content: "width=device-width, initial-scale=1"}))
+    (dom.append! "body" (dom.element "bootstrap" {})) ## runs code from bootstrap.riot.html
+    (riot.load "bootstrap" "bootstrap.riot.html" (=> []
+      (export { bootswatch-themes bootswatch })
+    ))
+  ))
 )
