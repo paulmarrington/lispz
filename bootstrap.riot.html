@@ -7,9 +7,10 @@
     -->
   <div class="panel { context }">
     <div class=panel-heading if={ opts.heading } name=heading
-         ><dropdown-bars align=right menu={ opts.menu }></dropdown-bars>
+         ><dropdown-bars align=right menu={ opts.menu }
+           owner={ opts.owner }/>
          <h3 class=panel-title>{ opts.heading }</h3></div>
-    <div class="panel-body"><yield/></div>
+    <div class="panel-body" name=body><yield/></div>
     <div class=panel-footer if={ opts.footer } name=footer
          >{ opts.footer }</div>
   </div>
@@ -20,29 +21,41 @@
 </panel>
 
 <dropdown-bars>
-  <div class="dropdown { right: opts.align === 'right' }">
+  <div name=dropdown class="dropdown { right: opts.align === 'right' }">
     <a style="text-decoration: none" data-toggle="dropdown"
     class="glyphicon glyphicon-menu-hamburger dropdown-toggle" aria-hidden="true"
     ></a>
     <ul class="dropdown-menu { dropdown-menu-right: opts.align === 'right' }">
       <li each={ items } class={ dropdown-header: header, divider: divider,
-          disabled: disabled }><a onclick={ goto } href="#"
-          >{ title || header }</a></li>
+          disabled: disabled }><a onclick={ goto } href="#">{ title || header }
+          <span class="caret" if={ menu }></span></a></li>
     </ul>
   </div>
   <style>
     dropdown-bars[align="right"] { float: right }
   </style>
   <script type=text/lispz>
-    (@goto: (=> [ev]
-    ))
     (with "message"
       (cond opts.menu
         (message.listen opts.menu (=> [items]
-          (@items: items)
+          (@root: (@items: items))
           (@update)
         ))
       )
+      
+      (($ @dropdown).on "show.bs.dropdown" (=> []
+        (@items: @root)
+        (@update)
+      ))
+      
+      (@goto: (=> [ev]
+        (cond ev.item.topic (message.send ev.item.topic
+          {item: ev.item owner: opts.owner action: "menu"}))
+        (cond ev.item.menu (do
+          (@items: ev.item.menu)
+          (ev.stopPropagation)
+        ))
+      ))
     )
   </script>
 </dropdown-bars>

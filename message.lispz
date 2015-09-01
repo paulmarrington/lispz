@@ -15,10 +15,11 @@
   )
 ))
 (var send (lambda [address packet reply=>]
+  (@reply: (default? reply=> (=>)))
   ## take a copy so that it does not change during processing
-  (((exchange address).slice).forEach (lambda [recipient]
+  (((exchange address).slice).forEach (=> [recipient]
     (set! recipient.last_packet packet) 
-    (yield (reply=> (recipient.listener=> packet)))
+    (yield (@reply (recipient.listener=> packet)))
     (countdown? recipient.limit (=> [](remove recipient)))
   ))
 ))

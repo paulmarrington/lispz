@@ -1,4 +1,4 @@
-(macro debug [*msg] (console.log arguments.callee arguments *msg))
+(macro debug [*msg] (console.log arguments *msg))
 
 ### Supporting function definition ###
 (macro lambda [params *body] (#join '' '(function(' params '){' *body '}).bind({})'))
@@ -35,6 +35,10 @@
 (macro contains [str substr] (isnt -1 (str .indexOf substr)))
 ## Javascript does not (yet) have tail recursion - it is scheduled for 2016
 (macro while [test body] (#join '' 'while(' test '){' body '}'))
+
+(global default? (lambda [value default-value]
+  (cond value (return value)) (return default-value)
+))
 
 ### List and dictionary manipulation ###
 (macro first [list] (get list 0))
