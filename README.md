@@ -38,4 +38,6 @@ A sample using riot with bootstrap:
         (message.listen "Test menu item 1" (=> [data] (console.log data)))
       )
     </script>
+    
+This example displays a bootstrap pane with header, footer and a menu. The menu can be changed dynamically by sending it a message. If item 1 is selected it send a message that causes the data to be printed on the console.
 
