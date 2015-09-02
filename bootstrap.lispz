@@ -16,7 +16,6 @@
   (net.cdnjs-load "twitter-bootstrap" '/\.map$|\.min\.|npm.js$/' (=> []
     (dom.append! "head" (dom.element "meta"
       {name: "viewport" content: "width=device-width, initial-scale=1"}))
-    (dom.append! "body" (dom.element "bootstrap" {})) ## runs code from bootstrap.riot.html
     (riot.load "bootstrap" "bootstrap.riot.html" (=> []
       (export { bootswatch-themes bootswatch })
     ))

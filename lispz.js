@@ -14,7 +14,8 @@ var lispz = function() {
       case '@': return (atom.length > 1) ? "this."+jsify(atom.slice(1)) : "this"
       case '-': return atom // unary minus or negative number
       default:  return atom.replace(/\W/g, function(c) {
-        var t = "$hpal_cewqgutkri"["!#%&+-:;<=>?@\\^~".indexOf(c)]; return t ? ("_"+t+"_") : c })
+        var t = "$hpalcewqgutkri"["!#%&+:;<=>?@\\^~".indexOf(c)];
+        return t ? ("_"+t+"_") : (c === "-") ? "_" : c })
     }
   },
   call_to_js = function(func, params) {

@@ -60,8 +60,69 @@
   </script>
 </dropdown-bars>
 
-<bootstrap>
+<sidebar>
+  <a aria-hidden="true" name=hamburger
+    class="glyphicon glyphicon-menu-hamburger"></a>
+  <div id=sidebar class="container bg-primary"><yield/></div>
+  <style>
+    sidebar > a {
+      text-decoration: none !important;
+      position: absolute !important;
+      z-index: 2000;
+    }
+    #sidebar {
+      z-index: 1000;
+      position: fixed;
+      width: 0;
+      height: 100%;
+      overflow-y: auto;
+      -webkit-transition: all 0.5s ease;
+      -moz-transition: all 0.5s ease;
+      -o-transition: all 0.5s ease;
+      transition: all 0.5s ease;
+      padding-right: 0;
+      overflow: hidden;
+    }
+    #sidebar.toggled { width: auto; padding-right: 15px; }
+  </style>
   <script type=text/lispz>
-    (riot.mount "panel,dropdown-bars")
+    (with "message"
+      (@hamburger.onclick: (=> []
+        (@sidebar.classList.toggle "toggled")
+        (yield
+          (message.send "page-content-wrapper-padding" @sidebar.offsetWidth)
+        )
+      ))
+    )
+  </script>
+</sidebar>
+
+<page-content>
+  <div id=page_content_wrapper>
+    <div class={ container-fluid: opts.fluid, container: !opts.fluid }>
+      <yield/>
+    </div>
+  </div>
+  <style>
+    #page_content_wrapper {
+      width: 100%;
+      position: absolute;
+    }
+  </style>  
+  <script type=text/lispz>
+    (with "message"
+      (message.listen "page-content-wrapper-padding" (=> [px]
+        (@page-content-wrapper.style.paddingLeft: (+ px "px"))
+      ))
+    )
+  </script>
+</page-content>
+
+<bootstrap>
+  <div id=page-wrapper><yield/></div>
+  <style>
+  </style>
+  <script type=text/lispz>
+    (riot.mount "panel,dropdown-bars,sidebar")
   </script>
 </bootstrap>
