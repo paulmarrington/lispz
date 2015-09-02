@@ -27,16 +27,13 @@ A sample using riot with bootstrap:
       context=warning menu=test-menu owner="Test Panel 2">
       This is a panel with simple heading and footer
     </panel>
-    <lispz-repl class=riot></lispz-repl>
+    
     <script src=/lispz/lispz.js#riot,bootstrap></script>
     <script id=test_code type="text/lispz">
       (using "message"
         (message.send "test-menu" [[
-          { header: "Heading 1" }
           { title: "Item 1" topic: "Test menu item 1" }
-          { title: "Item 2" menu: [[{ title: "Item 2a" }]] }
-          { divider: true }
-          { title: "item 2" disabled: true }
+          { title: "Item 2" menu:  [[{ title: "Item 2a" }]] }
         ]] (=>))
         (message.listen "Test menu item 1" (=> [data] (console.log data)))
       )
