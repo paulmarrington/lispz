@@ -7,7 +7,7 @@
     -->
   <div class="panel { context }">
     <div class=panel-heading if={ opts.heading } name=heading
-         ><dropdown-bars align=right menu={ opts.menu }
+         ><bars-menu align=right name={ opts.menu }
            owner={ opts.owner }/>
          <h3 class=panel-title>{ opts.heading }</h3></div>
     <div class="panel-body" name=body><yield/></div>
@@ -20,29 +20,30 @@
   </script>
 </panel>
 
-<dropdown-bars>
+<bars-menu>
   <div name=dropdown class="dropdown { right: opts.align === 'right' }">
     <a style="text-decoration: none" data-toggle="dropdown"
     class="glyphicon glyphicon-menu-hamburger dropdown-toggle" aria-hidden="true"
     ></a>
     <ul class="dropdown-menu { dropdown-menu-right: opts.align === 'right' }">
       <li each={ items } class={ dropdown-header: header, divider: divider,
-          disabled: disabled }><a onclick={ goto } href="#">{ title || header }
-          <span class="caret" if={ menu }></span></a></li>
+          disabled: disabled }><a onclick={ goto } href="#">
+          <span class="caret" if={ menu }></span>
+          { title || header }
+      </a></li>
     </ul>
   </div>
   <style>
-    dropdown-bars[align="right"] { float: right }
+    bars-menu > div.right { float: right }
+    bars-menu span.caret { margin-left: -11px }
   </style>
   <script type=text/lispz>
     (with "message"
-      (cond opts.menu
-        (message.listen opts.menu (=> [items]
-          (@root: (@items: items))
-          (@update)
-        ))
-      )
-      
+      (message.listen opts.name (=> [items]
+        (@root: (@items: items))
+        (@update)
+      ))
+    
       (($ @dropdown).on "show.bs.dropdown" (=> []
         (@items: @root)
         (@update)
@@ -58,7 +59,7 @@
       ))
     )
   </script>
-</dropdown-bars>
+</bars-menu>
 
 <sidebar>
   <a aria-hidden="true" name=hamburger
@@ -123,6 +124,6 @@
   <style>
   </style>
   <script type=text/lispz>
-    (riot.mount "panel,dropdown-bars,sidebar")
+    (riot.mount "panel,bars-menu,sidebar")
   </script>
 </bootstrap>
