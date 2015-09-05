@@ -44,9 +44,11 @@
         (@update)
       ))
     
-      (($ @dropdown).on "show.bs.dropdown" (=> []
-        (@items: @root)
-        (@update)
+      (@on "mount" (=> []
+        (($ @dropdown).on "show.bs.dropdown" (=> []
+          (@items: @root)
+          (@update)
+        ))
       ))
       
       (@goto: (=> [ev]
@@ -61,7 +63,7 @@
   </script>
 </bars-menu>
 
-<tree-menu>
+<tree>
   <ul class="dropdown-menu { dropdown-menu-right: opts.align === 'right' }">
     <li each={ items } class={ dropdown-header: header, divider: divider,
         disabled: disabled }><a onclick={ goto } href="#">
@@ -71,11 +73,11 @@
     </li>
   </ul>
   <style>
-    tree-menu ul {
+    tree ul {
       display: inherit !important;
       position: inherit !important;
     }
-    tree-menu span.glyphicon {
+    tree span.glyphicon {
       margin-left: -18px;
     }
   </style>
@@ -104,7 +106,7 @@
       ))
     )
   </script>
-</tree-menu>
+</tree>
 
 <sidebar>
   <a aria-hidden="true" name=hamburger
@@ -132,12 +134,15 @@
     #sidebar.toggled { width: auto; padding-right: 15px; }
   </style>
   <script type=text/lispz>
-    (with "message"
+    (with "message,dom"
       (@hamburger.onclick: (=> []
         (@sidebar.classList.toggle "toggled")
-        (yield
+        (delay 300 ## must be after slide action
           (message.send "page-content-wrapper-padding" @sidebar.offsetWidth)
         )
+      ))
+      (@on "mount" (delay 300
+        (message.send "page-content-wrapper-padding" @sidebar.offsetWidth)
       ))
     )
   </script>
@@ -166,9 +171,30 @@
 
 <bootstrap>
   <div id=page-wrapper><yield/></div>
-  <style>
-  </style>
+  <style></style>
   <script type=text/lispz>
-    (riot.mount "panel,tree-menu,bars-menu,sidebar")
+    (using  "dom,net,jquery,riot,message"
+      (var bootswatch-themes [[ "cerulean" "cosmo" "cyborg" "darkly" "flatly"
+        "journal" "lumen" "paper" "readable" "sandstone" "simplex" "slate"
+        "spacelab" "superhero" "united" "yeti" ]])
+      ###
+      # https://bootswatch.com
+      # Loads a bootswatch theme to make the page look different.
+      # If no theme is provided, a random one is selected.
+      ###
+      (message.listen "change-bootstrap-theme" (=> [theme] (@theme: theme)
+        (cond (not (defined? theme))
+          (@theme: (get bootswatch-themes (random bootswatch-themes.length)))
+        )
+        (net.css (+ "https://bootswatch.com/" @theme "/bootstrap.css"))
+      ))
+      
+      ### Load Bootstrap from the CDN and continue normally once all is done ###
+      (net.cdnjs-load "twitter-bootstrap" '/\.map$|\.min\.|npm.js$/' (=> []
+        (dom.append! "head" (dom.element "meta"
+          {name: "viewport" content: "width=device-width, initial-scale=1"}
+        ))
+      ))
+    )
   </script>
 </bootstrap>

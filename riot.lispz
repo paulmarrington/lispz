@@ -11,6 +11,8 @@
       (next-step=>)
     ))
   ))
+  
+  (var mount (lambda [tags] (riot.mount tags)))
 
   ### Load RIOT from the CDN and continue normally once all is done ###
   (net.cdnjs-load "riot" '/riot\.js$|\.min.js$/' (=> []
@@ -23,7 +25,7 @@
               (@uri: (+ (this.name.toLowerCase) ".riot.html")))
         (load @name @uri next-element=>)
       )
-      (=> [] (export {compile load}))
+      (=> [] (export {compile load mount}))
     )
   ))
 )

@@ -3,6 +3,15 @@
 ))
 
 (var element (lambda [tag-name attributes] (var element (document.createElement tag-name))
-  (for-each-attribute attributes element.setAttribute) (return element)))
+  (for-each-attribute attributes element.setAttribute) (return element)
+))
+  
+(var event-throttle (lambda [element event action]
+  (@timeout: 0)
+  (element.addEventListener event (=> [event]
+    (cond @timeout (return))
+    (@timeout: (delay 66 (=> [] (action event))))
+  ))
+))
 
-(export {append! element })
+(export {append! element event-throttle })

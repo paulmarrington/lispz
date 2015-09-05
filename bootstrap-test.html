@@ -3,9 +3,9 @@
   <head>
     <title>Bootstrap Test Canvas</title>
   <body>
-    <bootstrap>
+    <bootstrap class=riot>
     <sidebar>
-      <tree name=test-tree />
+      <tree name=test-menu />
     </sidebar>
     
     <page-content fluid=true>
@@ -19,7 +19,7 @@
     </bootstrap>
     
     <lispz-repl class=riot></lispz-repl>
-    <script src=/lispz/lispz.js#riot,bootstrap,tree></script>
+    <script src=/lispz/lispz.js#riot></script>
     <script id=test_code type="text/lispz">
       (using "message"
         (message.send "test-menu" [[
