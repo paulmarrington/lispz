@@ -26,10 +26,10 @@
     class="glyphicon glyphicon-menu-hamburger dropdown-toggle" aria-hidden="true"
     ></a>
     <ul class="dropdown-menu { dropdown-menu-right: opts.align === 'right' }">
-      <li each={ items } class={ dropdown-header: header, divider: divider,
-          disabled: disabled }><a onclick={ goto } href="#">
-          <span class="caret" if={ menu }></span>
-          { title || header }
+      <li each={ items } class={ dropdown-header: header && title,
+          divider: divider, disabled: disabled }><a onclick={ goto } href="#">
+          <span class="caret" if={ children }></span>
+          { title }
       </a></li>
     </ul>
   </div>
@@ -53,9 +53,9 @@
       
       (@goto: (=> [ev]
         (cond ev.item.topic (message.send ev.item.topic
-          {item: ev.item owner: opts.owner action: "menu"}))
-        (cond ev.item.menu (do
-          (@items: ev.item.menu)
+          {item: ev.item owner: opts.owner action: "select"}))
+        (cond ev.item.children (do
+          (@items: ev.item.children)
           (ev.stopPropagation)
         ))
       ))
@@ -64,49 +64,72 @@
 </bars-menu>
 
 <tree>
-  <ul class="dropdown-menu { dropdown-menu-right: opts.align === 'right' }">
-    <li each={ items } class={ dropdown-header: header, divider: divider,
-        disabled: disabled }><a onclick={ goto } href="#">
-        <span if={ menu } class="glyphicon glyphicon-{ parent.icon(this) }"
-          aria-hidden="true"></span> { title || header }</a>
-        <tree-menu if={ menu } >
+  <tree-component name=base/>
+  <script type=text/lispz>
+    (with "message"
+      (message.listen opts.name (=> [items]
+        (@children: {base: {children: items}})
+        (@update) (@update)
+      ))
+    )
+  </script>
+</tree>
+
+<tree-component>
+  <ul class="dropdown-menu">
+    <li each={ item, i in items }
+        class={ dropdown-header: item.header && item.title,
+        divider: item.divider, disabled: item.disabled }
+        ><a onclick={ parent.goto } href="#">
+        <span if={ item.children }
+              class="glyphicon glyphicon-triangle-right"
+              aria-hidden="true"></span>{ item.title }</a>
+        <tree-component if={ item.children } name={ item.title }>
     </li>
   </ul>
   <style>
-    tree ul {
+    tree-component ul {
       display: inherit !important;
       position: inherit !important;
     }
-    tree span.glyphicon {
+    tree-component:not([name=base]) > ul {
+      display: none !important;
+    }
+    tree-component:not([name=base]).open > ul {
+      margin-left:  9px;
+      margin-right: 9px;
+      display: inherit !important;
+    }
+    tree-component span.glyphicon {
       margin-left: -18px;
     }
   </style>
   <script type=text/lispz>
     (with "message"
-      (message.listen opts.name (=> [items]
-        (@items: items)
-        (@update)
+      (@on "update" (=> [data]
+        (cond (and @opts.name @parent.children) (do
+          (@items: (get @parent.children @opts.name "children"))
+          (cond (and @items @items.length)
+                (@children: (list-to-dict @items "title"))
+          )
+        ))
       ))
-    
+  
       (@goto: (=> [ev]
-        (cond ev.item.topic (message.send ev.item.topic
-          {item: ev.item owner: opts.owner action: "menu"}))
-        (cond ev.item.menu (do
+        (@item: ev.item.item)
+        (@topic: (or @item.topic @item.title ))
+        (cond @topic (message.send @topic
+          {item: @item action: "select"}))
+        (cond @item.children (do
+          (@tree: ev.currentTarget.nextElementSibling)
+          (@tree.classList.toggle "open")
+          (@tree.parentElement.classList.toggle "bg-info")
         ))
         (ev.stopPropagation)
       ))
-      
-      (@icon: (=> [item]
-        ## root=element, menu=has menu, etc
-        (cond
-          (item.root.classList.contains "open") (return "triangle-bottom")
-          item.menu                             (return "triangle-right")
-          (else)                                (return "")
-        )
-      ))
     )
   </script>
-</tree>
+</tree-component>
 
 <sidebar>
   <a aria-hidden="true" name=hamburger

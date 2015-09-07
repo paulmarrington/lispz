@@ -23,9 +23,9 @@
     <script id=test_code type="text/lispz">
       (using "message"
         (message.send "test-menu" [[
-          { header: "Heading 1" }
+          { header: true title: "Heading 1" }
           { title: "Item 1" topic: "Test menu item 1" }
-          { title: "Item 2" menu: [[{ title: "Item 2a" }]] }
+          { title: "Item 2" children: [[{ title: "Item 2a" }]] }
           { divider: true }
           { title: "item 2" disabled: true }
         ]] (=>))

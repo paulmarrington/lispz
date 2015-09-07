@@ -106,7 +106,8 @@ var lispz = function() {
     }],
     [/^(\)|\}|\])$/, function(env) {
       var f = env.node;
-      (env.node = env.stack.pop()).push(f)
+      try { (env.node = env.stack.pop()).push(f) }
+      catch(e) { compile_error("Unmatched closing bracket") }
     }],
     /*
      * Record line number for JS comment. Can't add a new element,
