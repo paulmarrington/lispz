@@ -2,6 +2,7 @@
 1. [Preparation](preparation.md)
 1. [The Basics](basics.md)
 2. [Macros](macros.md)
+3. [Modules](modules.md)
 3. [Asynchronous Programming](async.md)
 4. [UI Components with RIOT](riot.md)
 5. [Bootstrap Integration](bootstrap.md)
