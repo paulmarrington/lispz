@@ -1,0 +1,8 @@
+1. [Introduction](introduction.md)
+  1. [Why another *&^% language?](why-another-language.md)
+  1. [Overcoming the fear of change](overcoming-fear.md)
+  1. [The benefits of lisp](benefits-of-list.md)
+  1. [Where functional programming comes in](functional-programming)
+1. [Preparation] (preparation.md)
+  1. [Installation](installation.md)
+  1. [The 'REPL'](repl.md)
