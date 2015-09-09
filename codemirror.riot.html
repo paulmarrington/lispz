@@ -1,0 +1,16 @@
+<codemirror>
+  <div name=wrapper>
+  </div>
+  <style>
+  codemirror [name=wrapper] {
+  }
+  </style>
+  <script type=text/lispz>
+    (using  "net"
+      (net.cdnjs-load "codemirror"
+        {include: '/codemirror.js$/' exclude: '/\.min\./'} (=> []
+          (@cm: (CodeMirror @wrapper opts))
+      ))
+    )
+  </script>
+</codemirror>

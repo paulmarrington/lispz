@@ -1,7 +1,7 @@
 (macro debug [*msg] (console.log arguments *msg))
 
 ### Supporting function definition ###
-(macro lambda [params *body] (#join '' '(function(' params '){' *body '}).bind({})'))
+(macro lambda [params *body] (#join '' '(function(' params '){return (function(){' *body '}).call({})})'))
 (macro =>     [params *body] (#join '' '(function(' params '){' *body '}).bind(this)'))
 (macro *arguments [from] ([[]].slice.call arguments from))
 (macro global [name params *body] (#join '' 'lispz.macros["' name

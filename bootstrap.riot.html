@@ -1,11 +1,11 @@
 <panel>
   <!-- <panel [context=default|primary|success|info|warning|danger]
               [heading=heading-text] [footer=footer-text]
-              [menu=menu-id]>
+              [menu=menu-id] height=[nn%,nn]>
        panel-body-content-html
        </panel>
     -->
-  <div class="panel { context }">
+  <div class="panel { context }" name=outer>
     <div class=panel-heading if={ opts.heading } name=heading
          ><bars-menu align=right name={ opts.menu }
            owner={ opts.owner }/>
@@ -17,6 +17,15 @@
   
   <script type=text/lispz>
     (@context: (+ "panel-" (or opts.context "default")))
+    (@on "mount" (=> []
+      (cond opts.height (do
+        (@px: opts.height)
+        (cond (is "%" (opts.height.slice -1))
+          (@px: (/ (* window.innerHeight (opts.height.slice 0 -1)) 100))
+        )
+        (@outer.style.height: (+ @px "px"))
+      ))
+    ))
   </script>
 </panel>
 
@@ -213,7 +222,7 @@
       ))
       
       ### Load Bootstrap from the CDN and continue normally once all is done ###
-      (net.cdnjs-load "twitter-bootstrap" '/\.map$|\.min\.|npm.js$/' (=> []
+      (net.cdnjs-load "twitter-bootstrap" {exclude: '/\.map$|\.min\.|npm.js$/'} (=> []
         (dom.append! "head" (dom.element "meta"
           {name: "viewport" content: "width=device-width, initial-scale=1"}
         ))
