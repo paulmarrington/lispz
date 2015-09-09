@@ -27,8 +27,28 @@ The first major difference is not what has been added, but what has been taken a
 form the core syntax. Everything else is either a function or a macro. We won't talk more about macros yet - in case parenoia sets in.
 
 # The benefits of lisp
-Having only parenthesis, bracket or brace to deal with reduces ambiguity. In many cases the functional style can be clearer:
+Having only parenthesis, bracket or brace to deal with reduces ambiguity - when used with appropriate white-space. In many cases the functional style can be clearer:
 
     (or value default1 default2 12)
+    (+ a b 12)
+
+although not always
+
+  (/ (* value percent) 100)
+  
+While our practiced eye finds this harder to understand than "a * percent / 100" it is easier to decipher. Take the 'standard' syntax. Are these the same:
+
+  value * percent / 100
+  (value * percent) / 100
+  
+You win if you said 'no'. In most languages operator precedence is such that the first sample will do the divice before the multiply. With real numbers the change in order can cause a diffent result. For languages without auto-conversion, the first will return zero (assuming percent is less than 100). With auto-conversion and all integers, the first will cause two floating point operations while the second only one.
+
+Back to
+
+  (/ (* value percent) 100)
+  
+With the understanding that everthing appears to be a function, it becomes easier to read and there are no ambiguities. The word appears is intentional as Lispz expands binaries in-line, such that the code run is
+
+  ((value * percent) / 100)
 
 # Where functional programming comes in
