@@ -16,14 +16,15 @@
   </div>
   
   <script type=text/lispz>
-    (@context: (+ "panel-" (or opts.context "default")))
-    (@on "mount" (=> []
+    (var tag this)
+    (set! tag.context (+ "panel-" (or opts.context "default")))
+    (tag.on "mount" (=>
       (cond opts.height (do
-        (@px: opts.height)
+        (var px opts.height)
         (cond (is "%" (opts.height.slice -1))
-          (@px: (/ (* window.innerHeight (opts.height.slice 0 -1)) 100))
+          (set! px (/ (* window.innerHeight (opts.height.slice 0 -1)) 100))
         )
-        (@outer.style.height: (+ @px "px"))
+        (set! tag.outer.style.height (+ px "px"))
       ))
     ))
   </script>
@@ -47,24 +48,26 @@
     bars-menu span.caret { margin-left: -11px }
   </style>
   <script type=text/lispz>
-    (with "message"
-      (message.listen opts.name (=> [items]
-        (@root: (@items: items))
-        (@update)
+    (var tag this)
+    (using "message"
+      (message.listen opts.name (lambda [items]
+        (var root items)
+	(set! tag.items items)
+        (tag.update)
       ))
     
-      (@on "mount" (=> []
-        (($ @dropdown).on "show.bs.dropdown" (=> []
-          (@items: @root)
-          (@update)
+      (tag.on "mount" (=>
+        (($ tag.dropdown).on "show.bs.dropdown" (=>
+          (set! tag.items root)
+          (tag.update)
         ))
       ))
       
-      (@goto: (=> [ev]
+      (set! tag.goto (lambda [ev]
         (cond ev.item.topic (message.send ev.item.topic
           {item: ev.item owner: opts.owner action: "select"}))
         (cond ev.item.children (do
-          (@items: ev.item.children)
+          (set! tag.items ev.item.children)
           (ev.stopPropagation)
         ))
       ))
@@ -75,10 +78,11 @@
 <tree>
   <tree-component name=base/>
   <script type=text/lispz>
-    (with "message"
-      (message.listen opts.name (=> [items]
-        (@children: {base: {children: items}})
-        (@update) (@update)
+    (var tag this)
+    (using "message"
+      (message.listen opts.name (lambda [items]
+        (set! tag.children {base: {children: items}})
+        (tag.update) (tag.update)
       ))
     )
   </script>
@@ -114,25 +118,26 @@
     }
   </style>
   <script type=text/lispz>
-    (with "message"
-      (@on "update" (=> [data]
-        (cond (and @opts.name @parent.children) (do
-          (@items: (get @parent.children @opts.name "children"))
-          (cond (and @items @items.length)
-                (@children: (list-to-dict @items "title"))
+    (var tag this)
+    (using "message"
+      (tag.on "update" (lambda [data]
+        (cond (and opts.name tag.parent.children) (do
+          (set! tag.items (get tag.parent.children opts.name "children"))
+          (cond (and tag.items tag.items.length)
+                (set! tag.children (list-to-dict tag.items "title"))
           )
         ))
       ))
   
-      (@goto: (=> [ev]
-        (@item: ev.item.item)
-        (@topic: (or @item.topic @item.title ))
-        (cond @topic (message.send @topic
-          {item: @item action: "select"}))
-        (cond @item.children (do
-          (@tree: ev.currentTarget.nextElementSibling)
-          (@tree.classList.toggle "open")
-          (@tree.parentElement.classList.toggle "bg-info")
+      (set! tag.goto (lambda [ev]
+        (var item ev.item.item)
+        (var topic (or item.topic item.title ))
+        (cond topic (message.send topic
+          {item action: "select"}))
+        (cond item.children (do
+          (var tree ev.currentTarget.nextElementSibling)
+          (tree.classList.toggle "open")
+          (tree.parentElement.classList.toggle "bg-info")
         ))
         (ev.stopPropagation)
       ))
@@ -166,15 +171,16 @@
     #sidebar.toggled { width: auto; padding-right: 15px; }
   </style>
   <script type=text/lispz>
-    (with "message,dom"
-      (@hamburger.onclick: (=> []
-        (@sidebar.classList.toggle "toggled")
+    (var tag this)
+    (using "message,dom"
+      (set! tag.hamburger.onclick (=>
+        (tag.sidebar.classList.toggle "toggled")
         (delay 300 ## must be after slide action
-          (message.send "page-content-wrapper-padding" @sidebar.offsetWidth)
+          (message.send "page-content-wrapper-padding" tag.sidebar.offsetWidth)
         )
       ))
-      (@on "mount" (delay 300
-        (message.send "page-content-wrapper-padding" @sidebar.offsetWidth)
+      (tag.on "mount" (delay 300
+        (message.send "page-content-wrapper-padding" tag.sidebar.offsetWidth)
       ))
     )
   </script>
@@ -193,9 +199,10 @@
     }
   </style>  
   <script type=text/lispz>
-    (with "message"
-      (message.listen "page-content-wrapper-padding" (=> [px]
-        (@page-content-wrapper.style.paddingLeft: (+ px "px"))
+    (var tag this)
+    (using "message"
+      (message.listen "page-content-wrapper-padding" (lambda [px]
+        (set! tag.page-content-wrapper.style.paddingLeft (+ px "px"))
       ))
     )
   </script>
@@ -205,6 +212,7 @@
   <div id=page-wrapper><yield/></div>
   <style></style>
   <script type=text/lispz>
+    (var tag this)
     (using  "dom,net,jquery,riot,message"
       (var bootswatch-themes [[ "cerulean" "cosmo" "cyborg" "darkly" "flatly"
         "journal" "lumen" "paper" "readable" "sandstone" "simplex" "slate"
@@ -214,15 +222,15 @@
       # Loads a bootswatch theme to make the page look different.
       # If no theme is provided, a random one is selected.
       ###
-      (message.listen "change-bootstrap-theme" (=> [theme] (@theme: theme)
+      (message.listen "change-bootstrap-theme" (lambda [theme]
         (cond (not (defined? theme))
-          (@theme: (get bootswatch-themes (random bootswatch-themes.length)))
+          (set! theme (get bootswatch-themes (random bootswatch-themes.length)))
         )
-        (net.css (+ "https://bootswatch.com/" @theme "/bootstrap.css"))
+        (net.css (+ "https://bootswatch.com/" theme "/bootstrap.css"))
       ))
       
       ### Load Bootstrap from the CDN and continue normally once all is done ###
-      (net.cdnjs-load "twitter-bootstrap" {exclude: '/\.map$|\.min\.|npm.js$/'} (=> []
+      (net.cdnjs-load "twitter-bootstrap" {exclude: '/\.map$|\.min\.|npm.js$/'} (=>
         (dom.append! "head" (dom.element "meta"
           {name: "viewport" content: "width=device-width, initial-scale=1"}
         ))

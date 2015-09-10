@@ -3,8 +3,8 @@
   (var script (lambda [uri next-step=>]
     (var el (dom.element "script" {type: "text/javascript"}))
     (dom.append! "head" el)
-    (el.addEventListener "load"  (=> [evt] (delay 20 (next-step=> evt))))
-    (el.addEventListener "error" (=> [evt] (throw evt)))
+    (el.addEventListener "load"  (lambda [evt] (delay 20 (next-step=> evt))))
+    (el.addEventListener "error" (lambda [evt] (throw evt)))
     (set! el.src uri)
   ))
 
@@ -18,13 +18,13 @@
   ))
 
   (var json-request (lambda [uri next-step=>]
-    (http-get uri (=> [response] (next-step=> (JSON.parse response.text))))
+    (http-get uri (lambda [response] (next-step=> (JSON.parse response.text))))
   ))
 
   (var #cdnjs (lambda [query pkg next-step=>]
-    (json-request (+ "http://api.cdnjs.com/libraries?" query pkg) (=> [json]
-      (@filtered: (json.results.filter (=> [it] (return (=== it.name pkg)))) 0)
-      (next-step=> (get @filtered 0))
+    (json-request (+ "http://api.cdnjs.com/libraries?" query pkg) (lambda [json]
+      (var filtered (json.results.filter (lambda [it] (return (=== it.name pkg)))))
+      (next-step=> (get filtered 0))
     ))
   ))
 
@@ -32,26 +32,28 @@
   # returns an array of filtered full paths to files to upload
   ###
   (var cdnjs-assets (lambda [pkg next-step=>]
-    (#cdnjs "fields=assets&search=" pkg (=> [item]
-      (@asset: null)
-      (item.assets.some (=> [it] (@asset: it) (return (not (contains it.version "alpha")))))
-      (@asset.base: (+ "https://cdnjs.cloudflare.com/ajax/libs/" pkg "/" @asset.version "/"))
-      (next-step=> @asset)
+    (#cdnjs "fields=assets&search=" pkg (lambda [item]
+      (item.assets.some (lambda [it]
+        (return? (contains it.version "alpha") false)
+        (set! it.base (+ "https://cdnjs.cloudflare.com/ajax/libs/" pkg "/" it.version "/"))
+        (next-step=> it)
+	(return true)
+      ))
     ))
   ))
 
   (var cdn-cache {})
 
   (var #cdnjs-load-some (lambda [asset inclusion-test=> next-step=>]
-      (sequential asset.files (=> [file next-file=>]
+      (sequential asset.files (lambda [file next-file=>]
         (return? (not (inclusion-test=> file)) (next-file=>))
-        (@ext: (last (file.split ".")))
-	      (@file: (+ asset.base file))
-	      (lispz.manifest.push @file)
+        (var ext (last (file.split ".")))
+        (var filepath (+ asset.base file))
+        (lispz.manifest.push filepath)
         (cond
-          (is @ext "js")   (script @file next-file=>)
-          (is @ext "css")  (do (css @file) (next-file=>))
-	  (else)           (next-file=>)
+          (is ext "js")   (script filepath next-file=>)
+          (is ext "css")  (do (css filepath) (next-file=>))
+	  (else)          (next-file=>)
         )
       ) next-step=>)
   ))
@@ -64,11 +66,11 @@
   (var cdnjs-load (lambda [pkg match next-step=>]
     (return? (get cdn-cache pkg) (next-step=>))
     (set! (get cdn-cache pkg) true)
-    (cdnjs-assets pkg (=> [asset]
-      (@include: (or match.include '/^$/'))
-      (@exclude: (or match.exclude match))
-      (#cdnjs-load-some asset (=> [file] (return (@include.test file))) (=> []
-        (#cdnjs-load-some asset (=> [file] (return (not (@exclude.test file)))) next-step=>)
+    (cdnjs-assets pkg (lambda [asset]
+      (var include (or match.include '/^$/'))
+      (var exclude (or match.exclude match))
+      (#cdnjs-load-some asset (lambda [file] (return (include.test file))) (=>
+        (#cdnjs-load-some asset (lambda [file] (return (not (exclude.test file)))) next-step=>)
       ))
     ))
   ))

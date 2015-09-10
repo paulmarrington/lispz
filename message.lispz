@@ -1,10 +1,10 @@
 (var store {})
 
 (var exchange (lambda [address]
-  (@envelope: (get store address))
-  (cond (not @envelope)
+  (var envelope (get store address))
+  (cond (not envelope)
     (return (set! (get store address) [[]])))
-  (return @envelope)
+  (return envelope)
 ))
 ## remove a recipient from all attached addresses
 (var remove (lambda [recipient]
@@ -15,12 +15,12 @@
   )
 ))
 (var send (lambda [address packet reply=>]
-  (@reply: (default? reply=> (=>)))
+  (var reply (default? reply=> (=>)))
   ## take a copy so that it does not change during processing
-  (((exchange address).slice).forEach (=> [recipient]
+  (((exchange address).slice).forEach (lambda [recipient]
     (set! recipient.last_packet packet) 
-    (yield (@reply (recipient.listener=> packet)))
-    (countdown? recipient.limit (=> [](remove recipient)))
+    (yield (reply (recipient.listener=> packet)))
+    (countdown? recipient.limit (=> (remove recipient)))
   ))
 ))
 (var expect (lambda [address listener=>]

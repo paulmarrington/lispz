@@ -1,8 +1,8 @@
 (macro debug [*msg] (console.log arguments *msg))
 
 ### Supporting function definition ###
-(macro lambda [params *body] (#join '' '(function(' params '){return (function(){' *body '}).call({})})'))
-(macro =>     [params *body] (#join '' '(function(' params '){' *body '}).bind(this)'))
+(macro lambda [params *body] (#join '' '(function(' params '){' *body '})'))
+(macro =>     [*body]        (#join '' '(function(){' *body '})'))
 (macro *arguments [from] ([[]].slice.call arguments from))
 (macro global [name params *body] (#join '' 'lispz.macros["' name
     '"]=(function(){return (function(' params '){' *body '}).apply({},arguments)})'))
@@ -49,23 +49,21 @@
   (Object.keys obj)(.forEach (lambda [k] (action k (get obj k))))
 )
 (global list-to-dict (lambda [list key]
-  (@dict: {})
+  (var dict {})
   (cond list
-    (list.forEach (=> [item] (set! (get @dict (get item key)) item)))
+    (list.forEach (lambda [item] (set! (get dict (get item key)) item)))
   )
-  (return @dict)
+  (return dict)
 ))
 ### module import ###
-(macro with [modules *on_ready] (lispz.load modules
-  (=> [] (#requires modules) *on_ready)))
 (macro using [modules *on_ready] (lispz.load modules
-  (lambda [] (#requires modules) *on_ready)))
+  (=> (#requires modules) *on_ready)))
 
 ### Modules must export to continue processing ###
 (macro export [exports] (#join '' '__module_ready__(' exports ')'))
 (export {})
 
-(macro delay [ms *body] (setTimeout (=> [] *body) ms))
+(macro delay [ms *body] (setTimeout (=> *body) ms))
 (macro yield [*body] (delay 0 *body))
 (macro do [*body] *body)
 ###
@@ -92,10 +90,10 @@
 # Execute a list of asynchronous functions one after anothr
 ###
 (global sequential (lambda [list for-each=> on-complete=>]
-  (@list: (slice list))
-  (var each=> (=> []
-    (return? (not @list.length) (on-complete=>))
-    (for-each=> (@list.shift) each=>)
+  (set! list (slice list))
+  (var each=> (=>
+    (return? (not list.length) (on-complete=>))
+    (for-each=> (list.shift) each=>)
   ))(each=>)
 ))
 ###

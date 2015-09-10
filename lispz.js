@@ -11,7 +11,7 @@ var lispz = function() {
     if (/^'.*'$/.test(atom)) return atom.slice(1, -1).replace(/\\n/g, '\n')
     if (/^"(?:.|\r*\n)*"$/.test(atom)) return atom.replace(/\r*\n/g, '\\n')
     switch (atom[0]) {
-      case '@': return (atom.length > 1) ? "this."+jsify(atom.slice(1)) : "this"
+      case '@': return "this."+jsify(atom.slice(1))
       case '-': return atom // unary minus or negative number
       default:  return atom.replace(/\W/g, function(c) {
         var t = "$hpalcewqgutkri"["!#%&+:;<=>?@\\^~".indexOf(c)];
@@ -19,14 +19,12 @@ var lispz = function() {
     }
   },
   call_to_js = function(func, params) {
-    var selfish = (func[0] === "@" && func[func.length - 1] === ':')
     params = slice.call(arguments, 1)
     contexts.some(function(pre){if (macros[pre+'.'+func]) {func = pre+'.'+func; return true}})
     if (synonyms[func]) func = synonyms[func]
     if (macros[func]) return macros[func].apply(lispz, params)
-    func = ast_to_js(selfish ? func.slice(0, -1) : func)
+    func = ast_to_js(func)
     if (params[0] && params[0][0] === '.') func += params.shift()
-    if (selfish) return func + "=" + ast_to_js(params[0]) + '\n'
     return func + '(' + params.map(ast_to_js).join(',') + ')'
   },
   macro_to_js = function(name, pnames, body) {
@@ -202,7 +200,7 @@ var lispz = function() {
   requires_to_js = function(list) {
     return 'var ' + list.slice(1,-1).split(',').map(function(module) {
       var name = module.trim().split('/').pop()
-      return name + '=lispz.cache["' + name + '"]'
+      return jsify(name) + '=lispz.cache["' + name + '"]'
     }) + ';'
   }
   if (window) window.onload = function() {

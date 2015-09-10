@@ -6,10 +6,12 @@
   }
   </style>
   <script type=text/lispz>
-    (using  "net"
+    (var tag this)
+    (using  "net,diff-match-patch"
       (net.cdnjs-load "codemirror"
-        {include: '/codemirror.js$/' exclude: '/\.min\./'} (=> []
-          (@cm: (CodeMirror @wrapper opts))
+        {include: '/codemirror.js$/'
+	 exclude: '/\.min\.|_test\.js$|\.node\.js$|standalone\.js/'} (=>
+          (set! tag.cm (CodeMirror tag.wrapper opts))
       ))
     )
   </script>

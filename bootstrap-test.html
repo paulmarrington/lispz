@@ -35,7 +35,7 @@
           { divider: true }
           { title: "item 2" disabled: true }
         ]] (=>))
-        (message.listen "Test menu item 1" (=> [data] (debug data)))
+        (message.listen "Test menu item 1" (lambda [data] (debug data)))
       )
     </script>
   </body>

@@ -5,7 +5,7 @@
 
   (var load (lambda [name uri next-step=>]
     (return? (or (get cache name) (get cache uri)) (next-step=>))
-    (net.http-get uri (=> [response]
+    (net.http-get uri (lambda [response]
       (compile response.text)
       (riot.mount name)
       (next-step=>)
@@ -15,17 +15,17 @@
   (var mount (lambda [tags] (riot.mount tags)))
 
   ### Load RIOT from the CDN and continue normally once all is done ###
-  (net.cdnjs-load "riot" '/riot\.js$|\.min.js$/' (=> []
+  (net.cdnjs-load "riot" '/riot\.js$|\.min.js$/' (=>
     (set! riot.parsers.js.lispz
-      (=> [source] (return ((lispz.compile "riot-tags" source).join "\n"))))
+      (lambda [source] (return ((lispz.compile "riot-tags" source).join "\n"))))
     (sequential (document.getElementsByClassName "riot")
-      (=> [element next-element=>]
-        (@name: element.tagName)
-        (cond (not (@uri: (element.getAttribute "uri")))
-              (@uri: (+ (this.name.toLowerCase) ".riot.html")))
-        (load @name @uri next-element=>)
+      (lambda [element next-element=>]
+        (var name element.tagName)
+        (var uri (element.getAttribute "uri"))
+        (cond (not uri) (set! uri (+ (name.toLowerCase) ".riot.html")))
+        (load name uri next-element=>)
       )
-      (=> [] (export {compile load mount}))
+      (=> (export {compile load mount}))
     )
   ))
 )

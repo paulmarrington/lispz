@@ -10,34 +10,34 @@
     lispz-repl .hidden {display: none}
   </style>
   <script type=text/lispz>
-      (@hidden: true)
-      (@run: (=> []
-        (@source: (((@usings.value.split ",").map (=> [pkg]
-          (@pkg: pkg)
+      (var tag this)
+      (var hidden true)
+      (var run (=>
+        (var source (((tag.usings.value.split ",").map (lambda [pkg]
           (cond (is (first pkg) "*") (do
-            (@pkg: (slice pkg 1))
-            (delete (get lispz.cache @pkg))
-            (delete (get lispz.cache (last (this.pkg.split "/"))))
+            (set! pkg (slice pkg 1))
+            (delete (get lispz.cache pkg))
+            (delete (get lispz.cache (last (pkg.split "/"))))
           ))
-          (return @pkg)
+          (return pkg)
         )).join ","))
         (cond
-          @source (@source: (+ "(using \"" @source "\" " @code.value ")"))
-          (else)  (@source: @code.value)
+          source (set! source (+ "(using \"" source "\" " tag.code.value ")"))
+          (else)  (set! source tag.code.value)
         )
-        (console.log (lispz.run "lispz-repl" @source))
-        (@code.select)
+        (console.log (lispz.run "lispz-repl" source))
+        (tag.code.select)
       ))
       
-      (@toggle-show-repl: (=> []
-        (@hidden: (not @hidden)) (@update)
-        (@code.focus) (@code.select)
+      (var toggle-show-repl (=>
+        (set! hidden (not hidden)) (tag.update)
+        (tag.code.focus) (tag.code.select)
       ))
 
-      (document.body.addEventListener "keydown" (=> [ev] (cond
-        (and ev.altKey ev.shiftKey (is ev.keyCode 82)) (@toggle-show-repl)
+      (document.body.addEventListener "keydown" (lambda [ev] (cond
+        (and ev.altKey ev.shiftKey (is ev.keyCode 82)) (toggle-show-repl)
       )))
-      (this.code.addEventListener "keypress"
-        (=> [ev] (cond (is ev.keyCode 13) (@run) )))
+      (tag.code.addEventListener "keypress"
+        (lambda [ev] (cond (is ev.keyCode 13) (run) )))
   </script>
 </lispz-repl>
