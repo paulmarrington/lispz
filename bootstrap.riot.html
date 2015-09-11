@@ -230,7 +230,7 @@
       ))
       
       ### Load Bootstrap from the CDN and continue normally once all is done ###
-      (net.cdnjs-load "twitter-bootstrap" {exclude: '/\.map$|\.min\.|npm.js$/'} (=>
+      (net.cdnjs-load "twitter-bootstrap" [['/\.map$|\.min\.|npm.js$/']] (=>
         (dom.append! "head" (dom.element "meta"
           {name: "viewport" content: "width=device-width, initial-scale=1"}
         ))

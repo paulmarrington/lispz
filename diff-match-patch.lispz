@@ -1,4 +1,4 @@
 (using  "net"
   (net.cdnjs-load "diff_match_patch"
-    {include: '/diff_match_patch_uncompressed.js$/' exclude: /^$/} (=> (export {})))
+    [['/diff_match_patch_uncompressed.js$/']] (=> (export {})))
 )

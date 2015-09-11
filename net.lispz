@@ -21,7 +21,7 @@
     (http-get uri (lambda [response] (next-step=> (JSON.parse response.text))))
   ))
 
-  (var #cdnjs (lambda [query pkg next-step=>]
+  (var cdnjs (lambda [query pkg next-step=>]
     (json-request (+ "http://api.cdnjs.com/libraries?" query pkg) (lambda [json]
       (var filtered (json.results.filter (lambda [it] (return (=== it.name pkg)))))
       (next-step=> (get filtered 0))
@@ -32,7 +32,7 @@
   # returns an array of filtered full paths to files to upload
   ###
   (var cdnjs-assets (lambda [pkg next-step=>]
-    (#cdnjs "fields=assets&search=" pkg (lambda [item]
+    (cdnjs "fields=assets&search=" pkg (lambda [item]
       (item.assets.some (lambda [it]
         (return? (contains it.version "alpha") false)
         (set! it.base (+ "https://cdnjs.cloudflare.com/ajax/libs/" pkg "/" it.version "/"))
@@ -42,11 +42,10 @@
     ))
   ))
 
-  (var cdn-cache {})
-
-  (var #cdnjs-load-some (lambda [asset inclusion-test=> next-step=>]
+  (var cdnjs-load-some (lambda [asset inclusion-test=> next-step=>]
       (sequential asset.files (lambda [file next-file=>]
-        (return? (not (inclusion-test=> file)) (next-file=>))
+        (return? (or (get asset.loaded file) (not (inclusion-test=> file))) (next-file=>))
+	(set! (get asset.loaded file) true)
         (var ext (last (file.split ".")))
         (var filepath (+ asset.base file))
         (lispz.manifest.push filepath)
@@ -57,23 +56,25 @@
         )
       ) next-step=>)
   ))
+
+  (var inclusion (lambda [match] (return (lambda [file] (return (match.test file))))))
+  (var exclusion (lambda [match] (return (lambda [file] (return (not (match.test file)))))))
   
-  ###
-  # match is an exclude unless it is a dictionary with an include and exclude elements:
-  # {include: '/myfile.js$/' exclude: '/.min./}
-  # include is loaded first then everything not excluded. This provides load order
-  ###
-  (var cdnjs-load (lambda [pkg match next-step=>]
+  (var cdn-cache {})
+
+  ## matches is an array. if global flag is set it is inclusive, else exclusive
+  (var cdnjs-load (lambda [pkg matches next-step=>]
     (return? (get cdn-cache pkg) (next-step=>))
     (set! (get cdn-cache pkg) true)
     (cdnjs-assets pkg (lambda [asset]
-      (var include (or match.include '/^$/'))
-      (var exclude (or match.exclude match))
-      (#cdnjs-load-some asset (lambda [file] (return (include.test file))) (=>
-        (#cdnjs-load-some asset (lambda [file] (return (not (exclude.test file)))) next-step=>)
-      ))
+      (set! asset.loaded {})
+      (sequential matches (lambda [match next-match=>]
+        ## RE with global flat is positive test, without is negative (exclude) 
+        (cond match.global (cdnjs-load-some asset (inclusion match) next-match=>)
+	      (else)       (cdnjs-load-some asset (exclusion match) next-match=>))
+      ) next-step=>)
     ))
   ))
 
-  (export {script css http-get json-request cdnjs-assets cdnjs-load})
+  (export {script css http-get json-request cdnjs-load})
 )

@@ -9,8 +9,8 @@
     (var tag this)
     (using  "net,diff-match-patch"
       (net.cdnjs-load "codemirror"
-        {include: '/codemirror.js$/'
-	 exclude: '/\.min\.|_test\.js$|\.node\.js$|standalone\.js/'} (=>
+        [['/codemirror.js$/g' '/simple.js$/g'
+	 '/\.min\.|_test\.js$|\.node\.js$|standalone\.js|elm\.js$/']] (=>
           (set! tag.cm (CodeMirror tag.wrapper opts))
       ))
     )

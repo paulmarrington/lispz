@@ -15,7 +15,7 @@
   (var mount (lambda [tags] (riot.mount tags)))
 
   ### Load RIOT from the CDN and continue normally once all is done ###
-  (net.cdnjs-load "riot" '/riot\.js$|\.min.js$/' (=>
+  (net.cdnjs-load "riot" [['/riot\.js$|\.min.js$/']] (=>
     (set! riot.parsers.js.lispz
       (lambda [source] (return ((lispz.compile "riot-tags" source).join "\n"))))
     (sequential (document.getElementsByClassName "riot")
