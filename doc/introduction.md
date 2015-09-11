@@ -47,8 +47,9 @@ Back to
 
   (/ (* value percent) 100)
   
-With the understanding that everthing appears to be a function, it becomes easier to read and there are no ambiguities. The word appears is intentional as Lispz expands binaries in-line, such that the code run is
+With the understanding that everthing appears to be a function, it becomes easier to read and there are no ambiguities. The word 'appears' is intentional as Lispz expands binaries in-line, such that the code run is
 
   ((value * percent) / 100)
 
 # Where functional programming comes in
+JavaScript is already a functional language in that it provides functions as first-class operation, closures and bindings.
