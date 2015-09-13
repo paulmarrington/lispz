@@ -2,6 +2,8 @@
 
 [Documentation](doc/index.md)
 
+**Executive Summary**: Lispz supports functional programming for developing single-page-applications for the browser. It does this with modules, RIOT components, Bootstrap visuals, message passing and numerous other features to make SPA development easier.
+
 **Lispz encourages a functional programming style** and data immutability in lisp-like syntax for running in the browser. It compiles to JavaScript, so can easily make use of all the JavaScript libraries and packages.
 
 Lisp (without the z) is a functional language with a long pedigree. Only FORTRAN is an older living language. Traditionally it did not address data immutability, although Clojure (a relatively recent arrival) does.
