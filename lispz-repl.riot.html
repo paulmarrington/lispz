@@ -13,7 +13,7 @@
       (var tag this)
       (var hidden true)
       (var run (=>
-        (var source (((tag.usings.value.split ",").map (lambda [pkg]
+        (var source (((tag.usings.value.split " ").map (lambda [pkg]
           (cond (is (first pkg) "*") (do
             (set! pkg (slice pkg 1))
             (delete (get lispz.cache pkg))

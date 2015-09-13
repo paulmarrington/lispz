@@ -21,28 +21,38 @@
     (http-get uri (lambda [response] (next-step=> (JSON.parse response.text))))
   ))
 
-  (var cdnjs (lambda [query pkg next-step=>]
-    (json-request (+ "http://api.cdnjs.com/libraries?" query pkg) (lambda [json]
-      (var filtered (json.results.filter (lambda [it] (return (=== it.name pkg)))))
-      (next-step=> (get filtered 0))
-    ))
-  ))
 
   ###
-  # returns an array of filtered full paths to files to upload
+  # Extract assets from the latest release of a package on cdnjs.com
   ###
-  (var cdnjs-assets (lambda [pkg next-step=>]
-    (cdnjs "fields=assets&search=" pkg (lambda [item]
-      (item.assets.some (lambda [it]
-        (return? (contains it.version "alpha") false)
-        (set! it.base (+ "https://cdnjs.cloudflare.com/ajax/libs/" pkg "/" it.version "/"))
-        (next-step=> it)
-	(return true)
-      ))
-    ))
+  (var cdnjs (lambda [pkg process-asset=>]
+    (json-request
+      (+ "http://api.cdnjs.com/libraries?fields=assets&search=" pkg)
+      (lambda [json]
+        (var filtered (json.results.filter (lambda [it] (return (=== it.name pkg)))))
+        ((get filtered 0).assets.some (lambda [it]
+          (return? (contains it.version "alpha") false)
+          (set! it.base (+ "https://cdnjs.cloudflare.com/ajax/libs/" pkg "/" it.version "/"))
+          (process-asset=> it)
+	  (return true)
+        ))
+      )
+    )
+  ))
+  ###
+  # Extract assets from the latest release of a package from github.com releases
+  ###
+  (var cdngit (lambda [pkg process-asset=>]
+    (json-request (+ "https://api.github.com/repos/" pkg "/releases/latest")
+      (lambda [json]
+        (process-asset=> {base: "" files:
+          (json.assets.map (lambda [asset] (return asset.browser_download_url)))
+	})
+      )
+    )
   ))
 
-  (var cdnjs-load-some (lambda [asset inclusion-test=> next-step=>]
+  (var cdn-load-some (lambda [asset inclusion-test=> next-step=>]
       (sequential asset.files (lambda [file next-file=>]
         (return? (or (get asset.loaded file) (not (inclusion-test=> file))) (next-file=>))
 	(set! (get asset.loaded file) true)
@@ -63,18 +73,21 @@
   (var cdn-cache {})
 
   ## matches is an array. if global flag is set it is inclusive, else exclusive
-  (var cdnjs-load (lambda [pkg matches next-step=>]
+  (var cdn-load (lambda [source pkg matches next-step=>]
     (return? (get cdn-cache pkg) (next-step=>))
     (set! (get cdn-cache pkg) true)
-    (cdnjs-assets pkg (lambda [asset]
+    (source pkg (lambda [asset]
       (set! asset.loaded {})
       (sequential matches (lambda [match next-match=>]
         ## RE with global flat is positive test, without is negative (exclude) 
-        (cond match.global (cdnjs-load-some asset (inclusion match) next-match=>)
-	      (else)       (cdnjs-load-some asset (exclusion match) next-match=>))
+        (cond match.global (cdn-load-some asset (inclusion match) next-match=>)
+	      (else)       (cdn-load-some asset (exclusion match) next-match=>))
       ) next-step=>)
     ))
   ))
 
-  (export {script css http-get json-request cdnjs-load})
+  (var cdnjs-load  (cdn-load.bind undefined cdnjs))
+  (var cdngit-load (cdn-load.bind undefined cdngit))
+
+  (export {script css http-get json-request cdnjs-load cdngit-load})
 )

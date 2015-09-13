@@ -1,7 +1,7 @@
 var lispz = function() {
   var delims = "(){}[]n".split(''), // characters that are not space separated atoms
   not_delims = delims.join("\\"), delims = delims.join('|\\'),
-  stringRE = "'[\\s\\S]*?'|" + '"[\\s\\S]*?[^\\\\]"|""|' +
+  stringRE = "''|'[\\s\\S]*?[^\\\\]'|" + '""|"[\\s\\S]*?[^\\\\]"|' +
     '###+(?:.|\\r*\\n)*?###+|' + '##\\s+.*?\\r*\\n|',
   tkre = new RegExp('(' + stringRE + '\\' + delims + "|[^\\s" + not_delims + "]+)", 'g'),
   opens = new Set("({["), closes = new Set(")}]"), ast_to_js, slice = [].slice, contexts = [],
@@ -11,7 +11,6 @@ var lispz = function() {
     if (/^'.*'$/.test(atom)) return atom.slice(1, -1).replace(/\\n/g, '\n')
     if (/^"(?:.|\r*\n)*"$/.test(atom)) return atom.replace(/\r*\n/g, '\\n')
     switch (atom[0]) {
-      case '@': return "this."+jsify(atom.slice(1))
       case '-': return atom // unary minus or negative number
       default:  return atom.replace(/\W/g, function(c) {
         var t = "$hpalcewqgutkri"["!#%&+:;<=>?@\\^~".indexOf(c)];
@@ -63,8 +62,7 @@ var lispz = function() {
       if ((key = kvp[i])[kvp[i].length - 1] === ":") {
         dict.push("'"+jsify(key.slice(0, -1))+"':"+ast_to_js(kvp[++i]));
       } else {
-        var kk = (key[0] === "@") ? key.slice(1) : key
-        dict.push("'"+jsify(kk)+"':"+ast_to_js(key));
+        dict.push("'"+jsify(key)+"':"+ast_to_js(key));
       }
     }
     return "{" + dict.join(',') + "}";
@@ -189,7 +187,7 @@ var lispz = function() {
     })
   },
   load = function(uri_list, on_all_ready) {
-    var uris = uri_list.split(',')
+    var uris = uri_list.split(' ')
     var next_uri = function() {
       if (uris.length) load_one(uris.shift().trim(), next_uri)
       else if (on_all_ready) on_all_ready()
@@ -198,7 +196,7 @@ var lispz = function() {
   },
   // Special to set variables loaded with requires
   requires_to_js = function(list) {
-    return 'var ' + list.slice(1,-1).split(',').map(function(module) {
+    return 'var ' + list.slice(1,-1).split(' ').map(function(module) {
       var name = module.trim().split('/').pop()
       return jsify(name) + '=lispz.cache["' + name + '"]'
     }) + ';'

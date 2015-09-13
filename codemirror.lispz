@@ -1,0 +1,9 @@
+(using  "net diff-match-patch"
+  ## elm script has a bug - restore for a later version.
+  ## tern is for javascript features - overrides console.log
+  (net.cdnjs-load "codemirror"
+    [['/codemirror.js$/g' '/simple.js$/g'
+      '/\.min\.|_test\.js$|\.node\.js$|standalone\.js|elm\.js$|\/tern\//']] (=>
+    (export {CodeMirror})
+  ))
+)

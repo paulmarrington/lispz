@@ -1,0 +1,38 @@
+<firepad>
+  <!-- <firepad name=pad-name [db=default]> -->
+  <div name=wrapper>
+  </div>
+  <style>
+    firepad .CodeMirror {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 5px;
+      right: 0;
+      height: initial;
+    }
+  </style>
+  <script type=text/lispz>
+    (var tag this)
+    (using  "firebase codemirror firepad message"
+      (var cm (CodeMirror tag.wrapper) pad null)
+
+      (var close (lambda []
+        (return? (not pad) false)
+	(pad.dispose)
+	(set! pad false)
+      ))
+
+      (var open (lambda [packet]
+        (close)
+        (var db (firebase.attach packet.key packet.db))
+	(var rich_text (is packet.type "richtext"))
+	(set! pad (Firepad.fromCodeMirror db cm
+	  {richTextShortcuts: rich_text richTextToolbar: rich_text}
+	))
+      ))
+
+      (message.dispatch (+ "firepad/" opts.name) { open close })
+    )
+  </script>
+</firepad>

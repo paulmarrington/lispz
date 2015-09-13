@@ -1,0 +1,19 @@
+(using  "net"
+  ( var databases (JSON.parse (or (localStorage.getItem "firebases") "{}")))
+
+  (var register (lambda [key uri]
+    (set! (get databases key) uri)
+    (localStorage.setItem "firebases" (JSON.stringify databases))
+  ))
+
+  (var attach (lambda [collection db]
+    (var uri (get databases (or db "default")))
+    (return? (not uri) null)
+    (return (new Firebase (+ uri "/" collection)))
+  ))
+
+  (net.script
+    "https://cdn.firebase.com/js/client/2.2.9/firebase.js" (=>
+      (export {register attach databases})
+  ))
+)

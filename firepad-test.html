@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html manifest=firepad-test.cache-manifest>
+  <head>
+    <title>FirePad Test Canvas</title>
+  <body>
+    <bootstrap class=riot>
+    <page-content fluid=true>
+    <panel height=30% heading="test.lispz">
+      <firepad class=riot name=test />
+    </panel>
+    </page-content>
+    </bootstrap>
+    
+    <lispz-repl class=riot></lispz-repl>
+    <script src=/lispz/lispz.js></script>
+    <script id=test_code type="text/lispz">
+      (using "firebase message jquery"
+        (firebase.register "default" "https://sizzling-heat-3048.firebaseapp.com")
+	(using "riot"
+	  (message.wait-for "firebase/test" (=>
+	    (message.send "firebase/test"
+              {action: "open" type: "richtext" key: "firepads/test-1"})
+          ))
+	)
+      )
+    </script>
+  </body>
+</html>

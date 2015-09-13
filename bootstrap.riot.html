@@ -14,6 +14,19 @@
     <div class=panel-footer if={ opts.footer } name=footer
          >{ opts.footer }</div>
   </div>
+
+  <style>
+    panel .panel {
+      position: relative;
+    }
+    panel .panel-body {
+      position: absolute;
+      top: 40px;
+      bottom: 10px;
+      left: 0;
+      right: 0;
+    }
+  </style>
   
   <script type=text/lispz>
     (var tag this)
@@ -172,7 +185,7 @@
   </style>
   <script type=text/lispz>
     (var tag this)
-    (using "message,dom"
+    (using "message dom"
       (set! tag.hamburger.onclick (=>
         (tag.sidebar.classList.toggle "toggled")
         (delay 300 ## must be after slide action
@@ -213,7 +226,7 @@
   <style></style>
   <script type=text/lispz>
     (var tag this)
-    (using  "dom,net,jquery,riot,message"
+    (using  "dom net jquery riot message"
       (var bootswatch-themes [[ "cerulean" "cosmo" "cyborg" "darkly" "flatly"
         "journal" "lumen" "paper" "readable" "sandstone" "simplex" "slate"
         "spacelab" "superhero" "united" "yeti" ]])

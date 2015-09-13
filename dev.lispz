@@ -1,0 +1,9 @@
+(using "net"
+  (var manifest (=>
+    (var text [["CACHE MANIFEST"]])
+    (lispz.manifest.forEach (lambda [uri] (text.push uri)))
+    (text.push "NETWORK:" "*")
+    (return (text.join "\n"))
+  ))
+  (export {manifest})
+)

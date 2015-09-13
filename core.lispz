@@ -12,6 +12,7 @@
 (macro closure [params *body] (#join '' '(function(' params '){' *body '})(' params ')'))
 (macro return  [value] (#join '' 'return ' value '\n'))
 (macro return? [test value] (cond test (return value)))
+(macro new [cls params] (#join '' '(new ' cls '(' params '))'))
 
 ### Pure functional programming wants immutability - but we live in an impure world ###
 (macro set! [name value] (#join '' name '=' value ';'))
@@ -41,6 +42,7 @@
 ))
 
 ### List and dictionary manipulation ###
+(macro length [list] (#join '' list '.length'))
 (macro first [list] (get list 0))
 (macro rest [list] (list .slice 1))
 (macro last [list] (get (list .slice -1) 0))

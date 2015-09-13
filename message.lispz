@@ -2,10 +2,10 @@
 
 (var exchange (lambda [address]
   (var envelope (get store address))
-  (cond (not envelope)
-    (return (set! (get store address) [[]])))
-  (return envelope)
+  (return? envelope envelope)
+  (return (set! (get store address) [[]]))
 ))
+
 ## remove a recipient from all attached addresses
 (var remove (lambda [recipient]
   (set! (get exchange address)
@@ -14,21 +14,37 @@
     ))
   )
 ))
+
 (var send (lambda [address packet reply=>]
   (var reply (default? reply=> (=>)))
   ## take a copy so that it does not change during processing
   (((exchange address).slice).forEach (lambda [recipient]
-    (set! recipient.last_packet packet) 
     (yield (reply (recipient.listener=> packet)))
     (countdown? recipient.limit (=> (remove recipient)))
   ))
 ))
+
 (var expect (lambda [address listener=>]
-  ((exchange address).append {limit: 1 listener=>})
-  (cond recipient.packet (listener=> recipient.last_packet))
+  ((exchange address).push {limit: 1 listener=>})
 ))
+
+## Only add expect if no other listeners - otherwise respond immediately
+(var wait-for (lambda [address listener=>]
+  (return? (length (exchange address)) (listener=>))
+  (expect address listener=>)
+))
+
 (var listen (lambda [address listener=>]
   ((exchange address).push {limit: -1 listener=>})
 ))
 
-(export {exchange send expect listen})
+(var dispatch (lambda [address actions]
+  (listen address (lambda [packet]
+    (var action (get actions packet.action))
+    (return? (not action) false)
+    (action packet)
+  ))
+  (send address {action: "#add dispatcher"})
+))
+
+(export {exchange send expect listen dispatch wait-for})
