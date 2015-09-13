@@ -52,4 +52,8 @@ With the understanding that everthing appears to be a function, it becomes easie
   ((value * percent) / 100)
 
 # Where functional programming comes in
-JavaScript is already a functional language in that it provides functions as first-class operation, closures and bindings.
+Shhh! Don't tell the Haskellers. JavaScript is already a functional language in that it provides functions as first-class operation, closures and bindings. There are other aspects that it does not support - the major ones being immutability and static types. I think of JavaScript as a modern assember, making it the responsibility of the higher (:) level language to fill in the gaps.
+
+Lispz is too lightweight to do anything about static types.
+
+Immutability is a moving target. For a functional language, this means if a function is called with the same parameters it will always return the same result. Another definition states "no side-effects". A third suggest it means all data on the stack - meaning function call parameters. In the extreme it means that there are no variables, only constants - data once allocated never changes.
