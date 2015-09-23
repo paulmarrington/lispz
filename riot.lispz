@@ -1,4 +1,4 @@
-(using  "net"
+(using  "net list"
   (var compile (lambda [html] (return (riot.compile html))))
 
   (var cache {})
@@ -18,11 +18,11 @@
   (net.cdnjs-load "riot" [['/riot\.js$|\.min.js$/']] (=>
     (set! riot.parsers.js.lispz
       (lambda [source] (return ((lispz.compile "riot-tags" source).join "\n"))))
-    (sequential (document.getElementsByClassName "riot")
+    (list.sequential (document.getElementsByClassName "riot")
       (lambda [element next-element=>]
         (var name element.tagName)
-        (var uri (element.getAttribute "uri"))
-        (cond (not uri) (set! uri (+ (name.toLowerCase) ".riot.html")))
+        (var uri (or (element.getAttribute "uri")
+                     (+ (name.toLowerCase) ".riot.html")))
         (load name uri next-element=>)
       )
       (=> (export {compile load mount}))

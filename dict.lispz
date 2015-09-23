@@ -1,0 +1,23 @@
+###
+# There is often need to merge multiple dictionaries together to create a new
+# combined one.
+###
+(var merge (lambda [dictionaries]
+  (var merged {})
+  ((*arguments 0).forEach (lambda [dictionary]
+    ((Object.keys dictionary).forEach (lambda [key]
+      (dict.update! merged key (get dictionary key))
+    ))
+  ))
+  (return merged)
+))
+
+(var from-list (lambda [list key]
+  (var dictionary {})
+  (cond list
+    (list.forEach (lambda [item] (dict.update! dictionary (get item key) item)))
+  )
+  (return dictionary)
+))
+
+(export merge from-list update!)

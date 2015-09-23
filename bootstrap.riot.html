@@ -27,7 +27,7 @@
       right: 0;
     }
   </style>
-  
+
   <script type=text/lispz>
     (var tag this)
     (set! tag.context (+ "panel-" (or opts.context "default")))
@@ -35,7 +35,7 @@
       (cond opts.height (do
         (var px opts.height)
         (cond (is "%" (opts.height.slice -1))
-          (set! px (/ (* window.innerHeight (opts.height.slice 0 -1)) 100))
+          (var px (/ (* window.innerHeight (opts.height.slice 0 -1)) 100))
         )
         (set! tag.outer.style.height (+ px "px"))
       ))
@@ -61,21 +61,21 @@
     bars-menu span.caret { margin-left: -11px }
   </style>
   <script type=text/lispz>
-    (var tag this)
+    (var tag this root null)
     (using "message"
       (message.listen opts.name (lambda [items]
-        (var root items)
-	(set! tag.items items)
+        (set! root (or items [[]]))
+        (set! tag.items items)
         (tag.update)
       ))
-    
+
       (tag.on "mount" (=>
         (($ tag.dropdown).on "show.bs.dropdown" (=>
           (set! tag.items root)
           (tag.update)
         ))
       ))
-      
+
       (set! tag.goto (lambda [ev]
         (cond ev.item.topic (message.send ev.item.topic
           {item: ev.item owner: opts.owner action: "select"}))
@@ -132,16 +132,16 @@
   </style>
   <script type=text/lispz>
     (var tag this)
-    (using "message"
+    (using "message dict"
       (tag.on "update" (lambda [data]
         (cond (and opts.name tag.parent.children) (do
           (set! tag.items (get tag.parent.children opts.name "children"))
           (cond (and tag.items tag.items.length)
-                (set! tag.children (list-to-dict tag.items "title"))
+                (set! tag.children (dict.from-list tag.items "title"))
           )
         ))
       ))
-  
+
       (set! tag.goto (lambda [ev]
         (var item ev.item.item)
         (var topic (or item.topic item.title ))
@@ -237,11 +237,11 @@
       ###
       (message.listen "change-bootstrap-theme" (lambda [theme]
         (cond (not (defined? theme))
-          (set! theme (get bootswatch-themes (random bootswatch-themes.length)))
+          (var theme (get bootswatch-themes (random bootswatch-themes.length)))
         )
         (net.css (+ "https://bootswatch.com/" theme "/bootstrap.css"))
       ))
-      
+
       ### Load Bootstrap from the CDN and continue normally once all is done ###
       (net.cdnjs-load "twitter-bootstrap" [['/\.map$|\.min\.|npm.js$/']] (=>
         (dom.append! "head" (dom.element "meta"

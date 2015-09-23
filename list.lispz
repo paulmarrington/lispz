@@ -1,3 +1,12 @@
-(global 'for-pairs' [pairs action] (empty? pairs (return))
-  (action (first pairs) (first (rest pairs)))
-  (for-pairs (rest (rest pairs)) action))
+###
+# Execute a list of asynchronous functions one after another
+###
+(var sequential (lambda [list for-each=> on-complete=>]
+  (var list (slice list))
+  (var each=> (=>
+    (return? (not list.length) (on-complete=>))
+    (for-each=> (list.shift) each=>)
+  ))(each=>)
+))
+
+(export {sequential})

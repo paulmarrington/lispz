@@ -2,7 +2,7 @@
   ( var databases (JSON.parse (or (localStorage.getItem "firebases") "{}")))
 
   (var register (lambda [key uri]
-    (set! (get databases key) uri)
+    (dict.update! databases key uri)
     (localStorage.setItem "firebases" (JSON.stringify databases))
   ))
 

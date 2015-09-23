@@ -4,8 +4,6 @@
 (macro lambda [params *body] (#join '' '(function(' params '){' *body '})'))
 (macro =>     [*body]        (#join '' '(function(){' *body '})'))
 (macro *arguments [from] ([[]].slice.call arguments from))
-(macro global [name params *body] (#join '' 'lispz.macros["' name
-    '"]=(function(){return (function(' params '){' *body '}).apply({},arguments)})'))
 (macro global [name value]
   (#join '' 'lispz.globals.' name '=' value)
   (macro name [&params] (#join '' 'lispz.globals.' name '(' &params ')')))
@@ -17,16 +15,13 @@
 ### Pure functional programming wants immutability - but we live in an impure world ###
 (macro set! [name value] (#join '' name '=' value ';'))
 (macro var  (*list) (#join '' 'var ' (#pairs *list '=' ',') ';'))
+(macro dict.update! [dict key value] (#join '' dict '[' key ']' '=' value ';'))
 
 ### Retrieval - can be used for objects and arrays ###
 (macro get [dict *key] (#join '' dict '[' (#join '][' *key) ']'))
 
 ### Operators ###
 (macro not [value] (#join '' '!(' value ')'))
-(macro countdown? [counter action=>]
-  (cond (not counter) (return (action=>)))
-  (set! counter (- counter 1))
-)
 
 ### conditional processing ###
 (macro empty? [list] (not list.length))
@@ -50,13 +45,6 @@
 (macro for-each-attribute [obj action]
   (Object.keys obj)(.forEach (lambda [k] (action k (get obj k))))
 )
-(global list-to-dict (lambda [list key]
-  (var dict {})
-  (cond list
-    (list.forEach (lambda [item] (set! (get dict (get item key)) item)))
-  )
-  (return dict)
-))
 ### module import ###
 (macro using [modules *on_ready] (lispz.load modules
   (=> (#requires modules) *on_ready)))
@@ -75,29 +63,6 @@
 # from outside.
 ###
 (macro contain [contain#args *contain#body] ((lambda contain#args *contain#body) contain#args))
-###
-# There is often need to merge multiple dictionaries together to create a new
-# combined one.
-###
-(global merge (lambda [dictionaries]
-  (var merged {})
-  ((*arguments 0).forEach (lambda [dictionary]
-    ((Object.keys dictionary).forEach (lambda [key]
-      (set! (get merged key) (get dictionary key))
-    ))
-  ))
-  (return merged)
-))
-###
-# Execute a list of asynchronous functions one after anothr
-###
-(global sequential (lambda [list for-each=> on-complete=>]
-  (set! list (slice list))
-  (var each=> (=>
-    (return? (not list.length) (on-complete=>))
-    (for-each=> (list.shift) each=>)
-  ))(each=>)
-))
 ###
 # Return a random integer between 0 and the range given
 ###

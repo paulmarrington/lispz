@@ -1,20 +1,8 @@
 CACHE MANIFEST
-http://localhost:2020/lispz/core.lispz
-http://localhost:2020/lispz/firebase.lispz
-http://localhost:2020/lispz/net.lispz
-http://localhost:2020/lispz/dom.lispz
-http://localhost:2020/lispz/message.lispz
-http://localhost:2020/lispz/jquery.lispz
 http://api.cdnjs.com/libraries?fields=assets&search=jquery
 https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.js
-http://localhost:2020/lispz/riot.lispz
 http://api.cdnjs.com/libraries?fields=assets&search=riot
 https://cdnjs.cloudflare.com/ajax/libs/riot/2.2.4/riot+compiler.js
-http://localhost:2020/lispz/bootstrap.riot.html
-http://localhost:2020/lispz/firepad.riot.html
-http://localhost:2020/lispz/codemirror.lispz
-http://localhost:2020/lispz/lispz-repl.riot.html
-http://localhost:2020/lispz/diff-match-patch.lispz
 http://api.cdnjs.com/libraries?fields=assets&search=twitter-bootstrap
 https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.5/css/bootstrap-theme.css
 https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.5/css/bootstrap.css
@@ -242,7 +230,5 @@ https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.6.0/theme/xq-dark.css
 https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.6.0/theme/xq-light.css
 https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.6.0/theme/yeti.css
 https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.6.0/theme/zenburn.css
-http://localhost:2020/lispz/firepad.lispz
-http://localhost:2020/lispz/dev.lispz
 NETWORK:
 *

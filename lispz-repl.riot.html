@@ -11,26 +11,26 @@
   </style>
   <script type=text/lispz>
       (var tag this)
-      (var hidden true)
+      (set! tag.hidden true)
       (var run (=>
         (var source (((tag.usings.value.split " ").map (lambda [pkg]
           (cond (is (first pkg) "*") (do
-            (set! pkg (slice pkg 1))
+            (var pkg (rest pkg))
             (delete (get lispz.cache pkg))
             (delete (get lispz.cache (last (pkg.split "/"))))
           ))
           (return pkg)
         )).join ","))
         (cond
-          source (set! source (+ "(using \"" source "\" " tag.code.value ")"))
-          (else)  (set! source tag.code.value)
+          source (var source (+ "(using \"" source "\" " tag.code.value ")"))
+          (else)  (var source tag.code.value)
         )
         (console.log (lispz.run "lispz-repl" source))
         (tag.code.select)
       ))
-      
+
       (var toggle-show-repl (=>
-        (set! hidden (not hidden)) (tag.update)
+        (set! tag.hidden (not tag.hidden)) (tag.update)
         (tag.code.focus) (tag.code.select)
       ))
 

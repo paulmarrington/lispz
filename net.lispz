@@ -1,5 +1,5 @@
 ### Load packages from CDN and other web sources - listing them when possible ###
-(using "dom"
+(using "list dom"
   (var script (lambda [uri next-step=>]
     (var el (dom.element "script" {type: "text/javascript"}))
     (dom.append! "head" el)
@@ -34,7 +34,7 @@
           (return? (contains it.version "alpha") false)
           (set! it.base (+ "https://cdnjs.cloudflare.com/ajax/libs/" pkg "/" it.version "/"))
           (process-asset=> it)
-	  (return true)
+          (return true)
         ))
       )
     )
@@ -47,41 +47,41 @@
       (lambda [json]
         (process-asset=> {base: "" files:
           (json.assets.map (lambda [asset] (return asset.browser_download_url)))
-	})
+        })
       )
     )
   ))
 
   (var cdn-load-some (lambda [asset inclusion-test=> next-step=>]
-      (sequential asset.files (lambda [file next-file=>]
+      (list.sequential asset.files (lambda [file next-file=>]
         (return? (or (get asset.loaded file) (not (inclusion-test=> file))) (next-file=>))
-	(set! (get asset.loaded file) true)
+        (dict.update! asset.loaded file true)
         (var ext (last (file.split ".")))
         (var filepath (+ asset.base file))
         (lispz.manifest.push filepath)
         (cond
           (is ext "js")   (script filepath next-file=>)
           (is ext "css")  (do (css filepath) (next-file=>))
-	  (else)          (next-file=>)
+          (else)          (next-file=>)
         )
       ) next-step=>)
   ))
 
   (var inclusion (lambda [match] (return (lambda [file] (return (match.test file))))))
   (var exclusion (lambda [match] (return (lambda [file] (return (not (match.test file)))))))
-  
+
   (var cdn-cache {})
 
   ## matches is an array. if global flag is set it is inclusive, else exclusive
   (var cdn-load (lambda [source pkg matches next-step=>]
     (return? (get cdn-cache pkg) (next-step=>))
-    (set! (get cdn-cache pkg) true)
+    (dict.update! cdn-cache pkg true)
     (source pkg (lambda [asset]
       (set! asset.loaded {})
-      (sequential matches (lambda [match next-match=>]
-        ## RE with global flat is positive test, without is negative (exclude) 
+      (list.sequential matches (lambda [match next-match=>]
+        ## RE with global flat is positive test, without is negative (exclude)
         (cond match.global (cdn-load-some asset (inclusion match) next-match=>)
-	      (else)       (cdn-load-some asset (exclusion match) next-match=>))
+              (else)       (cdn-load-some asset (exclusion match) next-match=>))
       ) next-step=>)
     ))
   ))

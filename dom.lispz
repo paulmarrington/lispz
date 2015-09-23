@@ -7,11 +7,12 @@
 ))
   
 (var event-throttle (lambda [element event action]
-  (var timeout 0)
-  (element.addEventListener event (lambda [event]
-    (cond timeout (return))
-    (set! timeout (delay 66 (=> (action event))))
+  (var add null listener (lambda [event]
+    (element.removeEventListener event listener)
+    (set! timeout (delay 66 add))
+    (action event)
   ))
+  (var add (=> (element.addEventListener event listener)))
 ))
 
 (export {append! element event-throttle})

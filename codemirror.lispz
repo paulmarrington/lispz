@@ -1,9 +1,221 @@
-(using  "net diff-match-patch"
+(using  "net diff-match-patch message"
+  (var options (localStorage.getItem "CodeMirror-options"))
+  (cond options (var options (JSON.parse options))
+        (else)  (var options {
+    lineNumbers:        true
+    foldGutter:         true
+##  gutters:            ["CodeMirror-lint-markers"
+##                       "CodeMirror-foldgutter"]
+    lint:               true
+    matchBrackets:      true
+    autoCloseBrackets:  true
+    matchTags:          true
+    showTrailingSpace:  true
+    inputStyle:         "contenteditable"
+    autofocus:          true
+    dragDrop:           false
+    cursorScrollMargin: 5
+    scrollbarStyle:     "overlay"
+    extraKeys:          {
+      'Cmd-Left':         "goLineStartSmart"
+      'Ctrl-Q':           "fold_at_cursor"
+      'Ctrl-Space':       "autocomplete"
+      'Ctrl-/':           "toggleComment"
+      'Ctrl-<':           "goColumnLeft"
+      'Ctrl->':           "goColumnRight"
+      'Ctrl-Shift-F':     "clearSearch"
+      ## toMatchingTag appears to only work for XML
+      ## 'Ctrl-=':           "toMatchingTag"
+      'Alt-S':            "view_source"
+      'Ctrl-`':           "insertSoftTab"
+      'Shift-Ctrl-`':     "insertTab"
+      'Ctrl-,':           "delLineLeft"
+      'Ctrl-.':           "killLine"
+      'Shift-Ctrl-,':     "delWrappedLineLeft"
+      'Shift-Ctrl-.':     "delWrappedLineRight"
+      'Ctrl-9':           "delWordBefore"
+      'Ctrl-0':           "delWordAfter"
+      'Ctrl-6':           "transposeChars"
+      'Ctrl-Left':        "goWordLeft"
+      'Ctrl-Right':       "goWordRight"
+      'Ctrl-Home':        "goLineLeft"
+      'Ctrl-Shift-Home':  "goLineLeftSmart"
+      'Ctrl-End':         "goLineRight"
+     }
+  }))
+  (var update-options (=>
+    (localStorage.setItem "CodeMirror-options" (JSON.stringify options))
+  ))
+  ## Context menu for code editor
+  (var topic "CodeMirror-command")
+  (var menu [[
+    {title: "File" children: [[
+      {topic meta: "save" title: "Save"}
+    ]]}
+    {title: "Edit" children: [[
+      {topic meta: "autocomplete" title: "Auto-Complete" }
+      {topic meta: "redo" title: "Redo"}
+      {topic meta: "undo" title: "Undo"}
+      {topic meta: "redoSelection" title: "Redo Selection"}
+      {topic meta: "undoSelection" title: "Undo Selection"}
+      {divider: true}
+      {topic meta: "toggleOverwrite" title: "Insert/Overwrite"}
+      {topic meta: "toggleComment" title: "Comment/Uncomment" }
+      {topic meta: "insertTab" title: "Insert Tab" }
+      {topic meta: "insertSoftTab" title: "Insert Soft Tab" }
+      {topic meta: "defaultTab" title: "Tab or Indent"}
+      {title: "Delete" children: [[
+        {topic meta: "deleteLine" title: "Line"}
+        {topic meta: "killLine" title: "Line Right" }
+        {topic meta: "delLineLeft" title: "Line Left" }
+        {divider: true}
+        {topic meta: "delWrappedLineLeft" title: "Wrapped Line Left" }
+        {topic meta: "delWrappedLineRight" title: "Wrapped Line Right" }
+        {divider: true}
+        {topic meta: "delWordBefore" title: "Word Left" }
+        {topic meta: "delWordAfter" title: "Word Right" }
+        {divider: true}
+        {topic meta: "delGroupBefore" title: "Group Before"}
+        {topic meta: "delGroupAfter" title: "Group After"}
+        {divider: true}
+        {topic meta: "delCharBefore" title: "Character Left"}
+        {topic meta: "delCharAfter" title: "Character Right"}
+      ]]}
+      {topic meta: "indentAuto" title: "Auto Indent"}
+      {topic meta: "indentLess" title: "Indent Left"}
+      {topic meta: "indentMore" title: "Indent Right"}
+      {topic meta: "newlineAndIndent" title: "New line and indent"}
+      {divider: true}
+      {topic meta: "transposeChars" title: "Transpose Characters" }
+      {divider: true}
+      {topic meta: "selectAll" title: "Select All"}
+      {topic meta: "singleSelection" title: "Single Selection"}
+    ]]}
+    {title: "Go" children: [[
+      {topic meta: "goDocStart" title: "Document Start"}
+      {topic meta: "goDocEnd" title: "Document End"}
+      {divider: true}
+      {topic meta: "goCharLeft" title: "Char Left"}
+      {topic meta: "goCharRight" title: "Char Right"}
+      {divider: true}
+      {topic meta: "goColumnLeft" title: "Column Left" }
+      {topic meta: "goColumnRight" title: "Column Right" }
+      {divider: true}
+      {topic meta: "goGroupLeft" title: "Group Left"}
+      {topic meta: "goGroupRight" title: "Group Right"}
+      {divider: true}
+      {topic meta: "goWordLeft" title: "Word Left" }
+      {topic meta: "goWordRight" title: "Word Right" }
+      {divider: true}
+      {topic meta: "goLineStart" title: "Line Start"}
+      {topic meta: "goLineStartSmart" title: "Smart Line Start" }
+      {topic meta: "goLineEnd" title: "Line End"}
+      {divider: true}
+      {topic meta: "goLineLeft" title: "Line Left" }
+      {topic meta: "goLineLeftSmart" title: "Smart Line Left" }
+      {topic meta: "goLineRight" title: "Line Right" }
+      {divider: true}
+      {topic meta: "goLineUp" title: "Line Up"}
+      {topic meta: "goLineDown" title: "Line Down"}
+      {divider: true}
+      {topic meta: "goPageUp" title: "Page Up"}
+      {topic meta: "goPageDown" title: "Page Down"}
+    ]]}
+    {title: "Search" children: [[
+      {topic meta: "find" title: "Find..."}
+      {topic meta: "findNext" title: "Find Next"}
+      {topic meta: "findPrev" title: "Find Previous"}
+      {topic meta: "clearSearch" title: "Clear Search" }
+      {divider: true}
+      {topic meta: "replace" title: "Replace"}
+      {topic meta: "replaceAll" title: "Replace All"}
+      ## {divider: true} appears to only work for XML
+      ## {topic meta: "toMatchingTag" title: "Matching Tag" }
+    ]]}
+    {title: "View" children: [[
+      {topic meta: "fold_at_cursor" title: "Fold at Cursor" }
+      {topic meta: "view_source" title: "View Source" }
+      {title: "Theme" children: [[
+        {title: "Dark" children: [[
+          {topic meta: "set_option,theme,3024-night" title: "3024"}
+          {topic meta: "set_option,theme,ambiance" title: "Ambience"}
+          {topic meta: "set_option,theme,ambiance-mobile" title: "Ambience (mobile)"}
+          {topic meta: "set_option,theme,base16-dark" title: "Base 16"}
+          {topic meta: "set_option,theme,blackboard" title: "Blackboard"}
+          {topic meta: "set_option,theme,cobalt" title: "Cobalt"}
+          {topic meta: "set_option,theme,colorforth" title: "Colour Forth"}
+          {topic meta: "set_option,theme,erlang-dark" title: "Erlang Dark"}
+          {topic meta: "set_option,theme,lesser-dark" title: "Lesser Dark"}
+          {topic meta: "set_option,theme,mbo" title: "MBO"}
+          {topic meta: "set_option,theme,midnight" title: "Midnight"}
+          {topic meta: "set_option,theme,monokai" title: "Monokai"}
+          {topic meta: "set_option,theme,night" title: "Night"}
+          {topic meta: "set_option,theme,paraiso-dark" title: "Paraiso"}
+          {topic meta: "set_option,theme,pastel-on-dark" title: "Pastel"}
+          {topic meta: "set_option,theme,rubyblue" title: "Ruby Blue"}
+          {topic meta: "set_option,theme,the-matrix" title: "The Matrix"}
+          {topic meta: "set_option,theme,tomorrow-night-bright" title: "Tomorrow Night"}
+          {topic meta: "set_option,theme,tomorrow-night-eighties" title: "Tomorrow Night Eighties"}
+          {topic meta: "set_option,theme,twilight" title: "Twilight"}
+          {topic meta: "set_option,theme,vibrant-ink" title: "Vibrant Ink"}
+          {topic meta: "set_option,theme,xq-dark" title: "XQ Dark"}
+          {topic meta: "set_option,theme,zenburn" title: "Zenburn"}
+        ]]}            
+        {title: "Light" children: [[
+          {topic meta: "set_option,theme,3024-day" title: "3024"}
+          {topic meta: "set_option,theme,base16-light" title: "Base 16"}
+          {topic meta: "set_option,theme,default" title: "Default"}
+          {topic meta: "set_option,theme,eclipse" title: "Eclipse"}
+          {topic meta: "set_option,theme,elegant" title: "Elegant"}
+          {topic meta: "set_option,theme,mdn-line" title: "MDN"}
+          {topic meta: "set_option,theme,neat" title: "Neat"}
+          {topic meta: "set_option,theme,neo>Neo"}
+          {topic meta: "set_option,theme,paraiso-light" title: "Paraiso"}
+          {topic meta: "set_option,theme,solarized" title: "Solarized"}
+          {topic meta: "set_option,theme,xq-light" title: "XQ Light"}
+        ]]}
+      ]]}
+    ]]}
+    {title: "Settings" children: [[
+      {title: "Keyboard" children: [[
+        {topic meta: "set_mode,default" title: "Code Mirror"}
+        {topic meta: "set_mode,emacs" title: "Emacs"}
+        {topic meta: "set_mode,vim" title: "Vi"}
+      ]]}
+      {divider: true}
+      {topic meta: "toggle_option,smartIndent" title: "Auto-indent"}
+      {title: "Indent" children: [[
+        {topic meta: "set_option,indentUnit,2" title: "2"}
+        {topic meta: "set_option,indentUnit,4" title: "4"}
+      ]]}
+      {topic meta: "toggle_option,autoCloseBrackets" title: "Close Brackets"}
+      {topic meta: "toggle_option,matchBrackets" title: "Match Brackets"}
+      {topic meta: "toggle_option,matchTags" title: "Match Tags"}
+      {divider: true}
+      {title: "Scroll Margin" children: [[
+        {topic meta: "set_option,cursorScrollMargin,0" title: "0"}
+        {topic meta: "set_option,cursorScrollMargin,2" title: "2"}
+        {topic meta: "set_option,cursorScrollMargin,4" title: "4"}
+      ]]}
+      {topic meta: "toggle_option,continueComments" title: "Comment Continuation"}
+      {topic meta: "toggle_option,showTrailingSpace" title: "Show Trailing Spaces"}
+      {topic meta: "toggle_option,dragDrop" title: "Toggle Drag and Drop"}
+      {topic meta: "toggle_option,lineNumbers" title: "Toggle Line Numbers"}
+      {topic meta: "toggle_option,lineWrapping" title: "Toggle Line Wrap"}
+    ]]}
+  ]])
+  (message.send "CodeMirror-menu" menu)
+  (message.listen "CodeMirror-command" (lambda [data]
+    (var args (data.item.meta.split ","))
+    (var command (args.shift))
+    (args.unshift cm)
+    ((get CodeMirror.commands command).apply CodeMirror args)
+  ))
   ## elm script has a bug - restore for a later version.
   ## tern is for javascript features - overrides console.log
   (net.cdnjs-load "codemirror"
     [['/codemirror.js$/g' '/simple.js$/g'
       '/\.min\.|_test\.js$|\.node\.js$|standalone\.js|elm\.js$|\/tern\//']] (=>
-    (export {CodeMirror})
+    (export {CodeMirror options})
   ))
 )

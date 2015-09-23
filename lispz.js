@@ -1,11 +1,11 @@
 var lispz = function() {
   var delims = "(){}[]n".split(''), // characters that are not space separated atoms
   not_delims = delims.join("\\"), delims = delims.join('|\\'),
-  stringRE = "''|'[\\s\\S]*?[^\\\\]'|" + '""|"[\\s\\S]*?[^\\\\]"|' +
+  stringRE = "''|'[\\s\\S]*?[^\\\\]':?|" + '""|"[\\s\\S]*?[^\\\\]"|' +
     '###+(?:.|\\r*\\n)*?###+|' + '##\\s+.*?\\r*\\n|',
   tkre = new RegExp('(' + stringRE + '\\' + delims + "|[^\\s" + not_delims + "]+)", 'g'),
   opens = new Set("({["), closes = new Set(")}]"), ast_to_js, slice = [].slice, contexts = [],
-  module = {line:0, name:"boot"}, modules = {}, globals = {},
+  module = {line:0, name:"boot"}, modules = {}, globals = {}, load_index = 0,
   synonyms = {and:'&&',or:'||',is:'===',isnt:'!=='},
   jsify = function(atom) {
     if (/^'.*'$/.test(atom)) return atom.slice(1, -1).replace(/\\n/g, '\n')
@@ -158,13 +158,15 @@ var lispz = function() {
   http_request = function(uri, type, callback) {
     var req = new XMLHttpRequest()
     req.open(type, uri, true)
+    if (lispz.debug && uri.indexOf(":") == -1)
+      req.setRequestHeader("Cache-Control", "no-cache")
     req.onerror = function(err) {
       callback({ uri: uri, error: err })
     }
     req.onload = function() {
       manifest.push(req.responseURL)
       if (req.status === 200) callback({ uri:uri, text: req.responseText })
-      else                    req.onerror(req.statusText) 
+      else                    req.onerror(req.statusText)
     }
     req.send()
   },

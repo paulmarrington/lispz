@@ -1,7 +1,8 @@
 <firepad>
   <!-- <firepad name=pad-name [db=default]> -->
-  <div name=wrapper>
-  </div>
+  <panel height={ opts.height } heading={ opts.heading } menu={ menu } >
+    <div name=wrapper> </div>
+  </panel>
   <style>
     firepad .CodeMirror {
       position: absolute;
@@ -13,23 +14,24 @@
     }
   </style>
   <script type=text/lispz>
-    (var tag this)
+    (var wrapper this.tags.panel.wrapper)
+    (set! this.menu "CodeMirror-menu")
     (using  "firebase codemirror firepad message"
-      (var cm (CodeMirror tag.wrapper) pad null)
+      (var cm (CodeMirror wrapper) pad null)
 
       (var close (lambda []
         (return? (not pad) false)
-	(pad.dispose)
-	(set! pad false)
+        (pad.dispose)
+        (set! pad false)
       ))
 
       (var open (lambda [packet]
         (close)
         (var db (firebase.attach packet.key packet.db))
-	(var rich_text (is packet.type "richtext"))
-	(set! pad (Firepad.fromCodeMirror db cm
-	  {richTextShortcuts: rich_text richTextToolbar: rich_text}
-	))
+        (var rich_text (is packet.type "richtext"))
+        (set! pad (Firepad.fromCodeMirror db cm
+          {richTextShortcuts: rich_text richTextToolbar: rich_text}
+        ))
       ))
 
       (message.dispatch (+ "firepad/" opts.name) { open close })
