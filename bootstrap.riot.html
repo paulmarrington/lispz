@@ -19,6 +19,9 @@
     panel .panel {
       position: relative;
     }
+    panel .panel-title {
+      cursor: default;
+    }
     panel .panel-body {
       position: absolute;
       top: 40px;
@@ -45,13 +48,13 @@
 
 <bars-menu>
   <div name=dropdown class="dropdown { right: opts.align === 'right' }">
-    <a style="text-decoration: none" data-toggle="dropdown"
+    <a style="text-decoration: none" data-toggle="dropdown" name=bars
     class="glyphicon glyphicon-menu-hamburger dropdown-toggle" aria-hidden="true"
     ></a>
     <ul class="dropdown-menu { dropdown-menu-right: opts.align === 'right' }">
       <li each={ items } class={ dropdown-header: header && title,
           divider: divider, disabled: disabled }><a onclick={ goto } href="#">
-          <span class="caret" if={ children }></span>
+          <span class="pointer right float-right" if={ children }></span>
           { title }
       </a></li>
     </ul>
@@ -59,6 +62,7 @@
   <style>
     bars-menu > div.right { float: right }
     bars-menu span.caret { margin-left: -11px }
+    bars-menu a.dropdown-toggle { cursor: pointer }
   </style>
   <script type=text/lispz>
     (var tag this root null)
@@ -81,6 +85,7 @@
           {item: ev.item owner: opts.owner action: "select"}))
         (cond ev.item.children (do
           (set! tag.items ev.item.children)
+          (ev.currentTarget.blur)
           (ev.stopPropagation)
         ))
       ))
@@ -223,7 +228,31 @@
 
 <bootstrap>
   <div id=page-wrapper><yield/></div>
-  <style></style>
+  <style>
+    .pointer {
+      border: 5px solid transparent;
+      display: inline-block;
+      width: 0;
+      height: 0;
+      vertical-align: middle;
+    }
+    .pointer.float-right {
+      float: right;
+      margin-top: 5px;
+    }
+    .pointer.up {
+        border-bottom: 5px solid;
+    }
+    .pointer.right {
+        border-left: 5px solid;
+    }
+    .pointer.down {
+        border-top: 5px solid;
+    }
+    .pointer.left {
+        border-right: 5px solid;
+    }
+  </style>
   <script type=text/lispz>
     (var tag this)
     (using  "dom net jquery riot message"
