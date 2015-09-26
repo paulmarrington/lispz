@@ -1,6 +1,7 @@
 <firepad>
   <!-- <firepad name=pad-name [db=default]> -->
-  <panel height={ opts.height } heading={ opts.heading } menu={ menu } >
+  <panel height={ opts.height } heading={ opts.heading }
+      menu={ menu } owner={ _id }>
     <div name=wrapper> </div>
   </panel>
   <style>
@@ -14,10 +15,10 @@
     }
   </style>
   <script type=text/lispz>
-    (var wrapper this.tags.panel.wrapper)
-    (set! this.menu "CodeMirror-menu")
+    (var tag this)
+    (set! tag.menu "CodeMirror-menu")
     (using  "firebase codemirror firepad message"
-      (var cm (CodeMirror wrapper) pad null)
+      (var cm (codemirror.open tag._id tag.tags.panel.wrapper) pad null)
 
       (var close (lambda []
         (return? (not pad) false)

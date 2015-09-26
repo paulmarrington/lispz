@@ -20,4 +20,4 @@
   (return dictionary)
 ))
 
-(export merge from-list update!)
+(export merge from-list)

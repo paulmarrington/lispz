@@ -81,7 +81,8 @@
       ))
 
       (set! tag.goto (lambda [ev]
-        (cond ev.item.topic (message.send ev.item.topic
+        (cond ev.item.topic (message.send
+          (+ opts.owner "-" ev.item.topic)
           {item: ev.item owner: opts.owner action: "select"}))
         (cond ev.item.children (do
           (set! tag.items ev.item.children)

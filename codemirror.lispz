@@ -1,4 +1,4 @@
-(using  "net diff-match-patch message"
+(using  "net diff-match-patch message dict"
   (var options (localStorage.getItem "CodeMirror-options"))
   (cond options (var options (JSON.parse options))
         (else)  (var options {
@@ -49,9 +49,9 @@
   ## Context menu for code editor
   (var topic "CodeMirror-command")
   (var menu [[
-    {title: "File" children: [[
+    ### {title: "File" children: [[
       {topic meta: "save" title: "Save"}
-    ]]}
+    ]]} ###
     {title: "Edit" children: [[
       {topic meta: "autocomplete" title: "Auto-Complete" }
       {topic meta: "redo" title: "Redo"}
@@ -133,8 +133,8 @@
       ## {topic meta: "toMatchingTag" title: "Matching Tag" }
     ]]}
     {title: "View" children: [[
+      {topic meta: "view_keyboard_shortcuts" title: "Keyboard Shortcuts" }
       {topic meta: "fold_at_cursor" title: "Fold at Cursor" }
-      {topic meta: "view_source" title: "View Source" }
       {title: "Theme" children: [[
         {title: "Dark" children: [[
           {topic meta: "set_option,theme,3024-night" title: "3024"}
@@ -180,6 +180,7 @@
       {title: "Keyboard" children: [[
         {topic meta: "set_mode,default" title: "Code Mirror"}
         {topic meta: "set_mode,emacs" title: "Emacs"}
+        {topic meta: "set_mode,sublime" title: "Sublime"}
         {topic meta: "set_mode,vim" title: "Vi"}
       ]]}
       {divider: true}
@@ -204,18 +205,85 @@
       {topic meta: "toggle_option,lineWrapping" title: "Toggle Line Wrap"}
     ]]}
   ]])
-  (message.send "CodeMirror-menu" menu)
-  (message.listen "CodeMirror-command" (lambda [data]
+  (var listener (lambda [cm data]
     (var args (data.item.meta.split ","))
     (var command (args.shift))
     (args.unshift cm)
     ((get CodeMirror.commands command).apply CodeMirror args)
   ))
+  (var open (lambda [owner wrapper]
+    (var cm (CodeMirror wrapper options))
+    (set! cm.listener (lambda [data] (listener cm data)))
+    (message.send "CodeMirror-menu" menu)
+    (message.listen (+ owner "-" "CodeMirror-command") cm.listener)
+    (return cm)
+  ))
+  (var close (lambda [cm]
+    (message.remove cm.listener)
+  ))
+  (var spaces "                ")
+  (var extra-commands {
+    view_keyboard_shortcuts: (lambda [cm]
+      (var keys [[]])
+      (var one-map (lambda [map]
+        ((Object.keys map).forEach (lambda [key]
+          (cond
+            (is key "fallthrough") (do
+                (var more (get map key))
+                (cond (is (typeof more) "string") (var more [[more]]))
+                (more.forEach (lambda [map] 
+                  (one-map (get CodeMirror.keyMap map))))
+              )
+            (else) (keys.push (+ key ": " (get map key)))
+          )
+        ))
+      ))
+      (one-map cm.options.extraKeys)
+      (var core (get CodeMirror.keyMap cm.options.keyMap))
+      (cond (not core.fallthrough)
+        (set! core.fallthrough CodeMirror.keyMap.default.fallthrough))
+      (one-map core)
+      (window.open
+        (+ "data:text/html," (encodeURIComponent (keys.join "<br>")))
+        "Keys" "width=300,height=600")
+    )
+    fold_at_cursor: (lambda [cm]
+      (cm.foldCode (cm.getCursor))
+    )
+    toggle_option: (lambda [cm name]
+      (CodeMirror.commands.set_option cm name (not (cm.getOption name)))
+    )
+    set_option: (lambda [cm name value]
+      (cm.setOption name value)
+      (dict.update! options name value)
+      (update-options)
+    )
+    set_mode: (lambda [cm mode]
+      (CodeMirror.commands.set_option cm "keyMap" mode)
+    )
+    auto_complete: (lambda [cm]
+      (var not-only (lambda []
+        (var result (CodeMirror.hint.anyword.apply null arguments))
+        (return? (isnt result.list.length 1) result)
+        (var size (- result.to.ch result.from.ch))
+        (return? (isnt (do (get list 0).length) size) result)
+        (set! result.list [[]])
+        (return result)
+      ))
+    )
+    insertTab: (lambda [cm]
+      (var tab_space (+ (cm.getOption "indentUnit") 1))
+      (cm.replaceSelection tab_space "end" "+input")
+    )
+  })
   ## elm script has a bug - restore for a later version.
   ## tern is for javascript features - overrides console.log
   (net.cdnjs-load "codemirror"
     [['/codemirror.js$/g' '/simple.js$/g'
       '/\.min\.|_test\.js$|\.node\.js$|standalone\.js|elm\.js$|\/tern\//']] (=>
-    (export {CodeMirror options})
+    ((Object.keys extra-commands).forEach (lambda [key]
+      (dict.update! CodeMirror.commands key (get extra-commands key))
+    ))
+    (export {CodeMirror options open close})
   ))
 )
