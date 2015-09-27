@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html manifest=firepad-test.cache-manifest>
   <head>
+    <meta charset="utf-8">
     <title>FirePad Test Canvas</title>
   <body>
     <bootstrap class=riot>
     <page-content fluid=true>
-    <firepad class=riot name=test height=30% heading="test.lispz"/>
+    <firepad class=riot name=test height=30% heading="Heading"/>
     </page-content>
     </bootstrap>
     
@@ -14,10 +15,10 @@
     <script id=test_code type="text/lispz">
       (set! lispz.debug true)
       (using "firebase message jquery"
-        (firebase.register "default" "https://sizzling-heat-3048.firebaseapp.com")
+        (firebase.register "default" "https://sizzling-heat-3048.firebaseio.com")
         (using "riot"
-          (message.wait-for "firebase/test" (=>
-            (message.send "firebase/test"
+          (message.wait-for "firepad/test" (=>
+            (message.send "firepad/test"
               {action: "open" type: "richtext" key: "firepads/test-1"})
           ))
         )

@@ -2,17 +2,23 @@
   <!-- <firepad name=pad-name [db=default]> -->
   <panel height={ opts.height } heading={ opts.heading }
       menu={ menu } owner={ _id }>
-    <div name=wrapper> </div>
+    <div name=wrapper class=wrapper></div>
   </panel>
   <style>
-    firepad .CodeMirror {
+    firepad .wrapper {
       position: absolute;
-      top: 0;
-      bottom: 0;
-      left: 5px;
-      right: 0;
+      top: 0; bottom: 0;
+      left: 0; right: 0;
       height: initial;
     }
+    firepad .CodeMirror {
+      position: absolute;
+      top: 0; bottom: 0;
+      left: 5px; right: 0;
+      height: initial;
+    }
+    a.powered-by-firepad { display: none; }
+    div.firepad-toolbar { margin-top: -25px; }
   </style>
   <script type=text/lispz>
     (var tag this)
@@ -29,9 +35,8 @@
       (var open (lambda [packet]
         (close)
         (var db (firebase.attach packet.key packet.db))
-        (var rich_text (is packet.type "richtext"))
         (set! pad (Firepad.fromCodeMirror db cm
-          {richTextShortcuts: rich_text richTextToolbar: rich_text}
+          {richTextShortcuts: false richTextToolbar: false}
         ))
       ))
 

@@ -1,9 +1,16 @@
-(var store {})
+(var store {}  expecting {})
 
 (var exchange (lambda [address]
   (var envelope (get store address))
   (return? envelope envelope)
   (return (dict.update! store address [[]]))
+))
+
+(var add (lambda [address envelope]
+  (var envelopes (exchange address))
+  (envelopes.push envelope)
+  (cond (and (is envelopes.length 1) (get expecting address))
+        (do ((get expecting address)) (delete (get expecting address))))
 ))
 
 ## remove a recipient from all attached addresses
@@ -25,17 +32,17 @@
 ))
 
 (var expect (lambda [address listener=>]
-  ((exchange address).push {once: true listener=>})
+  (add address {once: true listener=>})
 ))
 
 ## Only add expect if no other listeners - otherwise respond immediately
 (var wait-for (lambda [address listener=>]
   (return? (length (exchange address)) (listener=>))
-  (expect address listener=>)
+  (dict.update! expecting address listener=>)
 ))
 
 (var listen (lambda [address listener=>]
-  ((exchange address).push {listener=>})
+  (add address {listener=>})
 ))
 
 (var dispatch (lambda [address actions]
@@ -44,7 +51,6 @@
     (return? (not action) false)
     (action packet)
   ))
-  (send address {action: "#add dispatcher"})
 ))
 
 (export {exchange send expect listen dispatch wait-for})
