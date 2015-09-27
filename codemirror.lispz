@@ -11,7 +11,7 @@
     autoCloseBrackets:  true
     matchTags:          true
     showTrailingSpace:  true
-    inputStyle:         "contenteditable"
+    inputStyle:         "textarea" ## change to "contenteditable" after vim cursor bug fix
     autofocus:          true
     dragDrop:           false
     cursorScrollMargin: 5
