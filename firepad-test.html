@@ -6,7 +6,7 @@
   <body>
     <bootstrap class=riot>
     <page-content fluid=true>
-    <firepad class=riot name=test height=30% heading="Heading"/>
+    <firepad class=riot name=test height=30% />
     </page-content>
     </bootstrap>
     
@@ -19,7 +19,7 @@
         (using "riot"
           (message.wait-for "firepad/test" (=>
             (message.send "firepad/test"
-              {action: "open" type: "richtext" key: "firepads/test-1"})
+              {action: "open" type: "richtext" key: "firepads/test-1.lispz"})
           ))
         )
       )

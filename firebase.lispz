@@ -6,10 +6,17 @@
     (localStorage.setItem "firebases" (JSON.stringify databases))
   ))
 
+  (var encode (lambda [before]
+    (var uri (before.replace '/\./g' ":"))
+    (var uri (uri.replace    '/#/g'  "_hash_"))
+    (var uri (uri.replace    '/\$/g' "_dollar_"))
+    (return uri)
+  ))
+
   (var attach (lambda [collection db]
     (var uri (get databases (or db "default")))
-    (return? (not uri) null)
-    (return (new Firebase (+ uri "/" collection)))
+    (return-if (not uri) null)
+    (return (new Firebase (+ uri "/" (encode collection))))
   ))
 
   (net.script

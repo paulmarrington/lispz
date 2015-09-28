@@ -4,7 +4,7 @@
 (var sequential (lambda [list for-each=> on-complete=>]
   (var list (slice list))
   (var each=> (=>
-    (return? (not list.length) (on-complete=>))
+    (return-if (not list.length) (on-complete=>))
     (for-each=> (list.shift) each=>)
   ))(each=>)
 ))

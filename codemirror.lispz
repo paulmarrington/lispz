@@ -264,9 +264,9 @@
     auto_complete: (lambda [cm]
       (var not-only (lambda []
         (var result (CodeMirror.hint.anyword.apply null arguments))
-        (return? (isnt result.list.length 1) result)
+        (return-if (isnt result.list.length 1) result)
         (var size (- result.to.ch result.from.ch))
-        (return? (isnt (do (get list 0).length) size) result)
+        (return-if (isnt (do (get list 0).length) size) result)
         (set! result.list [[]])
         (return result)
       ))
@@ -276,6 +276,148 @@
       (cm.replaceSelection tab_space "end" "+input")
     )
   })
+  ## Editing modes dependent on file type
+  (var mode-extensions {
+    apl: "apl" as3: "apl" asf: "apl"
+    c: "clike" cpp: "clike" h: "clike" cs: "clike"
+    chh: "clike" hh: "clike" h__: "clike" hpp: "clike"
+    hxx: "clike" cc: "clike" cxx: "clike" c__: "clike"
+    "c++": "clike" stl: "clike" sma: "clike"
+    java: "clike" scala: "clike" clj: "clojure"
+    cpy: "cobol" cbl: "cobol"cob: "cobol"
+    coffee: "coffeescript" coffeescript: "coffeescript"
+    "gwt.coffee": "coffeescript"
+    vlx: "commonlisp" fas: "commonlisp" lsp: "commonlisp"
+    el: "commonlisp" css: "css" less: "css"
+    dl: "d" d: "d" diff: "diff" dtd: "dtd" dylan: "dylan"
+    ecl: "ecl" e: "eiffel" erl: "erlang" hrl: "erlang"
+    f: "fortran" for: "fortran" FOR: "fortran"
+    f95: "fortran" f90: "fortran" f03: "fortran"
+    gas: "gas" gfm: "gfm" feature: "gherkin" go: "go"
+    groovy: "groovy" "html.haml": "haml" hx: "haxe"
+    lhs: "haskell" gs: "haskell" hs: "haskell"
+    asp: "htmlembedded" jsp: "htmlembedded"
+    ejs: "htmlembedded" http: "http"
+    html: "htmlmixed" htm: "htmlmixed" ".py.jade": "jade"
+    js: "javascript" json: "javascript" jinja2: "jinja2"
+    jl: "julia" ls: "livescript" lua: "lua"
+    markdown: "markdown" mdown: "markdown" mkdn: "markdown"
+    md: "markdown" mkd: "markdown" mdwn: "markdown"
+    mdtxt: "markdown" mdtext: "markdown"
+    mdx: "mirc" dcx: "mirc"
+    ml: "mllike" fs: "mllike" fsi: "mllike"
+    mli: "mllike" fsx: "mllike" fsscript: "mllike"
+    nginx: "nginx" nt: "ntriples" mex: "octave"
+    pas: "pascal" pegjs: "pegjs" ps: "perl"
+    php: "php" "lib.php": "php"
+    pig: "pig" ini: "properties" properties: "properties"
+    pp: "puppet" py: "python" q: "q" r: "r"
+    rpm: "rpm" "src.rpm": "rpm" rst: "rst" rb: "ruby"
+    rs: "rust" sass: "sass" scm: "scheme" ss: "scheme"
+    sh: "shell" sieve: "sieve"
+    sm: "smalltalk" st: "smalltalk" tpl: "smartymixed"
+    solr: "solr" sparql: "sparql" sql: "sql"
+    stex: "stex" tex: "stex" tcl: "tcl" tw: "tiddlywiki"
+    tiki: "tiki" toml: "toml" ttl: "turtle" vb: "vb"
+    bas: "vbscript" vbs: "vbscript" vtl: "velocity"
+    v: "verilog" xml: "xml"
+    xquery: "xquery" xq: "xquery" xqy: "xquery"
+    yaml: "yaml" yml: "yaml" z80: "z80" asm: "z80"
+  })
+  (var saved-mode-extensions localStorage.CodeMirror-mode-extensions)
+  (cond saved-mode-extensions (var mode-extensions
+    (dict.merge mode-extensions saved-mode-extensions)
+  ))
+
+  (var set-mode (lambda [cm name]
+    (var try-mode (lambda [exts]
+      (var ext (exts.join "."))
+      (return? (get mode-extensions ext))
+      (return-if (get CodeMirror.modes ext) ext)
+      (return false)
+    ))
+    (var mode ((=>
+      (var parts (name.split "."))
+      (cond (> parts.length 2) (return? (try-mode (parts.slice -2))))
+      (return? (try-mode (parts.slice -1)))
+      (return  "text")
+    )))
+    (cm.setOption "mode" mode)
+    (CodeMirror.autoLoadMode cm mode)
+    (cond (contains [["lispz" "commonlisp" "scheme" "clojure"]] mode)
+        (cm.setOption "keyMap" "subpar")
+      (else)
+        (cm.setOption "keyMap" (default? options.keyMap "default"))
+    )
+  ))
+
+  ## CodeMirror lispz mode
+  (var init-lispz-mode (=>
+  (CodeMirror.defineSimpleMode "lispz" {
+    start: [[
+      {regex: '/"(?:[^\\]|\\.)*?"/'                  token: "string"}
+      {regex: '/\([^\s\(\[]+/'                       token: "keyword"}
+      {regex: '/\).?/'                               token: "keyword"}
+      {regex: '/true|false|null|undefined|debugger/' token: "atom"}
+      {regex: '/0x[a-f\d]+|[-+]?(?:\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/i' token: "number"}
+      {regex: '/## .*/'                              token: "comment"}
+      {regex: '/\/(?:[^\\]|\\.)*?\//'                token: "variable-3"}
+      {regex: '/###/'                next: "comment" token: "comment" }
+      {regex: '/[\{\[\(]/'           indent: true}
+      {regex: '/[\}\]\)]/'           dedent: true}
+      {regex: '/[^\s\(\{\[\)\]\}]+/'                 token: "variable"}
+      {regex: '/\s+/' next: "start"}
+    ]]
+    comment: [[
+      {regex: '/###/' token: "comment" next: "start"}
+      {regex: '/.*/' token: "comment"}
+    ]]
+    meta: { lineComment: "## " dontIndentStates: [["comment"]] }
+  })
+  (set! CodeMirror.keyMap.subpar {
+    'Backspace':      (lambda [cm] (subpar.core.backward_delete cm))
+    'Delete':         (lambda [cm] (subpar.core.forward_delete cm))
+    'Ctrl-D':         (lambda [cm] (subpar.core.forward_delete cm))
+
+    'Shift-9':        (lambda [cm] (subpar.core.open_expression cm "()"))
+    '[':              (lambda [cm] (subpar.core.open_expression cm "[]"))
+    'Shift-[':        (lambda [cm] (subpar.core.open_expression cm "{}"))
+
+    'Shift-0':        (lambda [cm] (subpar.core.close_expression cm ")"))
+    ']':              (lambda [cm] (subpar.core.close_expression cm "]"))
+    'Shift-]':        (lambda [cm] (subpar.core.close_expression cm "}"))
+
+    'Shift-\'':        (lambda [cm] (subpar.core.double_quote cm))
+
+    'Ctrl-Alt-F':     (lambda [cm] (subpar.core.forward cm))
+    'Ctrl-Alt-B':     (lambda [cm] (subpar.core.backward cm))
+    'Ctrl-Alt-U':     (lambda [cm] (subpar.core.backward_up cm))
+    'Ctrl-Alt-D':     (lambda [cm] (subpar.core.forward_down cm))
+    'Ctrl-Alt-P':     (lambda [cm] (subpar.core.backward_down cm))
+    'Ctrl-Alt-N':     (lambda [cm] (subpar.core.forward_up cm))
+
+    'Shift-Ctrl-[':   (lambda [cm] (subpar.core.backward_barf cm))
+    'Ctrl-Alt-Right': (lambda [cm] (subpar.core.backward_barf cm))
+    'Ctrl-]':         (lambda [cm] (subpar.core.backward_barf cm))
+
+    'Shift-Ctrl-]':   (lambda [cm] (subpar.core.forward_barf cm))
+    'Ctrl-Left':      (lambda [cm] (subpar.core.forward_barf cm))
+
+    'Shift-Ctrl-9':   (lambda [cm] (subpar.core.backward_slurp cm))
+    'Ctrl-Alt-Left':  (lambda [cm] (subpar.core.backward_slurp cm))
+    'Ctrl-[':         (lambda [cm] (subpar.core.backward_slurp cm))
+
+    'Shift-Ctrl-0':   (lambda [cm] (subpar.core.forward_slurp cm))
+    'Ctrl-Right':     (lambda [cm] (subpar.core.forward_slurp cm))
+
+    'Alt-Up':         (lambda [cm] (subpar.core.splice_delete_backward cm))
+    'Alt-Down':       (lambda [cm] (subpar.core.splice_delete_forward cm))
+    'Alt-S':          (lambda [cm] (subpar.core.splice cm))
+    'Ctrl-Alt-/':    (lambda [cm] (subpar.core.indent_selection cm))
+    fallthrough:      [["basic" "emacs"]]
+  })
+  ))
+
   ## elm script has a bug - restore for a later version.
   ## tern is for javascript features - overrides console.log
   (net.cdnjs-load "codemirror"
@@ -284,6 +426,9 @@
     ((Object.keys extra-commands).forEach (lambda [key]
       (dict.update! CodeMirror.commands key (get extra-commands key))
     ))
-    (export {CodeMirror options open close})
+    (net.script "https://cdn.rawgit.com/achengs/subpar/master/resources/public/js/subpar.core.js" (=>
+      (init-lispz-mode)
+      (export {options open close set-mode})
+    ))
   ))
 )

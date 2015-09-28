@@ -4,7 +4,7 @@
   (var cache {})
 
   (var load (lambda [name uri next-step=>]
-    (return? (or (get cache name) (get cache uri)) (next-step=>))
+    (return-if (or (get cache name) (get cache uri)) (next-step=>))
     (net.http-get uri (lambda [response]
       (compile response.text)
       (riot.mount name)

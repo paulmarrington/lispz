@@ -1,6 +1,6 @@
 <firepad>
   <!-- <firepad name=pad-name [db=default]> -->
-  <panel height={ opts.height } heading={ opts.heading }
+  <panel height={ opts.height } heading={ heading }
       menu={ menu } owner={ _id }>
     <div name=wrapper class=wrapper></div>
   </panel>
@@ -23,11 +23,12 @@
   <script type=text/lispz>
     (var tag this)
     (set! tag.menu "CodeMirror-menu")
+    (set! tag.heading "Edit")
     (using  "firebase codemirror firepad message"
       (var cm (codemirror.open tag._id tag.tags.panel.wrapper) pad null)
 
       (var close (lambda []
-        (return? (not pad) false)
+        (return-if (not pad) false)
         (pad.dispose)
         (set! pad false)
       ))
@@ -38,6 +39,9 @@
         (set! pad (Firepad.fromCodeMirror db cm
           {richTextShortcuts: false richTextToolbar: false}
         ))
+        (codemirror.set-mode cm packet.key)
+        (set! tag.heading (last (packet.key.split "/")))
+        (tag.update)
       ))
 
       (message.dispatch (+ "firepad/" opts.name) { open close })

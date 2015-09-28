@@ -31,7 +31,7 @@
       (lambda [json]
         (var filtered (json.results.filter (lambda [it] (return (=== it.name pkg)))))
         ((get filtered 0).assets.some (lambda [it]
-          (return? (contains it.version "alpha") false)
+          (return-if (contains it.version "alpha") false)
           (set! it.base (+ "https://cdnjs.cloudflare.com/ajax/libs/" pkg "/" it.version "/"))
           (process-asset=> it)
           (return true)
@@ -54,7 +54,7 @@
 
   (var cdn-load-some (lambda [asset inclusion-test=> next-step=>]
       (list.sequential asset.files (lambda [file next-file=>]
-        (return? (or (get asset.loaded file) (not (inclusion-test=> file))) (next-file=>))
+        (return-if (or (get asset.loaded file) (not (inclusion-test=> file))) (next-file=>))
         (dict.update! asset.loaded file true)
         (var ext (last (file.split ".")))
         (var filepath (+ asset.base file))
@@ -74,7 +74,7 @@
 
   ## matches is an array. if global flag is set it is inclusive, else exclusive
   (var cdn-load (lambda [source pkg matches next-step=>]
-    (return? (get cdn-cache pkg) (next-step=>))
+    (return-if (get cdn-cache pkg) (next-step=>))
     (dict.update! cdn-cache pkg true)
     (source pkg (lambda [asset]
       (set! asset.loaded {})

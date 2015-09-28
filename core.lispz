@@ -9,7 +9,8 @@
   (macro name [&params] (#join '' 'lispz.globals.' name '(' &params ')')))
 (macro closure [params *body] (#join '' '(function(' params '){' *body '})(' params ')'))
 (macro return  [value] (#join '' 'return ' value '\n'))
-(macro return? [test value] (cond test (return value)))
+(macro return? [value] (cond value (return value)))
+(macro return-if [test value] (cond test (return value)))
 (macro new [cls params] (#join '' '(new ' cls '(' params '))'))
 
 ### Pure functional programming wants immutability - but we live in an impure world ###
@@ -22,6 +23,7 @@
 
 ### Operators ###
 (macro not [value] (#join '' '!(' value ')'))
+(macro in [test against] (#join '' '(' test ' in ' against ')'))
 
 ### conditional processing ###
 (macro empty? [list] (not list.length))

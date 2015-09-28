@@ -2,7 +2,7 @@
 
 (var exchange (lambda [address]
   (var envelope (get store address))
-  (return? envelope envelope)
+  (return? envelope)
   (return (dict.update! store address [[]]))
 ))
 
@@ -37,7 +37,7 @@
 
 ## Only add expect if no other listeners - otherwise respond immediately
 (var wait-for (lambda [address listener=>]
-  (return? (length (exchange address)) (listener=>))
+  (return-if (length (exchange address)) (listener=>))
   (dict.update! expecting address listener=>)
 ))
 
@@ -48,7 +48,7 @@
 (var dispatch (lambda [address actions]
   (listen address (lambda [packet]
     (var action (get actions packet.action))
-    (return? (not action) false)
+    (return-if (not action) false)
     (action packet)
   ))
 ))
