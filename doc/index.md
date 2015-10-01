@@ -6,4 +6,5 @@
 3. [Asynchronous Programming](async.md)
 4. [UI Components with RIOT](riot.md)
 5. [Bootstrap Integration](bootstrap.md)
+6. [CodeMirror Integration](codemirror.md)
 2. [Lispz Cheat Sheet](cheatsheet.md)
