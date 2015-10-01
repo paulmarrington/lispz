@@ -4,4 +4,4 @@ This is the shortest section in the book. If you have an Internet connection, th
 
 # The REPL
 
-While in development mode, a lispz repl is available in the browser by typing <Ctrl><Alt>L. Two entry fields will appear at the bottom of the screen, one for required packages and one for a lispz command. Output will be available on the JavaScript console.
+While in development mode, a lispz repl is available in the browser by typing Ctrl-Alt-L. Two entry fields will appear at the bottom of the screen, one for required packages and one for a lispz command. Output will be available on the JavaScript console.
