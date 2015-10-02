@@ -21,14 +21,28 @@ The first 'atom' can also be an anonymous function.
     
 Internally functional lists are either expanded into more lispz statements by a macro or are converted to a Javascript function. The list becomes the function arguments.
 
-    (console.log "Hello" "world")  ## ==> console.log("Hello" "world")
+    (console.log "Hello" "world")  ## ==> console.log("Hello", "world")
     
 Macros are amazing things. Addition does not expand to a function but to in-line code:
 
     (+ 1 2 3) ## ==> 1 + 2 + 3
 
 ## Raw List
+
+At the risk of repeating myself (and at the risk of repeating myself), Lispz is a lightweight compiler to JavaScript. A raw list is an sequence of atoms. When compiled to Javascript the sequence will be comma separated. It is most commonly used for parameters in a function definition:
+
+    (var expect (lambda [address listener=>]
+      (add address {once: true listener=>})
+    ))
+    
+The defined function, expect takes 2 parameters, being a string address and a function reference. The => at the end of this function reference is not syntax, just convenience text to show that this is a callback function.
+
 ## Array List
+
+For a traditional list or array, use [[]]. This will translate into a normal JavaScript array with standard functional support suchs as forEach and map.
+
+  (var list [[1 2 6 9 my-var "astring"]])
+
 ## Associative Array List
 
 # Operators
