@@ -21,11 +21,11 @@ The first 'atom' can also be an anonymous function.
     
 Internally functional lists are either expanded into more lispz statements by a macro or are converted to a Javascript function. The list becomes the function arguments.
 
-    (console.log "Hello" "world")  ## ==> console.log("Hello", "world")
+    (console.log "Hello" "world")  ## JS==> console.log("Hello", "world")
     
 Macros are amazing things. Addition does not expand to a function but to in-line code:
 
-    (+ 1 2 3) ## ==> 1 + 2 + 3
+    (+ 1 2 3) ## JS==> 1 + 2 + 3
 
 ## Raw List
 
@@ -41,7 +41,8 @@ The defined function, expect takes 2 parameters, being a string address and a fu
 
 For a traditional list or array, use [[]]. This will translate into a normal JavaScript array with standard functional support suchs as forEach and map.
 
-  (var list [[1 2 6 9 my-var "astring"]])
+    (var list [[1 2 6 9]])
+    (var double (list.map [item] (return (* item 2)))) ## JS==> [2, 4, 12, 18]
 
 ## Associative Array List
 
