@@ -1,15 +1,20 @@
+(var insert (lambda [target dictionaries]
+  (dictionaries.forEach (lambda [dictionary]
+    ((Object.keys dictionary).forEach (lambda [key]
+      (dict.update! target key (get dictionary key))
+    ))
+  ))
+  (return target)
+))
 ###
 # There is often need to merge multiple dictionaries together to create a new
 # combined one.
 ###
 (var merge (lambda [dictionaries]
-  (var merged {})
-  ((*arguments 0).forEach (lambda [dictionary]
-    ((Object.keys dictionary).forEach (lambda [key]
-      (dict.update! merged key (get dictionary key))
-    ))
-  ))
-  (return merged)
+  (return (insert {} (*arguments 0)))
+))
+(var insert! (lambda [target dictionaries]
+  (return (insert target (*arguments 0)))
 ))
 
 (var from-list (lambda [list key]
@@ -20,4 +25,4 @@
   (return dictionary)
 ))
 
-(export merge from-list)
+(export {merge from-list insert!})

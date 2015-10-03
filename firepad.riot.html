@@ -26,25 +26,21 @@
     (set! tag.heading "Edit")
     (using  "firebase codemirror firepad message"
       (var cm (codemirror.open tag._id tag.tags.panel.wrapper) pad null)
-
-      (var close (lambda []
-        (return-if (not pad) false)
-        (pad.dispose)
-        (set! pad false)
+      (var db (firebase.attach (+ "firepads/" opts.name) opts.db))
+      (set! pad (Firepad.fromCodeMirror db cm
+        {richTextShortcuts: false richTextToolbar: false}
       ))
 
       (var open (lambda [packet]
-        (close)
-        (var db (firebase.attach packet.key packet.db))
-        (set! pad (Firepad.fromCodeMirror db cm
-          {richTextShortcuts: false richTextToolbar: false}
-        ))
         (codemirror.set-mode cm packet.key)
         (set! tag.heading (last (packet.key.split "/")))
+        (cond packet.contents (pad.setText packet.contents))
         (tag.update)
       ))
 
-      (message.dispatch (+ "firepad/" opts.name) { open close })
+      (pad.on "ready" (=>
+        (message.dispatch (+ "firepad/" opts.name) { open })
+      ))
     )
   </script>
 </firepad>

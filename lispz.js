@@ -1,7 +1,9 @@
 var lispz = function() {
   var delims = "(){}[]n".split(''), // characters that are not space separated atoms
   not_delims = delims.join("\\"), delims = delims.join('|\\'),
-  stringRE = "''|'[\\s\\S]*?[^\\\\]':?|" + '""|"[\\s\\S]*?[^\\\\]"|' +
+  stringRE =
+    "''|'[\\s\\S]*?[^\\\\]':?|" +
+    '""|"(?:.|\\r*\\n)*?[^\\\\]"|' +
     '###+(?:.|\\r*\\n)*?###+|' + '##\\s+.*?\\r*\\n|',
   tkre = new RegExp('(' + stringRE + '\\' + delims + "|[^\\s" + not_delims + "]+)", 'g'),
   opens = new Set("({["), closes = new Set(")}]"), ast_to_js, slice = [].slice, contexts = [],
