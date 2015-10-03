@@ -152,7 +152,7 @@ var lispz = function() {
       var js = parse_to_ast(source).map(ast_to_js)
       module = last_module
       return js
-    } catch (err) { return compile_error(err.message, "") }
+    } catch (err) { return compile_error(err.message, source) }
   },
   run = function(name, source) { return compile(name, source).map(eval) },
   //######################### Script Loader ####################################//

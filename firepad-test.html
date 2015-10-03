@@ -9,7 +9,7 @@
     <firepad class=riot name=test height=30% db=default />
     </page-content>
     </bootstrap>
-    
+
     <lispz-repl class=riot></lispz-repl>
     <script src=/lispz/lispz.js></script>
     <script id=test_code type="text/lispz">
@@ -28,7 +28,7 @@
         </tag-name>")
       (set! lispz.debug true)
       (using "firebase message jquery"
-        ## (firebase.register "default" "https://sizzling-heat-3048.firebaseio.com")
+        (firebase.register "default" "https://sizzling-heat-3048.firebaseio.com")
         (using "riot"
           (message.wait-for "firepad/test" (=>
             (message.send "firepad/test"

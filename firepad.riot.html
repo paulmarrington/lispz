@@ -24,11 +24,18 @@
     (var tag this)
     (set! tag.menu "CodeMirror-menu")
     (set! tag.heading "Edit")
-    (using  "firebase codemirror firepad message"
-      (var cm (codemirror.open tag._id tag.tags.panel.wrapper) pad null)
-      (var db (firebase.attach (+ "firepads/" opts.name) opts.db))
-      (set! pad (Firepad.fromCodeMirror db cm
-        {richTextShortcuts: false richTextToolbar: false}
+    (using  "firebase codemirror firepad message dict"
+      (var cm (codemirror.open tag._id tag.tags.panel.wrapper))
+      (var pad {
+        setText:  (lambda [contents] (cm.setValue contents))
+        on-ready: (lambda [act] (act))
+      })
+      (cond opts.db (do
+        (var db (firebase.attach (+ "firepads/" opts.name) opts.db))
+        (set! pad (Firepad.fromCodeMirror db cm
+          {richTextShortcuts: false richTextToolbar: false}
+        ))
+        (set! pad.on-ready (lambda [act] (pad.on "ready" act)))
       ))
 
       (var open (lambda [packet]
@@ -38,7 +45,7 @@
         (tag.update)
       ))
 
-      (pad.on "ready" (=>
+      (pad.on-ready (=>
         (message.dispatch (+ "firepad/" opts.name) { open })
       ))
     )

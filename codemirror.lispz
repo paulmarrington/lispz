@@ -80,6 +80,8 @@
       'Alt-Down':         "subpar_splice_delete_forward"
       'Alt-S':            "subpar_splice"
       'Ctrl-Alt-/':       "subpar_indent_selection"
+
+      'Alt-Enter':        "lispz_run_selection"
      }
   }))
   ## write changed options back to persistent storage
@@ -200,7 +202,7 @@
           {topic meta: "set_option,theme,vibrant-ink" title: "Vibrant Ink"}
           {topic meta: "set_option,theme,xq-dark" title: "XQ Dark"}
           {topic meta: "set_option,theme,zenburn" title: "Zenburn"}
-        ]]}            
+        ]]}
         {title: "Light" children: [[
           {topic meta: "set_option,theme,3024-day" title: "3024"}
           {topic meta: "set_option,theme,base16-light" title: "Base 16"}
@@ -271,7 +273,7 @@
             (is key "fallthrough") (do
                 (var more (get map key))
                 (cond (is (typeof more) "string") (var more [[more]]))
-                (more.forEach (lambda [map] 
+                (more.forEach (lambda [map]
                   (one-map (get CodeMirror.keyMap map))))
               )
             (else) (keys.push (+ key ": " (get map key)))
@@ -384,11 +386,6 @@
     )))
     (cm.setOption "mode" mode)
     (CodeMirror.autoLoadMode cm mode)
-    (cond (contains [["lispz" "commonlisp" "scheme" "clojure"]] mode)
-        (cm.setOption "keyMap" "subpar")
-      (else)
-        (cm.setOption "keyMap" (default? options.keyMap "default"))
-    )
   ))
 
   ## CodeMirror lispz mode
@@ -425,6 +422,12 @@
 
   ## paredit keys that defer if not in lisp code
   (var lisp-modes {lispz: true clojure: true commonlisp: true scheme: true})
+  (set! subpar.core.run_selection (lambda [cm]
+    (cond (cm.somethingSelected) (var source (cm.doc.getSelection))
+          (else)                 (var source (cm.doc.getValue))
+    )
+    (console.log (lispz.run "lispz-repl" source))
+  ))
   (var subpart (lambda [cmd opt]
     (return (lambda [cm]
       (var mode (cm.getModeAt (cm.getCursor)))
@@ -439,9 +442,9 @@
     subpar_forward_delete:         (subpart "forward_delete")
     subpar_forward_delete:         (subpart "forward_delete")
 
-    subpar_open_bracket:           (subpart "open_expression" "(")
-    subpar_open_square_bracket:    (subpart "open_expression" "[")
-    subpar_open_braces:            (subpart "open_expression" "{")
+    subpar_open_bracket:           (subpart "open_expression" "()")
+    subpar_open_square_bracket:    (subpart "open_expression" "[]")
+    subpar_open_braces:            (subpart "open_expression" "{}")
 
     subpar_close_bracket:          (subpart "close_expression" ")")
     subpar_close_square_bracket:   (subpart "close_expression" "]")
@@ -474,7 +477,9 @@
     subpar_splice_delete_forward:  (subpart "splice_delete_forward")
     subpar_splice:                 (subpart "splice")
     subpar_indent_selection:       (subpart "indent_selection")
-  }) 
+
+    lispz_run_selection:           (subpart "run_selection")
+  })
   ))
 
   ## elm script has a bug - restore for a later version.
