@@ -14,6 +14,9 @@
     inputStyle:         "textarea" ## change to "contenteditable" after vim cursor bug fix
     autofocus:          true
     dragDrop:           false
+    smartIndent:        true
+    indentUnit:         2
+    indentWithTabs:     false
     cursorScrollMargin: 5
     scrollbarStyle:     "overlay"
     extraKeys:          {
@@ -392,16 +395,20 @@
   (var init-lispz-mode (=>
   (CodeMirror.defineSimpleMode "lispz" {
     start: [[
-      {regex: '/"(?:[^\\]|\\.)*?"/'                  token: "string"}
-      {regex: '/\([^\s\(\[]+/'                       token: "keyword"}
-      {regex: '/\).?/'                               token: "keyword"}
+      {regex: '/"/'                   next: "string" token: "string"}
+      {regex: '/\'(?:[^\\]|\\.)*?\'/'                token: "variable-2"}
+      {regex: '/###/'                next: "comment" token: "comment" }
+      {regex: '/(\()([!\s\(\[\{\)\}\]]*?!)/'
+                                indent: true  token: [[null "error"]]}
+      {regex: '/(\()([^\s\(\[\{\)\}\]]+)/'
+                                indent: true  token: [[null "keyword"]]}
       {regex: '/true|false|null|undefined|debugger/' token: "atom"}
-      {regex: '/0x[a-f\d]+|[-+]?(?:\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/i' token: "number"}
+      {regex: '/0x[a-f\d]+|[-+]?(?:\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/i'
+                                                     token: "number"}
       {regex: '/## .*/'                              token: "comment"}
       {regex: '/\/(?:[^\\]|\\.)*?\//'                token: "variable-3"}
-      {regex: '/###/'                next: "comment" token: "comment" }
-      {regex: '/[\{\[\(]/'           indent: true}
-      {regex: '/[\}\]\)]/'           dedent: true}
+      {regex: '/[\{\[\(]+/'            indent: true}
+      {regex: '/[\}\]\)]+/'            dedent: true}
       {regex: '/[^\s\(\{\[\)\]\}]+/'                 token: "variable"}
       {regex: '/\s+/' next: "start"}
     ]]
@@ -409,7 +416,11 @@
       {regex: '/###/' token: "comment" next: "start"}
       {regex: '/.*/' token: "comment"}
     ]]
-    meta: { lineComment: "## " dontIndentStates: [["comment"]] }
+    string: [[
+      {regex: '/[^\\]"/' token: "string" next: "start"}
+      {regex: '/.*/' token: "string"}
+    ]]
+    meta: { lineComment: "## " dontIndentStates: [["comment" "string"]] }
   })
   (CodeMirror.defineMIME "text/lispz" "lispz")
   ## Update htmlmixed to understand lispz scripts
