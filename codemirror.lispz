@@ -30,7 +30,6 @@
       'Ctrl-=':           "toMatchingTag"
       'Alt-S':            "view_source"
       'Ctrl-`':           "insertSoftTab"
-      'Shift-Ctrl-`':     "insertTab"
       'Ctrl-,':           "delLineLeft"
       'Ctrl-.':           "killLine"
       'Shift-Ctrl-,':     "delWrappedLineLeft"
@@ -106,7 +105,6 @@
       {divider: true}
       {topic meta: "toggleOverwrite" title: "Insert/Overwrite"}
       {topic meta: "toggleComment" title: "Comment/Uncomment" }
-      {topic meta: "insertTab" title: "Insert Tab" }
       {topic meta: "insertSoftTab" title: "Insert Soft Tab" }
       {topic meta: "defaultTab" title: "Tab or Indent"}
       {title: "Delete" children: [[
@@ -315,10 +313,6 @@
         (set! result.list [[]])
         (return result)
       ))
-    )
-    insertTab: (lambda [cm]
-      (var tab_space (+ (cm.getOption "indentUnit") 1))
-      (cm.replaceSelection tab_space "end" "+input")
     )
   })
   ## Editing modes dependent on file type
