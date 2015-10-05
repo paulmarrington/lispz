@@ -13,12 +13,11 @@
     <lispz-repl class=riot></lispz-repl>
     <script src=/lispz/lispz.js></script>
     <script id=test_code type="text/lispz">
-      (var contents "## Enter Lispz code (Alt-Enter to run)")
       (set! lispz.debug true)
       (using "firebase message jquery riot"
         (message.wait-for "firepad/scratch" (=>
           (message.send "firepad/scratch"
-            {action: "open" key: "scratchpad.lispz" contents})
+            {action: "open" key: "scratchpad.lispz" contents: null})
         ))
       )
     </script>

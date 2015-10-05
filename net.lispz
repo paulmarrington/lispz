@@ -43,7 +43,7 @@
   # Extract assets from the latest release of a package from github.com releases
   ###
   (var cdngit (lambda [pkg process-asset=>]
-    (json-request (+ "https://api.github.com/repos/" pkg "/releases/latest")
+    (json-request (+ "https://cdn.rawgit.com/" pkg "/releases/latest")
       (lambda [json]
         (process-asset=> {base: "" files:
           (json.assets.map (lambda [asset] (return asset.browser_download_url)))
@@ -89,5 +89,12 @@
   (var cdnjs-load  (cdn-load.bind undefined cdnjs))
   (var cdngit-load (cdn-load.bind undefined cdngit))
 
-  (export {script css http-get json-request cdnjs-load cdngit-load})
+  (var github-cdn-uri (lambda [project filepath]
+    (return (+ "https://cdn.rawgit.com/" project "/master/" filepath))
+  ))
+
+  (export {
+    script css http-get json-request cdnjs-load cdngit-load
+    github-cdn-uri
+  })
 )

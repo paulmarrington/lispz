@@ -1,0 +1,34 @@
+(using  "net dict"
+  (net.script (net.github-cdn-uri "michael/github" "github.js") (=>
+    (var
+      branch (lambda [repo branch-name ready=>]
+          (set! repo.lispz.branch branch-name)
+          (repo.createBranch branch-name ready=>)
+        )
+    )
+    (export {
+      branch
+      repo: (lambda [username password project ready=>]
+        (var github (new Github {username password auth: "basic"}))
+        (var repo (github.getRepo.apply null (project.split "/")))
+        (set! repo.lispz {github username password project})
+        (branch repo username (=> (ready=> repo)))
+      )
+      list: (lambda [path ready=>]
+        (repo.contents repo.lispz.branch path ready=>)
+      )
+      read: (lambda [path ready=>]
+        (repo.read repo.lispz.branch path ready=>)
+      )
+      write: (lambda [path contents comment complete=>]
+        (repo.write repo.lispz.branch path contents comment complete=>)
+      )
+      move: (lambda [from to ready=>]
+        (repo.move repo.lispz.branch from to complete=>)
+      )
+      delete: (lambda [path ready=>]
+        (repo.remove repo.lispz.branch path complete=>)
+      )
+    })
+  ))
+)

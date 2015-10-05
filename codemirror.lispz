@@ -389,6 +389,7 @@
   (var init-lispz-mode (=>
   (CodeMirror.defineSimpleMode "lispz" {
     start: [[
+      {regex: '/""/'                                 token: "string"}
       {regex: '/"/'                   next: "string" token: "string"}
       {regex: '/\'(?:[^\\]|\\.)*?\'/'                token: "variable-2"}
       {regex: '/###/'                next: "comment" token: "comment" }
@@ -412,7 +413,7 @@
     ]]
     string: [[
       {regex: '/[^\\]"/' token: "string" next: "start"}
-      {regex: '/.*/' token: "string"}
+      {regex: '/./' token: "string"}
     ]]
     meta: { lineComment: "## " dontIndentStates: [["comment" "string"]] }
   })
@@ -495,9 +496,10 @@
     ((Object.keys extra-commands).forEach (lambda [key]
       (dict.update! CodeMirror.commands key (get extra-commands key))
     ))
-    (net.script "https://cdn.rawgit.com/achengs/subpar/master/resources/public/js/subpar.core.js" (=>
-      (init-lispz-mode)
-      (export {options open close set-mode})
+    (net.script (net.github-cdn-uri
+      "achengs/subpar" "resources/public/js/subpar.core.js") (=>
+        (init-lispz-mode)
+        (export {options open close set-mode})
     ))
   ))
 )

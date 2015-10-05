@@ -25,25 +25,40 @@
     (set! tag.menu "CodeMirror-menu")
     (set! tag.heading "Edit")
     (using  "firebase codemirror firepad message dict"
+      (var filename-key (+ "codemirror/" opts.name "/filename"))
       (var cm (codemirror.open tag._id tag.tags.panel.wrapper))
       (var pad {
         setText:  (lambda [contents] (cm.setValue contents))
         on-ready: (lambda [act] (act))
       })
-      (cond opts.db (do
-        (var db (firebase.attach (+ "firepads/" opts.name) opts.db))
-        (set! pad (Firepad.fromCodeMirror db cm
-          {richTextShortcuts: false richTextToolbar: false}
-        ))
-        (set! pad.on-ready (lambda [act] (pad.on "ready" act)))
-      ))
 
       (var open (lambda [packet]
         (codemirror.set-mode cm packet.key)
         (set! tag.heading (last (packet.key.split "/")))
+        (set! (get localStorage filename-key) packet.key)
         (cond packet.contents (pad.setText packet.contents))
         (tag.update)
       ))
+
+      (cond
+        opts.db (do
+          (var db (firebase.attach (+ "firepads/" opts.name) opts.db))
+          (set! pad (Firepad.fromCodeMirror db cm
+            {richTextShortcuts: false richTextToolbar: false}
+          ))
+          (set! pad.on-ready (lambda [act] (pad.on "ready" act)))
+        ) (else) (do ## without firebase we need to persist locally
+          (var contents (+ "codemirror/" opts.name "/contents"))
+          (var filename (get localStorage filename-key))
+          (cond filename (delay 100
+            (open {key:      filename
+                   contents: (get localStorage contents)})
+          ))
+          (cm.on "change" (=>
+            (set! (get localStorage contents) (cm.getValue))
+          ))
+        )
+      )
 
       (pad.on-ready (=>
         (message.dispatch (+ "firepad/" opts.name) { open })
