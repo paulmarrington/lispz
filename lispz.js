@@ -49,10 +49,12 @@ var lispz = function() {
     }
     return "/*macro "+name+"*/"
   },
-  array_to_js = function(its) {
-    var js_array = (arguments.length === 1 && arguments[0][0] === '[')
-    its = slice.call(arguments).map(ast_to_js).join(',')
-    return js_array ? "[" + its + "]" : its
+  array_to_js = function() {
+    var its = slice.call(arguments)
+    if (arguments.length === 1 && arguments[0][0] === '[') {
+      return "[" + its.map(ast_to_js).join(',') + "]"
+    }
+    return its.map(ast_to_js).join(',')
   },
   list_to_js = function(its) {
     return slice.call(arguments).map(ast_to_js).join('\n')
@@ -93,9 +95,14 @@ var lispz = function() {
    * if possible. Now we are generating JavaScript we find and process it. This is
    * because comments can't have their own atom or they will screw up argument lists.
    */
-  eol_to_js = function(name, number, ast) {
+  eol_to_js = function(name, number) {
     module = {name:name, line:number}
-    return ast_to_js(slice.call(arguments, 2)) + "//#" + name + ":" + number + "\n"
+    var ast = slice.call(arguments, 2)
+    var line = ast_to_js(ast)
+    if (ast[0] !== "[" && (ast[0] !== "\n" || ast[3] !== "[")) {
+      line += "//#" + name + ":" + number + "\n"
+    }
+    return line
   },
   parsers = [
     [/^(\(|\{|\[)$/, function(env) {
@@ -190,8 +197,8 @@ var lispz = function() {
       })
     })
   },
-  load = function(uri_list, on_all_ready) {
-    var uris = uri_list.split(' ')
+  load = function(uris, on_all_ready) {
+    uris = uris.split(",")
     var next_uri = function() {
       if (uris.length) load_one(uris.shift().trim(), next_uri)
       else if (on_all_ready) on_all_ready()
@@ -200,16 +207,18 @@ var lispz = function() {
   },
   // Special to set variables loaded with requires
   requires_to_js = function(list) {
-    return 'var ' + list.slice(1,-1).split(' ').map(function(module) {
+    list = list.slice(list.indexOf("[") + 1)
+    return 'var ' + list.map(function(module) {
       var name = module.trim().split('/').pop()
       return jsify(name) + '=lispz.cache["' + name + '"]'
     }) + ';'
   }
   if (window) window.onload = function() {
     var q = document.querySelector('script[src*="lispz.js"]').getAttribute('src').split('#')
-    load((q.length == 1) ? "core" : "core," + q.pop(), function() {
-      slice.call(document.querySelectorAll('script[type="text/lispz"]')).forEach(
-        function (script) { run("script", script.textContent) })
+    load(((q.length == 1) ? "core" : "core," + q.pop()),
+      function() {
+        slice.call(document.querySelectorAll('script[type="text/lispz"]')).forEach(
+          function (script) { run("script", script.textContent) })
     })
   }
   //#########################    Helpers    ####################################//
@@ -220,8 +229,9 @@ var lispz = function() {
   }
   //#########################   Interface   ####################################//
   var macros = {
-    '(': call_to_js, '[': array_to_js, '{': dict_to_js, 'macro': macro_to_js, '#join': join_to_js,
-    '#pairs': pairs_to_js, '#binop': binop_to_js, '#requires': requires_to_js, 'list': list_to_js,
+    '(': call_to_js, '[': array_to_js, '{': dict_to_js, 'macro': macro_to_js,
+    '#join': join_to_js, '#pairs': pairs_to_js, '#binop': binop_to_js,
+    '#requires': requires_to_js, 'list': list_to_js,
     '\n': eol_to_js, 'immediate': immediate_to_js
   }
   // add all standard binary operations (+, -, etc)

@@ -66,7 +66,7 @@
   </style>
   <script type=text/lispz>
     (var tag this root null)
-    (using "message"
+    (using [message]
       (message.listen opts.name (lambda [items]
         (set! root (or items [[]]))
         (set! tag.items items)
@@ -98,7 +98,7 @@
   <tree-component name=base/>
   <script type=text/lispz>
     (var tag this)
-    (using "message"
+    (using [message]
       (message.listen opts.name (lambda [items]
         (set! tag.children {base: {children: items}})
         (tag.update) (tag.update)
@@ -138,7 +138,7 @@
   </style>
   <script type=text/lispz>
     (var tag this)
-    (using "message dict"
+    (using [message dict]
       (tag.on "update" (lambda [data]
         (cond (and opts.name tag.parent.children) (do
           (set! tag.items (get tag.parent.children opts.name "children"))
@@ -191,7 +191,7 @@
   </style>
   <script type=text/lispz>
     (var tag this)
-    (using "message dom"
+    (using [message dom]
       (set! tag.hamburger.onclick (=>
         (tag.sidebar.classList.toggle "toggled")
         (delay 300 ## must be after slide action
@@ -216,10 +216,10 @@
       width: 100%;
       position: absolute;
     }
-  </style>  
+  </style>
   <script type=text/lispz>
     (var tag this)
-    (using "message"
+    (using [message]
       (message.listen "page-content-wrapper-padding" (lambda [px]
         (set! tag.page-content-wrapper.style.paddingLeft (+ px "px"))
       ))
@@ -256,7 +256,7 @@
   </style>
   <script type=text/lispz>
     (var tag this)
-    (using  "dom net jquery riot message"
+    (using  [dom net jquery riot message]
       (var bootswatch-themes [[ "cerulean" "cosmo" "cyborg" "darkly" "flatly"
         "journal" "lumen" "paper" "readable" "sandstone" "simplex" "slate"
         "spacelab" "superhero" "united" "yeti" ]])

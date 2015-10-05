@@ -14,7 +14,7 @@
     <script src=/lispz/lispz.js></script>
     <script id=test_code type="text/lispz">
       (set! lispz.debug true)
-      (using "firebase message jquery riot"
+      (using [firebase message jquery riot]
         (message.wait-for "firepad/scratch" (=>
           (message.send "firepad/scratch"
             {action: "open" key: "scratchpad.lispz" contents: null})

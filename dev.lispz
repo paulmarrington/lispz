@@ -1,4 +1,4 @@
-(using "net"
+(using [net]
   (var manifest (=>
     (var text [["CACHE MANIFEST"]])
     (lispz.manifest.forEach (lambda [uri] (text.push uri)))

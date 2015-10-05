@@ -22,7 +22,7 @@
           (return pkg)
         )).join ","))
         (cond
-          source (var source (+ "(using \"" source "\" " tag.code.value ")"))
+          source (var source (+ "(using [" source "] " tag.code.value ")"))
           (else)  (var source tag.code.value)
         )
         (console.log (lispz.run "lispz-repl" source))

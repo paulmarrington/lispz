@@ -24,7 +24,7 @@
     (var tag this)
     (set! tag.menu "CodeMirror-menu")
     (set! tag.heading "Edit")
-    (using  "firebase codemirror firepad message dict"
+    (using  [firebase codemirror firepad message dict]
       (var filename-key (+ "codemirror/" opts.name "/filename"))
       (var cm (codemirror.open tag._id tag.tags.panel.wrapper))
       (var pad {

@@ -48,7 +48,7 @@
   (Object.keys obj)(.forEach (lambda [k] (action k (get obj k))))
 )
 ### module import ###
-(macro using [modules *on_ready] (lispz.load modules
+(macro using [modules *on_ready] (lispz.load (#join '' '"' modules '"')
   (=> (#requires modules) *on_ready)))
 
 ### Modules must export to continue processing ###

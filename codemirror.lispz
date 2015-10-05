@@ -1,4 +1,4 @@
-(using  "net diff-match-patch message dict"
+(using  [net diff-match-patch message dict]
   (var options (localStorage.getItem "CodeMirror-options"))
   (cond options (var options (JSON.parse options))
         (else)  (var options {
@@ -401,15 +401,30 @@
       {regex: '/0x[a-f\d]+|[-+]?(?:\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/i'
                                                      token: "number"}
       {regex: '/## .*/'                              token: "comment"}
-      {regex: '/\/(?:[^\\]|\\.)*?\//'                token: "variable-3"}
-      {regex: '/[\{\[\(]+/'            indent: true}
-      {regex: '/[\}\]\)]+/'            dedent: true}
+      {regex: '/(\[\[)(.*?)(\]\])/'           token: [[null "variable-3" null]]}
+      {regex: '/(\[)(.*?)(\])/'               token: [[null "attribute" null]]}
+      {regex: '/(\[\[)(.*)/'
+                    next: "dsb" indent: true  token: [[null "variable-3"]]}
+      {regex: '/(\[)(.*)/'
+                    next: "ssb" indent: true  token: [[null "attribute"]]}
+      {regex: '/[\{\(]/'        indent: true}
+      {regex: '/[\}\)]/'        dedent: true}
       {regex: '/[^\s\(\{\[\)\]\}]+/'                 token: "variable"}
       {regex: '/\s+/' next: "start"}
     ]]
     comment: [[
       {regex: '/###/' token: "comment" next: "start"}
       {regex: '/.*/' token: "comment"}
+    ]]
+    dsb: [[
+    {regex: '/(.*?)(\]\])/'
+                  next: "start" dedent: true  token: [["variable-3" null]]}
+    {regex: '/./' token: "variable-3"}
+    ]]
+    ssb: [[
+    {regex: '/(.*?)(\])/'
+                  next: "start" dedent: true  token: [["attribute" null]]}
+    {regex: '/./' token: "attribute"}
     ]]
     string: [[
       {regex: '/[^\\]"/' token: "string" next: "start"}

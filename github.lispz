@@ -1,4 +1,4 @@
-(using  "net dict"
+(using  [net dict]
   (net.script (net.github-cdn-uri "michael/github" "github.js") (=>
     (var
       branch (lambda [repo branch-name ready=>]

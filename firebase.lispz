@@ -1,4 +1,4 @@
-(using  "net"
+(using  [net]
   ( var databases (JSON.parse (or (localStorage.getItem "firebases") "{}")))
 
   (var register (lambda [key uri]

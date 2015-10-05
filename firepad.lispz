@@ -1,4 +1,4 @@
-(using  "net"
+(using  [net]
   (net.css "https://cdn.firebase.com/libs/firepad/1.2.0/firepad.css")
   (net.script "https://cdn.firebase.com/libs/firepad/1.2.0/firepad.min.js" (=>
     (export {})

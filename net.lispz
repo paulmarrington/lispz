@@ -1,5 +1,5 @@
 ### Load packages from CDN and other web sources - listing them when possible ###
-(using "list dom"
+(using [list dom]
   (var script (lambda [uri next-step=>]
     (var el (dom.element "script" {type: "text/javascript"}))
     (dom.append! "head" el)
