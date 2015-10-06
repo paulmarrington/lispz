@@ -3,30 +3,34 @@
     (var
       branch (lambda [repo branch-name ready=>]
           (set! repo.lispz.branch branch-name)
-          (repo.createBranch branch-name ready=>)
+          (repo.branch branch-name ready=>)
         )
     )
     (export {
       branch
-      repo: (lambda [username password project ready=>]
+      repo: (lambda [username password project]
         (var github (new Github {username password auth: "basic"}))
         (var repo (github.getRepo.apply null (project.split "/")))
-        (set! repo.lispz {github username password project})
-        (branch repo username (=> (ready=> repo)))
+        (set! repo.lispz {github username password project branch: "master"})
+        (return repo)
       )
-      list: (lambda [path ready=>]
+      update: (lambda [repo ready=>]
+        (var branch-name (default? [repo.lispz.username "master"]))
+        (branch repo branch-name ready=> repo)
+      )
+      list: (lambda [repo path ready=>]
         (repo.contents repo.lispz.branch path ready=>)
       )
-      read: (lambda [path ready=>]
+      read: (lambda [repo path ready=>]
         (repo.read repo.lispz.branch path ready=>)
       )
-      write: (lambda [path contents comment complete=>]
+      write: (lambda [repo path contents comment complete=>]
         (repo.write repo.lispz.branch path contents comment complete=>)
       )
-      move: (lambda [from to ready=>]
+      move: (lambda [repo from to ready=>]
         (repo.move repo.lispz.branch from to complete=>)
       )
-      delete: (lambda [path ready=>]
+      delete: (lambda [repo path ready=>]
         (repo.remove repo.lispz.branch path complete=>)
       )
     })
