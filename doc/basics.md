@@ -43,8 +43,16 @@ For a traditional list or array, use [[]]. This will translate into a normal Jav
 
     (var list [[1 2 6 9]])
     (var double (list.map [item] (return (* item 2)))) ## JS==> [2, 4, 12, 18]
+    
+Use the get command to retrieve entries
+
+    (var second (get double 2))
+    
+All the JavaScript list processing functions (every, filter, forEach, ...) are available. See the [List Processing](list-processing.md) section for more details.
 
 ## Associative Array List
+
+Are also called dictionaries or hashmaps. Because lispz is a functional language it is not uncommon for functions to return a dictionary of values. To make them clearer, if a key is supplied without a following colon then it is placed into the dictionary with a value of the same name.
 
 # Operators
 # Conditionals
