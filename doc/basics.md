@@ -54,6 +54,10 @@ All the JavaScript list processing functions (every, filter, forEach, ...) are a
 
 Are also called dictionaries or hashmaps. Because lispz is a functional language it is not uncommon for functions to return a dictionary of values. To make them clearer, if a key is supplied without a following colon then it is placed into the dictionary with a value of the same name.
 
+    (var exported-method-1 (=> ...))
+    (var key "whatever I want"}
+    (export {exported-method-1 key error: false date: (Date))
+
 # Operators
 # Conditionals
 # Functions
