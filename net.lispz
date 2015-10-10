@@ -25,7 +25,7 @@
   ###
   # Extract assets from the latest release of a package on cdnjs.com
   ###
-  (var cdnjs (lambda [pkg process-asset=>]
+  (var cdnjs-helper (lambda [pkg process-asset=>]
     (json-request
       (+ "http://api.cdnjs.com/libraries?fields=assets&search=" pkg)
       (lambda [json]
@@ -36,18 +36,6 @@
           (process-asset=> it)
           (return true)
         ))
-      )
-    )
-  ))
-  ###
-  # Extract assets from the latest release of a package from github.com releases
-  ###
-  (var cdngit (lambda [pkg process-asset=>]
-    (json-request (+ "https://cdn.rawgit.com/" pkg "/releases/latest")
-      (lambda [json]
-        (process-asset=> {base: "" files:
-          (json.assets.map (lambda [asset] (return asset.browser_download_url)))
-        })
       )
     )
   ))
@@ -86,15 +74,9 @@
     ))
   ))
 
-  (var cdnjs-load  (cdn-load.bind undefined cdnjs))
-  (var cdngit-load (cdn-load.bind undefined cdngit))
-
-  (var github-cdn-uri (lambda [project filepath]
-    (return (+ "https://cdn.rawgit.com/" project "/master/" filepath))
-  ))
+  (var cdnjs-load  (cdn-load.bind undefined cdnjs-helper))
 
   (export {
-    script css http-get json-request cdnjs-load cdngit-load
-    github-cdn-uri
+    script css http-get json-request cdnjs-load cdn-load
   })
 )

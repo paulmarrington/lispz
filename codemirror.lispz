@@ -1,4 +1,4 @@
-(using  [net diff-match-patch message dict]
+(using  [net diff-match-patch message dict github]
   (var options (localStorage.getItem "CodeMirror-options"))
   (cond options (var options (JSON.parse options))
         (else)  (var options {
@@ -503,6 +503,21 @@
   })
   ))
 
+  (var build (lambda [target-repo built=>]
+    (github.build target-repo "codemirror" [[
+      {repo: "codemirror/CodeMirror" files: [[
+        {base: "lib" include: '/codemirror.*/'}
+        {base: "addon/mode" include: '/simple.js/'}
+        {base: "theme"} {base: "keymap"}
+        {base: "addon" exclude: '/node.hs$|standalone.js$|\/tern\//'}
+        {base: "mode" exclude: /elm.js$/}
+      ]]}
+      {repo: "achengs/subpar" files: [[
+        {base: "resources/public/js" include: /subpar.core.js/}
+      ]]}
+    ]] built=>)
+  ))
+
   ## elm script has a bug - restore for a later version.
   ## tern is for javascript features - overrides console.log
   (net.cdnjs-load "codemirror"
@@ -511,10 +526,10 @@
     ((Object.keys extra-commands).forEach (lambda [key]
       (dict.update! CodeMirror.commands key (get extra-commands key))
     ))
-    (net.script (net.github-cdn-uri
+    (net.script (github.cdn-uri
       "achengs/subpar" "resources/public/js/subpar.core.js") (=>
         (init-lispz-mode)
-        (export {options open close set-mode})
+        (export {options open close set-mode build})
     ))
   ))
 )
