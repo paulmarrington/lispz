@@ -56,9 +56,31 @@ Are also called dictionaries or hashmaps. Because lispz is a functional language
 
     (var exported-method-1 (=> ...))
     (var key "whatever I want"}
-    (export {exported-method-1 key error: false date: (Date))
+    (export {exported-method-1 key error: false date: (new Date))
+    
+will create a JavaScript dictionary of the form
+
+    {exported_method_1: exported_method_1, key: key, error: false, date: new Date()}
 
 # Operators
+
+A pure lisp system does not have any operators. Everything is a function or a macro. Because Lispz compiles to JavaScript, all unary and many binary operators are exposed.
+
+    (delete dict.key)  ## JS==> delete dict.key
+    debugger           ## JS==> debugger
+    (+ 2 3 4)          ## JS==> (2 + 3 + 4)
+    
+While unary operators are transparent to Lispz and convert directly, binary operators are expanced with macros. Some operators have convenience names.
+
+    (and a b c)        ## JS==> a && b && c 
+    (or a b c)         ## JS==> a || b || c 
+    (is a 12)          ## JS==> a === 12
+    (isnt a 12)        ## JS==> a !== 12
+    
+Thanks to JavaScript 'and' and 'or' short-circuit - meaning that they will stop when they find truth for and or false for or.
+
+    (return (or value "default value string"))
+
 # Conditionals
 # Functions
 # Miscellaneous
