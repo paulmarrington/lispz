@@ -1,0 +1,35 @@
+### Load packages from CDN and other web sources - listing them when possible ###
+(using [net github]
+  (export {
+    build: (lambda [target-repo name sources built=>]
+      (github.builder target-repo name sources built=> {
+        list-all: (lambda [repo path ready=>]
+          (net.json-request
+            (+ "http://api.cdnjs.com/libraries?fields=assets&search=" repo.name)
+            (lambda [json]
+              (var filtered (json.results.filter (lambda [it]
+                (return (=== it.name repo.name))
+              )))
+              ((get filtered 0).assets.some (lambda [it]
+                (return-if (contains it.version "alpha") false)
+                (set! repo.base (+
+                  "https://cdnjs.cloudflare.com/ajax/libs/"
+                  repo.name "/" it.version "/"
+                ))
+                (ready=> null it.files)
+                (return true)
+              ))
+            )
+          )
+        )
+        read: (lambda [repo path ready=>]
+          (var uri (+ repo.base path))
+          (net.http-get uri (lambda [response]
+            (ready=> null response.text)
+          ))
+        )
+        repo: (lambda [target-repo name] (return {name lispz: {}}))
+      })
+    )
+  })
+)

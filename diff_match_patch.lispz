@@ -1,4 +1,13 @@
-(using [net]
-  (net.cdnjs-load "diff_match_patch"
-    [['/diff_match_patch_uncompressed.js$/']] (=> (export {})))
+(using [net github]
+  (net.script "ext/diff_match_patch.js" (=>
+    (export {
+      build: (lambda [target-repo built=>]
+        (github.build target-repo "diff_match_patch" [[
+          {repo: "tanaka-de-silva/google-diff-match-patch-js" files: [[
+            {base: "" include: '/^diff_match_patch_uncompressed.js$/'}
+          ]]}
+        ]])
+      )
+    })
+  ))
 )

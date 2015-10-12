@@ -1,4 +1,13 @@
-(using [net]
-  ### Load jquery from the CDN and continue normally once all is done ###
-  (net.cdnjs-load "jquery" [['/\.map$|\.min.js$/']] (=> (export {})))
+(using [net cdnjs]
+  (net.script "ext/jquery.js" (=>
+    (export {
+      build: (lambda [target-repo built=>]
+        (cdnjs.build target-repo "jquery" [[
+          {repo: "jquery" files: [[
+            {exclude: '/\.map$|\.min.js$/'}
+          ]]}
+        ]])
+      )
+    })
+  ))
 )

@@ -1,4 +1,4 @@
-(using  [net diff-match-patch message dict github]
+(using  [net diff_match_patch message dict github]
   (var options (localStorage.getItem "CodeMirror-options"))
   (cond options (var options (JSON.parse options))
         (else)  (var options {
@@ -503,33 +503,53 @@
   })
   ))
 
-  (var build (lambda [target-repo built=>]
-    (github.build target-repo "codemirror" [[
-      {repo: "codemirror/CodeMirror" files: [[
-        {base: "lib" include: '/codemirror.*/'}
-        {base: "addon/mode" include: '/simple.js/'}
-        {base: "theme"} {base: "keymap"}
-        {base: "addon" exclude: '/node.hs$|standalone.js$|\/tern\//'}
-        {base: "mode" exclude: /elm.js$/}
-      ]]}
-      {repo: "achengs/subpar" files: [[
-        {base: "resources/public/js" include: /subpar.core.js/}
-      ]]}
-    ]] built=>)
-  ))
-
   ## elm script has a bug - restore for a later version.
   ## tern is for javascript features - overrides console.log
-  (net.cdnjs-load "codemirror"
-    [['/codemirror.js$/g' '/simple.js$/g'
-      '/\.min\.|_test\.js$|\.node\.js$|standalone\.js|elm\.js$|\/tern\//']] (=>
-    ((Object.keys extra-commands).forEach (lambda [key]
-      (dict.update! CodeMirror.commands key (get extra-commands key))
+  (var build (lambda [target-repo built=>]
+    (github.build target-repo "codemirror-modes" [[
+      {repo: "codemirror/CodeMirror" files: [[
+        {base: "mode" exclude: '/htmlmixed|javascript|css|elm.js$/'}
+      ]]}
+    ]] built=>)
+    (return "")
+    (github.build target-repo "codemirror" [[
+      {repo: "codemirror/CodeMirror" files: [[
+        {base: "lib" include: '/^codemirror\.(js|css)$/'}
+        {base: "addon/mode" include: '/^simple.js$/'}
+        {base: "keymap"}
+        {base: "addon" exclude: '/node.js$|standalone.js$|\/tern\//'}
+        {base: "mode/htmlmixed" include: '/css$|js$/'}
+        {base: "mode/javascript" include: '/css$|js$/'}
+        {base: "mode/css" include: '/css$|js$/'}
+      ]]}
+      {repo: "achengs/subpar" files: [[
+        {base: "resources/public/js" include: '/subpar.core.js/'}
+      ]]}
+    ]] (=>
+    (github.build target-repo "codemirror-themes" [[
+      {repo: "codemirror/CodeMirror" files: [[
+        {base: "theme"}
+      ]]}
+    ]] (=>
+    (github.build target-repo "codemirror-extra" [[
+      {repo: "codemirror/CodeMirror" files: [[
+        {base: "mode" exclude: '/htmlmixed|javascript|css|elm.js$/'}
+      ]]}
+    ]] built=>)
+  ))))))
+
+  (net.css "ext/codemirror.css")
+  (net.script "ext/codemirror.js" (=>
+    (cond window.CodeMirror (do ## in case we haven't built it yet
+      ((Object.keys extra-commands).forEach (lambda [key]
+        (dict.update! CodeMirror.commands key (get extra-commands key))
+      ))
+      (init-lispz-mode)
     ))
-    (net.script (github.cdn-uri
-      "achengs/subpar" "resources/public/js/subpar.core.js") (=>
-        (init-lispz-mode)
-        (export {options open close set-mode build})
-    ))
+    (export {options open close set-mode build})
   ))
+  (delay 100
+    (net.css "ext/codemirror-themes.css")
+    (net.script "ext/codemirror-modes.js" (=>))
+  )
 )
