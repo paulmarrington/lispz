@@ -82,5 +82,20 @@ Thanks to JavaScript 'and' and 'or' short-circuit - meaning that they will stop 
     (return (or value "default value string"))
 
 # Conditionals
+
+Lispz boasts only one traditional conditional operator plus a number of macros for conditional assignment and function return. The operator, cond takes pairs of lists where the first is the condition and the second the action. Evaluation stops after the first true condition. There is an else macro that evaluates to true to catch situations not covered specifically.
+
+    (cond (is v "One")  (return 1)
+          (not v)       (return 0)
+          (else)        (return -1)
+    )
+
+As a functional language, most decisions are made by small single-focus functions. As such, conditional returns are a useful shortcut. To this end, return? returns a value if it not false, null or an empty container, while return-if has a conditional pair. If the first is true the second is returned.
+
+    (return? calculated-value)
+    ...
+    (return-if (not calculated-value) default-value)
+
 # Functions
+# Iteration
 # Miscellaneous
