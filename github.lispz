@@ -35,24 +35,23 @@
       (repo.read repo.lispz.branch path ready=>)
     ))
     (var update (lambda [repo ready=>]
-      (return? (is repo.lispz.branch repo.lispz.username))
-      (var branch-name (default? [repo.lispz.username "master"]))
+      (return-if (is repo.lispz.branch repo.lispz.username) (ready=>))
+      (var branch-name (default? repo.lispz.username "master"))
       (branch repo branch-name ready=>)
     ))
     (var write (lambda [repo path contents comment complete=>]
       (repo.write repo.lispz.branch path contents comment complete=>)
     ))
     ## Build and save a dependency list
-    (var build (lambda [target-repo name sources built=>]
+    (var builder (lambda [target-repo name sources built=> actors]
       (var code {js: [[]] css: [[]]})
       (var from [["Gathered from: "]])
       (list.sequential sources (lambda [source source-read=>]
-        (var source-repo (repo target-repo.username
-          target-repo.password source.repo
-        ))
+        (var source-repo (actors.repo target-repo source.repo))
         (from.push source.repo)
         (list.sequential source.files (lambda [meta file-set-read=>]
-          (list-all source-repo meta.base (lambda [err file-list]
+          (var base (default? meta.base ""))
+          (actors.list-all source-repo base (lambda [err file-list]
             (var files file-list)
             (cond meta.include
               (var files (files.filter (lambda [file]
@@ -67,8 +66,11 @@
             (list.sequential files (lambda [path next-file=>]
               (var saver (get code (last (path.split "."))))
               (return-if (not saver) (next-file=>))
-              (read source-repo path (lambda [err data]
-                (cond saver (saver.push data))
+              (actors.read source-repo path (lambda [err data]
+                (cond saver (do
+                  (saver.push (+ "\n\n/*" path "*/\n\n"))
+                  (saver.push data)
+                ))
                 (next-file=>)
               ))
             ) file-set-read=>)
@@ -76,15 +78,28 @@
         ) source-read=>)
       ) (=>
         (var save (lambda [ext done=>] (update target-repo (=>
+          (var source (get code ext))
+          (return-if (not source.length) (done=>))
           (write target-repo (+ "ext/" name "." ext)
-            ((get code ext) .join "\n\n") (from.join " ") done=>
+            (unescape (encodeURIComponent (source.join "")))
+            (from.join " ") done=>
           )
         ))))
         (save "js" (=> (save "css" built=>)))
       ))
     ))
+    (var build (lambda [target-repo name sources built=>]
+      (builder target-repo name sources built=> {
+        list-all read
+        repo: (lambda [target-repo name]
+          (return (repo target-repo.lispz.username
+            target-repo.lispz.password name
+          ))
+        )
+      })
+    ))
     (export {
-      branch list-dir list-all cdn-uri build repo read write update
+      branch list-dir list-all cdn-uri build builder repo read write update
       move: (lambda [repo from to ready=>]
         (repo.move repo.lispz.branch from to complete=>)
       )

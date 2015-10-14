@@ -1,4 +1,4 @@
-(using  [net list]
+(using  [net list github]
   (var compile (lambda [html] (return (riot.compile html))))
 
   (var cache {})
@@ -12,10 +12,18 @@
     ))
   ))
 
+  (var build (lambda [target-repo built=>]
+    (github.build target-repo "riot" [[
+      {repo: "riot/riot" files: [[
+        {include: '/^riot\+compiler.js$/'}
+      ]]}
+    ]] built=>)
+  ))
+
   (var mount (lambda [tags] (riot.mount tags)))
 
-  ### Load RIOT from the CDN and continue normally once all is done ###
-  (net.cdnjs-load "riot" [['/riot\.js$|\.min.js$/']] (=>
+  (net.script "ext/riot.js" (=>
+    (return-if (not window.riot) (export {build}))
     (set! riot.parsers.js.lispz
       (lambda [source] (return ((lispz.compile "riot-tags" source).join "\n"))))
     (list.sequential (document.getElementsByClassName "riot")
@@ -25,7 +33,7 @@
                      (+ (name.toLowerCase) ".riot.html")))
         (load name uri next-element=>)
       )
-      (=> (export {compile load mount}))
+      (=> (export {build compile load mount}))
     )
   ))
 )

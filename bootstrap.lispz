@@ -1,0 +1,14 @@
+(using [net github]
+  (net.css "ext/bootstrap.css")
+  (net.script "ext/bootstrap.js" (=>
+    (export {
+      build: (lambda [target-repo built=>]
+        (github.build target-repo "bootstrap" [[
+          {repo: "twbs/bootstrap" files: [[
+            {base: "dist" exclude: '/\.map$|\.min\.|npm.js$/'}
+          ]]}
+        ]]) built=>
+      )
+    })
+  ))
+)

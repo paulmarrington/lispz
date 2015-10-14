@@ -1,15 +1,21 @@
-### Load packages from CDN and other web sources - listing them when possible ###
 (using [list dom]
   (var script (lambda [uri next-step=>]
     (var el (dom.element "script" {type: "text/javascript"}))
     (dom.append! "head" el)
-    (el.addEventListener "load"  (lambda [evt] (delay 20 (next-step=> evt))))
-    (el.addEventListener "error" (lambda [evt] (throw evt)))
+    (el.addEventListener "load"  (lambda [evt]
+      (delay 20 (next-step=> evt))
+    ))
+    (el.addEventListener "error" (lambda [evt]
+      (console.log evt)
+      (delay 20 (next-step=> evt))
+    ))
     (set! el.src uri)
   ))
 
   (var css (lambda [uri]
-    (var el (dom.element "link" {type: "text/css" rel: "stylesheet" href: uri}))
+    (var el (dom.element "link" {
+      type: "text/css" rel: "stylesheet" href: uri
+    }))
     (dom.append! "head" el)
   ))
 
@@ -18,65 +24,12 @@
   ))
 
   (var json-request (lambda [uri next-step=>]
-    (http-get uri (lambda [response] (next-step=> (JSON.parse response.text))))
-  ))
-
-
-  ###
-  # Extract assets from the latest release of a package on cdnjs.com
-  ###
-  (var cdnjs-helper (lambda [pkg process-asset=>]
-    (json-request
-      (+ "http://api.cdnjs.com/libraries?fields=assets&search=" pkg)
-      (lambda [json]
-        (var filtered (json.results.filter (lambda [it] (return (=== it.name pkg)))))
-        ((get filtered 0).assets.some (lambda [it]
-          (return-if (contains it.version "alpha") false)
-          (set! it.base (+ "https://cdnjs.cloudflare.com/ajax/libs/" pkg "/" it.version "/"))
-          (process-asset=> it)
-          (return true)
-        ))
-      )
-    )
-  ))
-
-  (var cdn-load-some (lambda [asset inclusion-test=> next-step=>]
-      (list.sequential asset.files (lambda [file next-file=>]
-        (return-if (or (get asset.loaded file) (not (inclusion-test=> file))) (next-file=>))
-        (dict.update! asset.loaded file true)
-        (var ext (last (file.split ".")))
-        (var filepath (+ asset.base file))
-        (lispz.manifest.push filepath)
-        (cond
-          (is ext "js")   (script filepath next-file=>)
-          (is ext "css")  (do (css filepath) (next-file=>))
-          (else)          (next-file=>)
-        )
-      ) next-step=>)
-  ))
-
-  (var inclusion (lambda [match] (return (lambda [file] (return (match.test file))))))
-  (var exclusion (lambda [match] (return (lambda [file] (return (not (match.test file)))))))
-
-  (var cdn-cache {})
-
-  ## matches is an array. if global flag is set it is inclusive, else exclusive
-  (var cdn-load (lambda [source pkg matches next-step=>]
-    (return-if (get cdn-cache pkg) (next-step=>))
-    (dict.update! cdn-cache pkg true)
-    (source pkg (lambda [asset]
-      (set! asset.loaded {})
-      (list.sequential matches (lambda [match next-match=>]
-        ## RE with global flat is positive test, without is negative (exclude)
-        (cond match.global (cdn-load-some asset (inclusion match) next-match=>)
-              (else)       (cdn-load-some asset (exclusion match) next-match=>))
-      ) next-step=>)
+    (http-get uri (lambda [response]
+      (next-step=> (JSON.parse response.text))
     ))
   ))
 
-  (var cdnjs-load  (cdn-load.bind undefined cdnjs-helper))
-
   (export {
-    script css http-get json-request cdnjs-load cdn-load
+    script css http-get json-request
   })
 )
