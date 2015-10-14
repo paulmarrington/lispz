@@ -506,15 +506,9 @@
   ## elm script has a bug - restore for a later version.
   ## tern is for javascript features - overrides console.log
   (var build (lambda [target-repo built=>]
-    (github.build target-repo "codemirror-modes" [[
-      {repo: "codemirror/CodeMirror" files: [[
-        {base: "mode" exclude: '/htmlmixed|javascript|css|elm.js$/'}
-      ]]}
-    ]] built=>)
-    (return "")
     (github.build target-repo "codemirror" [[
       {repo: "codemirror/CodeMirror" files: [[
-        {base: "lib" include: '/^codemirror\.(js|css)$/'}
+        {base: "lib" include: '/codemirror\.(js|css)$/'}
         {base: "addon/mode" include: '/^simple.js$/'}
         {base: "keymap"}
         {base: "addon" exclude: '/node.js$|standalone.js$|\/tern\//'}
@@ -531,7 +525,7 @@
         {base: "theme"}
       ]]}
     ]] (=>
-    (github.build target-repo "codemirror-extra" [[
+    (github.build target-repo "codemirror-modes" [[
       {repo: "codemirror/CodeMirror" files: [[
         {base: "mode" exclude: '/htmlmixed|javascript|css|elm.js$/'}
       ]]}
