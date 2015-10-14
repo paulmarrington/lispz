@@ -83,12 +83,18 @@ Thanks to JavaScript 'and' and 'or' short-circuit - meaning that they will stop 
 
 # Conditionals
 
-Lispz boasts only one traditional conditional operator plus a number of macros for conditional assignment and function return. The operator, cond takes pairs of lists where the first is the condition and the second the action. Evaluation stops after the first true condition. There is an else macro that evaluates to true to catch situations not covered specifically.
+Lispz boasts only one traditional conditional operator plus a number of macros for conditional assignment and function return. The operator, cond takes pairs of lists where the first is the condition and the second the action. Evaluation stops after the first true condition. There is an else macro that evaluates to true to catch situations not covered specifically. The default? function takes a value and returns it if it exists and is not empty, otherwise it returns the default value.
 
     (cond (is v "One")  (return 1)
           (not v)       (return 0)
           (else)        (return -1)
     )
+    (var value (default? basic-value "I am empty")
+
+Apart from all the standard conditional tests (< > <= >=, etc), and the aliases (is isnt not), there are also a few more complex tests:
+
+    (empty? array) ## true if the array does not have any elements
+    (defined? item) ## true if the item exists and is non-empty
 
 As a functional language, most decisions are made by small single-focus functions. As such, conditional returns are a useful shortcut. To this end, return? returns a value if it not false, null or an empty container, while return-if has a conditional pair. If the first is true the second is returned.
 
