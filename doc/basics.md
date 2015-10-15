@@ -103,5 +103,19 @@ As a functional language, most decisions are made by small single-focus function
     (return-if (not calculated-value) default-value)
 
 # Functions
+
+As I am sure I mentioned before the default lisp/lispz element is the list surrounded by brackets. In most cases in lisp and all cases in list the first element of the list is a reference to a function. In JavaScript perspective this makes a lispz list a JavaScript function where the first element is the reference and the rest a list of parameters.
+
+This allows us to call JavaScript functions at any time we can get to them.
+
+    (console.log "This is the" count "log message")
+    
+Anonymous functions are created with the lambda key-word (which is actually a macro - confused yet?). The parameters are referenced in another list form - that between square brackets. For later use, assign it to or in a variable. A function will return undefined unless a specific return statement is used.
+
+    (var +1 (lambda [number] (return (+ number 1))))
+    ...
+    a = 12
+    (console.log a (+1 a))  ## 12 13
+
 # Iteration
 # Miscellaneous
