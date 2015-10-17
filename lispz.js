@@ -199,7 +199,7 @@ var lispz = function() {
       } catch (e) {
         delete pending[uri]
         console.log(js)
-        throw e
+        throw e.stack
       }
     })
   },

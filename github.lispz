@@ -44,7 +44,7 @@
     ))
     ## Build and save a dependency list
     (var builder (lambda [target-repo name sources built=> actors]
-      (var code {js: [[]] css: [[]]})
+      (var code {js: [[]] css: [[]]}  copies {})
       (var from [["Gathered from: "]])
       (list.sequential sources (lambda [source source-read=>]
         (var source-repo (actors.repo target-repo source.repo))
@@ -65,11 +65,13 @@
             )
             (list.sequential files (lambda [path next-file=>]
               (var saver (get code (last (path.split "."))))
-              (return-if (not saver) (next-file=>))
               (actors.read source-repo path (lambda [err data]
                 (cond saver (do
                   (saver.push (+ "\n\n/*" path "*/\n\n"))
                   (saver.push data)
+                ) meta.copy-to (do
+                  (var filename (last (path.split "/")))
+                  (set! (get copies (+ meta.copy-to "/" filename)) data)
                 ))
                 (next-file=>)
               ))
@@ -77,15 +79,22 @@
           ))
         ) source-read=>)
       ) (=>
+        (var comment (from.join " "))
         (var save (lambda [ext done=>] (update target-repo (=>
           (var source (get code ext))
           (return-if (not source.length) (done=>))
           (write target-repo (+ "ext/" name "." ext)
             (unescape (encodeURIComponent (source.join "")))
-            (from.join " ") done=>
+            comment done=>
           )
         ))))
-        (save "js" (=> (save "css" built=>)))
+        (save "js" (=> (save "css" (=>
+          (dict.sequential copies (lambda [path contents next-file=>]
+            (write target-repo path
+              (unescape (encodeURIComponent contents)) comment next-file=>
+            )
+          ) built=>)
+        ))))
       ))
     ))
     (var build (lambda [target-repo name sources built=>]
