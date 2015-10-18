@@ -2,7 +2,11 @@
   (var cdn-uri (lambda [project filepath]
     (return (+ "https://cdn.rawgit.com/" project "/master/" filepath))
   ))
-  (net.script (cdn-uri "michael/github" "github.js") (=>
+  (var release-uri (lambda [project version filename]
+    (return (+ "https://github.com/" project
+      "/releases/download/" version "/" filename))
+  ))
+  (net.script "ext/github.js" (=>
     (var repo (lambda [username password project]
       (var github (new Github {username password auth: "basic"}))
       (var repo (github.getRepo.apply null (project.split "/")))
@@ -18,14 +22,16 @@
     (var list-dir (lambda [repo path ready=>]
       (repo.contents repo.lispz.branch path ready=>)
     ))
-    (var list-all (lambda [repo path ready=>]
+    (var list-all (lambda [repo path single-level ready=>]
       (var result [[]])
       (var #list-all (lambda [path level-done=>]
         (list-dir repo path (lambda [err data]
           (cond err (do (console.log err) (throw "Error accessing GitHub")))
           (list.sequential data (lambda [entry next=>]
-            (cond (is "dir"  entry.type) (#list-all entry.path next=>)
-                  (is "file" entry.type) (do (result.push entry.path) (next=>))
+            (cond (is "dir"  entry.type)
+                    (cond single-level (#list-all entry.path next=>))
+                  (is "file" entry.type)
+                    (do (result.push entry.path) (next=>))
             )
           ) level-done=>)
         ))
@@ -43,15 +49,14 @@
       (repo.write repo.lispz.branch path contents comment complete=>)
     ))
     ## Build and save a dependency list
-    (var builder (lambda [target-repo name sources built=> actors]
-      (var code {js: [[]] css: [[]]}  copies {})
-      (var from [["Gathered from: "]])
+    (var retriever (lambda [target-repo sources actors retrieved=>]
+      (var code {js: [[]] css: [[]]  copies: {} from: [["Gathered from: "]]})
       (list.sequential sources (lambda [source source-read=>]
         (var source-repo (actors.repo target-repo source.repo))
-        (from.push source.repo)
+        (code.from.push source.repo)
         (list.sequential source.files (lambda [meta file-set-read=>]
           (var base (default? meta.base ""))
-          (actors.list-all source-repo base (lambda [err file-list]
+          (actors.list-all source-repo base meta.single-level (lambda [err file-list]
             (var files file-list)
             (cond meta.include
               (var files (files.filter (lambda [file]
@@ -78,8 +83,11 @@
             ) file-set-read=>)
           ))
         ) source-read=>)
-      ) (=>
-        (var comment (from.join " "))
+      ) (=> (retrieved=> code)))
+    ))
+    (var builder (lambda [target-repo name sources actors built=>]
+      (retriever target-repo sources actors (lambda [code]
+        (var comment (code.from.join " "))
         (var save (lambda [ext done=>] (update target-repo (=>
           (var source (get code ext))
           (return-if (not source.length) (done=>))
@@ -91,24 +99,77 @@
         (save "js" (=> (save "css" (=>
           (dict.sequential copies (lambda [path contents next-file=>]
             (write target-repo path
-              (unescape (encodeURIComponent contents)) comment next-file=>
-            )
+              (unescape (encodeURIComponent contents)) comment next-file=>)
           ) built=>)
         ))))
       ))
     ))
+    (var github-actors {
+      list-all read
+      repo: (lambda [target-repo name]
+        (return (repo target-repo.lispz.username
+          target-repo.lispz.password name
+        ))
+      )
+    })
     (var build (lambda [target-repo name sources built=>]
-      (builder target-repo name sources built=> {
-        list-all read
-        repo: (lambda [target-repo name]
-          (return (repo target-repo.lispz.username
-            target-repo.lispz.password name
-          ))
-        )
-      })
+      (builder target-repo name sources github-actors built=>)
+    ))
+    (var grunt (lambda [target-repo source-project process=>]
+      (var source-repo (github-actors.repo target-repo source-project))
+      (var comment (+ "from " source-project))
+      (var sources [[
+        {repo: source-project files: [[
+          {include: '/^Gruntfile.js$/' single-level: true}
+        ]]}
+      ]])
+      (retriever target-repo sources github-actors (lambda [code]
+        (var grunt-config ((Function
+          (+ "var module={};" (last code.js) "return module.exports"))))
+        (grunt-config {
+          loadNpmTasks: (=>) registerTask: (=>)
+          initConfig: (lambda [config-data]
+            (var grunt {
+              build: (lambda [meta built=>]
+                (var js [[(default? meta.pre "")]])
+                (var read-file (lambda [path next=>]
+                  (github-actors.read source-repo path (lambda [err data]
+                    (js.push data) (next=>)
+                  ))
+                ))
+                (list.sequential meta.files read-file (=>
+                  (js.push (default? meta.post ""))
+                  (write target-repo (+ "ext/" meta.target)
+                    (unescape (encodeURIComponent (js.join "\n"))) comment built=>)
+                ))
+              )
+              copy: (lambda [files built=>]
+                (var copy=> (lambda [item next=>]
+                  (var path (default? item.src item))
+                  (github-actors.read source-repo path (lambda [err data]
+                    (write target-repo (+ "ext/" (last (path.split "/")))
+                        (unescape (encodeURIComponent data)) comment next=>)
+                  ))
+                ))
+                (list.sequential files copy=> built=>)
+              )
+            })
+            (update target-repo (=> (process=> grunt config-data)))
+          )
+        })
+      ))
+    ))
+    (var build-github (lambda [target-repo built=>]
+      (var sources [[
+        {repo: "michael/github" files: [[
+          {include: '/github.js$/'}
+        ]]}
+      ]])
+      (build target-repo "github" sources  built=>)
     ))
     (export {
-      branch list-dir list-all cdn-uri build builder repo read write update
+      branch list-all cdn-uri build builder repo read write update
+      build-github release-uri retriever grunt
       move: (lambda [repo from to ready=>]
         (repo.move repo.lispz.branch from to complete=>)
       )
