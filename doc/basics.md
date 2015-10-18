@@ -118,4 +118,16 @@ Anonymous functions are created with the lambda key-word (which is actually a ma
     (console.log a (+1 a))  ## 12 13
 
 # Iteration
+
+In the functional way of programming, loop style iteration is (almost) never needed. Because of the 'almost' and to provide for those week on functional will, lispz provides one loop operator. It takes a test and a body.
+
+    (while (not (result)) (look-again))
+
+In this case both are functions. Lispz furthers the functional cause by making assignment difficult and ugly.
+
+Of course the need for iteration remains no matter what programming discipline you follow. In the functional world it is filled by ... you guessed it ... functions. For arrays, JavaScript provides an excellent set documented in [List Processing](list-processing.md). Lispz adds one to manage asynchronous operations. There is an equivalent for dictionaries to allow processing on elements sequentially. It requires a dictionary, a function for each entry and a function to call when all is done.
+
+    (var items {a: 1 b: 2 c: 3})
+    (dict.sequential items (lambda [key value next=>] ...) (=> (on-complete=> items results)))
+
 # Miscellaneous
