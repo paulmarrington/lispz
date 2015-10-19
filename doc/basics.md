@@ -141,17 +141,23 @@ Of course the need for iteration remains no matter what programming discipline y
 
     (var items {a: 1 b: 2 c: 3})
     (dict.sequential items (lambda [key value next=>] ...) (=> (on-complete=> items results)))
-
-# Miscellaneous
-In the extremely unlikely situation that you need a global variable, it can be defined as
-
-    (global the-world-knows (=> ...))
-
-Lispz is not an OO language, but JavaScript is. Sometimes it is necessary to create a new instance from the base library.
-
-    (var now (new Date))
     
-As a functional language, Lispz attempts to avoid changing of data. In the JavaScript ecosystem this is not always possible. As a compromise, lispz allows it but makes examples obvious. Only use it to change data within closures or for external systems such as the DOM when nothing else will do. In other words it is up to the developer to be totally clear of the reach of any change.
+# Referential Transparency
+
+Referential transparency is the holy grail of functional programming. An expression is referentially transparent if it can be replaced by it's value without changing the behaviour of the program.
+
+    (var +1 (lambda [v] (return (+ v 1))))
+    
+is referentially transparent because (+1 2) will be 3 no matter how often it is called.
+    (var fun (=>
+      (var v 2)
+      (var incv (=> (return (set! v (v 1)))))
+      (return (incv))
+    ))
+    
+The function created, incv, is not referentially transparent since every time it is called changes something. The outer function, fun, is referentially transparent since it will return 3 on call after call. This is an important example. In lispz it is possible to create local functions that break referential transparency. As long as you keep the faith with exports in modules, then you produce the same results as monads and other mechanisms to hold information. In other words, do your best to write in a referentially transparent method, but don't make the code more complex to do so.
+    
+As a functional language, Lispz attempts to avoid changing of data. In the JavaScript ecosystem this is not always possible. As a compromise, lispz allows it but makes examples obvious. Only use it to change data within closures or for external systems such as the DOM when nothing else will do. In other words it is up to the developer to be totally clear of the reach of any change. Aim for referential transparency for any function exported from a module. Where this is not possible, append the exported function with an exclamation mark. And if you need to, review your code and make sure it is absolutely necessary. At this point in the development, I have only needed to do that once - for dict.update!.
 
     (var cash 1000)
     ...
@@ -161,3 +167,13 @@ As a functional language, Lispz attempts to avoid changing of data. In the JavaS
     (add 200)
     
 In the example above, set! is used because a var would create a new reference inside the closure.
+
+# Miscellaneous
+
+In the extremely unlikely situation that you need a global variable, it can be defined as
+
+    (global the-world-knows (=> ...))
+
+Lispz is not an OO language, but JavaScript is. Sometimes it is necessary to create a new instance from the base library.
+
+    (var now (new Date))
