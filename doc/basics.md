@@ -6,6 +6,10 @@ One of the really cool things about a lisp language is that there is very little
     [[a b c]]          ## an array list
     {a: 1 b c}         ## an associative array or dictionary
     
+Named references are created using 'var'. They exist only inside the module or function in which they are first defined. This includes inner functions, but if the inner function defines a 'var' of the same name it will be distinct and hide the outer reference.
+
+    (var ref 23)
+    
 ## Functional List
 In Lispz the braces are reserved for function-like calls - being traditional functions and lisp macros. The atom immediately after the open brace is the name of the function or macro.
 
@@ -116,6 +120,14 @@ Anonymous functions are created with the lambda key-word (which is actually a ma
     ...
     a = 12
     (console.log a (+1 a))  ## 12 13
+    
+While I normally avoid short-cuts that don't clarify the code, I made an exception for functions without parameters. I kept forgetting the enpty square brackets.
+
+    (var random-number (=> (Math.random))
+
+Like JavaScript, lispz function definitions specify a fixed number of arguments. To gain access to the full list of arguments, use *arguments, with an optional starting index.
+
+    (lambda [type rest] (console.log type "=" (*arguments 1)))
 
 # Iteration
 
