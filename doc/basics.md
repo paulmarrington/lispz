@@ -128,7 +128,7 @@ While I normally avoid short-cuts that don't clarify the code, I made an excepti
 Like JavaScript, lispz function definitions specify a fixed number of arguments. To gain access to the full list of arguments, use *arguments, with an optional starting index.
 
     (lambda [type rest] (console.log type "=" (*arguments 1)))
-
+    
 # Iteration
 
 In the functional way of programming, loop style iteration is (almost) never needed. Because of the 'almost' and to provide for those week on functional will, lispz provides one loop operator. It takes a test and a body.
@@ -143,3 +143,21 @@ Of course the need for iteration remains no matter what programming discipline y
     (dict.sequential items (lambda [key value next=>] ...) (=> (on-complete=> items results)))
 
 # Miscellaneous
+In the extremely unlikely situation that you need a global variable, it can be defined as
+
+    (global the-world-knows (=> ...))
+
+Lispz is not an OO language, but JavaScript is. Sometimes it is necessary to create a new instance from the base library.
+
+    (var now (new Date))
+    
+As a functional language, Lispz attempts to avoid changing of data. In the JavaScript ecosystem this is not always possible. As a compromise, lispz allows it but makes examples obvious. Only use it to change data within closures or for external systems such as the DOM when nothing else will do. In other words it is up to the developer to be totally clear of the reach of any change.
+
+    (var cash 1000)
+    ...
+    (var cash (+ cash 100))
+    ...
+    (var add (lambda [added] (set! cash (+ cash added))))
+    (add 200)
+    
+In the example above, set! is used because a var would create a new reference inside the closure.
