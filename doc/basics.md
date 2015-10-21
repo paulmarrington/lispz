@@ -54,6 +54,10 @@ Use the get command to retrieve entries
     
 All the JavaScript list processing functions (every, filter, forEach, ...) are available. See the [List Processing](list-processing.md) section for more details.
 
+To see if an array contains an element, use 'in':
+
+    (return-if (12 in list) "has dozen")
+
 ## Associative Array List
 
 Are also called dictionaries or hashmaps. Because lispz is a functional language it is not uncommon for functions to return a dictionary of values. To make them clearer, if a key is supplied without a following colon then it is placed into the dictionary with a value of the same name.
@@ -64,7 +68,17 @@ Are also called dictionaries or hashmaps. Because lispz is a functional language
     
 will create a JavaScript dictionary of the form
 
-    {exported_method_1: exported_method_1, key: key, error: false, date: new Date()}
+    (var exporting {exported_method_1: exported_method_1, key: key, error: false, date: (new Date)})
+    
+access with a key is identical to arrays except that it is a key rather than an index. If the key is known, using dot syntax is clearer
+
+    exporting.error
+    (get exporting key)
+    
+If you need to update a dictionary, use set! or dict.update!. Be aware of and keep referential integrity.
+
+    (set! exporting.error "it broke")
+    (dict.update exporting key "new key)
 
 # Operators
 
@@ -97,7 +111,7 @@ Lispz boasts only one traditional conditional operator plus a number of macros f
 
 Apart from all the standard conditional tests (< > <= >=, etc), and the aliases (is isnt not), there are also a few more complex tests:
 
-    (empty? array) ## true if the array does not have any elements
+    (default? array) ## true if the array does not have any elements
     (defined? item) ## true if the item exists and is non-empty
 
 As a functional language, most decisions are made by small single-focus functions. As such, conditional returns are a useful shortcut. To this end, return? returns a value if it not false, null or an empty container, while return-if has a conditional pair. If the first is true the second is returned.
@@ -169,6 +183,15 @@ As a functional language, Lispz attempts to avoid changing of data. In the JavaS
 In the example above, set! is used because a var would create a new reference inside the closure.
 
 # Miscellaneous
+
+Delay will wait a specified number of milliseconds before executing the body of code. Yield just places the body on the execution stack to be run next in the processing loop. It is a way of waiting for other processes such as UI processing to complete before continuing.
+
+    (delay 10 (console.log "waited"))
+    (yield (is-field-visible))
+    
+And when you need something that varies (and therefore cannot have referential integrity), use random. Give it a range and it will return a number between zero and the integer before the range.
+
+    (var percentage (random 101))
 
 In the extremely unlikely situation that you need a global variable, it can be defined as
 
