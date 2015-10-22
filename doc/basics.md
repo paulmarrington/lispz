@@ -107,7 +107,11 @@ Lispz boasts only one traditional conditional operator plus a number of macros f
           (not v)       (return 0)
           (else)        (return -1)
     )
-    (var value (default? basic-value "I am empty")
+    (var value (default? basic-value "I am empty"))
+    
+Because conditionals work with list pairs, it is necessary to wrap the actions if there are more than one. Lispz provides 'do' for that.
+
+    (cond ok? (do (finish-up) (return true)))
 
 Apart from all the standard conditional tests (< > <= >=, etc), and the aliases (is isnt not), there are also a few more complex tests:
 
