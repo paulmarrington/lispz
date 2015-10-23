@@ -59,3 +59,5 @@ To process a list with an asynchronous method sequentially
       
       (list.sequential l1 for-each=> on-completion=>)
     )
+    
+There is a matching sequential operation for dictionaries.
