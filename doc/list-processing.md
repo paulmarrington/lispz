@@ -29,3 +29,5 @@ The following are not referentially transparent
     (l1.reverse)                                                    ## (is l1 [[3 2 1]])
     (l1.shift))                                                     ## 1  ## (is l1 [[2 3]])
     (l1.sort (lambda [a b] (- b a)))                                ## [[3 2 1]]  ## function optional
+    (l1.splice 1 1 32 33)                                           ## [[1 32 33 3]]  ## idx delcnt adds
+    (l1.unshift 99)                                                 ## [[99 1 2 3]]
