@@ -4,10 +4,15 @@ Lisp was named as a shorter form of 'list processing'. When I first heard of lis
 
 Lispz compiles to JavaScript on the browser, so has very little opportunity at this time to use multiple cores. It will work happily with web workers once they become ubiquitous, but that is more the architecture of the workers than the language to use.
 
-Enough... on to lists. JavaScript ES5 has already added quite a few referentially transparent list processing functions. In this case it means they will not change the lists provided as input
+Enough... on to lists. JavaScript ES5 has already added quite a few referentially transparent list processing functions. In this case it means they will not change the lists provided as input.
 
     (var l1 [[1 2 3]]   l2 [[4 5]]   l3 [[6 7]])
     
-    (var all (l1.concat l2 l3))                                      ## [[1 2 3 4 5 6 7]]
-    (var some (l1.every (lambda [item index] (return (< index 2))))) ## [[1 2]]
-    (var odd (l1.every (lambda [item index] (return (index % 2)))))  ## [[1 3]]
+    (l1.concat l2 l3)                                           ## [[1 2 3 4 5 6 7]]
+    (l1.indexOf 2 from)                                         ## 1  ## from is optional
+    (li.join ", ")                                              ## "1, 2, 3"
+    
+    (l1.every (lambda [item index lst] (return (< index 2))))   ## [[1 2]]  ## index, lst are optional
+    (l1.filter (lambda [item index lst] (return (% index 2))))  ## [[1 3]]
+    (l1.forEach (lambda [item index lst] (console.log item)))   ## 1\n2\n3
+    
