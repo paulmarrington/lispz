@@ -6,6 +6,8 @@ Lispz compiles to JavaScript on the browser, so has very little opportunity at t
 
 Enough... on to lists. JavaScript ES5 has already added quite a few referentially transparent list processing functions. In this case it means they will not change the lists provided as input
 
-    (var full-list (list-1.concat list-2 list-3)) ## returns a list with all the elements of the provided lists
-    (var some (list-1.every (lambda [item index] (return (< index 2))))) ## returns array of first 2 elements
-    (var odd (list-1.every (lambda [item index] (return (index % 2))))) ## returns array of every second element
+    (var l1 [[1 2 3]]   l2 [[4 5]]   l3 [[6 7]])
+    
+    (var all (l1.concat l2 l3))                                      ## [[1 2 3 4 5 6 7]]
+    (var some (l1.every (lambda [item index] (return (< index 2))))) ## [[1 2]]
+    (var odd (l1.every (lambda [item index] (return (index % 2)))))  ## [[1 3]]
