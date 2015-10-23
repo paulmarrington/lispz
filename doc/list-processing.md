@@ -19,9 +19,13 @@ Enough... on to lists. JavaScript ES5 has already added quite a few referentiall
     (l1.map (lambda [item idx lst] (return (* item 2))))            ## [[2 4 6]]
     (l1.reduce (lambda [prev item idx lst] (return (+ prev item))) seed)      ## 6 ## seed optional
     (l1.reduceRight (lambda [prev item idx lst] (return (+ prev item))) seed) ## 6 ## seed optional
+    (l1.slice 1 2)                                                  ## [[2]] ## -ve from end
+    (l1.some (lambda [item idx lst] (is item 4)))                   ## false  ## true if (is item 2)
     
 The following are not referentially transparent
 
-    (l1.pop)                                                    ## 3  ## changes l1 to [[1 2]]
-    (l1.push 88)                                                ## [[1 2 3 88]]
-    
+    (l1.pop)                                                        ## 3  ## (is l1 [[1 2]])
+    (l1.push 88)                                                    ## [[1 2 3 88]]
+    (l1.reverse)                                                    ## (is l1 [[3 2 1]])
+    (l1.shift))                                                     ## 1  ## (is l1 [[2 3]])
+    (l1.sort (lambda [a b] (- b a)))                                ## [[3 2 1]]  ## function optional
