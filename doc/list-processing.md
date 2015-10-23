@@ -31,3 +31,31 @@ The following are not referentially transparent
     (l1.sort (lambda [a b] (- b a)))                                ## [[3 2 1]]  ## function optional
     (l1.splice 1 1 32 33)                                           ## [[1 32 33 3]]  ## idx delcnt adds
     (l1.unshift 99)                                                 ## [[99 1 2 3]]
+
+Lispz has less convenient access to specific entries for updates or removals
+
+    (get l1 1)                                                      ## 2
+    (set! (get l1 1) 22)                                            ## (is l1 [[1 22 3]])
+    (update! l1 1 22)                                               ## (is l1 [[1 22 3]])
+    
+And for more functional processing
+
+    (first l1)                                                      ## 1
+    (rest l1)                                                       ## [[2 3]]
+    (last l1)                                                       ## 3
+    
+And others...
+
+    (in l2 2)                                                       ## true
+    (empty? l1)                                                     ## false
+    (slice 1 2)                                                     ## [[2]]  ## works with *arguments
+    
+To process a list with an asynchronous method sequentially
+
+    (using [list]
+    
+      (var for-each=> (lambda [item next=>] ... (next=>)))
+      (var on-completion (=> (console.log "All Done")))
+      
+      (list.sequential l1 for-each=> on-completion=>)
+    )
