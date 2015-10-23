@@ -78,7 +78,19 @@ access with a key is identical to arrays except that it is a key rather than an 
 If you need to update a dictionary, use set! or dict.update!. Be aware of and keep referential integrity.
 
     (set! exporting.error "it broke")
-    (dict.update exporting key "new key)
+    (dict.update! exporting key "new key)
+    
+Lispz provides some more functional referentially transparent functions.
+
+    (var big-dict (dict.merge dict-1 dict-2 dict-3))
+    
+Sometimes we want to process each element in a dictionary one after another:
+
+    (using [dict]
+      (var for-each (lambda [key value next=>] ... (next=>))
+      (var on-completion (=> (console.log "All done")))
+      (dict.sequential my-dict for-each=> on-completion=>)
+    )
 
 # Operators
 
