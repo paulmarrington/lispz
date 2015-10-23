@@ -8,16 +8,17 @@ Enough... on to lists. JavaScript ES5 has already added quite a few referentiall
 
     (var l1 [[1 2 3]]   l2 [[4 5]]   l3 [[6 7]])
     
-    (l1.concat l2 l3)                                                   ## [[1 2 3 4 5 6 7]]
-    (l1.indexOf 2 from)                                                 ## 1  ## from defaults to 0
-    (li.join ", ")                                                      ## "1, 2, 3"
-    (li.lastIndexOf 2 from)                                             ## 1  ## from default to last element
+    (l1.concat l2 l3)                                               ## [[1 2 3 4 5 6 7]]
+    (l1.indexOf 2 from)                                             ## 1  ## from defaults to 0
+    (li.join ", ")                                                  ## "1, 2, 3"
+    (li.lastIndexOf 2 from)                                         ## 1  ## from default to last element
     
-    (l1.every (lambda [item idx lst] (return (< idx 2))))               ## [[1 2]]  ## index, lst are optional
-    (l1.filter (lambda [item idx lst] (return (% idx 2))))              ## [[1 3]]
-    (l1.forEach (lambda [item idx lst] (console.log item)))             ## 1\n2\n3
-    (l1.map (lambda [item idx lst] (return (* item 2))))                ## [[2 4 6]]
-    (l1.reduce (lambda [prev item idx lst] (return (+ prev item))) seed)## 6  ## 0 + 1 + 2 + 3
+    (l1.every (lambda [item idx lst] (return (< idx 2))))           ## [[1 2]]  ## index, lst are optional
+    (l1.filter (lambda [item idx lst] (return (% idx 2))))          ## [[1 3]]
+    (l1.forEach (lambda [item idx lst] (console.log item)))         ## 1\n2\n3
+    (l1.map (lambda [item idx lst] (return (* item 2))))            ## [[2 4 6]]
+    (l1.reduce (lambda [prev item idx lst] (return (+ prev item))) seed)      ## 6 ## seed optional
+    (l1.reduceRight (lambda [prev item idx lst] (return (+ prev item))) seed) ## 6 ## seed optional
     
 The following are not referentially transparent
 
