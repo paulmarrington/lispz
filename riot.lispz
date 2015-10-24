@@ -1,5 +1,5 @@
 (using  [net list github]
-  (var compile (lambda [html] (return (riot.compile html))))
+  (var compile (lambda [html to-js] (return (riot.compile html to-js))))
 
   (var cache {})
 

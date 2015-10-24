@@ -1,9 +1,52 @@
-(using [net]
+(using [net github dict list riot]
   (var manifest (=>
     (var text [["CACHE MANIFEST"]])
     (lispz.manifest.forEach (lambda [uri] (text.push uri)))
     (text.push "NETWORK:" "*")
     (return (text.join "\n"))
   ))
-  (export {manifest})
+
+  (var package (lambda [lispz-repo packaged=>]  (github.update lispz-repo (=>
+    (github.list-dir lispz-repo "" (lambda [err meta-list]
+      (var modules [[]] riots [[]])
+      (meta-list.forEach (lambda [entry]
+        (return? (not (is "file" entry.type)))
+        (var parts (entry.name.split "."))
+        (var ext (last parts))
+        (cond
+          (is ext "lispz")                          (modules.push (first parts))
+          (is ((slice parts -2).join ".") "riot.html") (riots.push entry.name)
+        )
+      ))
+      (lispz.load (modules.join ",") (=>
+        (github.read lispz-repo "lispz.js" (lambda [err data]
+          (var source [[data]])
+          (dict.for-each lispz.cache (lambda [key value]
+            (var contents ((get lispz.modules key).toString))
+            (source.push "\n\nlispz.modules['" key "']=" contents)
+          ))
+          (list.sequential riots (lambda [path next=>]
+            (github.read lispz-repo path (lambda [err data]
+              (source.push
+                (+ "\n\n/*" path "*/\n\n")
+                (riot.compile data true)
+                "//# sourceURL=" path "\n"
+              )
+              (next=>)
+            ))
+          ) (=>
+            (github.write lispz-repo (+ "ext/lispz.js")
+              (unescape (encodeURIComponent (source.join "")))
+              "lispz release code" packaged=>
+            )
+          ))
+        ))
+      ))
+    ))
+  ))))
+
+  (var distribute (lambda [target-repo]
+  ))
+
+  (export {manifest package distribute})
 )

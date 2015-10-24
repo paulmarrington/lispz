@@ -179,8 +179,17 @@ var lispz = function() {
     }
     req.send()
   },
+  module_init = function(uri) {
+    modules[uri](function(exports) {
+      cache[name] = cache[uri] = exports
+      var on_readies = pending[uri]
+      delete pending[uri]
+      on_readies.forEach(function(call_module) {call_module(exports)})
+    })
+  }
   load_one = function(uri, on_ready) {
-    if (cache[uri] !== undefined) return on_ready(cache[uri])
+    if (cache[uri]) return on_ready()
+    if (modules[uri]) return module_init(uri)
     if (pending[uri]) return pending[uri].push(on_ready)
     pending[uri] = [on_ready]; var js = ""
     http_request(uri + ".lispz", 'GET', function(response) {
@@ -190,15 +199,9 @@ var lispz = function() {
         js = compile(uri, response.text).join('\n') +
           "//# sourceURL=" + name + ".lispz\n"
         modules[uri] = new Function('__module_ready__', js)
-        modules[uri](function(exports) {
-          cache[name] = cache[uri] = exports
-          var on_readies = pending[uri]
-          delete pending[uri]
-          on_readies.forEach(function(call_module) {call_module(exports)})
-        })
+        module_init(uri)
       } catch (e) {
         delete pending[uri]
-        console.log(js)
         throw e
       }
     })

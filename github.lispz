@@ -48,6 +48,18 @@
     (var write (lambda [repo path contents comment complete=>]
       (repo.write repo.lispz.branch path contents comment complete=>)
     ))
+    ## preprocess a file to generate css or js dependent on extension
+    (var preprocessors {
+      lispz: (lambda [name code]
+        (return {ext: "js" code: (window.lispz.compile name code)})
+      )
+    })
+    (var preprocess (lambda [path code]
+      (var ext (last (path.split ".")))
+      (var preprocessor (get preprocessors ext))
+      (return-if (not preprocessor) {ext code})
+      (return (preprocessor path code))
+    ))
     ## Build and save a dependency list
     (var retriever (lambda [target-repo sources actors retrieved=>]
       (var code {js: [[]] css: [[]]  copies: {} from: [["Gathered from: "]]})
@@ -69,14 +81,15 @@
               )))
             )
             (list.sequential files (lambda [path next-file=>]
-              (var saver (get code (last (path.split "."))))
               (actors.read source-repo path (lambda [err data]
+                (var entry (preprocess path data))
+                (var saver (get code entry.ext))
                 (cond saver (do
                   (saver.push (+ "\n\n/*" path "*/\n\n"))
-                  (saver.push data)
+                  (saver.push entry.code)
                 ) meta.copy-to (do
                   (var filename (last (path.split "/")))
-                  (set! (get copies (+ meta.copy-to "/" filename)) data)
+                  (set! (get code.copies (+ meta.copy-to "/" filename)) data)
                 ))
                 (next-file=>)
               ))
@@ -97,7 +110,7 @@
           )
         ))))
         (save "js" (=> (save "css" (=>
-          (dict.sequential copies (lambda [path contents next-file=>]
+          (dict.sequential code.copies (lambda [path contents next-file=>]
             (write target-repo path
               (unescape (encodeURIComponent contents)) comment next-file=>)
           ) built=>)
@@ -168,8 +181,8 @@
       (build target-repo "github" sources  built=>)
     ))
     (export {
-      branch list-all cdn-uri build builder repo read write update
-      build-github release-uri retriever grunt
+      branch list-all list-dir cdn-uri build builder repo read write update
+      build-github release-uri retriever grunt preprocessors
       move: (lambda [repo from to ready=>]
         (repo.move repo.lispz.branch from to complete=>)
       )
