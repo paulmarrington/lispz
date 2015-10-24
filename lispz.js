@@ -7,7 +7,7 @@ var lispz = function() {
     '###+(?:.|\\r*\\n)*?###+|' + '##\\s+.*?\\r*\\n|',
   tkre = new RegExp('(' + stringRE + '\\' + delims + "|[^\\s" + not_delims + "]+)", 'g'),
   opens = new Set("({["), closes = new Set(")}]"), ast_to_js, slice = [].slice, contexts = [],
-  module = {line:0, name:"boot"}, modules = {}, globals = {}, load_index = 0,
+  module = {line:0, name:"boot"}, globals = {}, load_index = 0,
   synonyms = {and:'&&',or:'||',is:'===',isnt:'!=='},
   jsify = function(atom) {
     if (/^'.*'$/.test(atom)) return atom.slice(1, -1).replace(/\\n/g, '\n')
@@ -163,7 +163,7 @@ var lispz = function() {
   },
   run = function(name, source) { return compile(name, source).map(eval) },
   //######################### Script Loader ####################################//
-  cache = {}, manifest = [], pending = {},
+  cache = {}, manifest = [], pending = {}, modules = {}
   http_request = function(uri, type, callback) {
     var req = new XMLHttpRequest()
     req.open(type, uri, true)
@@ -199,17 +199,9 @@ var lispz = function() {
       } catch (e) {
         delete pending[uri]
         console.log(js)
-        throw e.stack
+        throw e
       }
     })
-  },
-  load = function(uris, on_all_ready) {
-    uris = uris.split(",")
-    var next_uri = function() {
-      if (uris.length) load_one(uris.shift().trim(), next_uri)
-      else if (on_all_ready) on_all_ready()
-    }
-    next_uri()
   },
   // Special to set variables loaded with requires
   requires_to_js = function(list) {
@@ -218,6 +210,14 @@ var lispz = function() {
       var name = module.trim().split('/').pop()
       return jsify(name) + '=lispz.cache["' + name + '"]'
     }) + ';'
+  },
+  load = function(uris, on_all_ready) {
+    uris = uris.split(",")
+    var next_uri = function() {
+      if (uris.length) load_one(uris.shift().trim(), next_uri)
+      else if (on_all_ready) on_all_ready()
+    }
+    next_uri()
   }
   if (window) window.onload = function() {
     var q = document.querySelector('script[src*="lispz.js"]').getAttribute('src').split('#')
@@ -243,7 +243,8 @@ var lispz = function() {
   // add all standard binary operations (+, -, etc)
   "+,-,*,/,&&,||,==,===,<=,>=,!=,!==,<,>,^,%".split(',').forEach(binop_to_js)
 
-  return { compile: compile, run: run, parsers: parsers, load: load, macros: macros, cache: cache,
-           http_request: http_request, clone: clone, manifest: manifest, modules: modules,
+  return { compile: compile, run: run, parsers: parsers, load: load,
+           macros: macros, cache: cache, http_request: http_request,
+           clone: clone, manifest: manifest, modules: modules,
            synonyms: synonyms, globals: globals }
 }()
