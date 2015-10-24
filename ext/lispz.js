@@ -247,6 +247,8 @@ var lispz = function() {
            http_request: http_request, clone: clone, manifest: manifest, modules: modules,
            synonyms: synonyms, globals: globals }
 }()
+
+
 lispz.modules['core']=function anonymous(__module_ready__
 /**/) {
 /*macro debug*///#core:1
@@ -353,7 +355,9 @@ lispz.globals.random=(function(range){return Math.floor((Math.random()*range))
 /*macro random*///#core:68
 //# sourceURL=core.lispz
 
-}lispz.modules['list']=function anonymous(__module_ready__
+}
+
+lispz.modules['list']=function anonymous(__module_ready__
 /**/) {
 var sequential=(function(list,for_each_q__g_,on_complete_q__g_){switch(false){case !!(list):return on_complete_q__g_()
 }//#list:5
@@ -372,7 +376,9 @@ each_q__g_()//#list:10
 __module_ready__({'sequential':sequential})//#list:13
 //# sourceURL=list.lispz
 
-}lispz.modules['dict']=function anonymous(__module_ready__
+}
+
+lispz.modules['dict']=function anonymous(__module_ready__
 /**/) {
 var insert=(function(target,dictionaries){dictionaries.forEach((function(dictionary){Object.keys(dictionary).forEach((function(key){target[key]=dictionary[key];//#dict:4
 }))//#dict:5
@@ -425,7 +431,9 @@ each_q__g_()//#dict:41
 
 __module_ready__({'merge':merge,'from_list':from_list,'insert_$_':insert_$_,'for_each':for_each,'sequential':sequential})//# sourceURL=dict.lispz
 
-}lispz.modules['dom']=function anonymous(__module_ready__
+}
+
+lispz.modules['dom']=function anonymous(__module_ready__
 /**/) {
 lispz.load("dict"//#core:48
 ,(function(){var dict=lispz.cache["dict"];
@@ -457,7 +465,9 @@ var add=(function(){element.addEventListener(event,listener)});//#dom:18
 __module_ready__({'append_$_':append_$_,'element':element,'event_throttle':event_throttle})//#dom:21
 }))//# sourceURL=dom.lispz
 
-}lispz.modules['net']=function anonymous(__module_ready__
+}
+
+lispz.modules['net']=function anonymous(__module_ready__
 /**/) {
 lispz.load("list,dom"//#core:48
 ,(function(){var list=lispz.cache["list"],dom=lispz.cache["dom"];
@@ -496,7 +506,9 @@ __module_ready__({'script':script,'css':css,'http_get':http_get,'json_request':j
 }))//#net:35
 //# sourceURL=net.lispz
 
-}lispz.modules['firebase']=function anonymous(__module_ready__
+}
+
+lispz.modules['firebase']=function anonymous(__module_ready__
 /**/) {
 lispz.load("net"//#core:48
 ,(function(){var net=lispz.cache["net"];
@@ -535,7 +547,9 @@ net.script("https://cdn.firebase.com/js/client/2.2.9/firebase.js",(function(){__
 }))//#firebase:26
 //# sourceURL=firebase.lispz
 
-}lispz.modules['message']=function anonymous(__module_ready__
+}
+
+lispz.modules['message']=function anonymous(__module_ready__
 /**/) {
 var store={},expecting={};//#message:1
 //#message:2
@@ -616,7 +630,9 @@ listen("logging",(function(packet){console.log(packet.level,"-",packet.text)//#m
 __module_ready__({'exchange':exchange,'send':send,'expect':expect,'listen':listen,'dispatch':dispatch,'wait_for':wait_for})//#message:66
 //# sourceURL=message.lispz
 
-}lispz.modules['cdnjs']=function anonymous(__module_ready__
+}
+
+lispz.modules['cdnjs']=function anonymous(__module_ready__
 /**/) {
 lispz.load("net,github"//#core:48
 ,(function(){var net=lispz.cache["net"],github=lispz.cache["github"];
@@ -651,7 +667,9 @@ net.http_get(uri,(function(response){ready_q__g_(null,response.text)//#cdnjs:28
 }))//#cdnjs:35
 //# sourceURL=cdnjs.lispz
 
-}lispz.modules['jquery']=function anonymous(__module_ready__
+}
+
+lispz.modules['jquery']=function anonymous(__module_ready__
 /**/) {
 lispz.load("net,cdnjs"//#core:48
 ,(function(){var net=lispz.cache["net"],cdnjs=lispz.cache["cdnjs"];
@@ -664,7 +682,9 @@ net.script("ext/jquery.js",(function(){__module_ready__({'build':(function(targe
 }))//#jquery:13
 //# sourceURL=jquery.lispz
 
-}lispz.modules['riot']=function anonymous(__module_ready__
+}
+
+lispz.modules['riot']=function anonymous(__module_ready__
 /**/) {
 lispz.load("net,list,github"//#core:48
 ,(function(){var net=lispz.cache["net"],list=lispz.cache["list"],github=lispz.cache["github"];
@@ -716,7 +736,9 @@ load(name,uri,next_element_q__g_)//#riot:34
 }))//#riot:39
 //# sourceURL=riot.lispz
 
-}lispz.modules['diff_match_patch']=function anonymous(__module_ready__
+}
+
+lispz.modules['diff_match_patch']=function anonymous(__module_ready__
 /**/) {
 lispz.load("net,github"//#core:48
 ,(function(){var net=lispz.cache["net"],github=lispz.cache["github"];
@@ -729,7 +751,9 @@ net.script("ext/diff_match_patch.js",(function(){__module_ready__({'build':(func
 }))//#diff_match_patch:13
 //# sourceURL=diff_match_patch.lispz
 
-}lispz.modules['bootstrap']=function anonymous(__module_ready__
+}
+
+lispz.modules['bootstrap']=function anonymous(__module_ready__
 /**/) {
 lispz.load("net,github"//#core:48
 ,(function(){var net=lispz.cache["net"],github=lispz.cache["github"];
@@ -745,7 +769,9 @@ net.script("ext/bootstrap.js",(function(){__module_ready__({'build':(function(ta
 }))//#bootstrap:15
 //# sourceURL=bootstrap.lispz
 
-}lispz.modules['codemirror']=function anonymous(__module_ready__
+}
+
+lispz.modules['codemirror']=function anonymous(__module_ready__
 /**/) {
 lispz.load("net,diff_match_patch,message,dict,github"//#core:48
 ,(function(){var net=lispz.cache["net"],diff_match_patch=lispz.cache["diff_match_patch"],message=lispz.cache["message"],dict=lispz.cache["dict"],github=lispz.cache["github"];
@@ -1152,7 +1178,9 @@ setTimeout((function(){net.css("ext/codemirror-themes.css")}),100)//#codemirror:
 }))//#codemirror:531
 //# sourceURL=codemirror.lispz
 
-}lispz.modules['firepad']=function anonymous(__module_ready__
+}
+
+lispz.modules['firepad']=function anonymous(__module_ready__
 /**/) {
 lispz.load("net,github"//#core:48
 ,(function(){var net=lispz.cache["net"],github=lispz.cache["github"];
@@ -1167,7 +1195,9 @@ net.script("ext/firepad.js",(function(){__module_ready__({'build':(function(targ
 }))//#firepad:19
 //# sourceURL=firepad.lispz
 
-}lispz.modules['github']=function anonymous(__module_ready__
+}
+
+lispz.modules['github']=function anonymous(__module_ready__
 /**/) {
 lispz.load("net,dict,list"//#core:48
 ,(function(){var net=lispz.cache["net"],dict=lispz.cache["dict"],list=lispz.cache["list"];
@@ -1367,7 +1397,9 @@ __module_ready__({'branch':branch,'list_all':list_all,'list_dir':list_dir,'cdn_u
 }))//#github:194
 //# sourceURL=github.lispz
 
-}lispz.modules['dev']=function anonymous(__module_ready__
+}
+
+lispz.modules['dev']=function anonymous(__module_ready__
 /**/) {
 lispz.load("net,github,dict,list,riot"//#core:48
 ,(function(){var net=lispz.cache["net"],github=lispz.cache["github"],dict=lispz.cache["dict"],list=lispz.cache["list"],riot=lispz.cache["riot"];
@@ -1400,7 +1432,7 @@ lispz.load(modules.join(","),(function(){github.read(lispz_repo,"lispz.js",(func
 
 dict.for_each(lispz.cache,(function(key,value){var contents=lispz.modules[key].toString();//#dev:25
 
-source.push("lispz.modules['",key,"']=",contents)//#dev:26
+source.push("\n\nlispz.modules['",key,"']=",contents)//#dev:26
 }))//#dev:27
 
 list.sequential(riots,(function(path,next_q__g_){github.read(lispz_repo,path,(function(err,data){source.push(("\n\n/*"+path+"*/\n\n")//#dev:31
