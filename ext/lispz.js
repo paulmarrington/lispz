@@ -179,18 +179,17 @@ var lispz = function() {
     }
     req.send()
   },
-  module_init = function(uri) {
+  module_init = function(uri, on_readies) {
     modules[uri](function(exports) {
-      cache[name] = cache[uri] = exports
-      var on_readies = pending[uri]
+      cache[uri.split('/').pop()] = cache[uri] = exports
       delete pending[uri]
       on_readies.forEach(function(call_module) {call_module(exports)})
     })
   }
   load_one = function(uri, on_ready) {
     if (cache[uri]) return on_ready()
-    if (modules[uri]) return module_init(uri)
     if (pending[uri]) return pending[uri].push(on_ready)
+    if (modules[uri]) return module_init(uri, [on_ready])
     pending[uri] = [on_ready]; var js = ""
     http_request(uri + ".lispz", 'GET', function(response) {
       try {
@@ -199,7 +198,7 @@ var lispz = function() {
         js = compile(uri, response.text).join('\n') +
           "//# sourceURL=" + name + ".lispz\n"
         modules[uri] = new Function('__module_ready__', js)
-        module_init(uri)
+        module_init(uri, pending[uri])
       } catch (e) {
         delete pending[uri]
         throw e
@@ -249,7 +248,7 @@ var lispz = function() {
   return { compile: compile, run: run, parsers: parsers, load: load,
            macros: macros, cache: cache, http_request: http_request,
            clone: clone, manifest: manifest, modules: modules,
-           synonyms: synonyms, globals: globals }
+           synonyms: synonyms, globals: globals, tags: {} }
 }()
 
 
@@ -1201,6 +1200,22 @@ net.script("ext/firepad.js",(function(){__module_ready__({'build':(function(targ
 
 }
 
+lispz.modules['dexie']=function anonymous(__module_ready__
+/**/) {
+lispz.load("net,github"//#core:48
+,(function(){var net=lispz.cache["net"],github=lispz.cache["github"];
+var build=(function(target_repo,built_q__g_){github.build(target_repo,"dexie",[{'repo':"dfahlander/Dexie.js",'files':[{'base':"dist/latest",'include':/Dexie.js$/}//#dexie:6
+]}//#dexie:7
+],built_q__g_)//#dexie:8
+});//#dexie:9
+//#dexie:10
+
+net.script("ext/dexie.js",(function(){__module_ready__({'build':build})}))//#dexie:11
+}))//#dexie:12
+//# sourceURL=dexie.lispz
+
+}
+
 lispz.modules['github']=function anonymous(__module_ready__
 /**/) {
 lispz.load("net,dict,list"//#core:48
@@ -1461,22 +1476,6 @@ var distribute=(function(target_repo){});//#dev:49
 __module_ready__({'manifest':manifest,'package':package,'distribute':distribute})//#dev:51
 }))//#dev:52
 //# sourceURL=dev.lispz
-
-}
-
-lispz.modules['dexie']=function anonymous(__module_ready__
-/**/) {
-lispz.load("net,github"//#core:48
-,(function(){var net=lispz.cache["net"],github=lispz.cache["github"];
-var build=(function(target_repo,built_q__g_){github.build(target_repo,"dexie",[{'repo':"dfahlander/Dexie.js",'files':[{'base':"dist/latest",'include':/Dexie.js$/}//#dexie:6
-]}//#dexie:7
-],built_q__g_)//#dexie:8
-});//#dexie:9
-//#dexie:10
-
-net.script("ext/dexie.js",(function(){__module_ready__({'build':build})}))//#dexie:11
-}))//#dexie:12
-//# sourceURL=dexie.lispz
 
 }
 
