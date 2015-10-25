@@ -44,9 +44,6 @@
 (macro rest [list] (list .slice 1))
 (macro last [list] (get (list .slice -1) 0))
 (global slice (lambda [list from to]  (return ([[]].slice.call list from to))))
-(macro for-each-attribute [obj action]
-  (Object.keys obj)(.forEach (lambda [k] (action k (get obj k))))
-)
 ### module import ###
 (macro using [modules *on_ready] (lispz.load (#join '' '"' modules '"')
   (=> (#requires modules) *on_ready)))

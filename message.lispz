@@ -53,4 +53,14 @@
   ))
 ))
 
+(var log (lambda [text]
+  (var parts (text.split '/\s*:\s*/'))
+  (cond (is 1 parts.length) (parts.unshift "message"))
+  (send "logging" {level: (get parts 0) text: (get parts 1)})
+))
+
+(listen "logging" (lambda [packet]
+  (console.log packet.level "-" packet.text)
+))
+
 (export {exchange send expect listen dispatch wait-for})

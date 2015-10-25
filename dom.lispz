@@ -1,18 +1,22 @@
-(var append! (lambda [parent element]
-  (document.querySelector parent) (.appendChild element)
-))
-
-(var element (lambda [tag-name attributes] (var element (document.createElement tag-name))
-  (for-each-attribute attributes element.setAttribute) (return element)
-))
-  
-(var event-throttle (lambda [element event action]
-  (var add null listener (lambda [event]
-    (element.removeEventListener event listener)
-    (set! timeout (delay 66 add))
-    (action event)
+(using [dict]
+  (var append! (lambda [parent element]
+    (document.querySelector parent) (.appendChild element)
   ))
-  (var add (=> (element.addEventListener event listener)))
-))
-
-(export {append! element event-throttle})
+  
+  (var element (lambda [tag-name attributes]
+    (var elem (document.createElement tag-name))
+    (dict.for-each attributes (lambda [k v] (elem.setAttribute k v)))
+    (return elem)
+  ))
+    
+  (var event-throttle (lambda [element event action]
+    (var add null listener (lambda [event]
+      (element.removeEventListener event listener)
+      (set! timeout (delay 66 add))
+      (action event)
+    ))
+    (var add (=> (element.addEventListener event listener)))
+  ))
+  
+  (export {append! element event-throttle})
+)

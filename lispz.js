@@ -1,4 +1,5 @@
 var lispz = function() {
+  if (!window.lispz_modules) window.lispz_modules = {}
   var delims = "(){}[]n".split(''), // characters that are not space separated atoms
   not_delims = delims.join("\\"), delims = delims.join('|\\'),
   stringRE =
@@ -7,7 +8,7 @@ var lispz = function() {
     '###+(?:.|\\r*\\n)*?###+|' + '##\\s+.*?\\r*\\n|',
   tkre = new RegExp('(' + stringRE + '\\' + delims + "|[^\\s" + not_delims + "]+)", 'g'),
   opens = new Set("({["), closes = new Set(")}]"), ast_to_js, slice = [].slice, contexts = [],
-  module = {line:0, name:"boot"}, modules = {}, globals = {}, load_index = 0,
+  module = {line:0, name:"boot"}, globals = {}, load_index = 0,
   synonyms = {and:'&&',or:'||',is:'===',isnt:'!=='},
   jsify = function(atom) {
     if (/^'.*'$/.test(atom)) return atom.slice(1, -1).replace(/\\n/g, '\n')
@@ -163,7 +164,7 @@ var lispz = function() {
   },
   run = function(name, source) { return compile(name, source).map(eval) },
   //######################### Script Loader ####################################//
-  cache = {}, manifest = [], pending = {},
+  cache = {}, manifest = [], pending = {}
   http_request = function(uri, type, callback) {
     var req = new XMLHttpRequest()
     req.open(type, uri, true)
@@ -179,9 +180,17 @@ var lispz = function() {
     }
     req.send()
   },
+  module_init = function(uri, on_readies) {
+    lispz_modules[uri](function(exports) {
+      cache[uri.split('/').pop()] = cache[uri] = exports
+      delete pending[uri]
+      on_readies.forEach(function(call_module) {call_module(exports)})
+    })
+  }
   load_one = function(uri, on_ready) {
-    if (cache[uri] !== undefined) return on_ready(cache[uri])
+    if (cache[uri]) return on_ready()
     if (pending[uri]) return pending[uri].push(on_ready)
+    if (lispz_modules[uri]) return module_init(uri, [on_ready])
     pending[uri] = [on_ready]; var js = ""
     http_request(uri + ".lispz", 'GET', function(response) {
       try {
@@ -189,27 +198,13 @@ var lispz = function() {
         if (!response.text) return on_ready(response) // probably an error
         js = compile(uri, response.text).join('\n') +
           "//# sourceURL=" + name + ".lispz\n"
-        modules[uri] = new Function('__module_ready__', js)
-        modules[uri](function(exports) {
-          cache[name] = cache[uri] = exports
-          var on_readies = pending[uri]
-          delete pending[uri]
-          on_readies.forEach(function(call_module) {call_module(exports)})
-        })
+        lispz_modules[uri] = new Function('__module_ready__', js)
+        module_init(uri, pending[uri])
       } catch (e) {
         delete pending[uri]
-        console.log(js)
         throw e
       }
     })
-  },
-  load = function(uris, on_all_ready) {
-    uris = uris.split(",")
-    var next_uri = function() {
-      if (uris.length) load_one(uris.shift().trim(), next_uri)
-      else if (on_all_ready) on_all_ready()
-    }
-    next_uri()
   },
   // Special to set variables loaded with requires
   requires_to_js = function(list) {
@@ -218,8 +213,16 @@ var lispz = function() {
       var name = module.trim().split('/').pop()
       return jsify(name) + '=lispz.cache["' + name + '"]'
     }) + ';'
+  },
+  load = function(uris, on_all_ready) {
+    uris = uris.split(",")
+    var next_uri = function() {
+      if (uris.length) load_one(uris.shift().trim(), next_uri)
+      else if (on_all_ready) on_all_ready()
+    }
+    next_uri()
   }
-  if (window) window.onload = function() {
+  window.onload = function() {
     var q = document.querySelector('script[src*="lispz.js"]').getAttribute('src').split('#')
     load(((q.length == 1) ? "core" : "core," + q.pop()),
       function() {
@@ -243,7 +246,8 @@ var lispz = function() {
   // add all standard binary operations (+, -, etc)
   "+,-,*,/,&&,||,==,===,<=,>=,!=,!==,<,>,^,%".split(',').forEach(binop_to_js)
 
-  return { compile: compile, run: run, parsers: parsers, load: load, macros: macros, cache: cache,
-           http_request: http_request, clone: clone, manifest: manifest, modules: modules,
-           synonyms: synonyms, globals: globals }
+  return { compile: compile, run: run, parsers: parsers, load: load,
+           macros: macros, cache: cache, http_request: http_request,
+           clone: clone, manifest: manifest,
+           synonyms: synonyms, globals: globals, tags: {} }
 }()

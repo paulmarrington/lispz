@@ -1,6 +1,19 @@
-(using  [net]
-  (net.css "https://cdn.firebase.com/libs/firepad/1.2.0/firepad.css")
-  (net.script "https://cdn.firebase.com/libs/firepad/1.2.0/firepad.min.js" (=>
-    (export {})
+(using  [net github]
+  (net.css "ext/firepad.css")
+  (net.script "ext/firepad.js" (=>
+    (export {
+      build: (lambda [target-repo built=>]
+        (github.grunt target-repo "firebase/firepad" (lambda [grunt data]
+          (grunt.build {
+            target: "firepad.js"
+            pre:   data.concat.firepadjs.options.banner
+            post:  data.concat.firepadjs.options.footer
+            files: data.concat.firepadjs.src
+          } (=>
+            (grunt.copy data.copy.toBuild.files built=>)
+          ))
+        ))
+      )
+    })
   ))
 )

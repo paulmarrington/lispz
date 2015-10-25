@@ -6,8 +6,9 @@
         (github.build target-repo "bootstrap" [[
           {repo: "twbs/bootstrap" files: [[
             {base: "dist" exclude: '/\.map$|\.min\.|npm.js$/'}
+            {base: "dist/fonts" copy-to: "fonts"}
           ]]}
-        ]]) built=>
+        ]] built=>)
       )
     })
   ))
