@@ -1,258 +1,6 @@
-var lispz = function() {
-  var delims = "(){}[]n".split(''), // characters that are not space separated atoms
-  not_delims = delims.join("\\"), delims = delims.join('|\\'),
-  stringRE =
-    "''|'[\\s\\S]*?[^\\\\]':?|" +
-    '""|"(?:.|\\r*\\n)*?[^\\\\]"|' +
-    '###+(?:.|\\r*\\n)*?###+|' + '##\\s+.*?\\r*\\n|',
-  tkre = new RegExp('(' + stringRE + '\\' + delims + "|[^\\s" + not_delims + "]+)", 'g'),
-  opens = new Set("({["), closes = new Set(")}]"), ast_to_js, slice = [].slice, contexts = [],
-  module = {line:0, name:"boot"}, globals = {}, load_index = 0,
-  synonyms = {and:'&&',or:'||',is:'===',isnt:'!=='},
-  jsify = function(atom) {
-    if (/^'.*'$/.test(atom)) return atom.slice(1, -1).replace(/\\n/g, '\n')
-    if (/^"(?:.|\r*\n)*"$/.test(atom)) return atom.replace(/\r*\n/g, '\\n')
-    switch (atom[0]) {
-      case '-': return atom // unary minus or negative number
-      default:  return atom.replace(/\W/g, function(c) {
-        var t = "$hpalcewqgutkri"["!#%&+:;<=>?@\\^~".indexOf(c)];
-        return t ? ("_"+t+"_") : (c === "-") ? "_" : c })
-    }
-  },
-  call_to_js = function(func, params) {
-    params = slice.call(arguments, 1)
-    contexts.some(function(pre){if (macros[pre+'.'+func]) {func = pre+'.'+func; return true}})
-    if (synonyms[func]) func = synonyms[func]
-    if (macros[func]) return macros[func].apply(lispz, params)
-    func = ast_to_js(func)
-    if (params[0] && params[0][0] === '.') func += params.shift()
-    return func + '(' + params.map(ast_to_js).join(',') + ')'
-  },
-  macro_to_js = function(name, pnames, body) {
-    body = slice.call(arguments, 2)
-    if (pnames[0] === "\n") pnames = pnames.slice(3) // drop line number component
-    macros[name] = function(pvalues) {
-      pvalues = slice.call(arguments)
-      if (pvalues[0] === "\n") pvalues = pvalues.slice(3) // drop line number component
-      var args = {}
-      pnames.slice(1).forEach(function(pname, i) {
-        args[pname] = (pname[0] === '*') ? ["list"].concat(pvalues.slice(i)) :
-                      (pname[0] === '&') ? ["["].concat(pvalues.slice(i)) : pvalues[i]
-      })
-      var expand = function(ast) {
-        return (ast instanceof Array) ? ast.map(expand) : args[ast] || ast
-      }
-      contexts.unshift(name)
-      var js = ast_to_js(expand((body.length > 1) ? ["list"].concat(body) : body[0]))
-      contexts.shift()
-      return js
-    }
-    return "/*macro "+name+"*/"
-  },
-  array_to_js = function() {
-    var its = slice.call(arguments)
-    if (arguments.length === 1 && arguments[0][0] === '[') {
-      return "[" + its.map(ast_to_js).join(',') + "]"
-    }
-    return its.map(ast_to_js).join(',')
-  },
-  list_to_js = function(its) {
-    return slice.call(arguments).map(ast_to_js).join('\n')
-  },
-  // A dictionary can be a symbol table or k-value pair
-  dict_to_js = function(kvp) {
-    var dict = []; kvp = slice.call(arguments)
-    for (var key, i = 0, l = kvp.length; i < l; i++) {
-      if ((key = kvp[i])[kvp[i].length - 1] === ":") {
-        dict.push("'"+jsify(key.slice(0, -1))+"':"+ast_to_js(kvp[++i]));
-      } else {
-        dict.push("'"+jsify(key)+"':"+ast_to_js(key));
-      }
-    }
-    return "{" + dict.join(',') + "}";
-  },
-  join_to_js = function(sep, parts) {
-    parts = slice.call((arguments.length > 2) ? arguments : parts, 1)
-    return parts.map(ast_to_js).join(ast_to_js(sep))
-  },
-  immediate_to_js = function() {
-    return slice.call(arguments).map(ast_to_js).map(eval)
-  },
-  // processing pairs of list elements
-  pairs_to_js = function(pairs, tween, sep) {
-    var el = [], tween = ast_to_js(tween);
-    if (!(pairs.length % 2)) throw {message:"Unmatched pairs"}
-    for (var i = 1, l = pairs.length; i < l; i += 2) {
-        el.push(ast_to_js(pairs[i]) + tween + ast_to_js(pairs[i + 1]))
-    }
-    return el.join(ast_to_js(sep))
-  },
-  binop_to_js = function(op) {
-    macros[op] = function(list) { return '(' + slice.call(arguments).map(ast_to_js).join(op) + ')' }
-  },
-  /*
-   * When there was a new-line in the source, we inject it into the prior non-atom
-   * if possible. Now we are generating JavaScript we find and process it. This is
-   * because comments can't have their own atom or they will screw up argument lists.
-   */
-  eol_to_js = function(name, number) {
-    module = {name:name, line:number}
-    var ast = slice.call(arguments, 2)
-    var line = ast_to_js(ast)
-    if (ast[0] !== "[" && (ast[0] !== "\n" || ast[3] !== "[")) {
-      line += "//#" + name + ":" + number + "\n"
-    }
-    return line
-  },
-  parsers = [
-    [/^(\(|\{|\[)$/, function(env) {
-      env.stack.push(env.node)
-      env.node = [env.atom]
-    }],
-    [/^(\)|\}|\])$/, function(env) {
-      var f = env.node;
-      try { (env.node = env.stack.pop()).push(f) }
-      catch(e) { compile_error("Unmatched closing bracket") }
-    }],
-    /*
-     * Record line number for JS comment. Can't add a new element,
-     * so only do it if last compiled is not an atom.
-     */
-    [/^\n$/, function(env) {
-      if (!env.node.length) return
-      var atom = env.node[env.node.length - 1]
-      if (!(atom instanceof Array)) return
-      atom.unshift('\n', module.name, module.line)
-    }]
-  ],
-  comment = function(atom) {
-    return atom[0] === "#" && atom[1] === "#" && (atom[2] === '#' || atom[2] == ' ')
-  },
-  compile_error = function(msg, data) {
-    var errloc = module.name+".lispz:"+module.line
-    console.log(errloc, msg, data)
-    return ['throw "compile error for ' + errloc.replace(/["\n]/g," ") +
-            " -- " + msg.replace(/"/g,"'") + '"\n']
-  },
-  parse_to_ast = function(source) {
-    var env = { ast: [], stack: [] }
-    env.node = env.ast
-    tkre.lastIndex = 0
-    while ((env.atom = tkre.exec(source.toString())) && (env.atom = env.atom[1])) {
-      module.line += (env.atom.match(/\n/g) || []).length
-      if (!comment(env.atom) && !parsers.some(function(parser) {
-          if (!parser[0].test(env.atom)) return false
-          parser[1](env)
-          return true
-        })) { env.node.push(env.atom); } }
-    if (env.stack.length != 0) return compile_error("missing close brace", env)
-    return env.ast
-  },
-  ast_to_js = function(ast) {
-    return (ast instanceof Array) ? macros[ast[0]] ?
-      macros[ast[0]].apply(this, ast.slice(1)) : list_to_js(ast) : jsify(ast)
-  },
-  compile = function(name, source) {
-    try {
-      var last_module = module
-      module = {name:name, line:0}
-      var js = parse_to_ast(source).map(ast_to_js)
-      module = last_module
-      return js
-    } catch (err) { return compile_error(err.message, source) }
-  },
-  run = function(name, source) { return compile(name, source).map(eval) },
-  //######################### Script Loader ####################################//
-  cache = {}, manifest = [], pending = {}, modules = {}
-  http_request = function(uri, type, callback) {
-    var req = new XMLHttpRequest()
-    req.open(type, uri, true)
-    if (lispz.debug && uri.indexOf(":") == -1)
-      req.setRequestHeader("Cache-Control", "no-cache")
-    req.onerror = function(err) {
-      callback({ uri: uri, error: err })
-    }
-    req.onload = function() {
-      manifest.push(req.responseURL)
-      if (req.status === 200) callback({ uri:uri, text: req.responseText })
-      else                    req.onerror(req.statusText)
-    }
-    req.send()
-  },
-  module_init = function(uri, on_readies) {
-    modules[uri](function(exports) {
-      cache[uri.split('/').pop()] = cache[uri] = exports
-      delete pending[uri]
-      on_readies.forEach(function(call_module) {call_module(exports)})
-    })
-  }
-  load_one = function(uri, on_ready) {
-    if (cache[uri]) return on_ready()
-    if (pending[uri]) return pending[uri].push(on_ready)
-    if (modules[uri]) return module_init(uri, [on_ready])
-    pending[uri] = [on_ready]; var js = ""
-    http_request(uri + ".lispz", 'GET', function(response) {
-      try {
-        var name = uri.split('/').pop()
-        if (!response.text) return on_ready(response) // probably an error
-        js = compile(uri, response.text).join('\n') +
-          "//# sourceURL=" + name + ".lispz\n"
-        modules[uri] = new Function('__module_ready__', js)
-        module_init(uri, pending[uri])
-      } catch (e) {
-        delete pending[uri]
-        throw e
-      }
-    })
-  },
-  // Special to set variables loaded with requires
-  requires_to_js = function(list) {
-    list = list.slice(list.indexOf("[") + 1)
-    return 'var ' + list.map(function(module) {
-      var name = module.trim().split('/').pop()
-      return jsify(name) + '=lispz.cache["' + name + '"]'
-    }) + ';'
-  },
-  load = function(uris, on_all_ready) {
-    uris = uris.split(",")
-    var next_uri = function() {
-      if (uris.length) load_one(uris.shift().trim(), next_uri)
-      else if (on_all_ready) on_all_ready()
-    }
-    next_uri()
-  }
-  if (window) window.onload = function() {
-    var q = document.querySelector('script[src*="lispz.js"]').getAttribute('src').split('#')
-    load(((q.length == 1) ? "core" : "core," + q.pop()),
-      function() {
-        slice.call(document.querySelectorAll('script[type="text/lispz"]')).forEach(
-          function (script) { run("script", script.textContent) })
-    })
-  }
-  //#########################    Helpers    ####################################//
-  var clone = function (obj) {
-    var target = {};
-    for (var i in obj) if (obj.hasOwnProperty(i)) target[i] = obj[i];
-    return target;
-  }
-  //#########################   Interface   ####################################//
-  var macros = {
-    '(': call_to_js, '[': array_to_js, '{': dict_to_js, 'macro': macro_to_js,
-    '#join': join_to_js, '#pairs': pairs_to_js, '#binop': binop_to_js,
-    '#requires': requires_to_js, 'list': list_to_js,
-    '\n': eol_to_js, 'immediate': immediate_to_js
-  }
-  // add all standard binary operations (+, -, etc)
-  "+,-,*,/,&&,||,==,===,<=,>=,!=,!==,<,>,^,%".split(',').forEach(binop_to_js)
+window.lispz_modules={}
 
-  return { compile: compile, run: run, parsers: parsers, load: load,
-           macros: macros, cache: cache, http_request: http_request,
-           clone: clone, manifest: manifest, modules: modules,
-           synonyms: synonyms, globals: globals, tags: {} }
-}()
-
-
-lispz.modules['core']=function anonymous(__module_ready__
+lispz_modules['core']=function anonymous(__module_ready__
 /**/) {
 /*macro debug*///#core:1
 //#core:2
@@ -360,7 +108,7 @@ lispz.globals.random=(function(range){return Math.floor((Math.random()*range))
 
 }
 
-lispz.modules['list']=function anonymous(__module_ready__
+lispz_modules['list']=function anonymous(__module_ready__
 /**/) {
 var sequential=(function(list,for_each_q__g_,on_complete_q__g_){switch(false){case !!(list):return on_complete_q__g_()
 }//#list:5
@@ -381,7 +129,7 @@ __module_ready__({'sequential':sequential})//#list:13
 
 }
 
-lispz.modules['dict']=function anonymous(__module_ready__
+lispz_modules['dict']=function anonymous(__module_ready__
 /**/) {
 var insert=(function(target,dictionaries){dictionaries.forEach((function(dictionary){Object.keys(dictionary).forEach((function(key){target[key]=dictionary[key];//#dict:4
 }))//#dict:5
@@ -436,7 +184,7 @@ __module_ready__({'merge':merge,'from_list':from_list,'insert_$_':insert_$_,'for
 
 }
 
-lispz.modules['dom']=function anonymous(__module_ready__
+lispz_modules['dom']=function anonymous(__module_ready__
 /**/) {
 lispz.load("dict"//#core:48
 ,(function(){var dict=lispz.cache["dict"];
@@ -470,7 +218,7 @@ __module_ready__({'append_$_':append_$_,'element':element,'event_throttle':event
 
 }
 
-lispz.modules['net']=function anonymous(__module_ready__
+lispz_modules['net']=function anonymous(__module_ready__
 /**/) {
 lispz.load("list,dom"//#core:48
 ,(function(){var list=lispz.cache["list"],dom=lispz.cache["dom"];
@@ -511,7 +259,7 @@ __module_ready__({'script':script,'css':css,'http_get':http_get,'json_request':j
 
 }
 
-lispz.modules['firebase']=function anonymous(__module_ready__
+lispz_modules['firebase']=function anonymous(__module_ready__
 /**/) {
 lispz.load("net"//#core:48
 ,(function(){var net=lispz.cache["net"];
@@ -552,7 +300,7 @@ net.script("https://cdn.firebase.com/js/client/2.2.9/firebase.js",(function(){__
 
 }
 
-lispz.modules['message']=function anonymous(__module_ready__
+lispz_modules['message']=function anonymous(__module_ready__
 /**/) {
 var store={},expecting={};//#message:1
 //#message:2
@@ -635,7 +383,7 @@ __module_ready__({'exchange':exchange,'send':send,'expect':expect,'listen':liste
 
 }
 
-lispz.modules['cdnjs']=function anonymous(__module_ready__
+lispz_modules['cdnjs']=function anonymous(__module_ready__
 /**/) {
 lispz.load("net,github"//#core:48
 ,(function(){var net=lispz.cache["net"],github=lispz.cache["github"];
@@ -672,7 +420,7 @@ net.http_get(uri,(function(response){ready_q__g_(null,response.text)//#cdnjs:28
 
 }
 
-lispz.modules['jquery']=function anonymous(__module_ready__
+lispz_modules['jquery']=function anonymous(__module_ready__
 /**/) {
 lispz.load("net,cdnjs"//#core:48
 ,(function(){var net=lispz.cache["net"],cdnjs=lispz.cache["cdnjs"];
@@ -687,61 +435,67 @@ net.script("ext/jquery.js",(function(){__module_ready__({'build':(function(targe
 
 }
 
-lispz.modules['riot']=function anonymous(__module_ready__
+lispz_modules['riot']=function anonymous(__module_ready__
 /**/) {
-lispz.load("net,list,github"//#core:48
-,(function(){var net=lispz.cache["net"],list=lispz.cache["list"],github=lispz.cache["github"];
+lispz.load("net,list,github,dict"//#core:48
+,(function(){var net=lispz.cache["net"],list=lispz.cache["list"],github=lispz.cache["github"],dict=lispz.cache["dict"];
 var compile=(function(html,to_js){return riot.compile(html,to_js)
 });//#riot:2
 //#riot:3
 
-var cache={};//#riot:4
+var tags={};//#riot:4
 //#riot:5
 
-var load=(function(name,uri,next_step_q__g_){switch(false){case !(cache[name]||cache[uri]):return next_step_q__g_()
-}//#riot:7
+var load=(function(name,uri,next_step_q__g_){var mount=(function(){tags[name]=true;//#riot:8
 
-net.http_get(uri,(function(response){compile(response.text)//#riot:9
+tags[uri]=true;//#riot:9
 
 riot.mount(name)//#riot:10
 
 next_step_q__g_()//#riot:11
-}))//#riot:12
-});//#riot:13
-//#riot:14
+});//#riot:12
 
-var build=(function(target_repo,built_q__g_){github.build(target_repo,"riot",[{'repo':"riot/riot",'files':[{'include':/^riot\+compiler.js$/}//#riot:18
-]}//#riot:19
-],built_q__g_)//#riot:20
-});//#riot:21
-//#riot:22
+switch(false){case !tags[name]:next_step_q__g_()//#riot:14
+;break;case !lispz.tags[name]:lispz.tags[name]()
+mount()//#riot:15
+;break;case !true:net.http_get(uri,(function(response){compile(response.text)
+mount()}))//#riot:17
+}//#riot:18
+});//#riot:19
+//#riot:20
 
-var mount=(function(tags){riot.mount(tags)});//#riot:23
-//#riot:24
+var build=(function(target_repo,built_q__g_){github.build(target_repo,"riot",[{'repo':"riot/riot",'files':[{'include':/^riot\+compiler.js$/}//#riot:24
+]}//#riot:25
+],built_q__g_)//#riot:26
+});//#riot:27
+//#riot:28
+
+var mount=(function(tags){riot.mount(tags)});//#riot:29
+//#riot:30
 
 net.script("ext/riot.js",(function(){switch(false){case !!(window.riot):return __module_ready__({'build':build})
-}//#riot:26
+}//#riot:32
 
 riot.parsers.js.lispz=(function(source){return lispz.compile("riot-tags",source).join("\n")
-});//#riot:28
+});//#riot:34
 
-list.sequential(document.getElementsByClassName("riot")//#riot:29
-,(function(element,next_element_q__g_){var name=element.tagName;//#riot:31
+list.sequential(document.getElementsByClassName("riot")//#riot:35
+,(function(element,next_element_q__g_){var name=element.tagName;//#riot:37
 
-var uri=(element.getAttribute("uri")//#riot:32
-||(name.toLowerCase()+".riot.html"));//#riot:33
+var uri=(element.getAttribute("uri")//#riot:38
+||(name.toLowerCase()+".riot.html"));//#riot:39
 
-load(name,uri,next_element_q__g_)//#riot:34
-})//#riot:35
-,(function(){__module_ready__({'build':build,'compile':compile,'load':load,'mount':mount})})//#riot:36
-)//#riot:37
-}))//#riot:38
-}))//#riot:39
+load(name,uri,next_element_q__g_)//#riot:40
+})//#riot:41
+,(function(){__module_ready__({'build':build,'compile':compile,'load':load,'mount':mount})})//#riot:42
+)//#riot:43
+}))//#riot:44
+}))//#riot:45
 //# sourceURL=riot.lispz
 
 }
 
-lispz.modules['diff_match_patch']=function anonymous(__module_ready__
+lispz_modules['diff_match_patch']=function anonymous(__module_ready__
 /**/) {
 lispz.load("net,github"//#core:48
 ,(function(){var net=lispz.cache["net"],github=lispz.cache["github"];
@@ -756,7 +510,7 @@ net.script("ext/diff_match_patch.js",(function(){__module_ready__({'build':(func
 
 }
 
-lispz.modules['bootstrap']=function anonymous(__module_ready__
+lispz_modules['bootstrap']=function anonymous(__module_ready__
 /**/) {
 lispz.load("net,github"//#core:48
 ,(function(){var net=lispz.cache["net"],github=lispz.cache["github"];
@@ -774,7 +528,7 @@ net.script("ext/bootstrap.js",(function(){__module_ready__({'build':(function(ta
 
 }
 
-lispz.modules['codemirror']=function anonymous(__module_ready__
+lispz_modules['codemirror']=function anonymous(__module_ready__
 /**/) {
 lispz.load("net,diff_match_patch,message,dict,github"//#core:48
 ,(function(){var net=lispz.cache["net"],diff_match_patch=lispz.cache["diff_match_patch"],message=lispz.cache["message"],dict=lispz.cache["dict"],github=lispz.cache["github"];
@@ -1183,7 +937,7 @@ setTimeout((function(){net.css("ext/codemirror-themes.css")}),100)//#codemirror:
 
 }
 
-lispz.modules['firepad']=function anonymous(__module_ready__
+lispz_modules['firepad']=function anonymous(__module_ready__
 /**/) {
 lispz.load("net,github"//#core:48
 ,(function(){var net=lispz.cache["net"],github=lispz.cache["github"];
@@ -1200,23 +954,7 @@ net.script("ext/firepad.js",(function(){__module_ready__({'build':(function(targ
 
 }
 
-lispz.modules['dexie']=function anonymous(__module_ready__
-/**/) {
-lispz.load("net,github"//#core:48
-,(function(){var net=lispz.cache["net"],github=lispz.cache["github"];
-var build=(function(target_repo,built_q__g_){github.build(target_repo,"dexie",[{'repo':"dfahlander/Dexie.js",'files':[{'base':"dist/latest",'include':/Dexie.js$/}//#dexie:6
-]}//#dexie:7
-],built_q__g_)//#dexie:8
-});//#dexie:9
-//#dexie:10
-
-net.script("ext/dexie.js",(function(){__module_ready__({'build':build})}))//#dexie:11
-}))//#dexie:12
-//# sourceURL=dexie.lispz
-
-}
-
-lispz.modules['github']=function anonymous(__module_ready__
+lispz_modules['github']=function anonymous(__module_ready__
 /**/) {
 lispz.load("net,dict,list"//#core:48
 ,(function(){var net=lispz.cache["net"],dict=lispz.cache["dict"],list=lispz.cache["list"];
@@ -1418,7 +1156,7 @@ __module_ready__({'branch':branch,'list_all':list_all,'list_dir':list_dir,'cdn_u
 
 }
 
-lispz.modules['dev']=function anonymous(__module_ready__
+lispz_modules['dev']=function anonymous(__module_ready__
 /**/) {
 lispz.load("net,github,dict,list,riot"//#core:48
 ,(function(){var net=lispz.cache["net"],github=lispz.cache["github"],dict=lispz.cache["dict"],list=lispz.cache["list"],riot=lispz.cache["riot"];
@@ -1447,37 +1185,310 @@ switch(false){case !(ext==="lispz"):modules.push(parts[0])//#dev:17
 }//#dev:19
 }))//#dev:20
 
-lispz.load(modules.join(","),(function(){github.read(lispz_repo,"lispz.js",(function(err,data){var source=[data];//#dev:23
+lispz.load(modules.join(","),(function(){github.read(lispz_repo,"lispz.js",(function(err,lispz_js){var source=["window.lispz_modules={}"];//#dev:23
 
-dict.for_each(lispz.cache,(function(key,value){var contents=lispz.modules[key].toString();//#dev:25
+dict.for_each(lispz.cache,(function(key,value){var contents=lispz_modules[key].toString();//#dev:25
 
-source.push("\n\nlispz.modules['",key,"']=",contents)//#dev:26
+source.push("\n\nlispz_modules['",key,"']=",contents)//#dev:26
 }))//#dev:27
 
-list.sequential(riots,(function(path,next_q__g_){github.read(lispz_repo,path,(function(err,data){source.push(("\n\n/*"+path+"*/\n\nlispz.tags['"+path+"']=function(){")//#dev:31
-,riot.compile(data,true)//#dev:32
-,"}//# sourceURL=",path,"\n")//#dev:34
+source.push("\n/*lispz.js*/\n",lispz_js,"//# sourceURL=lispz.js\n")//#dev:28
 
-next_q__g_()//#dev:35
-}))//#dev:36
-}),(function(){github.write(lispz_repo,("ext/lispz.js")//#dev:38
-,unescape(encodeURIComponent(source.join("")))//#dev:39
-,"lispz release code",packaged_q__g_)//#dev:41
-}))//#dev:42
+list.sequential(riots,(function(path,next_q__g_){github.read(lispz_repo,path,(function(err,data){source.push(("\n\n/*"+path+"*/\n\nlispz.tags['"+path+"']=function(){")//#dev:32
+,riot.compile(data,true)//#dev:33
+,"}//# sourceURL=",path,"\n")//#dev:35
+
+next_q__g_()//#dev:36
+}))//#dev:37
+}),(function(){github.write(lispz_repo,("ext/lispz.js")//#dev:39
+,unescape(encodeURIComponent(source.join("")))//#dev:40
+,"lispz release code",packaged_q__g_)//#dev:42
 }))//#dev:43
 }))//#dev:44
 }))//#dev:45
-}))});//#dev:46
-//#dev:47
+}))//#dev:46
+}))});//#dev:47
+//#dev:48
 
-var distribute=(function(target_repo){});//#dev:49
-//#dev:50
+var distribute=(function(target_repo){});//#dev:50
+//#dev:51
 
-__module_ready__({'manifest':manifest,'package':package,'distribute':distribute})//#dev:51
-}))//#dev:52
+__module_ready__({'manifest':manifest,'package':package,'distribute':distribute})//#dev:52
+}))//#dev:53
 //# sourceURL=dev.lispz
 
 }
+
+lispz_modules['dexie']=function anonymous(__module_ready__
+/**/) {
+lispz.load("net,github"//#core:48
+,(function(){var net=lispz.cache["net"],github=lispz.cache["github"];
+var build=(function(target_repo,built_q__g_){github.build(target_repo,"dexie",[{'repo':"dfahlander/Dexie.js",'files':[{'base':"dist/latest",'include':/Dexie.js$/}//#dexie:6
+]}//#dexie:7
+],built_q__g_)//#dexie:8
+});//#dexie:9
+//#dexie:10
+
+net.script("ext/dexie.js",(function(){__module_ready__({'build':build})}))//#dexie:11
+}))//#dexie:12
+//# sourceURL=dexie.lispz
+
+}
+/*lispz.js*/
+var lispz = function() {
+  var delims = "(){}[]n".split(''), // characters that are not space separated atoms
+  not_delims = delims.join("\\"), delims = delims.join('|\\'),
+  stringRE =
+    "''|'[\\s\\S]*?[^\\\\]':?|" +
+    '""|"(?:.|\\r*\\n)*?[^\\\\]"|' +
+    '###+(?:.|\\r*\\n)*?###+|' + '##\\s+.*?\\r*\\n|',
+  tkre = new RegExp('(' + stringRE + '\\' + delims + "|[^\\s" + not_delims + "]+)", 'g'),
+  opens = new Set("({["), closes = new Set(")}]"), ast_to_js, slice = [].slice, contexts = [],
+  module = {line:0, name:"boot"}, globals = {}, load_index = 0,
+  synonyms = {and:'&&',or:'||',is:'===',isnt:'!=='},
+  jsify = function(atom) {
+    if (/^'.*'$/.test(atom)) return atom.slice(1, -1).replace(/\\n/g, '\n')
+    if (/^"(?:.|\r*\n)*"$/.test(atom)) return atom.replace(/\r*\n/g, '\\n')
+    switch (atom[0]) {
+      case '-': return atom // unary minus or negative number
+      default:  return atom.replace(/\W/g, function(c) {
+        var t = "$hpalcewqgutkri"["!#%&+:;<=>?@\\^~".indexOf(c)];
+        return t ? ("_"+t+"_") : (c === "-") ? "_" : c })
+    }
+  },
+  call_to_js = function(func, params) {
+    params = slice.call(arguments, 1)
+    contexts.some(function(pre){if (macros[pre+'.'+func]) {func = pre+'.'+func; return true}})
+    if (synonyms[func]) func = synonyms[func]
+    if (macros[func]) return macros[func].apply(lispz, params)
+    func = ast_to_js(func)
+    if (params[0] && params[0][0] === '.') func += params.shift()
+    return func + '(' + params.map(ast_to_js).join(',') + ')'
+  },
+  macro_to_js = function(name, pnames, body) {
+    body = slice.call(arguments, 2)
+    if (pnames[0] === "\n") pnames = pnames.slice(3) // drop line number component
+    macros[name] = function(pvalues) {
+      pvalues = slice.call(arguments)
+      if (pvalues[0] === "\n") pvalues = pvalues.slice(3) // drop line number component
+      var args = {}
+      pnames.slice(1).forEach(function(pname, i) {
+        args[pname] = (pname[0] === '*') ? ["list"].concat(pvalues.slice(i)) :
+                      (pname[0] === '&') ? ["["].concat(pvalues.slice(i)) : pvalues[i]
+      })
+      var expand = function(ast) {
+        return (ast instanceof Array) ? ast.map(expand) : args[ast] || ast
+      }
+      contexts.unshift(name)
+      var js = ast_to_js(expand((body.length > 1) ? ["list"].concat(body) : body[0]))
+      contexts.shift()
+      return js
+    }
+    return "/*macro "+name+"*/"
+  },
+  array_to_js = function() {
+    var its = slice.call(arguments)
+    if (arguments.length === 1 && arguments[0][0] === '[') {
+      return "[" + its.map(ast_to_js).join(',') + "]"
+    }
+    return its.map(ast_to_js).join(',')
+  },
+  list_to_js = function(its) {
+    return slice.call(arguments).map(ast_to_js).join('\n')
+  },
+  // A dictionary can be a symbol table or k-value pair
+  dict_to_js = function(kvp) {
+    var dict = []; kvp = slice.call(arguments)
+    for (var key, i = 0, l = kvp.length; i < l; i++) {
+      if ((key = kvp[i])[kvp[i].length - 1] === ":") {
+        dict.push("'"+jsify(key.slice(0, -1))+"':"+ast_to_js(kvp[++i]));
+      } else {
+        dict.push("'"+jsify(key)+"':"+ast_to_js(key));
+      }
+    }
+    return "{" + dict.join(',') + "}";
+  },
+  join_to_js = function(sep, parts) {
+    parts = slice.call((arguments.length > 2) ? arguments : parts, 1)
+    return parts.map(ast_to_js).join(ast_to_js(sep))
+  },
+  immediate_to_js = function() {
+    return slice.call(arguments).map(ast_to_js).map(eval)
+  },
+  // processing pairs of list elements
+  pairs_to_js = function(pairs, tween, sep) {
+    var el = [], tween = ast_to_js(tween);
+    if (!(pairs.length % 2)) throw {message:"Unmatched pairs"}
+    for (var i = 1, l = pairs.length; i < l; i += 2) {
+        el.push(ast_to_js(pairs[i]) + tween + ast_to_js(pairs[i + 1]))
+    }
+    return el.join(ast_to_js(sep))
+  },
+  binop_to_js = function(op) {
+    macros[op] = function(list) { return '(' + slice.call(arguments).map(ast_to_js).join(op) + ')' }
+  },
+  /*
+   * When there was a new-line in the source, we inject it into the prior non-atom
+   * if possible. Now we are generating JavaScript we find and process it. This is
+   * because comments can't have their own atom or they will screw up argument lists.
+   */
+  eol_to_js = function(name, number) {
+    module = {name:name, line:number}
+    var ast = slice.call(arguments, 2)
+    var line = ast_to_js(ast)
+    if (ast[0] !== "[" && (ast[0] !== "\n" || ast[3] !== "[")) {
+      line += "//#" + name + ":" + number + "\n"
+    }
+    return line
+  },
+  parsers = [
+    [/^(\(|\{|\[)$/, function(env) {
+      env.stack.push(env.node)
+      env.node = [env.atom]
+    }],
+    [/^(\)|\}|\])$/, function(env) {
+      var f = env.node;
+      try { (env.node = env.stack.pop()).push(f) }
+      catch(e) { compile_error("Unmatched closing bracket") }
+    }],
+    /*
+     * Record line number for JS comment. Can't add a new element,
+     * so only do it if last compiled is not an atom.
+     */
+    [/^\n$/, function(env) {
+      if (!env.node.length) return
+      var atom = env.node[env.node.length - 1]
+      if (!(atom instanceof Array)) return
+      atom.unshift('\n', module.name, module.line)
+    }]
+  ],
+  comment = function(atom) {
+    return atom[0] === "#" && atom[1] === "#" && (atom[2] === '#' || atom[2] == ' ')
+  },
+  compile_error = function(msg, data) {
+    var errloc = module.name+".lispz:"+module.line
+    console.log(errloc, msg, data)
+    return ['throw "compile error for ' + errloc.replace(/["\n]/g," ") +
+            " -- " + msg.replace(/"/g,"'") + '"\n']
+  },
+  parse_to_ast = function(source) {
+    var env = { ast: [], stack: [] }
+    env.node = env.ast
+    tkre.lastIndex = 0
+    while ((env.atom = tkre.exec(source.toString())) && (env.atom = env.atom[1])) {
+      module.line += (env.atom.match(/\n/g) || []).length
+      if (!comment(env.atom) && !parsers.some(function(parser) {
+          if (!parser[0].test(env.atom)) return false
+          parser[1](env)
+          return true
+        })) { env.node.push(env.atom); } }
+    if (env.stack.length != 0) return compile_error("missing close brace", env)
+    return env.ast
+  },
+  ast_to_js = function(ast) {
+    return (ast instanceof Array) ? macros[ast[0]] ?
+      macros[ast[0]].apply(this, ast.slice(1)) : list_to_js(ast) : jsify(ast)
+  },
+  compile = function(name, source) {
+    try {
+      var last_module = module
+      module = {name:name, line:0}
+      var js = parse_to_ast(source).map(ast_to_js)
+      module = last_module
+      return js
+    } catch (err) { return compile_error(err.message, source) }
+  },
+  run = function(name, source) { return compile(name, source).map(eval) },
+  //######################### Script Loader ####################################//
+  cache = {}, manifest = [], pending = {}, modules = {}
+  http_request = function(uri, type, callback) {
+    var req = new XMLHttpRequest()
+    req.open(type, uri, true)
+    if (lispz.debug && uri.indexOf(":") == -1)
+      req.setRequestHeader("Cache-Control", "no-cache")
+    req.onerror = function(err) {
+      callback({ uri: uri, error: err })
+    }
+    req.onload = function() {
+      manifest.push(req.responseURL)
+      if (req.status === 200) callback({ uri:uri, text: req.responseText })
+      else                    req.onerror(req.statusText)
+    }
+    req.send()
+  },
+  module_init = function(uri, on_readies) {
+    modules[uri](function(exports) {
+      cache[uri.split('/').pop()] = cache[uri] = exports
+      delete pending[uri]
+      on_readies.forEach(function(call_module) {call_module(exports)})
+    })
+  }
+  load_one = function(uri, on_ready) {
+    if (cache[uri]) return on_ready()
+    if (pending[uri]) return pending[uri].push(on_ready)
+    if (modules[uri]) return module_init(uri, [on_ready])
+    pending[uri] = [on_ready]; var js = ""
+    http_request(uri + ".lispz", 'GET', function(response) {
+      try {
+        var name = uri.split('/').pop()
+        if (!response.text) return on_ready(response) // probably an error
+        js = compile(uri, response.text).join('\n') +
+          "//# sourceURL=" + name + ".lispz\n"
+        modules[uri] = new Function('__module_ready__', js)
+        module_init(uri, pending[uri])
+      } catch (e) {
+        delete pending[uri]
+        throw e
+      }
+    })
+  },
+  // Special to set variables loaded with requires
+  requires_to_js = function(list) {
+    list = list.slice(list.indexOf("[") + 1)
+    return 'var ' + list.map(function(module) {
+      var name = module.trim().split('/').pop()
+      return jsify(name) + '=lispz.cache["' + name + '"]'
+    }) + ';'
+  },
+  load = function(uris, on_all_ready) {
+    uris = uris.split(",")
+    var next_uri = function() {
+      if (uris.length) load_one(uris.shift().trim(), next_uri)
+      else if (on_all_ready) on_all_ready()
+    }
+    next_uri()
+  }
+  if (window) window.onload = function() {
+    var q = document.querySelector('script[src*="lispz.js"]').getAttribute('src').split('#')
+    load(((q.length == 1) ? "core" : "core," + q.pop()),
+      function() {
+        slice.call(document.querySelectorAll('script[type="text/lispz"]')).forEach(
+          function (script) { run("script", script.textContent) })
+    })
+  }
+  //#########################    Helpers    ####################################//
+  var clone = function (obj) {
+    var target = {};
+    for (var i in obj) if (obj.hasOwnProperty(i)) target[i] = obj[i];
+    return target;
+  }
+  //#########################   Interface   ####################################//
+  var macros = {
+    '(': call_to_js, '[': array_to_js, '{': dict_to_js, 'macro': macro_to_js,
+    '#join': join_to_js, '#pairs': pairs_to_js, '#binop': binop_to_js,
+    '#requires': requires_to_js, 'list': list_to_js,
+    '\n': eol_to_js, 'immediate': immediate_to_js
+  }
+  // add all standard binary operations (+, -, etc)
+  "+,-,*,/,&&,||,==,===,<=,>=,!=,!==,<,>,^,%".split(',').forEach(binop_to_js)
+
+  return { compile: compile, run: run, parsers: parsers, load: load,
+           macros: macros, cache: cache, http_request: http_request,
+           clone: clone, manifest: manifest, modules: modules,
+           synonyms: synonyms, globals: globals, tags: {} }
+}()
+//# sourceURL=lispz.js
+
 
 /*bootstrap.riot.html*/
 
