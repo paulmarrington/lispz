@@ -7,7 +7,7 @@ var lispz = function() {
     '###+(?:.|\\r*\\n)*?###+|' + '##\\s+.*?\\r*\\n|',
   tkre = new RegExp('(' + stringRE + '\\' + delims + "|[^\\s" + not_delims + "]+)", 'g'),
   opens = new Set("({["), closes = new Set(")}]"), ast_to_js, slice = [].slice, contexts = [],
-  module = {line:0, name:"boot"}, modules = {}, globals = {}, load_index = 0,
+  module = {line:0, name:"boot"}, globals = {}, load_index = 0,
   synonyms = {and:'&&',or:'||',is:'===',isnt:'!=='},
   jsify = function(atom) {
     if (/^'.*'$/.test(atom)) return atom.slice(1, -1).replace(/\\n/g, '\n')
@@ -163,7 +163,7 @@ var lispz = function() {
   },
   run = function(name, source) { return compile(name, source).map(eval) },
   //######################### Script Loader ####################################//
-  cache = {}, manifest = [], pending = {},
+  cache = {}, manifest = [], pending = {}, modules = {}
   http_request = function(uri, type, callback) {
     var req = new XMLHttpRequest()
     req.open(type, uri, true)
@@ -179,8 +179,17 @@ var lispz = function() {
     }
     req.send()
   },
+  module_init = function(uri) {
+    modules[uri](function(exports) {
+      cache[name] = cache[uri] = exports
+      var on_readies = pending[uri]
+      delete pending[uri]
+      on_readies.forEach(function(call_module) {call_module(exports)})
+    })
+  }
   load_one = function(uri, on_ready) {
-    if (cache[uri] !== undefined) return on_ready(cache[uri])
+    if (cache[uri]) return on_ready()
+    if (modules[uri]) return module_init(uri)
     if (pending[uri]) return pending[uri].push(on_ready)
     pending[uri] = [on_ready]; var js = ""
     http_request(uri + ".lispz", 'GET', function(response) {
@@ -190,26 +199,12 @@ var lispz = function() {
         js = compile(uri, response.text).join('\n') +
           "//# sourceURL=" + name + ".lispz\n"
         modules[uri] = new Function('__module_ready__', js)
-        modules[uri](function(exports) {
-          cache[name] = cache[uri] = exports
-          var on_readies = pending[uri]
-          delete pending[uri]
-          on_readies.forEach(function(call_module) {call_module(exports)})
-        })
+        module_init(uri)
       } catch (e) {
         delete pending[uri]
-        console.log(js)
-        throw e.stack
+        throw e
       }
     })
-  },
-  load = function(uris, on_all_ready) {
-    uris = uris.split(",")
-    var next_uri = function() {
-      if (uris.length) load_one(uris.shift().trim(), next_uri)
-      else if (on_all_ready) on_all_ready()
-    }
-    next_uri()
   },
   // Special to set variables loaded with requires
   requires_to_js = function(list) {
@@ -218,6 +213,14 @@ var lispz = function() {
       var name = module.trim().split('/').pop()
       return jsify(name) + '=lispz.cache["' + name + '"]'
     }) + ';'
+  },
+  load = function(uris, on_all_ready) {
+    uris = uris.split(",")
+    var next_uri = function() {
+      if (uris.length) load_one(uris.shift().trim(), next_uri)
+      else if (on_all_ready) on_all_ready()
+    }
+    next_uri()
   }
   if (window) window.onload = function() {
     var q = document.querySelector('script[src*="lispz.js"]').getAttribute('src').split('#')
@@ -243,8 +246,9 @@ var lispz = function() {
   // add all standard binary operations (+, -, etc)
   "+,-,*,/,&&,||,==,===,<=,>=,!=,!==,<,>,^,%".split(',').forEach(binop_to_js)
 
-  return { compile: compile, run: run, parsers: parsers, load: load, macros: macros, cache: cache,
-           http_request: http_request, clone: clone, manifest: manifest, modules: modules,
+  return { compile: compile, run: run, parsers: parsers, load: load,
+           macros: macros, cache: cache, http_request: http_request,
+           clone: clone, manifest: manifest, modules: modules,
            synonyms: synonyms, globals: globals }
 }()
 
@@ -1437,7 +1441,7 @@ source.push("\n\nlispz.modules['",key,"']=",contents)//#dev:26
 
 list.sequential(riots,(function(path,next_q__g_){github.read(lispz_repo,path,(function(err,data){source.push(("\n\n/*"+path+"*/\n\n")//#dev:31
 ,riot.compile(data,true)//#dev:32
-,"\n//# sourceURL=",path,"\n")//#dev:34
+,"//# sourceURL=",path,"\n")//#dev:34
 
 next_q__g_()//#dev:35
 }))//#dev:36
@@ -1457,6 +1461,22 @@ var distribute=(function(target_repo){});//#dev:49
 __module_ready__({'manifest':manifest,'package':package,'distribute':distribute})//#dev:51
 }))//#dev:52
 //# sourceURL=dev.lispz
+
+}
+
+lispz.modules['dexie']=function anonymous(__module_ready__
+/**/) {
+lispz.load("net,github"//#core:48
+,(function(){var net=lispz.cache["net"],github=lispz.cache["github"];
+var build=(function(target_repo,built_q__g_){github.build(target_repo,"dexie",[{'repo':"dfahlander/Dexie.js",'files':[{'base':"dist/latest",'include':/Dexie.js$/}//#dexie:6
+]}//#dexie:7
+],built_q__g_)//#dexie:8
+});//#dexie:9
+//#dexie:10
+
+net.script("ext/dexie.js",(function(){__module_ready__({'build':build})}))//#dexie:11
+}))//#dexie:12
+//# sourceURL=dexie.lispz
 
 }
 
@@ -1601,7 +1621,6 @@ dom.append_$_("head",dom.element("meta",{'name':"viewport",'content':"width=devi
 }))//#riot-tags:21
 
 });
-
 //# sourceURL=bootstrap.riot.html
 
 
@@ -1615,7 +1634,6 @@ tag.cm=CodeMirror(tag.wrapper,opts);//#riot-tags:4
 }))//#riot-tags:5
 
 });
-
 //# sourceURL=codemirror.riot.html
 
 
@@ -1674,7 +1692,6 @@ pad.on_ready((function(){message.dispatch(("firepad/"+opts.name),{'open':open})/
 }))//#riot-tags:44
 
 });
-
 //# sourceURL=firepad.riot.html
 
 
@@ -1719,5 +1736,4 @@ document.body.addEventListener("keydown",(function(ev){switch(false){case !(ev.a
 tag.code.addEventListener("keypress",(function(ev){switch(false){case !(ev.keyCode===13):run()}}))//#riot-tags:30
 
 });
-
 //# sourceURL=lispz-repl.riot.html
