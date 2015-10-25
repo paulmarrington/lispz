@@ -15,16 +15,17 @@
         (var ext (last parts))
         (cond
           (is ext "lispz")                          (modules.push (first parts))
-          (is ((slice parts -2).join ".") "riot.html") (riots.push entry.name)
+          (is ((slice parts -2).join ".") "riot.html")   (riots.push entry.name)
         )
       ))
       (lispz.load (modules.join ",") (=>
-        (github.read lispz-repo "lispz.js" (lambda [err data]
-          (var source [[data]])
+        (github.read lispz-repo "lispz.js" (lambda [err lispz-js]
+          (var source [["window.lispz_modules={}"]])
           (dict.for-each lispz.cache (lambda [key value]
-            (var contents ((get lispz.modules key).toString))
-            (source.push "\n\nlispz.modules['" key "']=" contents)
+            (var contents ((get lispz_modules key).toString))
+            (source.push "\n\nlispz_modules['" key "']=" contents)
           ))
+          (source.push "\n/*lispz.js*/\n" lispz-js "//# sourceURL=lispz.js\n")
           (list.sequential riots (lambda [path next=>]
             (github.read lispz-repo path (lambda [err data]
               (source.push

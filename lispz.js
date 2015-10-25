@@ -1,4 +1,5 @@
 var lispz = function() {
+  if (!window.lispz_modules) window.lispz_modules = {}
   var delims = "(){}[]n".split(''), // characters that are not space separated atoms
   not_delims = delims.join("\\"), delims = delims.join('|\\'),
   stringRE =
@@ -163,7 +164,7 @@ var lispz = function() {
   },
   run = function(name, source) { return compile(name, source).map(eval) },
   //######################### Script Loader ####################################//
-  cache = {}, manifest = [], pending = {}, modules = {}
+  cache = {}, manifest = [], pending = {}
   http_request = function(uri, type, callback) {
     var req = new XMLHttpRequest()
     req.open(type, uri, true)
@@ -180,7 +181,7 @@ var lispz = function() {
     req.send()
   },
   module_init = function(uri, on_readies) {
-    modules[uri](function(exports) {
+    lispz_modules[uri](function(exports) {
       cache[uri.split('/').pop()] = cache[uri] = exports
       delete pending[uri]
       on_readies.forEach(function(call_module) {call_module(exports)})
@@ -189,7 +190,7 @@ var lispz = function() {
   load_one = function(uri, on_ready) {
     if (cache[uri]) return on_ready()
     if (pending[uri]) return pending[uri].push(on_ready)
-    if (modules[uri]) return module_init(uri, [on_ready])
+    if (lispz_modules[uri]) return module_init(uri, [on_ready])
     pending[uri] = [on_ready]; var js = ""
     http_request(uri + ".lispz", 'GET', function(response) {
       try {
@@ -197,7 +198,7 @@ var lispz = function() {
         if (!response.text) return on_ready(response) // probably an error
         js = compile(uri, response.text).join('\n') +
           "//# sourceURL=" + name + ".lispz\n"
-        modules[uri] = new Function('__module_ready__', js)
+        lispz_modules[uri] = new Function('__module_ready__', js)
         module_init(uri, pending[uri])
       } catch (e) {
         delete pending[uri]
@@ -221,7 +222,7 @@ var lispz = function() {
     }
     next_uri()
   }
-  if (window) window.onload = function() {
+  window.onload = function() {
     var q = document.querySelector('script[src*="lispz.js"]').getAttribute('src').split('#')
     load(((q.length == 1) ? "core" : "core," + q.pop()),
       function() {
@@ -247,6 +248,6 @@ var lispz = function() {
 
   return { compile: compile, run: run, parsers: parsers, load: load,
            macros: macros, cache: cache, http_request: http_request,
-           clone: clone, manifest: manifest, modules: modules,
+           clone: clone, manifest: manifest,
            synonyms: synonyms, globals: globals, tags: {} }
 }()

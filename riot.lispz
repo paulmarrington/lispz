@@ -4,12 +4,12 @@
   (var tags {})
 
   (var load (lambda [name uri next-step=>]
-    (var mount (lambda name)
+    (var mount (=>
       (dict.update! tags name true)
       (dict.update! tags uri true)
       (riot.mount name)
       (next-step=>)
-    )
+    ))
     (cond
       (get tags name)       (next-step=>)
       (get lispz.tags name) (do ((get lispz.tags name)) (mount))
