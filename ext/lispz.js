@@ -1439,9 +1439,9 @@ dict.for_each(lispz.cache,(function(key,value){var contents=lispz.modules[key].t
 source.push("\n\nlispz.modules['",key,"']=",contents)//#dev:26
 }))//#dev:27
 
-list.sequential(riots,(function(path,next_q__g_){github.read(lispz_repo,path,(function(err,data){source.push(("\n\n/*"+path+"*/\n\n")//#dev:31
+list.sequential(riots,(function(path,next_q__g_){github.read(lispz_repo,path,(function(err,data){source.push(("\n\n/*"+path+"*/\n\nlispz.tags['"+path+"']=function(){")//#dev:31
 ,riot.compile(data,true)//#dev:32
-,"//# sourceURL=",path,"\n")//#dev:34
+,"}//# sourceURL=",path,"\n")//#dev:34
 
 next_q__g_()//#dev:35
 }))//#dev:36
@@ -1482,7 +1482,7 @@ net.script("ext/dexie.js",(function(){__module_ready__({'build':build})}))//#dex
 
 /*bootstrap.riot.html*/
 
-riot.tag('panel', ' <div class="panel { context }" name=outer> <div class=panel-heading if="{ opts.heading }" name=heading ><bars-menu align=right name="{ opts.menu }" owner="{ opts.owner }"></bars-menu> <h3 class=panel-title>{ opts.heading }</h3></div> <div class="panel-body" name=body><yield></yield></div> <div class=panel-footer if="{ opts.footer }" name=footer >{ opts.footer }</div> </div>', 'panel .panel { position: relative; } panel .panel-title { cursor: default; } panel .panel-body { position: absolute; top: 40px; bottom: 10px; left: 0; right: 0; }', function(opts) {var tag=this;//#riot-tags:2
+lispz.tags['bootstrap.riot.html']=function(){riot.tag('panel', ' <div class="panel { context }" name=outer> <div class=panel-heading if="{ opts.heading }" name=heading ><bars-menu align=right name="{ opts.menu }" owner="{ opts.owner }"></bars-menu> <h3 class=panel-title>{ opts.heading }</h3></div> <div class="panel-body" name=body><yield></yield></div> <div class=panel-footer if="{ opts.footer }" name=footer >{ opts.footer }</div> </div>', 'panel .panel { position: relative; } panel .panel-title { cursor: default; } panel .panel-body { position: absolute; top: 40px; bottom: 10px; left: 0; right: 0; }', function(opts) {var tag=this;//#riot-tags:2
 
 tag.context=("panel-"+(opts.context||"default"));//#riot-tags:3
 
@@ -1621,12 +1621,12 @@ dom.append_$_("head",dom.element("meta",{'name':"viewport",'content':"width=devi
 }))//#riot-tags:21
 
 });
-//# sourceURL=bootstrap.riot.html
+}//# sourceURL=bootstrap.riot.html
 
 
 /*codemirror.riot.html*/
 
-riot.tag('codemirror', '<div name=wrapper> </div>', function(opts) {var tag=this;//#riot-tags:2
+lispz.tags['codemirror.riot.html']=function(){riot.tag('codemirror', '<div name=wrapper> </div>', function(opts) {var tag=this;//#riot-tags:2
 
 lispz.load("codemirror"//#core:48
 ,(function(){var codemirror=lispz.cache["codemirror"];
@@ -1634,12 +1634,12 @@ tag.cm=CodeMirror(tag.wrapper,opts);//#riot-tags:4
 }))//#riot-tags:5
 
 });
-//# sourceURL=codemirror.riot.html
+}//# sourceURL=codemirror.riot.html
 
 
 /*firepad.riot.html*/
 
-riot.tag('firepad', ' <panel height="{ opts.height }" heading="{ heading }" menu="{ menu }" owner="{ _id }"> <div name=wrapper class=wrapper></div> </panel>', 'firepad .wrapper { position: absolute; top: 0; bottom: 0; left: 0; right: 0; height: initial; } firepad .CodeMirror { position: absolute; top: 0; bottom: 0; left: 5px; right: 0; height: initial; } a.powered-by-firepad { display: none; } div.firepad-toolbar { margin-top: -25px; }', function(opts) {var tag=this;//#riot-tags:2
+lispz.tags['firepad.riot.html']=function(){riot.tag('firepad', ' <panel height="{ opts.height }" heading="{ heading }" menu="{ menu }" owner="{ _id }"> <div name=wrapper class=wrapper></div> </panel>', 'firepad .wrapper { position: absolute; top: 0; bottom: 0; left: 0; right: 0; height: initial; } firepad .CodeMirror { position: absolute; top: 0; bottom: 0; left: 5px; right: 0; height: initial; } a.powered-by-firepad { display: none; } div.firepad-toolbar { margin-top: -25px; }', function(opts) {var tag=this;//#riot-tags:2
 
 tag.menu="CodeMirror-menu";//#riot-tags:3
 
@@ -1692,12 +1692,12 @@ pad.on_ready((function(){message.dispatch(("firepad/"+opts.name),{'open':open})/
 }))//#riot-tags:44
 
 });
-//# sourceURL=firepad.riot.html
+}//# sourceURL=firepad.riot.html
 
 
 /*lispz-repl.riot.html*/
 
-riot.tag('lispz-repl', '<div id=lispz_repl_div class="{ hidden:hidden }"> <input type=text name=usings autocomplete=on size=20 placeholder="(package-list (* to reload))"> <input type=text name=code autocomplete=on size=50 placeholder="(Lispz code - enter to execute)"> </div>', 'lispz-repl {position: absolute; bottom: 0;} lispz-repl .hidden {display: none}', function(opts) {var tag=this;//#riot-tags:2
+lispz.tags['lispz-repl.riot.html']=function(){riot.tag('lispz-repl', '<div id=lispz_repl_div class="{ hidden:hidden }"> <input type=text name=usings autocomplete=on size=20 placeholder="(package-list (* to reload))"> <input type=text name=code autocomplete=on size=50 placeholder="(Lispz code - enter to execute)"> </div>', 'lispz-repl {position: absolute; bottom: 0;} lispz-repl .hidden {display: none}', function(opts) {var tag=this;//#riot-tags:2
 
 tag.hidden=true;//#riot-tags:3
 
@@ -1736,4 +1736,4 @@ document.body.addEventListener("keydown",(function(ev){switch(false){case !(ev.a
 tag.code.addEventListener("keypress",(function(ev){switch(false){case !(ev.keyCode===13):run()}}))//#riot-tags:30
 
 });
-//# sourceURL=lispz-repl.riot.html
+}//# sourceURL=lispz-repl.riot.html
