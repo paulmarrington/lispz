@@ -473,7 +473,7 @@ var build=(function(target_repo,built_q__g_){github.build(target_repo,"riot",[{'
 var mount=(function(tags){riot.mount(tags)});//#riot:29
 //#riot:30
 
-net.script("ext/riot.js",(function(){switch(false){case !!(window.riot):return __module_ready__({'build':build})
+lispz.script("ext/riot.js",(function(){switch(false){case !!(window.riot):return __module_ready__({'build':build})
 }//#riot:32
 
 riot.parsers.js.lispz=(function(source){return lispz.compile("riot-tags",source).join("\n")
@@ -499,7 +499,7 @@ lispz_modules['diff_match_patch']=function anonymous(__module_ready__
 /**/) {
 lispz.load("net,github"//#core:48
 ,(function(){var net=lispz.cache["net"],github=lispz.cache["github"];
-net.script("ext/diff_match_patch.js",(function(){__module_ready__({'build':(function(target_repo,built_q__g_){github.build(target_repo,"diff_match_patch",[{'repo':"tanaka-de-silva/google-diff-match-patch-js",'files':[{'base':"",'include':/^diff_match_patch_uncompressed.js$/}//#diff_match_patch:7
+lispz.script("ext/diff_match_patch.js",(function(){__module_ready__({'build':(function(target_repo,built_q__g_){github.build(target_repo,"diff_match_patch",[{'repo':"tanaka-de-silva/google-diff-match-patch-js",'files':[{'base':"",'include':/^diff_match_patch_uncompressed.js$/}//#diff_match_patch:7
 ]}//#diff_match_patch:8
 ])//#diff_match_patch:9
 })//#diff_match_patch:10
@@ -514,9 +514,9 @@ lispz_modules['bootstrap']=function anonymous(__module_ready__
 /**/) {
 lispz.load("net,github"//#core:48
 ,(function(){var net=lispz.cache["net"],github=lispz.cache["github"];
-net.css("ext/bootstrap.css")//#bootstrap:2
+lispz.css("ext/bootstrap.css")//#bootstrap:2
 
-net.script("ext/bootstrap.js",(function(){__module_ready__({'build':(function(target_repo,built_q__g_){github.build(target_repo,"bootstrap",[{'repo':"twbs/bootstrap",'files':[{'base':"dist",'exclude':/\.map$|\.min\.|npm.js$/}//#bootstrap:8
+lispz.script("ext/bootstrap.js",(function(){__module_ready__({'build':(function(target_repo,built_q__g_){github.build(target_repo,"bootstrap",[{'repo':"twbs/bootstrap",'files':[{'base':"dist",'exclude':/\.map$|\.min\.|npm.js$/}//#bootstrap:8
 ,{'base':"dist/fonts",'copy_to':"fonts"}//#bootstrap:9
 ]}//#bootstrap:10
 ],built_q__g_)//#bootstrap:11
@@ -918,9 +918,9 @@ var build=(function(target_repo,built_q__g_){github.build(target_repo,"codemirro
 }))}))});//#codemirror:517
 //#codemirror:518
 
-net.css("ext/codemirror.css")//#codemirror:519
+lispz.css("ext/codemirror.css")//#codemirror:519
 
-net.script("ext/codemirror.js",(function(){switch(false){case !window.CodeMirror:net.script("ext/codemirror-modes.js",(function(){}))//#codemirror:522
+lispz.script("ext/codemirror.js",(function(){switch(false){case !window.CodeMirror:lispz.script("ext/codemirror-modes.js",(function(){}))//#codemirror:522
 
 Object.keys(extra_commands).forEach((function(key){CodeMirror.commands[key]=extra_commands[key];//#codemirror:524
 }))//#codemirror:525
@@ -931,7 +931,7 @@ init_lispz_mode()//#codemirror:526
 __module_ready__({'options':options,'open':open,'close':close,'set_mode':set_mode,'build':build})//#codemirror:528
 }))//#codemirror:529
 
-setTimeout((function(){net.css("ext/codemirror-themes.css")}),100)//#codemirror:530
+setTimeout((function(){lispz.css("ext/codemirror-themes.css")}),100)//#codemirror:530
 }))//#codemirror:531
 //# sourceURL=codemirror.lispz
 
@@ -941,9 +941,9 @@ lispz_modules['firepad']=function anonymous(__module_ready__
 /**/) {
 lispz.load("net,github"//#core:48
 ,(function(){var net=lispz.cache["net"],github=lispz.cache["github"];
-net.css("ext/firepad.css")//#firepad:2
+lispz.css("ext/firepad.css")//#firepad:2
 
-net.script("ext/firepad.js",(function(){__module_ready__({'build':(function(target_repo,built_q__g_){github.grunt(target_repo,"firebase/firepad",(function(grunt,data){grunt.build({'target':"firepad.js",'pre':data.concat.firepadjs.options.banner,'post':data.concat.firepadjs.options.footer,'files':data.concat.firepadjs.src},(function(){grunt.copy(data.copy.toBuild.files,built_q__g_)//#firepad:13
+lispz.script("ext/firepad.js",(function(){__module_ready__({'build':(function(target_repo,built_q__g_){github.grunt(target_repo,"firebase/firepad",(function(grunt,data){grunt.build({'target':"firepad.js",'pre':data.concat.firepadjs.options.banner,'post':data.concat.firepadjs.options.footer,'files':data.concat.firepadjs.src},(function(){grunt.copy(data.copy.toBuild.files,built_q__g_)//#firepad:13
 }))//#firepad:14
 }))//#firepad:15
 })//#firepad:16
@@ -956,202 +956,200 @@ net.script("ext/firepad.js",(function(){__module_ready__({'build':(function(targ
 
 lispz_modules['github']=function anonymous(__module_ready__
 /**/) {
-lispz.load("net,dict,list"//#core:48
-,(function(){var net=lispz.cache["net"],dict=lispz.cache["dict"],list=lispz.cache["list"];
-var cdn_uri=(function(project,filepath){return ("https://cdn.rawgit.com/"+project+"/master/"+filepath)
-//#github:3
-});//#github:4
+lispz.load("net,dict,list,core"//#core:48
+,(function(){var net=lispz.cache["net"],dict=lispz.cache["dict"],list=lispz.cache["list"],core=lispz.cache["core"];
+var version=null;//#github:2
 
-var release_uri=(function(project,version,filename){return ("https://github.com/"+project+"/releases/download/"+version+"/"+filename)
-//#github:7
-});//#github:8
+var cdn_uri=(function(project,version,filepath){return ("https://cdn.rawgit.com/"+project+"/"+version+"/"+filepath)
+//#github:4
+});//#github:5
 
-net.script("ext/github.js",(function(){var repo=(function(username,password,project){var github=(new Github({'username':username,'password':password,'auth':"basic"}));//#github:11
+lispz.script("ext/github.js",(function(){var repo=(function(username,password,project){var github=(new Github({'username':username,'password':password,'auth':"basic"}));//#github:8
 
-var repo=github.getRepo.apply(null,project.split("/"));//#github:12
+var repo=github.getRepo.apply(null,project.split("/"));//#github:9
 
-repo.lispz={'github':github,'username':username,'password':password,'project':project,'branch':"master"};//#github:13
+repo.lispz={'github':github,'username':username,'password':password,'project':project,'branch':"master"};//#github:10
 
 return repo
-//#github:14
-});//#github:15
+//#github:11
+});//#github:12
 
-var branch=(function(repo,branch_name,ready_q__g_){repo.lispz.branch=branch_name;//#github:18
+var branch=(function(repo,branch_name,ready_q__g_){repo.lispz.branch=branch_name;//#github:15
 
-repo.branch(branch_name,ready_q__g_)//#github:19
-});//#github:20
+repo.branch(branch_name,ready_q__g_)//#github:16
+});//#github:17
 
-var list_dir=(function(repo,path,ready_q__g_){repo.contents(repo.lispz.branch,path,ready_q__g_)//#github:23
-});//#github:24
+var list_dir=(function(repo,path,ready_q__g_){repo.contents(repo.lispz.branch,path,ready_q__g_)//#github:20
+});//#github:21
 
-var list_all=(function(repo,path,single_level,ready_q__g_){var result=[];//#github:26
+var list_all=(function(repo,path,single_level,ready_q__g_){var result=[];//#github:23
 
 var _h_list_all=(function(path,level_done_q__g_){list_dir(repo,path,(function(err,data){switch(false){case !err:console.log(err)
-throw("Error accessing GitHub")}//#github:29
+throw("Error accessing GitHub")}//#github:26
 
-list.sequential(data,(function(entry,next_q__g_){switch(false){case !("dir"===entry.type)//#github:31
-:switch(false){case !single_level:_h_list_all(entry.path,next_q__g_)}//#github:32
-;break;case !("file"===entry.type)//#github:33
+list.sequential(data,(function(entry,next_q__g_){switch(false){case !("dir"===entry.type)//#github:28
+:switch(false){case !single_level:_h_list_all(entry.path,next_q__g_)}//#github:29
+;break;case !("file"===entry.type)//#github:30
 :result.push(entry.path)
-next_q__g_()//#github:34
-}//#github:35
-}),level_done_q__g_)//#github:36
-}))//#github:37
+next_q__g_()//#github:31
+}//#github:32
+}),level_done_q__g_)//#github:33
+}))//#github:34
 });
-_h_list_all(path,(function(){ready_q__g_(null,result)}))//#github:38
+_h_list_all(path,(function(){ready_q__g_(null,result)}))//#github:35
+});//#github:36
+
+var read=(function(repo,path,ready_q__g_){repo.read(repo.lispz.branch,path,ready_q__g_)//#github:38
 });//#github:39
 
-var read=(function(repo,path,ready_q__g_){repo.read(repo.lispz.branch,path,ready_q__g_)//#github:41
-});//#github:42
-
 var update=(function(repo,ready_q__g_){switch(false){case !(repo.lispz.branch===repo.lispz.username):return ready_q__g_()
-}//#github:44
+}//#github:41
 
-var branch_name=lispz.globals.default_u_(repo.lispz.username,"master");//#github:45
+var branch_name=lispz.globals.default_u_(repo.lispz.username,"master");//#github:42
 
-branch(repo,branch_name,ready_q__g_)//#github:46
+branch(repo,branch_name,ready_q__g_)//#github:43
+});//#github:44
+
+var write=(function(repo,path,contents,comment,complete_q__g_){repo.write(repo.lispz.branch,path,contents,comment,complete_q__g_)//#github:46
 });//#github:47
 
-var write=(function(repo,path,contents,comment,complete_q__g_){repo.write(repo.lispz.branch,path,contents,comment,complete_q__g_)//#github:49
-});//#github:50
-
 var preprocessors={'lispz':(function(name,code){return {'ext':"js",'code':window.lispz.compile(name,code)}
-//#github:54
-})//#github:55
-};//#github:56
+//#github:51
+})//#github:52
+};//#github:53
 
-var preprocess=(function(path,code){var ext=path.split(".").slice(-1)[0];//#github:58
+var preprocess=(function(path,code){var ext=path.split(".").slice(-1)[0];//#github:55
 
-var preprocessor=preprocessors[ext];//#github:59
+var preprocessor=preprocessors[ext];//#github:56
 
 switch(false){case !!(preprocessor):return {'ext':ext,'code':code}
-}//#github:60
+}//#github:57
 
 return preprocessor(path,code)
-//#github:61
-});//#github:62
+//#github:58
+});//#github:59
 
-var retriever=(function(target_repo,sources,actors,retrieved_q__g_){var code={'js':[],'css':[],'copies':{},'from':["Gathered from: "]};//#github:65
+var retriever=(function(target_repo,sources,actors,retrieved_q__g_){var code={'js':[],'css':[],'copies':{},'from':["Gathered from: "]};//#github:62
 
-list.sequential(sources,(function(source,source_read_q__g_){var source_repo=actors.repo(target_repo,source.repo);//#github:67
+list.sequential(sources,(function(source,source_read_q__g_){var source_repo=actors.repo(target_repo,source.repo);//#github:64
 
-code.from.push(source.repo)//#github:68
+code.from.push(source.repo)//#github:65
 
-list.sequential(source.files,(function(meta,file_set_read_q__g_){var base=lispz.globals.default_u_(meta.base,"");//#github:70
+list.sequential(source.files,(function(meta,file_set_read_q__g_){var base=lispz.globals.default_u_(meta.base,"");//#github:67
 
-actors.list_all(source_repo,base,meta.single_level,(function(err,file_list){var files=file_list;//#github:72
+actors.list_all(source_repo,base,meta.single_level,(function(err,file_list){var files=file_list;//#github:69
 
 switch(false){case !meta.include:var files=files.filter((function(file){return meta.include.test(file)
-//#github:75
-}));//#github:76
-}//#github:77
+//#github:72
+}));//#github:73
+}//#github:74
 
 switch(false){case !meta.exclude:var files=files.filter((function(file){return !(meta.exclude.test(file))
-//#github:80
-}));//#github:81
-}//#github:82
+//#github:77
+}));//#github:78
+}//#github:79
 
-list.sequential(files,(function(path,next_file_q__g_){actors.read(source_repo,path,(function(err,data){var entry=preprocess(path,data);//#github:85
+list.sequential(files,(function(path,next_file_q__g_){actors.read(source_repo,path,(function(err,data){var entry=preprocess(path,data);//#github:82
 
-var saver=code[entry.ext];//#github:86
+var saver=code[entry.ext];//#github:83
 
-switch(false){case !saver:saver.push(("\n\n/*"+path+"*/\n\n"))//#github:88
+switch(false){case !saver:saver.push(("\n\n/*"+path+"*/\n\n"))//#github:85
 
-saver.push(entry.code)//#github:89
-;break;case !meta.copy_to:var filename=path.split("/").slice(-1)[0];//#github:91
+saver.push(entry.code)//#github:86
+;break;case !meta.copy_to:var filename=path.split("/").slice(-1)[0];//#github:88
 
-code.copies[(meta.copy_to+"/"+filename)]=data;//#github:92
-}//#github:93
+code.copies[(meta.copy_to+"/"+filename)]=data;//#github:89
+}//#github:90
 
-next_file_q__g_()//#github:94
-}))//#github:95
-}),file_set_read_q__g_)//#github:96
-}))//#github:97
-}),source_read_q__g_)//#github:98
-}),(function(){retrieved_q__g_(code)}))//#github:99
-});//#github:100
+next_file_q__g_()//#github:91
+}))//#github:92
+}),file_set_read_q__g_)//#github:93
+}))//#github:94
+}),source_read_q__g_)//#github:95
+}),(function(){retrieved_q__g_(code)}))//#github:96
+});//#github:97
 
-var builder=(function(target_repo,name,sources,actors,built_q__g_){retriever(target_repo,sources,actors,(function(code){var comment=code.from.join(" ");//#github:103
+var builder=(function(target_repo,name,sources,actors,built_q__g_){retriever(target_repo,sources,actors,(function(code){var comment=code.from.join(" ");//#github:100
 
-var save=(function(ext,done_q__g_){update(target_repo,(function(){var source=code[ext];//#github:105
+var save=(function(ext,done_q__g_){update(target_repo,(function(){var source=code[ext];//#github:102
 
 switch(false){case !!(source.length):return done_q__g_()
-}//#github:106
+}//#github:103
 
-write(target_repo,("ext/"+name+"."+ext)//#github:107
-,unescape(encodeURIComponent(source.join("")))//#github:108
-,comment,done_q__g_)//#github:110
-}))});//#github:111
+write(target_repo,("ext/"+name+"."+ext)//#github:104
+,unescape(encodeURIComponent(source.join("")))//#github:105
+,comment,done_q__g_)//#github:107
+}))});//#github:108
 
-save("js",(function(){save("css",(function(){dict.sequential(code.copies,(function(path,contents,next_file_q__g_){write(target_repo,path,unescape(encodeURIComponent(contents)),comment,next_file_q__g_)//#github:115
-}),built_q__g_)//#github:116
-}))}))//#github:117
-}))//#github:118
-});//#github:119
+save("js",(function(){save("css",(function(){dict.sequential(code.copies,(function(path,contents,next_file_q__g_){write(target_repo,path,unescape(encodeURIComponent(contents)),comment,next_file_q__g_)//#github:112
+}),built_q__g_)//#github:113
+}))}))//#github:114
+}))//#github:115
+});//#github:116
 
 var github_actors={'list_all':list_all,'read':read,'repo':(function(target_repo,name){return repo(target_repo.lispz.username,target_repo.lispz.password,name)
-//#github:125
-})//#github:126
-};//#github:127
+//#github:122
+})//#github:123
+};//#github:124
 
-var build=(function(target_repo,name,sources,built_q__g_){builder(target_repo,name,sources,github_actors,built_q__g_)//#github:129
-});//#github:130
+var build=(function(target_repo,name,sources,built_q__g_){builder(target_repo,name,sources,github_actors,built_q__g_)//#github:126
+});//#github:127
 
-var grunt=(function(target_repo,source_project,process_q__g_){var source_repo=github_actors.repo(target_repo,source_project);//#github:132
+var grunt=(function(target_repo,source_project,process_q__g_){var source_repo=github_actors.repo(target_repo,source_project);//#github:129
 
-var comment=("from "+source_project);//#github:133
+var comment=("from "+source_project);//#github:130
 
-var sources=[{'repo':source_project,'files':[{'include':/^Gruntfile.js$/,'single_level':true}//#github:136
-]}//#github:137
-];//#github:138
+var sources=[{'repo':source_project,'files':[{'include':/^Gruntfile.js$/,'single_level':true}//#github:133
+]}//#github:134
+];//#github:135
 
-retriever(target_repo,sources,github_actors,(function(code){var grunt_config=Function(("var module={};"+code.js.slice(-1)[0]+"return module.exports"))();//#github:141
+retriever(target_repo,sources,github_actors,(function(code){var grunt_config=Function(("var module={};"+code.js.slice(-1)[0]+"return module.exports"))();//#github:138
 
-grunt_config({'loadNpmTasks':(function(){}),'registerTask':(function(){})//#github:143
-,'initConfig':(function(config_data){var grunt={'build':(function(meta,built_q__g_){var js=[lispz.globals.default_u_(meta.pre,"")];//#github:147
+grunt_config({'loadNpmTasks':(function(){}),'registerTask':(function(){})//#github:140
+,'initConfig':(function(config_data){var grunt={'build':(function(meta,built_q__g_){var js=[lispz.globals.default_u_(meta.pre,"")];//#github:144
 
 var read_file=(function(path,next_q__g_){github_actors.read(source_repo,path,(function(err,data){js.push(data)
-next_q__g_()//#github:150
-}))//#github:151
-});//#github:152
+next_q__g_()//#github:147
+}))//#github:148
+});//#github:149
 
-list.sequential(meta.files,read_file,(function(){js.push(lispz.globals.default_u_(meta.post,""))//#github:154
+list.sequential(meta.files,read_file,(function(){js.push(lispz.globals.default_u_(meta.post,""))//#github:151
 
-write(target_repo,("ext/"+meta.target)//#github:155
-,unescape(encodeURIComponent(js.join("\n"))),comment,built_q__g_)//#github:156
-}))//#github:157
-})//#github:158
-,'copy':(function(files,built_q__g_){var copy_q__g_=(function(item,next_q__g_){var path=lispz.globals.default_u_(item.src,item);//#github:161
+write(target_repo,("ext/"+meta.target)//#github:152
+,unescape(encodeURIComponent(js.join("\n"))),comment,built_q__g_)//#github:153
+}))//#github:154
+})//#github:155
+,'copy':(function(files,built_q__g_){var copy_q__g_=(function(item,next_q__g_){var path=lispz.globals.default_u_(item.src,item);//#github:158
 
-github_actors.read(source_repo,path,(function(err,data){write(target_repo,("ext/"+path.split("/").slice(-1)[0])//#github:163
-,unescape(encodeURIComponent(data)),comment,next_q__g_)//#github:164
-}))//#github:165
-});//#github:166
+github_actors.read(source_repo,path,(function(err,data){write(target_repo,("ext/"+path.split("/").slice(-1)[0])//#github:160
+,unescape(encodeURIComponent(data)),comment,next_q__g_)//#github:161
+}))//#github:162
+});//#github:163
 
-list.sequential(files,copy_q__g_,built_q__g_)//#github:167
+list.sequential(files,copy_q__g_,built_q__g_)//#github:164
+})//#github:165
+};//#github:166
+
+update(target_repo,(function(){process_q__g_(grunt,config_data)}))//#github:167
 })//#github:168
-};//#github:169
+})//#github:169
+}))//#github:170
+});//#github:171
 
-update(target_repo,(function(){process_q__g_(grunt,config_data)}))//#github:170
-})//#github:171
-})//#github:172
-}))//#github:173
-});//#github:174
+var build_github=(function(target_repo,built_q__g_){var sources=[{'repo':"michael/github",'files':[{'include':/github.js$/}//#github:175
+]}//#github:176
+];//#github:177
 
-var build_github=(function(target_repo,built_q__g_){var sources=[{'repo':"michael/github",'files':[{'include':/github.js$/}//#github:178
-]}//#github:179
-];//#github:180
+build(target_repo,"github",sources,built_q__g_)//#github:178
+});//#github:179
 
-build(target_repo,"github",sources,built_q__g_)//#github:181
-});//#github:182
-
-__module_ready__({'branch':branch,'list_all':list_all,'list_dir':list_dir,'cdn_uri':cdn_uri,'build':build,'builder':builder,'repo':repo,'read':read,'write':write,'update':update,'build_github':build_github,'release_uri':release_uri,'retriever':retriever,'grunt':grunt,'preprocessors':preprocessors,'move':(function(repo,from,to,ready_q__g_){repo.move(repo.lispz.branch,from,to,complete_q__g_)//#github:187
+__module_ready__({'branch':branch,'list_all':list_all,'list_dir':list_dir,'cdn_uri':cdn_uri,'build':build,'builder':builder,'repo':repo,'read':read,'write':write,'update':update,'build_github':build_github,'retriever':retriever,'grunt':grunt,'preprocessors':preprocessors,'move':(function(repo,from,to,ready_q__g_){repo.move(repo.lispz.branch,from,to,complete_q__g_)//#github:184
+})//#github:185
+,'delete':(function(repo,path,ready_q__g_){repo.remove(repo.lispz.branch,path,script,complete_q__g_)//#github:187
 })//#github:188
-,'delete':(function(repo,path,ready_q__g_){repo.remove(repo.lispz.branch,path,complete_q__g_)//#github:190
-})//#github:191
-})//#github:192
-}))//#github:193
-}))//#github:194
+})//#github:189
+}))//#github:190
+}))//#github:191
 //# sourceURL=github.lispz
 
 }
@@ -1229,13 +1227,14 @@ var build=(function(target_repo,built_q__g_){github.build(target_repo,"dexie",[{
 });//#dexie:9
 //#dexie:10
 
-net.script("ext/dexie.js",(function(){__module_ready__({'build':build})}))//#dexie:11
+lispz.script("ext/dexie.js",(function(){__module_ready__({'build':build})}))//#dexie:11
 }))//#dexie:12
 //# sourceURL=dexie.lispz
 
 }
 /*lispz.js*/
 var lispz = function() {
+  if (!window.lispz_modules) window.lispz_modules = {}
   var delims = "(){}[]n".split(''), // characters that are not space separated atoms
   not_delims = delims.join("\\"), delims = delims.join('|\\'),
   stringRE =
@@ -1400,7 +1399,7 @@ var lispz = function() {
   },
   run = function(name, source) { return compile(name, source).map(eval) },
   //######################### Script Loader ####################################//
-  cache = {}, manifest = [], pending = {}, modules = {}
+  cache = {}, manifest = [], pending = {}
   http_request = function(uri, type, callback) {
     var req = new XMLHttpRequest()
     req.open(type, uri, true)
@@ -1417,7 +1416,7 @@ var lispz = function() {
     req.send()
   },
   module_init = function(uri, on_readies) {
-    modules[uri](function(exports) {
+    lispz_modules[uri](function(exports) {
       cache[uri.split('/').pop()] = cache[uri] = exports
       delete pending[uri]
       on_readies.forEach(function(call_module) {call_module(exports)})
@@ -1426,7 +1425,7 @@ var lispz = function() {
   load_one = function(uri, on_ready) {
     if (cache[uri]) return on_ready()
     if (pending[uri]) return pending[uri].push(on_ready)
-    if (modules[uri]) return module_init(uri, [on_ready])
+    if (lispz_modules[uri]) return module_init(uri, [on_ready])
     pending[uri] = [on_ready]; var js = ""
     http_request(uri + ".lispz", 'GET', function(response) {
       try {
@@ -1434,7 +1433,7 @@ var lispz = function() {
         if (!response.text) return on_ready(response) // probably an error
         js = compile(uri, response.text).join('\n') +
           "//# sourceURL=" + name + ".lispz\n"
-        modules[uri] = new Function('__module_ready__', js)
+        lispz_modules[uri] = new Function('__module_ready__', js)
         module_init(uri, pending[uri])
       } catch (e) {
         delete pending[uri]
@@ -1458,7 +1457,7 @@ var lispz = function() {
     }
     next_uri()
   }
-  if (window) window.onload = function() {
+  window.onload = function() {
     var q = document.querySelector('script[src*="lispz.js"]').getAttribute('src').split('#')
     load(((q.length == 1) ? "core" : "core," + q.pop()),
       function() {
@@ -1484,7 +1483,7 @@ var lispz = function() {
 
   return { compile: compile, run: run, parsers: parsers, load: load,
            macros: macros, cache: cache, http_request: http_request,
-           clone: clone, manifest: manifest, modules: modules,
+           clone: clone, manifest: manifest,
            synonyms: synonyms, globals: globals, tags: {} }
 }()
 //# sourceURL=lispz.js
