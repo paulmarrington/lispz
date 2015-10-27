@@ -1399,7 +1399,7 @@ var lispz = function() {
   },
   run = function(name, source) { return compile(name, source).map(eval) },
   //######################### Script Loader ####################################//
-  cache = {}, manifest = [], pending = {}
+  cache = {}, manifest = [], pending = {},
   http_request = function(uri, type, callback) {
     var req = new XMLHttpRequest()
     req.open(type, uri, true)
@@ -1421,7 +1421,7 @@ var lispz = function() {
       delete pending[uri]
       on_readies.forEach(function(call_module) {call_module(exports)})
     })
-  }
+  },
   load_one = function(uri, on_ready) {
     if (cache[uri]) return on_ready()
     if (pending[uri]) return pending[uri].push(on_ready)
@@ -1456,9 +1456,26 @@ var lispz = function() {
       else if (on_all_ready) on_all_ready()
     }
     next_uri()
+  },
+  //##################    where to get scripts    #############################//
+  lispz_url = document.querySelector('script[src*="lispz.js"]').getAttribute('src'),
+  lispz_base_path = /^(.*?)(?:ext\/)?lispz.js/.exec(lispz_url)[1],
+  css = function(uri) {
+    el = document.createElement("link")
+    el.setAttribute("type", "text/css")
+    el.setAttribute("rel", "stylesheet")
+    el.setAttribute("href",  lispz_base_path+uri)
+    document.head.appendChild(el)
+  },
+  script = function(uri, when_loaded) {
+    el = document.createElement("script")
+    document.head.appendChild(el)
+    el.addEventListener("load",  function(evt) { setTimeout(when_loaded, 20) })
+    el.addEventListener("error", function(evt) { console.log(evt); when_loaded(evt) })
+    el.setAttribute("src", lispz_base_path+uri)
   }
   window.onload = function() {
-    var q = document.querySelector('script[src*="lispz.js"]').getAttribute('src').split('#')
+    var q = lispz_url.split('#')
     load(((q.length == 1) ? "core" : "core," + q.pop()),
       function() {
         slice.call(document.querySelectorAll('script[type="text/lispz"]')).forEach(
@@ -1483,7 +1500,7 @@ var lispz = function() {
 
   return { compile: compile, run: run, parsers: parsers, load: load,
            macros: macros, cache: cache, http_request: http_request,
-           clone: clone, manifest: manifest,
+           clone: clone, manifest: manifest, script: script, css: css,
            synonyms: synonyms, globals: globals, tags: {} }
 }()
 //# sourceURL=lispz.js
