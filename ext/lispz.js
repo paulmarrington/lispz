@@ -954,6 +954,22 @@ lispz.script("ext/firepad.js",(function(){__module_ready__({'build':(function(ta
 
 }
 
+lispz_modules['dexie']=function anonymous(__module_ready__
+/**/) {
+lispz.load("net,github"//#core:48
+,(function(){var net=lispz.cache["net"],github=lispz.cache["github"];
+var build=(function(target_repo,built_q__g_){github.build(target_repo,"dexie",[{'repo':"dfahlander/Dexie.js",'files':[{'base':"dist/latest",'include':/Dexie.js$/}//#dexie:6
+]}//#dexie:7
+],built_q__g_)//#dexie:8
+});//#dexie:9
+//#dexie:10
+
+lispz.script("ext/dexie.js",(function(){__module_ready__({'build':build})}))//#dexie:11
+}))//#dexie:12
+//# sourceURL=dexie.lispz
+
+}
+
 lispz_modules['github']=function anonymous(__module_ready__
 /**/) {
 lispz.load("net,dict,list,core"//#core:48
@@ -1214,22 +1230,6 @@ var distribute=(function(target_repo){});//#dev:50
 __module_ready__({'manifest':manifest,'package':package,'distribute':distribute})//#dev:52
 }))//#dev:53
 //# sourceURL=dev.lispz
-
-}
-
-lispz_modules['dexie']=function anonymous(__module_ready__
-/**/) {
-lispz.load("net,github"//#core:48
-,(function(){var net=lispz.cache["net"],github=lispz.cache["github"];
-var build=(function(target_repo,built_q__g_){github.build(target_repo,"dexie",[{'repo':"dfahlander/Dexie.js",'files':[{'base':"dist/latest",'include':/Dexie.js$/}//#dexie:6
-]}//#dexie:7
-],built_q__g_)//#dexie:8
-});//#dexie:9
-//#dexie:10
-
-lispz.script("ext/dexie.js",(function(){__module_ready__({'build':build})}))//#dexie:11
-}))//#dexie:12
-//# sourceURL=dexie.lispz
 
 }
 /*lispz.js*/
