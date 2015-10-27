@@ -1,6 +1,6 @@
 (using  [net github]
-  (net.css "ext/firepad.css")
-  (net.script "ext/firepad.js" (=>
+  (lispz.css "ext/firepad.css")
+  (lispz.script "ext/firepad.js" (=>
     (export {
       build: (lambda [target-repo built=>]
         (github.grunt target-repo "firebase/firepad" (lambda [grunt data]

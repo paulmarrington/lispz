@@ -516,10 +516,10 @@
     ]] built=>)
   ))))))
 
-  (net.css "ext/codemirror.css")
-  (net.script "ext/codemirror.js" (=>
+  (lispz.css "ext/codemirror.css")
+  (lispz.script "ext/codemirror.js" (=>
     (cond window.CodeMirror (do ## in case we haven't built it yet
-      (net.script "ext/codemirror-modes.js" (=>))
+      (lispz.script "ext/codemirror-modes.js" (=>))
       ((Object.keys extra-commands).forEach (lambda [key]
         (dict.update! CodeMirror.commands key (get extra-commands key))
       ))
@@ -527,5 +527,5 @@
     ))
     (export {options open close set-mode build})
   ))
-  (delay 100 (net.css "ext/codemirror-themes.css"))
+  (delay 100 (lispz.css "ext/codemirror-themes.css"))
 )

@@ -8,5 +8,5 @@
     ]] built=>)
   ))
 
-  (net.script "ext/dexie.js" (=> (export {build})))
+  (lispz.script "ext/dexie.js" (=> (export {build})))
 )

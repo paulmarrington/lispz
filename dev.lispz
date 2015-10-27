@@ -25,13 +25,12 @@
             (var contents ((get lispz_modules key).toString))
             (source.push "\n\nlispz_modules['" key "']=" contents)
           ))
-          (source.push "\n/*lispz.js*/\n" lispz-js "//# sourceURL=lispz.js\n")
+          (source.push "\n/*lispz.js*/\n" lispz-js "\n")
           (list.sequential riots (lambda [path next=>]
             (github.read lispz-repo path (lambda [err data]
               (source.push
-                (+ "\n\n/*" path "*/\n\nlispz.tags['" path "']=function(){")
-                (riot.compile data true)
-                "}//# sourceURL=" path "\n"
+                "\n\n/*" path "*/\n\nlispz.tags['" path "']=function(){"
+                (riot.compile data true) "}\n"
               )
               (next=>)
             ))

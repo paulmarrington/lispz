@@ -1,12 +1,9 @@
-(using  [net dict list]
-  (var cdn-uri (lambda [project filepath]
-    (return (+ "https://cdn.rawgit.com/" project "/master/" filepath))
+(using  [net dict list core]
+  (var version null)
+  (var cdn-uri (lambda [project version filepath]
+    (return (+ "https://cdn.rawgit.com/" project "/" version "/" filepath))
   ))
-  (var release-uri (lambda [project version filename]
-    (return (+ "https://github.com/" project
-      "/releases/download/" version "/" filename))
-  ))
-  (net.script "ext/github.js" (=>
+  (lispz.script "ext/github.js" (=>
     (var repo (lambda [username password project]
       (var github (new Github {username password auth: "basic"}))
       (var repo (github.getRepo.apply null (project.split "/")))
@@ -182,12 +179,12 @@
     ))
     (export {
       branch list-all list-dir cdn-uri build builder repo read write update
-      build-github release-uri retriever grunt preprocessors
+      build-github retriever grunt preprocessors
       move: (lambda [repo from to ready=>]
         (repo.move repo.lispz.branch from to complete=>)
       )
       delete: (lambda [repo path ready=>]
-        (repo.remove repo.lispz.branch path complete=>)
+        (repo.remove repo.lispz.branch path script complete=>)
       )
     })
   ))

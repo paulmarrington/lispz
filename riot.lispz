@@ -28,7 +28,7 @@
 
   (var mount (lambda [tags] (riot.mount tags)))
 
-  (net.script "ext/riot.js" (=>
+  (lispz.script "ext/riot.js" (=>
     (return-if (not window.riot) (export {build}))
     (set! riot.parsers.js.lispz
       (lambda [source] (return ((lispz.compile "riot-tags" source).join "\n"))))

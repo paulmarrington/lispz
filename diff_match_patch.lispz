@@ -1,5 +1,5 @@
 (using [net github]
-  (net.script "ext/diff_match_patch.js" (=>
+  (lispz.script "ext/diff_match_patch.js" (=>
     (export {
       build: (lambda [target-repo built=>]
         (github.build target-repo "diff_match_patch" [[
