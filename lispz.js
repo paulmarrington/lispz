@@ -181,7 +181,10 @@ var lispz = function() {
     req.send()
   },
   module_init = function(uri, on_readies) {
-    lispz_modules[uri](function(exports) {
+    var js = compile(uri, lispz_modules[uri]).join('\n') +
+      "//# sourceURL=" + uri + ".lispz\n"
+    init_func = new Function('__module_ready__', js)
+    init_func(function(exports) {
       cache[uri.split('/').pop()] = cache[uri] = exports
       delete pending[uri]
       on_readies.forEach(function(call_module) {call_module(exports)})
@@ -196,9 +199,7 @@ var lispz = function() {
       try {
         var name = uri.split('/').pop()
         if (!response.text) return on_ready(response) // probably an error
-        js = compile(uri, response.text).join('\n') +
-          "//# sourceURL=" + name + ".lispz\n"
-        lispz_modules[uri] = new Function('__module_ready__', js)
+        lispz_modules[uri] = response.text
         module_init(uri, pending[uri])
       } catch (e) {
         delete pending[uri]

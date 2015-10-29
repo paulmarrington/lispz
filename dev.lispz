@@ -21,25 +21,28 @@
       (lispz.load (modules.join ",") (=>
         (github.read lispz-repo "lispz.js" (lambda [err lispz-js]
           (var source [["window.lispz_modules={}"]])
-          (dict.for-each lispz.cache (lambda [key value]
-            (var contents ((get lispz_modules key).toString))
-            (source.push "\n\nlispz_modules['" key "']=" contents)
-          ))
-          (source.push "\n/*lispz.js*/\n" lispz-js "\n")
-          (list.sequential riots (lambda [path next=>]
+          (list.sequential modules (lambda [path next=>]
             (github.read lispz-repo path (lambda [err data]
-              (source.push
-                "\n\n/*" path "*/\n\nlispz.tags['" path "']=function(){"
-                (riot.compile data true) "}\n"
-              )
-              (next=>)
-            ))
+              (var contents (data.replace /[\\"]/gm "\\$&"))
+              (var contents (contents.replace /\n/gm "\\n"))
+              (source.push "\n\nlispz_modules['" path "']=\"" contents "\"")
           ) (=>
+            (source.push "\n/*lispz.js*/\n" lispz-js "\n")
+            (list.sequential riots (lambda [path next=>]
+              (github.read lispz-repo path (lambda [err data]
+                (source.push
+                  "\n\n/*" path "*/\n\nlispz.tags['" path "']=function(){"
+                  (riot.compile data true) "}\n"
+                )
+                (next=>)
+              ))
+          ) (=>
+            (source.push "//# sourceURL=lispz.js")
             (github.write lispz-repo (+ "ext/lispz.js")
               (unescape (encodeURIComponent (source.join "")))
               "lispz release code" packaged=>
             )
-          ))
+          ))))
         ))
       ))
     ))
