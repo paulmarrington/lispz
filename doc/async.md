@@ -26,7 +26,7 @@ Many callbacks producers follow the node-js approach of providing error and resp
     )
     
 ## Benefits
-1. Very simple with minimal overheads.
+1. Very simple with minimal overheads
 2. Can be called many times
 3. Cause and effect are sequential in code
 
@@ -34,7 +34,35 @@ Many callbacks producers follow the node-js approach of providing error and resp
 1. Empiric in nature
 2. Highly coupled
 3. Leads to hard-to-read code in more complex event sequences.
+4. Exceptions are lost if not processed within the callback
+5. Actions triggered before the callback is set are lost
 
 # Promises
+ES2015 has introduced native promises into the language. As of November 2015 it is available on all mainstream browsers. Even if not, there are shims that work in an identical(ish) manner.
+
+Functions that want to return information in an asynchronous manner return a promise object. This object can be passed around and whoever needs the data it will or does contain can ask for it with a callback function.
+
+A function that creates a promise uses the 'promise' keyword instead of 'lambda'. Whe the promise is fulfilled it will call (resolve-promise data). If it fails it calls (reject-promise err).
+
+    (var read (promise [addr param1 param2]
+      (http-get (+ addr "?&" param1 "&" param2) (lambda [err response]
+        (return-if err (reject-promise err))
+        (resolve-promise response.text)
+      ))
+    ))
+    
+
+
+## Benefits
+1. Separates cause and effect more clearly
+2. Results are available even it the promise is resolved before inspection
+3. You can pass around a promise just like the data it will contain
+4. Handles exceptions in a structured way
+
+## Disadvantages
+2. Still fairly highly coupled
+3. Only allows one action - not for repetitive events
+4. Developer view needs to change from sequential perspective
+
 # Events
 # Messaging
