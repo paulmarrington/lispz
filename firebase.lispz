@@ -19,8 +19,7 @@
     (return (new Firebase (+ uri "/" (encode collection))))
   ))
 
-  (net.script
-    "https://cdn.firebase.com/js/client/2.2.9/firebase.js" (=>
-      (export {register attach databases})
-  ))
+  (when (net.script "https://cdn.firebase.com/js/client/2.2.9/firebase.js") []
+    (export {register attach databases})
+  )
 )

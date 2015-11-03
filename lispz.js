@@ -164,45 +164,47 @@ var lispz = function() {
   },
   run = function(name, source) { return compile(name, source).map(eval) },
   //######################### Script Loader ####################################//
-  cache = {}, manifest = [], pending = {}
+  cache = {}, manifest = [], pending = {},
   http_request = function(uri, type, callback) {
     var req = new XMLHttpRequest()
     req.open(type, uri, true)
     if (lispz.debug && uri.indexOf(":") == -1)
       req.setRequestHeader("Cache-Control", "no-cache")
     req.onerror = function(err) {
-      callback({ uri: uri, error: err })
+      callback(err)
     }
     req.onload = function() {
       manifest.push(req.responseURL)
-      if (req.status === 200) callback({ uri:uri, text: req.responseText })
+      if (req.status === 200) callback(null, req.responseText)
       else                    req.onerror(req.statusText)
     }
     req.send()
   },
   module_init = function(uri, on_readies) {
-    lispz_modules[uri](function(exports) {
+    var js = compile(uri, lispz_modules[uri]).join('\n') +
+      "//# sourceURL=" + uri + ".lispz\n"
+    init_func = new Function('__module_ready__', js)
+    init_func(function(exports) {
       cache[uri.split('/').pop()] = cache[uri] = exports
       delete pending[uri]
       on_readies.forEach(function(call_module) {call_module(exports)})
     })
-  }
+  },
   load_one = function(uri, on_ready) {
     if (cache[uri]) return on_ready()
     if (pending[uri]) return pending[uri].push(on_ready)
     if (lispz_modules[uri]) return module_init(uri, [on_ready])
     pending[uri] = [on_ready]; var js = ""
-    http_request(uri + ".lispz", 'GET', function(response) {
+    http_request(uri + ".lispz", 'GET', function(err, response_text) {
       try {
+        if (err) throw err
         var name = uri.split('/').pop()
-        if (!response.text) return on_ready(response) // probably an error
-        js = compile(uri, response.text).join('\n') +
-          "//# sourceURL=" + name + ".lispz\n"
-        lispz_modules[uri] = new Function('__module_ready__', js)
+        lispz_modules[uri] = response_text
         module_init(uri, pending[uri])
       } catch (e) {
         delete pending[uri]
-        throw e
+        console.log(e)
+        throw uri+": "+e
       }
     })
   },
@@ -221,9 +223,26 @@ var lispz = function() {
       else if (on_all_ready) on_all_ready()
     }
     next_uri()
+  },
+  //##################    where to get scripts    #############################//
+  lispz_url = document.querySelector('script[src*="lispz.js"]').getAttribute('src'),
+  lispz_base_path = /^(.*?)(?:ext\/)?lispz.js/.exec(lispz_url)[1],
+  css = function(uri) {
+    el = document.createElement("link")
+    el.setAttribute("type", "text/css")
+    el.setAttribute("rel", "stylesheet")
+    el.setAttribute("href",  lispz_base_path+uri)
+    document.head.appendChild(el)
+  },
+  script = function(uri, when_loaded) {
+    el = document.createElement("script")
+    document.head.appendChild(el)
+    el.addEventListener("load",  function(evt) { setTimeout(when_loaded, 20) })
+    el.addEventListener("error", function(evt) { console.log(evt); when_loaded(evt) })
+    el.setAttribute("src", lispz_base_path+uri)
   }
   window.onload = function() {
-    var q = document.querySelector('script[src*="lispz.js"]').getAttribute('src').split('#')
+    var q = lispz_url.split('#')
     load(((q.length == 1) ? "core" : "core," + q.pop()),
       function() {
         slice.call(document.querySelectorAll('script[type="text/lispz"]')).forEach(
@@ -248,6 +267,6 @@ var lispz = function() {
 
   return { compile: compile, run: run, parsers: parsers, load: load,
            macros: macros, cache: cache, http_request: http_request,
-           clone: clone, manifest: manifest,
+           clone: clone, manifest: manifest, script: script, css: css,
            synonyms: synonyms, globals: globals, tags: {} }
 }()

@@ -50,7 +50,6 @@
 
 ### Modules must export to continue processing ###
 (macro export [exports] (#join '' '__module_ready__(' exports ')'))
-(export {})
 
 (macro delay [ms *body] (setTimeout (=> *body) ms))
 (macro yield [*body] (delay 0 *body))
@@ -66,3 +65,44 @@
 # Return a random integer between 0 and the range given
 ###
 (global random (lambda [range] (return (Math.floor (* (Math.random) range)))))
+
+### Promises ###
+(global promise {})
+(macro promise [params *body] (lambda params
+  (var #callbacks [[]])
+  (var #pledge (new Promise (lambda [ok fail] (set! #callbacks  {ok fail}))))
+  (var resolve-promise (lambda [] (#callbacks.ok.apply null (*arguments 0))))
+  (var reject-promise (lambda [err] (#callbacks.fail err)))
+  *body
+  (return #pledge)
+))
+(macro promise.callback [params *body]
+  (promise params
+    (var callback (lambda [err result]
+      (return-if err (reject-promise err))
+      (resolve-promise result)
+    ))
+    *body
+  )
+)
+(global promise.resolved (promise [pact] (resolve-promise pact)))
+
+(macro when  [pledge params *body] (pledge .then  (lambda params *body)))
+(macro catch [pledge errors *body] (pledge .catch (lambda errors *body)))
+
+(using [list]
+  (global promise.sequence (promise []
+    (var promises (list.flatten (*arguments)))
+    (promises.push #pact)
+    (promises.forEach (lambda [pledge idx]
+      (var next (+ idx 1))
+      (return? (is next promises.length))
+      (var next-promise (get promises next))
+      (when  pledge []      (return next-promise))
+      (catch pledge [error] (next-promise.catch error))
+    ))
+  ))
+
+  (global promise.all (=> (return (Promise.all (list.flatten (*arguments 0))))))
+)
+(export {})
