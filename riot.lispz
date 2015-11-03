@@ -1,45 +1,45 @@
-(using  [net list github dict]
+(using  [net github dict]
   (var compile (lambda [html to-js] (return (riot.compile html to-js))))
 
   (var tags {})
 
-  (var load (lambda [name uri next-step=>]
+  (var load (promise [name uri]
     (var mount (=>
       (dict.update! tags name true)
       (dict.update! tags uri true)
       (riot.mount name)
-      (next-step=>)
+      (resolve-promise)
     ))
     (cond
-      (get tags name)       (next-step=>)
+      (get tags name)       (resolve-promise)
       (get lispz.tags name) (do ((get lispz.tags name)) (mount))
-      (else)                (net.http-get uri (lambda [response]
-                              (compile response.text) (mount)))
+      (else)                (when (net.http-get uri) [response]
+                              (compile response) (mount))
     )
   ))
 
-  (var build (lambda [target-repo built=>]
-    (github.build target-repo "riot" [[
+  (var build (lambda [target-repo]
+    (return (github.build target-repo "riot" [[
       {repo: "riot/riot" files: [[
         {include: '/^riot\+compiler.js$/'}
       ]]}
-    ]] built=>)
+    ]]))
   ))
 
   (var mount (lambda [tags] (riot.mount tags)))
 
-  (lispz.script "ext/riot.js" (=>
+  (when (net.script "ext/riot.js") []
     (return-if (not window.riot) (export {build}))
     (set! riot.parsers.js.lispz
-      (lambda [source] (return ((lispz.compile "riot-tags" source).join "\n"))))
-    (list.sequential (document.getElementsByClassName "riot")
-      (lambda [element next-element=>]
-        (var name element.tagName)
-        (var uri (or (element.getAttribute "uri")
-                     (+ (name.toLowerCase) ".riot.html")))
-        (load name uri next-element=>)
-      )
-      (=> (export {build compile load mount}))
+      (lambda [source] (return ((lispz.compile "riot-tags" source).join "\n")))
     )
-  ))
+    (var riot-elements (slice (document.getElementsByClassName "riot")))
+    (var load-all (promise.all (riot-elements.map (lambda [element]
+      (var name (element.tagName.toLowerCase))
+      (var uri (or (element.getAttribute "uri")
+                   (+ (name.toLowerCase) ".riot.html")))
+      (return (load name uri))
+    ))))
+    (when load-all [] (export {build compile load mount}))
+  )
 )

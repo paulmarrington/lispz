@@ -1,53 +1,77 @@
-(using [net github dict list riot]
+(using [github riot]
   (var manifest (=>
     (var text [["CACHE MANIFEST"]])
     (lispz.manifest.forEach (lambda [uri] (text.push uri)))
     (text.push "NETWORK:" "*")
     (return (text.join "\n"))
   ))
+  ### Package Lispz for distribution ###
+  (var package (lambda [lispz-repo]
+    (var read-file (lambda [path] (return (github.read lispz-repo path))))
 
-  (var package (lambda [lispz-repo packaged=>]  (github.update lispz-repo (=>
-    (github.list-dir lispz-repo "" (lambda [err meta-list]
+    (var group (lambda [files]
       (var modules [[]] riots [[]])
-      (meta-list.forEach (lambda [entry]
+      (files.forEach (lambda [entry]
         (return? (not (is "file" entry.type)))
         (var parts (entry.name.split "."))
-        (var ext (last parts))
         (cond
-          (is ext "lispz")                          (modules.push (first parts))
-          (is ((slice parts -2).join ".") "riot.html")   (riots.push entry.name)
+          (is (last parts) "lispz")               (modules.push (first parts))
+          (is ((slice parts -2).join ".") "riot.html") (riots.push entry.name)
         )
       ))
-      (lispz.load (modules.join ",") (=>
-        (github.read lispz-repo "lispz.js" (lambda [err lispz-js]
-          (var source [["window.lispz_modules={}"]])
-          (list.sequential modules (lambda [path next=>]
-            (github.read lispz-repo path (lambda [err data]
-              (var contents (data.replace /[\\"]/gm "\\$&"))
-              (var contents (contents.replace /\n/gm "\\n"))
-              (source.push "\n\nlispz_modules['" path "']=\"" contents "\"")
-          ) (=>
-            (source.push "\n/*lispz.js*/\n" lispz-js "\n")
-            (list.sequential riots (lambda [path next=>]
-              (github.read lispz-repo path (lambda [err data]
-                (source.push
-                  "\n\n/*" path "*/\n\nlispz.tags['" path "']=function(){"
-                  (riot.compile data true) "}\n"
-                )
-                (next=>)
-              ))
-          ) (=>
-            (source.push "//# sourceURL=lispz.js")
-            (github.write lispz-repo (+ "ext/lispz.js")
-              (unescape (encodeURIComponent (source.join "")))
-              "lispz release code" packaged=>
-            )
-          ))))
+      (return (promise.resolved {modules riots}))
+    ))
+    (var build-modules (lambda [names]
+      (var source [[]])
+      (var load-module (lambda [name]
+        (return (when (read-file name) [text]
+          (var contents (data.replace /[\\"]/gm "\\$&"))
+          (var contents (contents.replace /\n/gm "\\n"))
+          (source.push "\n\nlispz_modules['" path "']=\"" contents "\"")
         ))
       ))
+      (return (promise
+        (when (promise.all (names.map load-module)) []
+          (return (resolve-promise source))
+        )
+      ))
     ))
-  ))))
+    (var build-riots (lambda [names]
+      (var source [[]])
+      (var load-riot (lambda [name]
+        (return (when (read-file name) [text]
+          (source.push "\n\n/*" path "*/\n\nlispz.tags['" name "']=function(){"
+            (riot.compile text true) "}\n")
+        ))
+      ))
+      (return (promise []
+        (when (promise.all (names.map load-riot)) []
+          (return (resolve-promise source))
+        )
+      ))
+    ))
+    (var write-lispz (=>
+      (var code (source.join ""))
+      (return (github.write lispz-repo "ext/lispz.js" code "lispz release code"))
+    ))
 
+    (var update-mode (github.update lispz-repo))
+    (var lispz-js    (when update-mode [] (read-file "lispz.js")))
+    (var listing     (when update-mode [] (github.list-dir lispz-repo "")))
+    (var groups      (when listing [files] (group files)))
+    (var modules     (when groups [files] (return  (build-modules files.modules))))
+    (var riots       (when groups [files] (return  (build-riots files.riots))))
+
+    (var  source     [["window.lispz_modules={}"]])
+    (var all-loaded  (promise.sequence
+      (when modules  [sources] (source.concat sources))
+      (when lispz-js [code]    (source.push code))
+      (when riots    [sources] (source.concat sources))
+    ))
+    (return (when all-loaded [] (write-lispz)))
+  ))
+
+  ### Distribution ###
   (var distribute (lambda [target-repo]
   ))
 

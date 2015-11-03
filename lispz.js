@@ -171,11 +171,11 @@ var lispz = function() {
     if (lispz.debug && uri.indexOf(":") == -1)
       req.setRequestHeader("Cache-Control", "no-cache")
     req.onerror = function(err) {
-      callback({ uri: uri, error: err })
+      callback(err)
     }
     req.onload = function() {
       manifest.push(req.responseURL)
-      if (req.status === 200) callback({ uri:uri, text: req.responseText })
+      if (req.status === 200) callback(null, req.responseText)
       else                    req.onerror(req.statusText)
     }
     req.send()
@@ -195,15 +195,16 @@ var lispz = function() {
     if (pending[uri]) return pending[uri].push(on_ready)
     if (lispz_modules[uri]) return module_init(uri, [on_ready])
     pending[uri] = [on_ready]; var js = ""
-    http_request(uri + ".lispz", 'GET', function(response) {
+    http_request(uri + ".lispz", 'GET', function(err, response_text) {
       try {
+        if (err) throw err
         var name = uri.split('/').pop()
-        if (!response.text) return on_ready(response) // probably an error
-        lispz_modules[uri] = response.text
+        lispz_modules[uri] = response_text
         module_init(uri, pending[uri])
       } catch (e) {
         delete pending[uri]
-        throw e
+        console.log(e)
+        throw uri+": "+e
       }
     })
   },

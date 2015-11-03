@@ -1,191 +1,220 @@
-(using  [net dict list core]
+(using  [net dict]
   (var version null)
   (var cdn-uri (lambda [project version filepath]
     (return (+ "https://cdn.rawgit.com/" project "/" version "/" filepath))
   ))
-  (lispz.script "ext/github.js" (=>
-    (var repo (lambda [username password project]
-      (var github (new Github {username password auth: "basic"}))
-      (var repo (github.getRepo.apply null (project.split "/")))
-      (set! repo.lispz {github username password project branch: "master"})
-      (return repo)
-    ))
-    ## Set the branch to use for repo - defaults to master
-    (var branch (lambda [repo branch-name ready=>]
-      (set! repo.lispz.branch branch-name)
-      (repo.branch branch-name ready=>)
-    ))
-    ## list files in a specific path on the repo
-    (var list-dir (lambda [repo path ready=>]
-      (repo.contents repo.lispz.branch path ready=>)
-    ))
-    (var list-all (lambda [repo path single-level ready=>]
-      (var result [[]])
-      (var #list-all (lambda [path level-done=>]
-        (list-dir repo path (lambda [err data]
-          (cond err (do (console.log err) (throw "Error accessing GitHub")))
-          (list.sequential data (lambda [entry next=>]
-            (cond (is "dir"  entry.type)
-                    (cond single-level (#list-all entry.path next=>))
-                  (is "file" entry.type)
-                    (do (result.push entry.path) (next=>))
-            )
-          ) level-done=>)
-        ))
-      )) (#list-all path (=> (ready=> null result)))
-    ))
-    (var read (lambda [repo path ready=>]
-      (repo.read repo.lispz.branch path ready=>)
-    ))
-    (var update (lambda [repo ready=>]
-      (return-if (is repo.lispz.branch repo.lispz.username) (ready=>))
-      (var branch-name (default? repo.lispz.username "master"))
-      (branch repo branch-name ready=>)
-    ))
-    (var write (lambda [repo path contents comment complete=>]
-      (repo.write repo.lispz.branch path contents comment complete=>)
-    ))
-    ## preprocess a file to generate css or js dependent on extension
-    (var preprocessors {
-      lispz: (lambda [name code]
-        (return {ext: "js" code: (window.lispz.compile name code)})
-      )
-    })
-    (var preprocess (lambda [path code]
-      (var ext (last (path.split ".")))
-      (var preprocessor (get preprocessors ext))
-      (return-if (not preprocessor) {ext code})
-      (return (preprocessor path code))
-    ))
-    ## Build and save a dependency list
-    (var retriever (lambda [target-repo sources actors retrieved=>]
-      (var code {js: [[]] css: [[]]  copies: {} from: [["Gathered from: "]]})
-      (list.sequential sources (lambda [source source-read=>]
-        (var source-repo (actors.repo target-repo source.repo))
-        (code.from.push source.repo)
-        (list.sequential source.files (lambda [meta file-set-read=>]
-          (var base (default? meta.base ""))
-          (actors.list-all source-repo base meta.single-level (lambda [err file-list]
-            (var files file-list)
-            (cond meta.include
-              (var files (files.filter (lambda [file]
-                (return (meta.include.test file))
-              )))
-            )
-            (cond meta.exclude
-              (var files (files.filter (lambda [file]
-                (return (not (meta.exclude.test file)))
-              )))
-            )
-            (list.sequential files (lambda [path next-file=>]
-              (actors.read source-repo path (lambda [err data]
-                (var entry (preprocess path data))
-                (var saver (get code entry.ext))
-                (cond saver (do
-                  (saver.push (+ "\n\n/*" path "*/\n\n"))
-                  (saver.push entry.code)
-                ) meta.copy-to (do
-                  (var filename (last (path.split "/")))
-                  (set! (get code.copies (+ meta.copy-to "/" filename)) data)
-                ))
-                (next-file=>)
-              ))
-            ) file-set-read=>)
-          ))
-        ) source-read=>)
-      ) (=> (retrieved=> code)))
-    ))
-    (var builder (lambda [target-repo name sources actors built=>]
-      (retriever target-repo sources actors (lambda [code]
-        (var comment (code.from.join " "))
-        (var save (lambda [ext done=>] (update target-repo (=>
-          (var source (get code ext))
-          (return-if (not source.length) (done=>))
-          (write target-repo (+ "ext/" name "." ext)
-            (unescape (encodeURIComponent (source.join "")))
-            comment done=>
+  (var repo (lambda [username password project]
+    (var github (new Github {username password auth: "basic"}))
+    (var repo (github.getRepo.apply null (project.split "/")))
+    (set! repo.lispz {github username password project branch: "master"})
+    (return repo)
+  ))
+  ## Set the branch to use for repo - defaults to master
+  (var branch (promise.callback [repo branch-name]
+    (set! repo.lispz.branch branch-name)
+    (repo.branch branch-name callback)
+  ))
+  ## list files in a specific path on the repo
+  (var list-dir (promise.callback [repo path]
+    (repo.contents repo.lispz.branch path callback)
+  ))
+  (var list-all (promise [repo path single-level]
+    (var result [[]])
+    (var list-path (lambda [path]
+      (return (when (list-dir repo path) [paths]
+        (var children [[]])
+        (paths.forEach (lambda [entry]
+          (cond
+            (is "dir"  entry.type)
+              (cond (not single-level) (children.push (list-path entry.path)))
+            (is "file" entry.type)
+              (result.push entry.path)
           )
-        ))))
-        (save "js" (=> (save "css" (=>
-          (dict.sequential code.copies (lambda [path contents next-file=>]
-            (write target-repo path
-              (unescape (encodeURIComponent contents)) comment next-file=>)
-          ) built=>)
-        ))))
+        ))
+        (return (promise.all children))
       ))
     ))
-    (var github-actors {
-      list-all read
-      repo: (lambda [target-repo name]
-        (return (repo target-repo.lispz.username
-          target-repo.lispz.password name
-        ))
-      )
-    })
-    (var build (lambda [target-repo name sources built=>]
-      (builder target-repo name sources github-actors built=>)
+    (when (list-path path) [] (resolve-promise result))
+  ))
+  (var read (promise.callback [repo path]
+    (repo.read repo.lispz.branch path callback)
+  ))
+  (var update (lambda [repo]
+    (return-if (is repo.lispz.branch repo.lispz.username) (promise.resolved))
+    (var branch-name (default? repo.lispz.username "master"))
+    (return (branch repo branch-name))
+  ))
+  (var write (promise.callback [repo path contents comment]
+    (return-if (not contents.length) (promise.resolved))
+    (var encoded (unescape (encodeURIComponent contents)))
+    (repo.write repo.lispz.branch path encoded comment callback)
+  ))
+  ## preprocess a file to generate css or js dependent on extension
+  (var preprocessors {
+    lispz: (lambda [name code]
+      (return {ext: "js" code: (window.lispz.compile name code)})
+    )
+  })
+  (var preprocess (lambda [path code]
+    (var ext (last (path.split ".")))
+    (var preprocessor (get preprocessors ext))
+    (return-if (not preprocessor) {ext code})
+    (return (preprocessor path code))
+  ))
+  ## Build and save a dependency list
+  ## We will need to filter the dependencies
+  (var filter (lambda [before include exclude]
+    (var after before)
+    (cond include (var after
+      (after.filter (lambda [file] (return (include.test file))))
     ))
-    (var grunt (lambda [target-repo source-project process=>]
-      (var source-repo (github-actors.repo target-repo source-project))
-      (var comment (+ "from " source-project))
-      (var sources [[
-        {repo: source-project files: [[
-          {include: '/^Gruntfile.js$/' single-level: true}
-        ]]}
-      ]])
-      (retriever target-repo sources github-actors (lambda [code]
-        (var grunt-config ((Function
-          (+ "var module={};" (last code.js) "return module.exports"))))
-        (grunt-config {
-          loadNpmTasks: (=>) registerTask: (=>)
-          initConfig: (lambda [config-data]
-            (var grunt {
-              build: (lambda [meta built=>]
-                (var js [[(default? meta.pre "")]])
-                (var read-file (lambda [path next=>]
-                  (github-actors.read source-repo path (lambda [err data]
-                    (js.push data) (next=>)
-                  ))
-                ))
-                (list.sequential meta.files read-file (=>
-                  (js.push (default? meta.post ""))
-                  (write target-repo (+ "ext/" meta.target)
-                    (unescape (encodeURIComponent (js.join "\n"))) comment built=>)
-                ))
-              )
-              copy: (lambda [files built=>]
-                (var copy=> (lambda [item next=>]
-                  (var path (default? item.src item))
-                  (github-actors.read source-repo path (lambda [err data]
-                    (write target-repo (+ "ext/" (last (path.split "/")))
-                        (unescape (encodeURIComponent data)) comment next=>)
-                  ))
-                ))
-                (list.sequential files copy=> built=>)
-              )
-            })
-            (update target-repo (=> (process=> grunt config-data)))
+    (cond exclude (var after
+      (after.filter (lambda [file] (return (not (exclude.test file)))))
+    ))
+    (return after)
+  ))
+  ## and see which to save and which to copy
+  (var process-file (lambda [store path code]
+    (var entry (preprocess path code))
+    (var saver (get store entry.ext))
+    (cond saver (do
+      (saver.push (+ "\n\n/*" path "*/\n\n"))
+      (saver.push entry.code)
+    ) meta.copy-to (do
+      (var filename (last (path.split "/")))
+      (set! (get store.copies (+ meta.copy-to "/" filename)) code)
+    ))
+  ))
+  ## Load the contents of the files we need from a single repo
+  (var process-repo (lambda [source-repo files]
+    (return (promise.all (files.map (promise [meta]
+      (var base (default? meta.base ""))
+      (when (actors.list-all source-repo base meta.single-level) [file-list]
+        (var files (filter file-list meta.include meta.exclude))
+        (promise.all (files.map (promise [path]
+          (when (actors.read source-repo path) [code]
+            (when (process-file path code) [] (resolve-promise))
           )
-        })
+        )))
+        (resolve-promise)
+      )
+    ))))
+  ))
+  ## Given a list of repos, go through them all for files in need
+  (var process-repos (lambda [target-repo sources]
+    (return (promise.all (sources.map (promise [source]
+      (var source-repo (actors.repo target-repo source.repo))
+      (store.from.push source.repo)
+      (when (process-repo source-repo source.files) [] (resolve-promise))
+    ))))
+  ))
+  ## Retrieve file contents based of filtering meta-data
+  (var retriever (promise [target-repo sources actors]
+    (var store {js: [[]] css: [[]]  copies: {} from: [["Gathered from: "]]})
+    (when (process-repos target-repo sources) [] (resolve-promise))
+  ))
+  ## Given a file type, save the concatenated source contents
+  (var save (promise [target-repo store name ext comment]
+    (var contents ((get store ext).join ""))
+    (return (write target-repo (+ "ext/" name "." ext) contents comment))
+  ))
+  ## copy files identified as needed as-is
+  (var copy (lambda [target-repo store comment]
+    (return (dict.map store.copies (lambda [path contents]
+      (return (write target-repo path contents comment))
+    )))
+  ))
+  ## Now we have gathered needed resources, build and save the output file
+  (var builder (promise [actors target-repo name sources]
+    (when (retriever target-repo sources actors) [store]
+      (var comment (store.from.join " "))
+      (var saved (when (update target-repo) []
+        (return (promise.all
+          (save target-repo store name "js" comment)
+          (save target-repo store name "js" comment)
+          (copy target-repo store           comment)
+        ))
       ))
-    ))
-    (var build-github (lambda [target-repo built=>]
-      (var sources [[
-        {repo: "michael/github" files: [[
-          {include: '/github.js$/'}
-        ]]}
-      ]])
-      (build target-repo "github" sources  built=>)
-    ))
+      (when saved [] (resolve-promise))
+    )
+  ))
+  (var github-actors {
+    list-all read
+    repo: (lambda [target-repo name]
+      (return (repo target-repo.lispz.username
+        target-repo.lispz.password name
+      ))
+    )
+  })
+  (var build (builder.bind null github-actors))
+  ## Use gruntfile to decide which files to include and it what order
+  (var grunt-build (promise [meta]
+    (var js [[(default? meta.pre "")]])
+    (var read-all (promise.all (meta.files.map (promise []
+      (when (github-actors.read source-repo path) [data]
+        (js.push data) (resolve-promise)
+      )
+    ))))
+    (when read-all []
+      (js.push (default? meta.post ""))
+      (var contents (js.join "\n"))
+      (when (write target-repo (+ "ext/" meta.target) contents comment) []
+        (resolve-promise)
+      )
+    )
+  ))
+  (var grunt-copy (promise [files]
+    (var copy-all (promise.all (files.map (promise [item]
+      (var path (default? item.src item))
+      (when (github-actors.read source-repo path) [contents]
+        (var path (+ "ext/" (last (path.split "/"))))
+        (when (write target-repo path contents comment) [] (resolve-promise))
+      )
+    ))))
+  ))
+  (var grunt (promise [target-repo source-project]
+    (var source-repo (github-actors.repo target-repo source-project))
+    (var comment (+ "from " source-project))
+    (var sources [[
+      {repo: source-project files: [[
+        {include: '/^Gruntfile.js$/' single-level: true}
+      ]]}
+    ]])
+    (when (retriever target-repo sources actors) [store]
+      (var grunt-config ((Function
+        (+ "var module={};" (last store.js) "return module.exports"))))
+      (grunt-config {
+        loadNpmTasks: (=>) registerTask: (=>)
+        initConfig: (lambda [config-data]
+          (var grunt-processor {
+            build: grunt-build
+            copy:  grunt-copy
+          })
+          (when (update target-repo) []
+            (resolve-promise grunt-processor config-data)
+          )
+        )
+      })
+    )
+  ))
+  (var build-github (lambda [target-repo]
+    (var sources [[
+      {repo: "michael/github" files: [[
+        {include: '/github.js$/'}
+      ]]}
+    ]])
+    (return (build target-repo "github" sources))
+  ))
+  (when (net.script "ext/github.js") []
     (export {
       branch list-all list-dir cdn-uri build builder repo read write update
       build-github retriever grunt preprocessors
-      move: (lambda [repo from to ready=>]
-        (repo.move repo.lispz.branch from to complete=>)
+      move: (promise.callback [repo from to]
+        (repo.move repo.lispz.branch from to callback)
       )
-      delete: (lambda [repo path ready=>]
-        (repo.remove repo.lispz.branch path script complete=>)
+      delete: (promise.callback [repo path]
+        (repo.remove repo.lispz.branch path script callback)
       )
     })
-  ))
+  )
 )

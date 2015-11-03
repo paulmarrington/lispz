@@ -1,16 +1,5 @@
 (using [list dom]
-  (var script (lambda [uri next-step=>]
-    (var el (dom.element "script" {type: "text/javascript"}))
-    (dom.append! "head" el)
-    (el.addEventListener "load"  (lambda [evt]
-      (delay 20 (next-step=> evt))
-    ))
-    (el.addEventListener "error" (lambda [evt]
-      (console.log evt)
-      (delay 20 (next-step=> evt))
-    ))
-    (set! el.src uri)
-  ))
+  (var script (promise.callback [uri] (lispz.script uri callback)))
 
   (var css (lambda [uri]
     (var el (dom.element "link" {
@@ -19,14 +8,12 @@
     (dom.append! "head" el)
   ))
 
-  (var http-get (lambda [uri next-step=>]
-    (lispz.http_request uri "GET" next-step=>)
+  (var http-get (promise.callback [uri]
+    (lispz.http_request uri "GET" callback)
   ))
 
-  (var json-request (lambda [uri next-step=>]
-    (http-get uri (lambda [response]
-      (next-step=> (JSON.parse response.text))
-    ))
+  (var json-request (promise [uri]
+    (when (http-get uri) [response] (resolve-promise (JSON.parse response)))
   ))
 
   (export {

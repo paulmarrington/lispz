@@ -25,20 +25,12 @@
   (return dictionary)
 ))
 
-(var for-each (lambda [dict action]
-  (Object.keys dict)(.forEach (lambda [k] (action k (get dict k))))
-))
-###
-# Execute a list of asynchronous functions one after another
-###
-(var sequential (lambda [dict for-each=> on-complete=>]
-  (return-if (not dict) (on-complete=>))
-  (var list (Object.keys dict))
-  (var each=> (=>
-    (return-if (not list.length) (on-complete=>))
-    (var key (list.shift))
-    (for-each=> key (get dict key) each=>)
-  ))(each=>)
+(var for-each (lambda [dict action=>]
+  (Object.keys dict)(.forEach (lambda [k] (action=> k (get dict k))))
 ))
 
-(export {merge from-list insert! for-each sequential})
+(var map (lambda [dict action=>]
+  (Object.keys dict)(.map (lambda [k] (return (action=> k (get dict k)))))
+))
+
+(export {merge from-list insert! for-each map})

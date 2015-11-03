@@ -1,19 +1,17 @@
 (using  [net github]
-  (lispz.css "ext/firepad.css")
-  (lispz.script "ext/firepad.js" (=>
-    (export {
-      build: (lambda [target-repo built=>]
-        (github.grunt target-repo "firebase/firepad" (lambda [grunt data]
-          (grunt.build {
-            target: "firepad.js"
-            pre:   data.concat.firepadjs.options.banner
-            post:  data.concat.firepadjs.options.footer
-            files: data.concat.firepadjs.src
-          } (=>
-            (grunt.copy data.copy.toBuild.files built=>)
-          ))
-        ))
-      )
-    })
+  (var build (promise [target-repo]
+    (github.grunt target-repo "firebase/firepad" [grunt data]
+      (grunt.build {
+        target: "firepad.js"
+        pre:   data.concat.firepadjs.options.banner
+        post:  data.concat.firepadjs.options.footer
+        files: data.concat.firepadjs.src
+      } (=>
+        (grunt.copy data.copy.toBuild.files built=>)
+      ))
+    )
   ))
+
+  (lispz.css "ext/firepad.css")
+  (when (net.script "ext/firepad.js") [] (export {build}))
 )

@@ -1,15 +1,12 @@
 (using [net github]
-  (lispz.css "ext/bootstrap.css")
-  (lispz.script "ext/bootstrap.js" (=>
-    (export {
-      build: (lambda [target-repo built=>]
-        (github.build target-repo "bootstrap" [[
-          {repo: "twbs/bootstrap" files: [[
-            {base: "dist" exclude: '/\.map$|\.min\.|npm.js$/'}
-            {base: "dist/fonts" copy-to: "fonts"}
-          ]]}
-        ]] built=>)
-      )
-    })
+  (var build (lambda [target-repo]
+    (return (github.build target-repo "bootstrap" [[
+      {repo: "twbs/bootstrap" files: [[
+        {base: "dist" exclude: '/\.map$|\.min\.|npm.js$/'}
+        {base: "dist/fonts" copy-to: "fonts"}
+      ]]}
+    ]]))
   ))
+  (lispz.css "ext/bootstrap.css")
+  (when (net.script "ext/bootstrap.js") [] (export {build}))
 )

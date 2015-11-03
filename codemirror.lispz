@@ -489,8 +489,8 @@
 
   ## elm script has a bug - restore for a later version.
   ## tern is for javascript features - overrides console.log
-  (var build (lambda [target-repo built=>]
-    (github.build target-repo "codemirror" [[
+  (var build-base (lambda [target-repo]
+    (return (github.build target-repo "codemirror" [[
       {repo: "codemirror/CodeMirror" files: [[
         {base: "lib" include: '/codemirror\.(js|css)$/'}
         {base: "addon/mode" include: '/^simple.js$/'}
@@ -503,29 +503,36 @@
       {repo: "achengs/subpar" files: [[
         {base: "resources/public/js" include: '/subpar.core.js/'}
       ]]}
-    ]] (=>
-    (github.build target-repo "codemirror-themes" [[
+    ]]))
+  ))
+  (var build-themes (lambda [target-repo]
+    (return (github.build target-repo "codemirror-themes" [[
       {repo: "codemirror/CodeMirror" files: [[
         {base: "theme"}
       ]]}
-    ]] (=>
-    (github.build target-repo "codemirror-modes" [[
+    ]]))
+  ))
+  (var build-mode (lambda [target-repo]
+    (return (github.build target-repo "codemirror-modes" [[
       {repo: "codemirror/CodeMirror" files: [[
         {base: "mode" exclude: '/htmlmixed|javascript|css|elm.js$|test.js$/'}
       ]]}
-    ]] built=>)
-  ))))))
+    ]]))
+  ))
+  (var build (lambda [target-repo]
+    (return (promise.all build-base build-themes build-mode))
+  ))
 
   (lispz.css "ext/codemirror.css")
-  (lispz.script "ext/codemirror.js" (=>
+  (when (net.script "ext/codemirror.js") []
     (cond window.CodeMirror (do ## in case we haven't built it yet
-      (lispz.script "ext/codemirror-modes.js" (=>))
-      ((Object.keys extra-commands).forEach (lambda [key]
-        (dict.update! CodeMirror.commands key (get extra-commands key))
+      (net.script "ext/codemirror-modes.js") ## don't care when
+      (dict.for-each extra-commands (lambda [key value]
+        (dict.update! CodeMirror.commands key value)
       ))
       (init-lispz-mode)
     ))
     (export {options open close set-mode build})
-  ))
+  )
   (delay 100 (lispz.css "ext/codemirror-themes.css"))
 )
