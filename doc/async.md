@@ -14,6 +14,27 @@ By contrast the second approach is called asynchronous. It takes the mind-bendin
 One more tale before getting back to lispz. Microsoft Windows prior to '95 used what they called "cooperative multi-processing". This meant that the operating system never took the CPU away from a program without the program first giving permission. Hmmm, very similar to a JavaScript machine based on asynchronous methods, isn't it. The complaint then is that badly behaved applications could freeze the UI by not releasing the CPU often enough. Since JavaScript runs on the UI thread it can also freeze the UI in the same way. A well behaved program, on the other hand, is more efficient and far easier to write.
 
 # Callbacks
+Callbacks provide the simplest mechanism for asynchronous responses. Any function that want to initiate something that will complete at an undetermined later time can take a reference to a function to call at that time (or thereabouts)
+
+    (delay 2000 (=> (console.log "delay over")))
+    
+Many callbacks producers follow the node-js approach of providing error and response parameters.
+
+    (read my-url (lambda [err response]
+      (cond err (throw "read failed"))
+      (return response.text)
+    )
+    
+## Benefits
+1. Very simple with minimal overheads.
+2. Can be called many times
+3. Cause and effect are sequential in code
+
+## Disadvantages
+1. Empiric in nature
+2. Highly coupled
+3. Leads to hard-to-read code in more complex event sequences.
+
 # Promises
 # Events
 # Messaging
