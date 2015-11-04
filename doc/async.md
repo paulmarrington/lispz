@@ -120,6 +120,7 @@ In summary we have
 2. Still fairly highly coupled
 3. Only allows one action - not for repetitive events
 4. Developer view needs to change from sequential perspective
+5. Being selective about errors and exceptions is painful. Once a promise is resolved it cannot change. Any promises that rely on a rejected promise will themselves be rejected causing a cascade of failures. To be selective you need to wrap a promise catch in an outer promise and resolve the outer one if the error itself can be resolved. Don't forget to resolve the outer promise with the data from the inner one when there are no errors.
 
 # Events
 # Messaging
