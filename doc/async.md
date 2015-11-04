@@ -99,9 +99,16 @@ So far this adds very little at the cost of a relatively large supporting librar
     
 In summary we have
 
-1. **(promise [params...]** is a macro that generates a function that returns a promise
+1. **(promise [params...] ...)** is a macro that generates a function that returns a promise
   1. **(resolve-promise results...)** sets results used in **when [results...] ...** macros
   2. **(reject-promise err)** sets results used in **(catch [err] ...)** macros
+2. **(promise.callback [params...] ...)** is a macro to creates promises from traditional callbacks
+  1. **callback** is a function reference to use where callbacks would normally be defined
+3. **(promise.resolved results)** Will return a promise that will always provide the results supplied to when. Use it to turn a synchronous function into a promise to use in sequences.
+4. **(when a-promise [results...] ...)** is a macro that works like a lambda where the function body is executed with the results supplied once (and if) the promise is resolved. If a **when** statement returns a promise it can be used for chaining.
+5. **(catch a-promise [err] ...) is a macro that works like a lambda where the function body is executed if any of a set of chained promises uses **reject-promise** to indicate an error.
+6. **(promise.all promise-1 promise-2 [[promises]])** will return a promise that is fulfilled when all the promises specified are resolved or rejected. It will flatten arrays of promises.
+7. **(promise.sequence promise-1 promise-2 [[promises]])** will return a promise that is fulfilled when all the promises specified are resolved or rejected. Unlike **all**, each promise is triggered when the preceding promise is resolved.
 
 ## Benefits
 1. Separates cause and effect more clearly
