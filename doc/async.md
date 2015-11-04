@@ -70,7 +70,38 @@ The power of promises starts to become clearer with the understanding that 'when
     (var processed (when reading (lambda [result] (return (process result)))))
     (when processed (console.log "All done"))
 
-So far this adds very little at the cost of a relatively large supporting library.
+So far this adds very little at the cost of a relatively large supporting library. if we start thinking functionally instead of sequentially, promises provides a way to clarify our code (a little).
+
+    # change branch we will be working with
+    (var update-mode (github.update lispz-repo))
+    # Once in update mode we can retrieve lispz.js and ask for a list of other file in parallel
+    (var lispz-js    (when update-mode [] (read-file "lispz.js")))
+    (var listing     (when update-mode [] (github.list-dir lispz-repo "")))
+    # We can only sort files once we have a listing from the server
+    (var groups      (when listing [files] (group files)))
+    # but then we can process the different groups in parallel (retrieving source as needed)
+    (var modules     (when groups [files] (return (build-modules files.modules))))
+    (var riots       (when groups [files] (return (build-riots files.riots))))
+    
+    # Now to pull it all together into a single file
+    (var  source     [["window.lispz_modules={}"]])
+    # promise.sequence forces the order.
+    (var all-loaded  (promise.sequence
+      (when modules  [sources] (source.concat sources) (return (promise.resolved))
+      # lisp.js is added after modules and lisp-js are resolved
+      (when lispz-js [code]    (source.push code) (return (promise.resolved))
+      # riot tags are added after lisp.js and lisp-js is added and riots promise is resolved
+      (when riots    [sources] (source.concat sources) (return (promise.resolved))
+    ))
+    # Only write the result when the sequence above is complete
+    (return (when all-loaded [] (write-lispz)))
+    # returns a promise that is complete once the results are written
+    
+In summary we have
+
+1. **(promise [params...]** is a macro that generates a function that returns a promise
+  1. **(resolve-promise results...)** sets results used in **when [results...] ...** macros
+  2. **(reject-promise err)** sets results used in **(catch [err] ...)** macros
 
 ## Benefits
 1. Separates cause and effect more clearly
