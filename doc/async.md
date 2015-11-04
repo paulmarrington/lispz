@@ -47,11 +47,30 @@ A function that creates a promise uses the 'promise' keyword instead of 'lambda'
     (var read (promise [addr param1 param2]
       (http-get (+ addr "?&" param1 "&" param2) (lambda [err response]
         (return-if err (reject-promise err))
-        (resolve-promise response.text)
+        (resolve-promise response)
       ))
     ))
     
+Because it is common to turn a callback into a promise, lispz provides a helper macro. The following provides identical functionality. One of the benefits of a language with real macros :)
 
+    (var read (promise.callback [addr param1 param2]
+      (http-get (+ addr "?&" param1 "&" param2) callback)
+    ))
+    
+Now that we have a promise, we can use it just like a callback if we want:
+
+    (var reading (read "http://blat.com/blah" 1 2))
+    (when reading (lambda [result] (return (process result))))
+    (catch reading (lambda [err] (console.log "ERROR: "+err)))
+    
+Even without further knowledge, promises clean up errors and exceptions. If you do not catch errors, exceptions thrown in the asynchronous function can be caught in the code containing the promise.
+
+The power of promises starts to become clearer with the understanding that 'when' can return a promise.
+
+    (var processed (when reading (lambda [result] (return (process result)))))
+    (when processed (console.log "All done"))
+
+So far this adds very little at the cost of a relatively large supporting library.
 
 ## Benefits
 1. Separates cause and effect more clearly
