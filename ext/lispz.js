@@ -1,4 +1,5 @@
-window.lispz_modules={}function (){var _h_callbacks=[];//#core:72
+window.lispz_modules={}
+function (){var _h_callbacks=[];//#core:72
 
 var _h_pledge=(new Promise((function(ok,fail){_h_callbacks={'ok':ok,'fail':fail};})));//#core:73
 
