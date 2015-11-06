@@ -1,7 +1,7 @@
 window.lispz_modules={}
 
 
-lispz_modules[',bootstrap,']=",(using [net github]
+lispz_modules['bootstrap']="(using [net github]
   (var build (lambda [target-repo]
     (return (github.build target-repo "bootstrap" [[
       {repo: "twbs/bootstrap" files: [[
@@ -13,9 +13,9 @@ lispz_modules[',bootstrap,']=",(using [net github]
   (lispz.css "ext/bootstrap.css")
   (when (net.script "ext/bootstrap.js") [] (export {build}))
 )
-,",
+"
 
-lispz_modules[',cdnjs,']=",### Load packages from CDN and other web sources - listing them when possible ###
+lispz_modules['cdnjs']="### Load packages from CDN and other web sources - listing them when possible ###
 (using [net github]
   (var cdnjs-actors {
     list-all: (promise [repo path]
@@ -47,9 +47,9 @@ lispz_modules[',cdnjs,']=",### Load packages from CDN and other web sources - li
     build: (github.builder.bind null cdnjs-actors)
   })
 )
-,",
+"
 
-lispz_modules[',codemirror,']=",(using  [net diff_match_patch message dict github]
+lispz_modules['codemirror']="(using  [net diff_match_patch message dict github]
   (var options (localStorage.getItem "CodeMirror-options"))
   (cond options (var options (JSON.parse options))
         (else)  (var options {
@@ -587,9 +587,9 @@ lispz_modules[',codemirror,']=",(using  [net diff_match_patch message dict githu
   )
   (delay 100 (lispz.css "ext/codemirror-themes.css"))
 )
-,",
+"
 
-lispz_modules[',core,']=",(macro debug [*msg] (console.log arguments *msg))
+lispz_modules['core']="(macro debug [*msg] (console.log arguments *msg))
 
 ### Supporting function definition ###
 (macro lambda [params *body] (#join '' '(function(' params '){' *body '})'))
@@ -697,9 +697,9 @@ lispz_modules[',core,']=",(macro debug [*msg] (console.log arguments *msg))
   (global promise.all (=> (return (Promise.all (list.flatten (*arguments 0))))))
 )
 (export {})
-,",
+"
 
-lispz_modules[',dev,']=",(using [github riot]
+lispz_modules['dev']="(using [github riot]
   (var manifest (=>
     (var text [["CACHE MANIFEST"]])
     (lispz.manifest.forEach (lambda [uri] (text.push uri)))
@@ -778,9 +778,9 @@ lispz_modules[',dev,']=",(using [github riot]
 
   (export {manifest package distribute})
 )
-,",
+"
 
-lispz_modules[',dexie,']=",(using  [net github]
+lispz_modules['dexie']="(using  [net github]
 
   (var build (lambda [target-repo]
     (return (github.build target-repo "dexie" [[
@@ -792,9 +792,9 @@ lispz_modules[',dexie,']=",(using  [net github]
 
   (lispz.script "ext/dexie.js" (=> (export { build })))
 )
-,",
+"
 
-lispz_modules[',dict,']=",(var insert (lambda [target dictionaries]
+lispz_modules['dict']="(var insert (lambda [target dictionaries]
   (dictionaries.forEach (lambda [dictionary]
     ((Object.keys dictionary).forEach (lambda [key]
       (dict.update! target key (get dictionary key))
@@ -830,9 +830,9 @@ lispz_modules[',dict,']=",(var insert (lambda [target dictionaries]
 ))
 
 (export {merge from-list insert! for-each map})
-,",
+"
 
-lispz_modules[',diff_match_patch,']=",(using [net github]
+lispz_modules['diff_match_patch']="(using [net github]
   (var build (lambda [target-repo built=>]
     (return (github.build target-repo "diff_match_patch" [[
       {repo: "tanaka-de-silva/google-diff-match-patch-js" files: [[
@@ -842,9 +842,9 @@ lispz_modules[',diff_match_patch,']=",(using [net github]
   ))
   (lispz.script "ext/diff_match_patch.js" (=> (export { build })))
 )
-,",
+"
 
-lispz_modules[',dom,']=",(using [dict]
+lispz_modules['dom']="(using [dict]
   (var append! (lambda [parent element]
     (document.querySelector parent) (.appendChild element)
   ))
@@ -867,9 +867,9 @@ lispz_modules[',dom,']=",(using [dict]
 
   (export {append! element event-throttle})
 )
-,",
+"
 
-lispz_modules[',firebase,']=",(using  [net]
+lispz_modules['firebase']="(using  [net]
   ( var databases (JSON.parse (or (localStorage.getItem "firebases") "{}")))
 
   (var register (lambda [key uri]
@@ -894,9 +894,9 @@ lispz_modules[',firebase,']=",(using  [net]
     (export {register attach databases})
   )
 )
-,",
+"
 
-lispz_modules[',firepad,']=",(using  [net github]
+lispz_modules['firepad']="(using  [net github]
   (var build (promise [target-repo]
     (github.grunt target-repo "firebase/firepad" [grunt data]
       (grunt.build {
@@ -913,9 +913,9 @@ lispz_modules[',firepad,']=",(using  [net github]
   (lispz.css "ext/firepad.css")
   (when (net.script "ext/firepad.js") [] (export {build}))
 )
-,",
+"
 
-lispz_modules[',github,']=",(using  [net dict]
+lispz_modules['github']="(using  [net dict]
   (var version null)
   (var cdn-uri (lambda [project version filepath]
     (return (+ "https://cdn.rawgit.com/" project "/" version "/" filepath))
@@ -1135,9 +1135,9 @@ lispz_modules[',github,']=",(using  [net dict]
     })
   )
 )
-,",
+"
 
-lispz_modules[',jquery,']=",(using [net cdnjs]
+lispz_modules['jquery']="(using [net cdnjs]
   (var build (lambda [target-repo]
     (return (cdnjs.build target-repo "jquery" [[
       {repo: "jquery" files: [[
@@ -1147,15 +1147,15 @@ lispz_modules[',jquery,']=",(using [net cdnjs]
   ))
   (when (net.script "ext/jquery.js") [] (export {build}))
 )
-,",
+"
 
-lispz_modules[',list,']=",(var flatten (lambda [list]
+lispz_modules['list']="(var flatten (lambda [list]
   (return (list.reduce (lambda [a b] (return (a.concat b)))))
 ))
 (export {flatten})
-,",
+"
 
-lispz_modules[',message,']=",(var store {}  expecting {})
+lispz_modules['message']="(var store {}  expecting {})
 
 (var exchange (lambda [address]
   (var envelope (get store address))
@@ -1221,9 +1221,9 @@ lispz_modules[',message,']=",(var store {}  expecting {})
 ))
 
 (export {exchange send expect listen dispatch wait-for})
-,",
+"
 
-lispz_modules[',net,']=",(using [list dom]
+lispz_modules['net']="(using [list dom]
   (var script (promise.callback [uri] (lispz.script uri callback)))
 
   (var css (lambda [uri]
@@ -1245,9 +1245,9 @@ lispz_modules[',net,']=",(using [list dom]
     script css http-get json-request
   })
 )
-,",
+"
 
-lispz_modules[',riot,']=",(using  [net github dict]
+lispz_modules['riot']="(using  [net github dict]
   (var compile (lambda [html to-js] (return (riot.compile html to-js))))
 
   (var tags {})
@@ -1292,7 +1292,7 @@ lispz_modules[',riot,']=",(using  [net github dict]
     (when load-all [] (export {build compile load mount}))
   )
 )
-,"var lispz = function() {
+"var lispz = function() {
   if (!window.lispz_modules) window.lispz_modules = {}
   var delims = "(){}[]n".split(''), // characters that are not space separated atoms
   not_delims = delims.join("\\"), delims = delims.join('|\\'),
@@ -1566,9 +1566,9 @@ lispz_modules[',riot,']=",(using  [net github dict]
 }()
 
 
-/*,bootstrap.riot.html,*/
+/*bootstrap.riot.html*/
 
-lispz.tags[',bootstrap.riot.html,']=function(){,riot.tag('panel', ' <div class="panel { context }" name=outer> <div class=panel-heading if="{ opts.heading }" name=heading ><bars-menu align=right name="{ opts.menu }" owner="{ opts.owner }"></bars-menu> <h3 class=panel-title>{ opts.heading }</h3></div> <div class="panel-body" name=body><yield></yield></div> <div class=panel-footer if="{ opts.footer }" name=footer >{ opts.footer }</div> </div>', 'panel .panel { position: relative; } panel .panel-title { cursor: default; } panel .panel-body { position: absolute; top: 40px; bottom: 10px; left: 0; right: 0; }', function(opts) {var tag=this;//#riot-tags:2
+lispz.tags['bootstrap.riot.html']=function(){riot.tag('panel', ' <div class="panel { context }" name=outer> <div class=panel-heading if="{ opts.heading }" name=heading ><bars-menu align=right name="{ opts.menu }" owner="{ opts.owner }"></bars-menu> <h3 class=panel-title>{ opts.heading }</h3></div> <div class="panel-body" name=body><yield></yield></div> <div class=panel-footer if="{ opts.footer }" name=footer >{ opts.footer }</div> </div>', 'panel .panel { position: relative; } panel .panel-title { cursor: default; } panel .panel-body { position: absolute; top: 40px; bottom: 10px; left: 0; right: 0; }', function(opts) {var tag=this;//#riot-tags:2
 
 tag.context=("panel-"+(opts.context||"default"));//#riot-tags:3
 
@@ -1586,7 +1586,7 @@ tag.outer.style.height=(px+"px");//#riot-tags:10
 
 riot.tag('bars-menu', '<div name=dropdown class="dropdown { right: opts.align === \'right\' }"> <a style="text-decoration: none" data-toggle="dropdown" name=bars class="glyphicon glyphicon-menu-hamburger dropdown-toggle" aria-hidden="true" ></a> <ul class="dropdown-menu { dropdown-menu-right: opts.align === \'right\' }"> <li each="{ items }" class="{ dropdown-header: header && title, divider: divider, disabled: disabled }"><a onclick="{ goto }" href="#"> <span class="pointer right float-right" if="{ children }"></span> { title } </a></li> </ul> </div>', 'bars-menu > div.right { float: right } bars-menu span.caret { margin-left: -11px } bars-menu a.dropdown-toggle { cursor: pointer }', function(opts) {var tag=this,root=null;//#riot-tags:2
 
-lispz.load("message"//#core:48
+lispz.load("message"//#core:49
 ,(function(){var message=lispz.cache["message"];
 message.listen(opts.name,(function(items){root=(items||[]);//#riot-tags:5
 
@@ -1619,7 +1619,7 @@ ev.stopPropagation()//#riot-tags:24
 
 riot.tag('tree', '<tree-component name=base></tree-component>', function(opts) {var tag=this;//#riot-tags:2
 
-lispz.load("message"//#core:48
+lispz.load("message"//#core:49
 ,(function(){var message=lispz.cache["message"];
 message.listen(opts.name,(function(items){tag.children={'base':{'children':items}};//#riot-tags:5
 
@@ -1632,7 +1632,7 @@ tag.update()//#riot-tags:6
 
 riot.tag('tree-component', '<ul class="dropdown-menu"> <li each="{ item, i in items }" class="{ dropdown-header: item.header && item.title, divider: item.divider, disabled: item.disabled }" ><a onclick="{ parent.goto }" href="#"> <span if="{ item.children }" class="glyphicon glyphicon-triangle-right" aria-hidden="true"></span>{ item.title }</a> <tree-component if="{ item.children }" name="{ item.title }"> </li> </ul>', 'tree-component ul { display: inherit !important; position: inherit !important; } tree-component:not([name=base]) > ul { display: none !important; } tree-component:not([name=base]).open > ul { margin-left: 9px; margin-right: 9px; display: inherit !important; } tree-component span.glyphicon { margin-left: -18px; }', function(opts) {var tag=this;//#riot-tags:2
 
-lispz.load("message,dict"//#core:48
+lispz.load("message,dict"//#core:49
 ,(function(){var message=lispz.cache["message"],dict=lispz.cache["dict"];
 tag.on("update",(function(data){switch(false){case !(opts.name&&tag.parent.children):tag.items=tag.parent.children[opts.name]["children"];//#riot-tags:6
 
@@ -1664,7 +1664,7 @@ ev.stopPropagation()//#riot-tags:23
 
 riot.tag('sidebar', '<a aria-hidden="true" name=hamburger class="glyphicon glyphicon-menu-hamburger"></a> <div id=sidebar class="container bg-primary"><yield></yield></div>', 'sidebar > a { text-decoration: none !important; position: absolute !important; z-index: 2000; } #sidebar { z-index: 1000; position: fixed; width: 0; height: 100%; overflow-y: auto; -webkit-transition: all 0.5s ease; -moz-transition: all 0.5s ease; -o-transition: all 0.5s ease; transition: all 0.5s ease; padding-right: 0; overflow: hidden; } #sidebar.toggled { width: auto; padding-right: 15px; }', function(opts) {var tag=this;//#riot-tags:2
 
-lispz.load("message,dom"//#core:48
+lispz.load("message,dom"//#core:49
 ,(function(){var message=lispz.cache["message"],dom=lispz.cache["dom"];
 tag.hamburger.onclick=(function(){tag.sidebar.classList.toggle("toggled")//#riot-tags:5
 
@@ -1680,7 +1680,7 @@ tag.on("mount",setTimeout((function(){message.send("page-content-wrapper-padding
 
 riot.tag('page-content', '<div id=page_content_wrapper> <div class="{ container-fluid: opts.fluid, container: !opts.fluid }"> <yield></yield> </div> </div>', '#page_content_wrapper { width: 100%; position: absolute; }', function(opts) {var tag=this;//#riot-tags:2
 
-lispz.load("message"//#core:48
+lispz.load("message"//#core:49
 ,(function(){var message=lispz.cache["message"];
 message.listen("page-content-wrapper-padding",(function(px){tag.page_content_wrapper.style.paddingLeft=(px+"px");//#riot-tags:5
 }))//#riot-tags:6
@@ -1690,7 +1690,7 @@ message.listen("page-content-wrapper-padding",(function(px){tag.page_content_wra
 
 riot.tag('bootstrap', '<div id=page-wrapper><yield></yield></div>', '.pointer { border: 5px solid transparent; display: inline-block; width: 0; height: 0; vertical-align: middle; } .pointer.float-right { float: right; margin-top: 5px; } .pointer.up { border-bottom: 5px solid; } .pointer.right { border-left: 5px solid; } .pointer.down { border-top: 5px solid; } .pointer.left { border-right: 5px solid; }', function(opts) {var tag=this;//#riot-tags:2
 
-lispz.load("dom,net,jquery,riot,message,bootstrap"//#core:48
+lispz.load("dom,net,jquery,riot,message,bootstrap"//#core:49
 ,(function(){var dom=lispz.cache["dom"],net=lispz.cache["net"],jquery=lispz.cache["jquery"],riot=lispz.cache["riot"],message=lispz.cache["message"],bootstrap=lispz.cache["bootstrap"];
 var bootswatch_themes=["cerulean","cosmo","cyborg","darkly","flatly","journal","lumen","paper","readable","sandstone","simplex","slate","spacelab","superhero","united","yeti"];//#riot-tags:6
 //#riot-tags:11
@@ -1707,31 +1707,31 @@ dom.append_$_("head",dom.element("meta",{'name':"viewport",'content':"width=devi
 }))//#riot-tags:21
 
 });
-,}
-,
+}
 
-/*,codemirror.riot.html,*/
 
-lispz.tags[',codemirror.riot.html,']=function(){,riot.tag('codemirror', '<div name=wrapper> </div>', function(opts) {var tag=this;//#riot-tags:2
+/*codemirror.riot.html*/
 
-lispz.load("codemirror"//#core:48
+lispz.tags['codemirror.riot.html']=function(){riot.tag('codemirror', '<div name=wrapper> </div>', function(opts) {var tag=this;//#riot-tags:2
+
+lispz.load("codemirror"//#core:49
 ,(function(){var codemirror=lispz.cache["codemirror"];
 tag.cm=CodeMirror(tag.wrapper,opts);//#riot-tags:4
 }))//#riot-tags:5
 
 });
-,}
-,
+}
 
-/*,firepad.riot.html,*/
 
-lispz.tags[',firepad.riot.html,']=function(){,riot.tag('firepad', ' <panel height="{ opts.height }" heading="{ heading }" menu="{ menu }" owner="{ _id }"> <div name=wrapper class=wrapper></div> </panel>', 'firepad .wrapper { position: absolute; top: 0; bottom: 0; left: 0; right: 0; height: initial; } firepad .CodeMirror { position: absolute; top: 0; bottom: 0; left: 5px; right: 0; height: initial; } a.powered-by-firepad { display: none; } div.firepad-toolbar { margin-top: -25px; }', function(opts) {var tag=this;//#riot-tags:2
+/*firepad.riot.html*/
+
+lispz.tags['firepad.riot.html']=function(){riot.tag('firepad', ' <panel height="{ opts.height }" heading="{ heading }" menu="{ menu }" owner="{ _id }"> <div name=wrapper class=wrapper></div> </panel>', 'firepad .wrapper { position: absolute; top: 0; bottom: 0; left: 0; right: 0; height: initial; } firepad .CodeMirror { position: absolute; top: 0; bottom: 0; left: 5px; right: 0; height: initial; } a.powered-by-firepad { display: none; } div.firepad-toolbar { margin-top: -25px; }', function(opts) {var tag=this;//#riot-tags:2
 
 tag.menu="CodeMirror-menu";//#riot-tags:3
 
 tag.heading="Edit";//#riot-tags:4
 
-lispz.load("firebase,codemirror,firepad,message,dict"//#core:48
+lispz.load("firebase,codemirror,firepad,message,dict"//#core:49
 ,(function(){var firebase=lispz.cache["firebase"],codemirror=lispz.cache["codemirror"],firepad=lispz.cache["firepad"],message=lispz.cache["message"],dict=lispz.cache["dict"];
 var filename_key=("codemirror/"+opts.name+"/filename");//#riot-tags:6
 
@@ -1778,12 +1778,12 @@ pad.on_ready((function(){message.dispatch(("firepad/"+opts.name),{'open':open})/
 }))//#riot-tags:44
 
 });
-,}
-,
+}
 
-/*,lispz-repl.riot.html,*/
 
-lispz.tags[',lispz-repl.riot.html,']=function(){,riot.tag('lispz-repl', '<div id=lispz_repl_div class="{ hidden:hidden }"> <input type=text name=usings autocomplete=on size=20 placeholder="(package-list (* to reload))"> <input type=text name=code autocomplete=on size=50 placeholder="(Lispz code - enter to execute)"> </div>', 'lispz-repl {position: absolute; bottom: 0;} lispz-repl .hidden {display: none}', function(opts) {var tag=this;//#riot-tags:2
+/*lispz-repl.riot.html*/
+
+lispz.tags['lispz-repl.riot.html']=function(){riot.tag('lispz-repl', '<div id=lispz_repl_div class="{ hidden:hidden }"> <input type=text name=usings autocomplete=on size=20 placeholder="(package-list (* to reload))"> <input type=text name=code autocomplete=on size=50 placeholder="(Lispz code - enter to execute)"> </div>', 'lispz-repl {position: absolute; bottom: 0;} lispz-repl .hidden {display: none}', function(opts) {var tag=this;//#riot-tags:2
 
 tag.hidden=true;//#riot-tags:3
 
@@ -1822,4 +1822,4 @@ document.body.addEventListener("keydown",(function(ev){switch(false){case !(ev.a
 tag.code.addEventListener("keypress",(function(ev){switch(false){case !(ev.keyCode===13):run()}}))//#riot-tags:30
 
 });
-,}
+}
