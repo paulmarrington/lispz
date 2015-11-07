@@ -32,7 +32,7 @@ lispz_modules['message']="(var store {}  expecting {})\n\n(var exchange (lambda 
 
 lispz_modules['net']="(using [list dom]\n  (var script (promise.callback [uri] (lispz.script uri callback)))\n\n  (var css (lambda [uri]\n    (var el (dom.element \"link\" {\n      type: \"text/css\" rel: \"stylesheet\" href: uri\n    }))\n    (dom.append! \"head\" el)\n  ))\n\n  (var http-get (promise.callback [uri]\n    (lispz.http_request uri \"GET\" callback)\n  ))\n\n  (var json-request (promise [uri]\n    (when (http-get uri) [response] (resolve-promise (JSON.parse response)))\n  ))\n\n  (export {\n    script css http-get json-request\n  })\n)\n"
 
-lispz_modules['riot']="(using  [net github dict]\n  (var compile (lambda [html to-js] (return (riot.compile html to-js))))\n\n  (var tags {})\n\n  (var load (promise [name uri]\n    (var mount (=>\n      (dict.update! tags name true)\n      (dict.update! tags uri true)\n      (riot.mount name)\n      (resolve-promise)\n    ))\n    (cond\n      (get tags name)       (resolve-promise)\n      (get lispz.tags name) (do ((get lispz.tags name)) (mount))\n      (else)                (when (net.http-get uri) [response]\n                              (compile response) (mount))\n    )\n  ))\n\n  (var build (lambda [target-repo]\n    (return (github.build target-repo \"riot\" [[\n      {repo: \"riot/riot\" files: [[\n        {include: '/^riot\\+compiler.js$/'}\n      ]]}\n    ]]))\n  ))\n\n  (var mount (lambda [tags] (riot.mount tags)))\n\n  (when (net.script \"ext/riot.js\") []\n    (return-if (not window.riot) (export {build}))\n    (set! riot.parsers.js.lispz\n      (lambda [source] (return ((lispz.compile \"riot-tags\" source).join \"\\n\")))\n    )\n    (var riot-elements (slice (document.getElementsByClassName \"riot\")))\n    (var load-all (promise.all (riot-elements.map (lambda [element]\n      (var name (element.tagName.toLowerCase))\n      (var uri (or (element.getAttribute \"uri\")\n                   (+ (name.toLowerCase) \".riot.html\")))\n      (return (load name uri))\n    ))))\n    (when load-all [] (export {build compile load mount}))\n  )\n)\n"
+lispz_modules['riot']="(using  [net github dict]\n  (var compile (lambda [html to-js] (return (riot.compile html to-js))))\n\n  (var tags {})\n\n  (var load (promise [name uri]\n    (var mount (=>\n      (dict.update! tags name true)\n      (dict.update! tags uri true)\n      (riot.mount name)\n      (resolve-promise)\n    ))\n    (cond\n      (get tags name)       (resolve-promise (=>))\n      (get lispz.tags name) (do ((get lispz.tags name)) (resolve-promise mount))\n      (else)                (when (net.http-get uri) [response]\n                              (compile response) (resolve-promise mount))\n    )\n  ))\n\n  (var build (lambda [target-repo]\n    (return (github.build target-repo \"riot\" [[\n      {repo: \"riot/riot\" files: [[\n        {include: '/^riot\\+compiler.js$/'}\n      ]]}\n    ]]))\n  ))\n\n  (var mount (lambda [tags] (riot.mount tags)))\n\n  (when (net.script \"ext/riot.js\") []\n    (return-if (not window.riot) (export {build}))\n    (set! riot.parsers.js.lispz\n      (lambda [source] (return ((lispz.compile \"riot-tags\" source).join \"\\n\")))\n    )\n    (var riot-elements (slice (document.getElementsByClassName \"riot\")))\n    (var load-all (promise.all (riot-elements.map (lambda [element]\n      (var name (element.tagName.toLowerCase))\n      (var uri (or (element.getAttribute \"uri\")\n                   (+ (name.toLowerCase) \".riot.html\")))\n      (return (load name uri))\n    ))))\n    (when load-all [mounts]\n      (mounts.forEach (lambda [mount] (mount)))\n      (export {build compile load mount})\n    )\n  )\n)\n"
 var lispz = function() {
   if (!window.lispz_modules) window.lispz_modules = {}
   var delims = "(){}[]n".split(''), // characters that are not space separated atoms
@@ -454,12 +454,7 @@ dom.append_$_("head",dom.element("meta",{'name':"viewport",'content':"width=devi
 
 /*codemirror.riot.html*/
 
-lispz.tags['codemirror.riot.html']=function(){riot.tag('codemirror', '<div name=wrapper> </div>', function(opts) {var tag=this;//#riot-tags:2
-
-lispz.load("codemirror"//#core:49
-,(function(){var codemirror=lispz.cache["codemirror"];
-tag.cm=CodeMirror(tag.wrapper,opts);//#riot-tags:4
-}))//#riot-tags:5
+lispz.tags['codemirror.riot.html']=function(){riot.tag('codemirror', '<div name=wrapper> </div>', function(opts) {throw "compile error for riot_tags.lispz_c_5 __ missing close brace"
 
 });
 }
@@ -473,7 +468,7 @@ tag.menu="CodeMirror-menu";//#riot-tags:3
 
 tag.heading="Edit";//#riot-tags:4
 
-lispz.load("firebase,codemirror,firepad,message,dict"//#core:49
+tag.on("mount",(function(){lispz.load("firebase,codemirror,firepad,message,dict"//#core:49
 ,(function(){var firebase=lispz.cache["firebase"],codemirror=lispz.cache["codemirror"],firepad=lispz.cache["firepad"],message=lispz.cache["message"],dict=lispz.cache["dict"];
 var filename_key=("codemirror/"+opts.name+"/filename");//#riot-tags:6
 
@@ -517,7 +512,7 @@ cm.on("change",(function(){localStorage[contents]=cm.getValue();//#riot-tags:36
 
 pad.on_ready((function(){message.dispatch(("firepad/"+opts.name),{'open':open})//#riot-tags:42
 }))//#riot-tags:43
-}))//#riot-tags:44
+}))}))//#riot-tags:44
 
 });
 }
