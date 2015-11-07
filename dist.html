@@ -10,10 +10,9 @@
     </page-content>
     </bootstrap>
 
-    <lispz-repl class=riot></lispz-repl>
     <script src=ext/lispz.js></script>
     <script id=test_code type="text/lispz">
-      (using [firebase message jquery riot]
+      (using [message jquery riot]
         (message.wait-for "firepad/scratch" (=>
           (message.send "firepad/scratch"
             {action: "open" key: "scratchpad.lispz" contents: null})
