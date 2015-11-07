@@ -524,15 +524,19 @@
   ))
 
   (lispz.css "ext/codemirror.css")
+  (var load-js (promise.all
+    (net.script "ext/codemirror.js") (net.script "ext/codemirror-modes.js")
+  ))
   (when (net.script "ext/codemirror.js") []
-    (cond window.CodeMirror (do ## in case we haven't built it yet
-      (net.script "ext/codemirror-modes.js") ## don't care when
-      (dict.for-each extra-commands (lambda [key value]
-        (dict.update! CodeMirror.commands key value)
+    (when (net.script "ext/codemirror-modes.js") []
+      (cond window.CodeMirror (do ## in case we haven't built it yet
+        (dict.for-each extra-commands (lambda [key value]
+          (dict.update! CodeMirror.commands key value)
+        ))
+        (init-lispz-mode)
       ))
-      (init-lispz-mode)
-    ))
-    (export {options open close set-mode build})
+      (export {options open close set-mode build})
+    )
   )
   (delay 100 (lispz.css "ext/codemirror-themes.css"))
 )
