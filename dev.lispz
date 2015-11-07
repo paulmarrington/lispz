@@ -26,7 +26,7 @@
         (return (when (read-file (+ name ".lispz")) [text]
           (var contents (text.replace '/[\\"]/g' "\\$&"))
           (var contents (contents.replace '/\n/g' "\\n"))
-          (return [["\n\nlispz_modules['" name "']=\"" contents "\"\n"]])
+          (return [["\nlispz_modules['" name "']=\"" contents "\"\n"]])
         ))
       ))
       (return (promise.all (names.map load-module)))
