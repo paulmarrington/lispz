@@ -11,10 +11,10 @@
       (resolve-promise)
     ))
     (cond
-      (get tags name)       (resolve-promise)
-      (get lispz.tags name) (do ((get lispz.tags name)) (mount))
+      (get tags name)       (resolve-promise (=>))
+      (get lispz.tags name) (do ((get lispz.tags name)) (resolve-promise mount))
       (else)                (when (net.http-get uri) [response]
-                              (compile response) (mount))
+                              (compile response) (resolve-promise mount))
     )
   ))
 
@@ -40,6 +40,9 @@
                    (+ (name.toLowerCase) ".riot.html")))
       (return (load name uri))
     ))))
-    (when load-all [] (export {build compile load mount}))
+    (when load-all [mounts]
+      (mounts.forEach (lambda [mount] (mount)))
+      (export {build compile load mount})
+    )
   )
 )

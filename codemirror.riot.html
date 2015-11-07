@@ -5,8 +5,8 @@
   </style>
   <script type=text/lispz>
     (var tag this)
-    (using  [codemirror]
+    (tag.on "mount" (=> (using  [codemirror]
       (set! tag.cm (CodeMirror tag.wrapper opts))
-    )
+    ))
   </script>
 </codemirror>
