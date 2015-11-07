@@ -11,6 +11,7 @@ var lispz = function() {
   module = {line:0, name:"boot"}, globals = {}, load_index = 0,
   synonyms = {and:'&&',or:'||',is:'===',isnt:'!=='},
   jsify = function(atom) {
+    if (/^'\/(?:.|\n)*'$/.test(atom)) return atom.slice(1, -1).replace(/\n/g, '\\n')
     if (/^'.*'$/.test(atom)) return atom.slice(1, -1).replace(/\\n/g, '\n')
     if (/^"(?:.|\r*\n)*"$/.test(atom)) return atom.replace(/\r*\n/g, '\\n')
     switch (atom[0]) {

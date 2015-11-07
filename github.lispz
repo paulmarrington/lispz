@@ -10,9 +10,9 @@
     (return repo)
   ))
   ## Set the branch to use for repo - defaults to master
-  (var branch (promise.callback [repo branch-name]
+  (var branch (promise [repo branch-name]
     (set! repo.lispz.branch branch-name)
-    (repo.branch branch-name callback)
+    (repo.branch branch-name (lambda [err result] (resolve-promise)))
   ))
   ## list files in a specific path on the repo
   (var list-dir (promise.callback [repo path]

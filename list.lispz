@@ -1,4 +1,8 @@
 (var flatten (lambda [list]
-  (return (list.reduce (lambda [a b] (return (a.concat b)))))
+  (return (list.reduce (lambda [a b]
+    (var bflat b)
+    (cond (instance-of Array b) (var bflat (flatten b)))
+    (return (a.concat bflat))
+  ) [[]]))
 ))
 (export {flatten})
