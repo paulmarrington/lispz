@@ -454,7 +454,12 @@ dom.append_$_("head",dom.element("meta",{'name':"viewport",'content':"width=devi
 
 /*codemirror.riot.html*/
 
-lispz.tags['codemirror.riot.html']=function(){riot.tag('codemirror', '<div name=wrapper> </div>', function(opts) {throw "compile error for riot_tags.lispz_c_5 __ missing close brace"
+lispz.tags['codemirror.riot.html']=function(){riot.tag('codemirror', '<div name=wrapper> </div>', function(opts) {var tag=this;//#riot-tags:2
+
+tag.on("mount",(function(){lispz.load("codemirror"//#core:49
+,(function(){var codemirror=lispz.cache["codemirror"];
+tag.cm=CodeMirror(tag.wrapper,opts);//#riot-tags:4
+}))}))//#riot-tags:5
 
 });
 }
