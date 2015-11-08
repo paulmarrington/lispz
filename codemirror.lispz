@@ -527,7 +527,7 @@
   (var load-js (promise.all
     (net.script "ext/codemirror.js") (net.script "ext/codemirror-modes.js")
   ))
-  (when (net.script "ext/codemirror.js") []
+  (when (net.script "ext/codemirror.js") [] (yield
     (when (net.script "ext/codemirror-modes.js") []
       (cond window.CodeMirror (do ## in case we haven't built it yet
         (dict.for-each extra-commands (lambda [key value]
@@ -537,6 +537,6 @@
       ))
       (export {options open close set-mode build})
     )
-  )
+  ))
   (delay 100 (lispz.css "ext/codemirror-themes.css"))
 )
