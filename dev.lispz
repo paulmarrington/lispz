@@ -34,7 +34,7 @@
     (var build-riots (promise [names]
       (var source [[]])
       (var load-riot (lambda [name]
-        (return (when (read-file (+ name ".riot.html") [text]
+        (return (when (read-file (+ name ".riot.html")) [text]
           (return [["\n\n/*" name "*/\n\nlispz.tags['" name "']=function(){"
             (riot.compile text true) "}\n"]])
         ))
