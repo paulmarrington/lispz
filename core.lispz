@@ -55,6 +55,12 @@
 (macro delay [ms *body] (setTimeout (=> *body) ms))
 (macro yield [*body] (delay 0 *body))
 (macro do [*body] *body)
+(global wait-for (lambda [test]
+  (var waiter (=>
+    (return? (test))
+    (delay 10 waiter)
+  )) (waiter)
+))
 ###
 # Use contain to contain state changes. Any var inside a contain can be changed
 # no matter how many times the contain is called concurrently. It is also allows
