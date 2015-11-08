@@ -81,6 +81,7 @@
       (saver.push (+ "\n\n/*" path "*/\n\n"))
       (saver.push entry.code)
     ) meta.copy-to (do
+      ## not working yet for binary files
       (var filename (last (path.split "/")))
       (set! (get store.copies (+ meta.copy-to "/" filename)) code)
     ))
