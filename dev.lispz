@@ -1,4 +1,4 @@
-(using [github riot]
+(using [github riot list]
   (var manifest (=>
     (var text [["CACHE MANIFEST"]])
     (lispz.manifest.forEach (lambda [uri] (text.push uri)))
@@ -7,7 +7,7 @@
   ))
   ### Package Lispz for distribution ###
   (var package (lambda [lispz-repo]
-    (var read-file (lambda [path] (return (github.read lispz-repo path))))
+    (var read-file (github.read.bind null lispz-repo))
 
     (var group (lambda [files]
       (var modules [[]] riots [[]])
@@ -15,60 +15,48 @@
         (return? (not (is "file" entry.type)))
         (var parts (entry.name.split "."))
         (cond
-          (is (last parts) "lispz")               (modules.push (first parts))
-          (is ((slice parts -2).join ".") "riot.html") (riots.push entry.name)
+          (is (last parts) "lispz")                  (modules.push (first parts))
+          (is ((slice parts -2).join ".") "riot.html") (riots.push (first parts))
         )
       ))
       (return (promise.resolved {modules riots}))
     ))
-    (var build-modules (lambda [names]
-      (var source [[]])
+    (var build-modules (promise [names]
       (var load-module (lambda [name]
-        (return (when (read-file name) [text]
-          (var contents (data.replace /[\\"]/gm "\\$&"))
-          (var contents (contents.replace /\n/gm "\\n"))
-          (source.push "\n\nlispz_modules['" path "']=\"" contents "\"")
+        (return (when (read-file (+ name ".lispz")) [text]
+          (var contents (text.replace '/[\\"]/g' "\\$&"))
+          (var contents (contents.replace '/\n/g' "\\n"))
+          (return [["\nlispz_modules['" name "']=\"" contents "\"\n"]])
         ))
       ))
-      (return (promise
-        (when (promise.all (names.map load-module)) []
-          (return (resolve-promise source))
-        )
-      ))
+      (return (promise.all (names.map load-module)))
     ))
-    (var build-riots (lambda [names]
+    (var build-riots (promise [names]
       (var source [[]])
       (var load-riot (lambda [name]
-        (return (when (read-file name) [text]
-          (source.push "\n\n/*" path "*/\n\nlispz.tags['" name "']=function(){"
-            (riot.compile text true) "}\n")
+        (return (when (read-file (+ name ".riot.html")) [text]
+          (return [["\n\n/*" name "*/\n\nlispz.tags['" name "']=function(){"
+            (riot.compile text true) "}\n"]])
         ))
       ))
-      (return (promise []
-        (when (promise.all (names.map load-riot)) []
-          (return (resolve-promise source))
-        )
-      ))
-    ))
-    (var write-lispz (=>
-      (var code (source.join ""))
-      (return (github.write lispz-repo "ext/lispz.js" code "lispz release code"))
+      (return (promise.all (names.map load-riot)))
     ))
 
     (var update-mode (github.update lispz-repo))
-    (var lispz-js    (when update-mode [] (read-file "lispz.js")))
-    (var listing     (when update-mode [] (github.list-dir lispz-repo "")))
-    (var groups      (when listing [files] (group files)))
-    (var modules     (when groups [files] (return  (build-modules files.modules))))
-    (var riots       (when groups [files] (return  (build-riots files.riots))))
+    (var lispz-js    (when update-mode [] (return (read-file "lispz.js"))))
+    (var listing     (when update-mode []  (return (github.list-dir lispz-repo ""))))
+    (var groups      (when listing [files] (return (group files))))
+    (var modules     (when groups [files]  (return  (build-modules files.modules))))
+    (var riots       (when groups [files]  (return  (build-riots files.riots))))
 
-    (var  source     [["window.lispz_modules={}"]])
-    (var all-loaded  (promise.sequence
-      (when modules  [sources] (source.concat sources))
-      (when lispz-js [code]    (source.push code))
-      (when riots    [sources] (source.concat sources))
+    (var all-loaded  (promise.all modules lispz-js riots))
+
+    (return (when all-loaded [sources]
+      (var  code  (list.flatten [["window.lispz_modules={}\n" sources]]))
+      (return (github.write lispz-repo "ext/lispz.js"
+        (code.join "") "lispz release code")
+      )
     ))
-    (return (when all-loaded [] (write-lispz)))
   ))
 
   ### Distribution ###

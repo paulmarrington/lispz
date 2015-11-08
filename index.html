@@ -5,18 +5,17 @@
     <title>Lispz Scratchpad</title>
   <body>
     <bootstrap class=riot>
-    <page-content fluid=true>
-    <firepad class=riot name=scratch height=30% />
-    </page-content>
+      <page-content fluid=true>
+        <code-editor class=riot name=scratch height=30% />
+      </page-content>
     </bootstrap>
 
-    <lispz-repl class=riot></lispz-repl>
     <script src=lispz.js></script>
     <script id=test_code type="text/lispz">
-      (using [firebase message jquery riot]
+      (using [message jquery riot]
         (set! lispz.debug true)
-        (message.wait-for "firepad/scratch" (=>
-          (message.send "firepad/scratch"
+        (message.wait-for "code-editor/scratch" (=>
+          (message.send "code-editor/scratch"
             {action: "open" key: "scratchpad.lispz" contents: null})
         ))
       )

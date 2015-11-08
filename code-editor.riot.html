@@ -1,0 +1,49 @@
+<code-editor>
+  <!-- <firepad name=pad-name [db=default]> -->
+  <panel height={ opts.height } heading={ heading }
+      menu={ menu } owner={ _id }>
+    <div name=wrapper class=wrapper></div>
+  </panel>
+  <style>
+    code-editor .wrapper {
+      position: absolute;
+      top: 0; bottom: 0;
+      left: 0; right: 0;
+      height: initial;
+    }
+    code-editor .CodeMirror {
+      position: absolute;
+      top: 0; bottom: 0;
+      left: 5px; right: 0;
+      height: initial;
+    }
+  </style>
+  <script type=text/lispz>
+    (var tag this)
+    (set! tag.menu "CodeMirror-menu")
+    (set! tag.heading "Edit")
+    (tag.on "mount" (=> (using  [codemirror message dict]
+      (var filename-key (+ "code-editor/" opts.name "/filename"))
+      (var cm (codemirror.open tag._id tag.tags.panel.wrapper))
+
+      (var open (lambda [packet]
+        (codemirror.set-mode cm packet.key)
+        (set! tag.heading (last (packet.key.split "/")))
+        (set! (get localStorage filename-key) packet.key)
+        (cond packet.contents (cm.setValue packet.contents))
+        (tag.update)
+      ))
+
+      (var contents (+ "code-editor/" opts.name "/contents"))
+      (var filename (get localStorage filename-key))
+      (cond filename (delay 100
+        (open {key: filename contents: (get localStorage contents)})
+      ))
+      (cm.on "change" (=>
+        (set! (get localStorage contents) (cm.getValue))
+      ))
+
+      (message.dispatch (+ "code-editor/" opts.name) { open })
+    )))
+  </script>
+</code-editor>

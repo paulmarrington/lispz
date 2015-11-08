@@ -1,22 +1,20 @@
 <!DOCTYPE html>
-<html manifest=index.cache-manifest>
+<html amanifest=index.cache-manifest>
   <head>
     <meta charset="utf-8">
     <title>Lispz Scratchpad</title>
   <body>
     <bootstrap class=riot>
     <page-content fluid=true>
-    <firepad class=riot name=scratch height=30% />
+    <code-editor class=riot name=scratch height=30% />
     </page-content>
     </bootstrap>
 
-    <lispz-repl class=riot></lispz-repl>
     <script src=ext/lispz.js></script>
     <script id=test_code type="text/lispz">
-      (using [firebase message jquery riot]
-        (set! lispz.debug true)
-        (message.wait-for "firepad/scratch" (=>
-          (message.send "firepad/scratch"
+      (using [message jquery riot]
+        (message.wait-for "code-editor/scratch" (=>
+          (message.send "code-editor/scratch"
             {action: "open" key: "scratchpad.lispz" contents: null})
         ))
       )
