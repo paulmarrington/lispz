@@ -1,0 +1,18 @@
+<!-- using bootstrap code-editor -->
+<app>
+  <bootstrap class=riot>
+    <page-content fluid=true>
+      <code-editor class=riot name=scratch height=30% />
+    </page-content>
+  </bootstrap>
+
+  <script type="text/lispz">
+    (using [message riot]
+      (set! lispz.debug true)
+      (message.wait-for "code-editor/scratch" (=>
+        (message.send "code-editor/scratch"
+          {action: "open" key: "scratchpad.lispz" contents: null})
+      ))
+    )
+  </script>
+</app>

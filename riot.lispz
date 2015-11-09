@@ -1,20 +1,25 @@
-(using  [net github dict]
+(using  [jquery net github dict]
   (var compile (lambda [html to-js] (return (riot.compile html to-js))))
 
-  (var tags {})
-
   (var load (promise [name uri]
-    (var mount (=>
-      (dict.update! tags name true)
-      (dict.update! tags uri true)
-      (riot.mount name)
-      (resolve-promise)
+    (var load-tags-used (lambda [tags]
+      (var loaded (promise.all (tags.map (lambda [tag] (return (load tag))))))
+      (when loaded [] (resolve-promise))
+    ))
+    (var usings (lambda [source]
+      (var tags ('/<!--\s*using\s*(.*?)\s*-->/'.exec source))
+      (cond
+        tags   (do (load-tags-used ((last tags).split '/\s+/')))
+        (else) (resolve-promise)
+      )
+    ))
+    (var retrieve-and-compile (=>
+      (var url (or uri (+ (name.toLowerCase) ".riot.html")))
+      (when (net.http-get url) [tag] (usings (compile tag)))
     ))
     (cond
-      (get tags name)       (resolve-promise (=>))
-      (get lispz.tags name) (do ((get lispz.tags name)) (resolve-promise mount))
-      (else)                (when (net.http-get uri) [response]
-                              (compile response) (resolve-promise mount))
+      (get lispz.tags name) (usings ((get lispz.tags name)))
+      (else)                (retrieve-and-compile)
     )
   ))
 
@@ -26,7 +31,7 @@
     ]]))
   ))
 
-  (var mount (lambda [tags] (riot.mount tags)))
+  (var mount (lambda [tags] (riot.mount.apply riot argument)))
 
   (when (net.script "ext/riot.js") []
     (return-if (not window.riot) (export {build}))
@@ -36,12 +41,10 @@
     (var riot-elements (slice (document.getElementsByClassName "riot")))
     (var load-all (promise.all (riot-elements.map (lambda [element]
       (var name (element.tagName.toLowerCase))
-      (var uri (or (element.getAttribute "uri")
-                   (+ (name.toLowerCase) ".riot.html")))
-      (return (load name uri))
+      (return (load name (element.getAttribute "uri")))
     ))))
     (when load-all [mounts]
-      (mounts.forEach (lambda [mount] (mount)))
+      (riot.mount "*")
       (export {build compile load mount})
     )
   )

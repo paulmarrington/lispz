@@ -35,8 +35,9 @@
       (var source [[]])
       (var load-riot (lambda [name]
         (return (when (read-file (+ name ".riot.html")) [text]
+          (var usings (('/<!--\s*using\s*.*?\s*-->/'.exec text).replace "'" ""))
           (return [["\n\n/*" name "*/\n\nlispz.tags['" name "']=function(){"
-            (riot.compile text true) "}\n"]])
+            (riot.compile text true) "\nreturn '" usings  "'}\n"]])
         ))
       ))
       (return (promise.all (names.map load-riot)))
