@@ -35,7 +35,6 @@
     (var tag this)
     (tag.on "mount" (=>
       (set! tag.context (+ "panel-" (or opts.context "default")))
-      (tag.on "mount" (=>
         (cond opts.height (do
           (var px opts.height)
           (cond (is "%" (opts.height.slice -1))
@@ -43,7 +42,6 @@
           )
           (set! tag.outer.style.height (+ px "px"))
         ))
-      ))
     ))
   </script>
 </panel>
