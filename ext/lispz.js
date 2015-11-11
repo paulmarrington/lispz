@@ -312,7 +312,7 @@ var lispz = function() {
 /*app*/
 
 lispz.tags['app']=function(){<!-- using bootstrap code-editor -->
-riot.tag('app', '<bootstrap class=riot> <page-content fluid=true> <code-editor class=riot name=scratch height=30%></code-editor> </page-content> </bootstrap>', function(opts) {lispz.load("message,riot"//#core:49
+riot.tag('app', '<bootstrap class=riot> <page-content fluid=true> <div class=col-sm-6> <code-editor class=riot name=literate height=48%></code-editor> </div> <div class=col-sm-6> <code-editor class=riot name=code height=48%></code-editor> </div> </page-content> </bootstrap>', function(opts) {lispz.load("message,riot"//#core:49
 ,(function(){var message=lispz.cache["message"],riot=lispz.cache["riot"];
 lispz.debug=true;//#riot-tags:3
 
