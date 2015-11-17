@@ -1,0 +1,13 @@
+(delete lispz.cache.github)
+(delete lispz.cache.dev)
+
+(using [dev github]
+  (var target-repo (github.repo
+    "paulmarrington" "spmdev58"
+    "paulmarrington/lispz"
+  ))
+  (var package (dev.package target-repo))
+  (when package []
+    (console.log "DONE" package)
+  )
+)

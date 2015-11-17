@@ -1,0 +1,18 @@
+(using  [net cdnjs]
+
+  (var build (lambda [target-repo]
+    (return (cdnjs.build target-repo "jasmine" [[
+      {repo: "jasmine" files: [[
+        {include: '/jasmine\.(css|js)$/'}
+        {include: '/jasmine-html.js$|boot.js$/'}
+      ]]}
+    ]]))
+  ))
+
+  (lispz.css "ext/jasmine.css")
+  (catch (when (net.script "ext/jasmine.js") []
+    (export { build })
+  ) []
+    (export { build })
+  )
+)

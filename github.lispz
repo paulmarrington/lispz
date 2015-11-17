@@ -1,4 +1,4 @@
-(using  [net dict]
+(using  [net dict list]
   (var version null)
   (var cdn-uri (lambda [project version filepath]
     (return (+ "https://cdn.rawgit.com/" project "/" version "/" filepath))
@@ -52,13 +52,13 @@
   ## preprocess a file to generate css or js dependent on extension
   (var preprocessors {
     lispz: (lambda [name code]
-      (return {ext: "js" code: (window.lispz.compile name code)})
+      (return {path ext: "js" code: (window.lispz.compile name code)})
     )
   })
   (var preprocess (lambda [path code]
     (var ext (last (path.split ".")))
     (var preprocessor (get preprocessors ext))
-    (return-if (not preprocessor) {ext code})
+    (return-if (not preprocessor) {path ext code})
     (return (preprocessor path code))
   ))
   ## Build and save a dependency list
@@ -74,45 +74,51 @@
     (return after)
   ))
   ## and see which to save and which to copy
-  (var process-file (lambda [store path code]
-    (var entry (preprocess path code))
-    (var saver (get store entry.ext))
-    (cond saver (do
-      (saver.push (+ "\n\n/*" path "*/\n\n"))
-      (saver.push entry.code)
-    ) meta.copy-to (do
-      ## not working yet for binary files
-      (var filename (last (path.split "/")))
-      (set! (get store.copies (+ meta.copy-to "/" filename)) code)
-    ))
+  (var copy (lambda [copy-to path code]
+    ## not working yet for binary files
+    (var filename (last (path.split "/")))
+    (return {path code copy: (+ copy-to "/" filename)})
   ))
   ## Load the contents of the files we need from a single repo
-  (var process-repo (lambda [source-repo files]
+  (var process-repo (lambda [source-repo files actors]
     (return (promise.all (files.map (promise [meta]
       (var base (default? meta.base ""))
       (when (actors.list-all source-repo base meta.single-level) [file-list]
         (var files (filter file-list meta.include meta.exclude))
-        (promise.all (files.map (promise [path]
+        (resolve-promise (promise.all (files.map (promise [path]
           (when (actors.read source-repo path) [code]
-            (when (process-file path code) [] (resolve-promise))
+            (cond
+              meta.copy-to (resolve-promise (copy meta.copy-to path code))
+              (else)       (resolve-promise (preprocess path code))
+            )
           )
-        )))
-        (resolve-promise)
+        ))))
       )
     ))))
   ))
   ## Given a list of repos, go through them all for files in need
-  (var process-repos (lambda [target-repo sources]
-    (return (promise.all (sources.map (promise [source]
+  (var process-repos (lambda [target-repo sources actors]
+    (return (promise.all (sources.map (lambda [source]
       (var source-repo (actors.repo target-repo source.repo))
-      (store.from.push source.repo)
-      (when (process-repo source-repo source.files) [] (resolve-promise))
+      (return (process-repo source-repo source.files actors))
     ))))
   ))
   ## Retrieve file contents based of filtering meta-data
   (var retriever (promise [target-repo sources actors]
-    (var store {js: [[]] css: [[]]  copies: {} from: [["Gathered from: "]]})
-    (when (process-repos target-repo sources) [] (resolve-promise))
+    (when (process-repos target-repo sources actors) [entry-tree]
+      (var store {js: [[]] css: [[]]  copies: [[]] from:
+        (sources.map (lambda [source] (return source.repo)))})
+      (store.from.unshift "Gathered from: ")
+      ((list.flatten entry-tree).forEach (lambda [entry]
+        (cond
+          (get store entry.ext)
+            ((get store entry.ext).push "\n\n/* " entry.path " */\n" entry.code)
+          store.copy
+            (store.copies.push entry)
+        )
+      ))
+      (resolve-promise store)
+    )
   ))
   ## Given a file type, save the concatenated source contents
   (var save (promise [target-repo store name ext comment]
@@ -121,9 +127,9 @@
   ))
   ## copy files identified as needed as-is
   (var copy (lambda [target-repo store comment]
-    (return (dict.map store.copies (lambda [path contents]
-      (return (write target-repo path contents comment))
-    )))
+    (return (promise.all (store.copies.map (lambda [entry]
+      (return (write target-repo entry.path entry.code comment))
+    ))))
   ))
   ## Now we have gathered needed resources, build and save the output file
   (var builder (promise [actors target-repo name sources]
@@ -131,9 +137,9 @@
       (var comment (store.from.join " "))
       (var saved (when (update target-repo) []
         (return (promise.all
-          (save target-repo store name "js" comment)
-          (save target-repo store name "js" comment)
-          (copy target-repo store           comment)
+          (save target-repo store name "js"  comment)
+          (save target-repo store name "css" comment)
+          (copy target-repo store            comment)
         ))
       ))
       (when saved [] (resolve-promise))
