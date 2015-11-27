@@ -10,6 +10,8 @@ Riot, like React it works with a virtual DOM and only updates changes to the rea
 
 Scripting can be any language of choice that runs on the browser. JavaScript, Lispz, Es6 (with babel) and CoffeeScript are available out-of-the-box.
 
+Small tight API that provides all needed web component functionality for reactive views, events and routing.
+
 # Structure of a RIOT/Lispz Program
 
     <code-editor>
