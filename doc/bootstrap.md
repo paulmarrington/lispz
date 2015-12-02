@@ -17,7 +17,7 @@ Any single page application that is going to use bootstrap to simplify the UI wr
     
 ### Bootstrap Themes
 
-Bootstrap sites do not have to look alike. Bootswatch provides 16+ free themes, including ones that fit in with Metro, Polymer and Ubuntu:
+> Bootstrap sites do not have to look alike. Bootswatch provides 16+ free themes, including ones that fit in with Metro, Polymer and Ubuntu:
 
 Default, Cerulean, Cosmo, Cyborg, Darkly, Flatly, Journal, Lumen, Paper, Readable, Sandstone, Simplex, Slate, Spacelab, Superhero, United, Yeti
 
