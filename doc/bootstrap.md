@@ -51,6 +51,19 @@ A panel is a UI component that provides decorations around your content. The hea
 The context defines the colours use for the decoration. The _menu-id_ is used to listen on a messaging channel that can publish menu contents.
 
 # Modals
+
+Modals pop up and deny access to the rest of the page until they are dismissed.
+
+    <modal name=n [title=heading-text] [buttons=a,*b] [context=default|primary|success|info|warning|danger]>
+      modal-body-content-html
+    </modal>
+
+Buttons are added to a footer, with the one starting with a star being the default. When a modal button is pressed it will send a message with a topic of _modal-name/button-name/button_.
+
+    <modal name=login-dialog title="..." buttons="Log in,Cancel">...</modal>
+    ....
+    (message.listen "login-dialog/Log in/button" (=> ...)
+
 # Menus
 # Trees
 # Side-bar
