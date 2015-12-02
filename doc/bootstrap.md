@@ -39,6 +39,17 @@ Riot components can include a _script_ section. If you preface all entries with 
     </code-editor>
 
 # Panels
+
+A panel is a UI component that provides decorations around your content. The header includes a title and a menu button. An optional footer can include more text.
+
+    <panel [context=default|primary|success|info|warning|danger]
+              [heading=heading-text] [footer=footer-text]
+              [menu=menu-id] height=[nn%,nn]>
+      panel-body-content-html
+    </panel>
+
+The context defines the colours use for the decoration. The _menu-id_ is used to listen on a messaging channel that can publish menu contents.
+
 # Modals
 # Menus
 # Trees
