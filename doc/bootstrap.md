@@ -65,5 +65,37 @@ Buttons are added to a footer, with the one starting with a star being the defau
     (message.listen "login-dialog/Log in/button" (=> ...)
 
 # Menus
+
+A menu is a multi-level option selection. Both menu contents and results selected communicate by messages.
+
+Menu contents loading can be driven by the menu component or an external provider. For the former, the menu component sends out a message when a user asks to open the menu. It is up to a listener to provide the data requested. Use this if the menu contents change between uses.
+
+        fill-me-in
+
+If an external controller knows when the menu changes, or if the menu is static, then send the contents to a named message address so that the specified menu can be reloaded.
+
+        fill-me-in
+        
+The menu itself is a dictionary with the format:
+
+   (var test-menu
+        [[
+          { header: true title: "Heading 1" }
+          { title: "Item 1" topic: "Test menu item 1" }
+          { title: "Item 2" children: [[{ title: "Item 2a" }]] }
+          { divider: true }
+          { title: "item 2" disabled: true }
+        ]]
+    )
+    (message.send "test-menu" test-menu)
+    
+where _header_ and _divider_ are list separates that cannot be selected. For the rest, _title_ is the text displayed, _topic_ is part of the the address for the message sent, _children_ defines sub-menus and _disabled_ is for items that cannot be selected.
+
+If a menu item has a topic entry, a message will be sent to that an address made up of the component owner, dash, topic.
+
+    (message.listen "Test Panel 2 - Test menu item 1" (lambda [data] (debug data)))
+
+## <bars-menu>
+
 # Trees
 # Side-bar
