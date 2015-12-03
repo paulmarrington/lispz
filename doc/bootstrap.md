@@ -103,7 +103,11 @@ If a menu item has a topic entry, a message will be sent to that an address made
 
     (message.listen "Test Panel 2 - Test menu item 1" (lambda [data] (debug data)))
 
-## <bars-menu>
+## bars-menu
+
+This menu type displays three horizontal bars - sometime call a _hamburger_. Click it opens up a drop-down menu.
+
+  <bars-menu align=left|center|right />
 
 # Trees
 # Side-bar
