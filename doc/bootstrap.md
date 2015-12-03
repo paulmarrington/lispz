@@ -107,7 +107,9 @@ If a menu item has a topic entry, a message will be sent to that an address made
 
 This menu type displays three horizontal bars - sometime call a _hamburger_. Click it opens up a drop-down menu.
 
-  <bars-menu align=left|center|right />
+    <bars-menu align=left|center|right name=name owner=owning-component />
+    
+The owner is prepended to the response to a menu selection so that the correct component can respond.
 
 # Trees
 # Side-bar
