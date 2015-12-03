@@ -78,7 +78,7 @@ If an external controller knows when the menu changes, or if the menu is static,
         
 The menu itself is a dictionary with the format:
 
-   (var test-menu
+     (var test-menu
         [[
           { header: true title: "Heading 1" }
           { title: "Item 1" topic: "Test menu item 1" }
@@ -86,7 +86,7 @@ The menu itself is a dictionary with the format:
           { divider: true }
           { title: "item 2" disabled: true }
         ]]
-    )
+      )
     (message.send "test-menu" test-menu)
     
 where _header_ and _divider_ are list separates that cannot be selected. For the rest, _title_ is the text displayed, _topic_ is part of the the address for the message sent, _children_ defines sub-menus and _disabled_ is for items that cannot be selected.
