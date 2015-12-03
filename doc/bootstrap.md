@@ -6,7 +6,7 @@ There is a difference of scope between bootstrap and riot. Bootstrap is designed
 
 Any single page application that is going to use bootstrap to simplify the UI wraps the contents inside the body with a bootstrap tag. Use an inner page-content tag to allow for fluid layouts - those that change as the window changes size.
 
-<!-- using bootstrap code-editor -->
+    <!-- using bootstrap code-editor -->
     <body>
       <bootstrap class=riot>
         <page-content fluid=true>
@@ -70,12 +70,20 @@ A menu is a multi-level option selection. Both menu contents and results selecte
 
 Menu contents loading can be driven by the menu component or an external provider. For the former, the menu component sends out a message when a user asks to open the menu. It is up to a listener to provide the data requested. Use this if the menu contents change between uses.
 
-        fill-me-in
+      (message.listen "specifications-menu-open" (=>
+        (var menu (dict.map lispz_modules (lambda [title source]
+          (return {topic: "specifications" title source})
+        )))
+        (message.send "specifications-menu" (menu.sort))
+      ))
+      
+This example has a flat single-level list. All menus send a message when displayed with the name of the menu concatenated to _.open_. They also listen on the menu name as an address, so you can pass the resulting menu back.
 
-If an external controller knows when the menu changes, or if the menu is static, then send the contents to a named message address so that the specified menu can be reloaded.
+If an external controller knows when the menu changes, or if the menu is static, then send the contents to a named message address so that the specified menu can be reloaded. If this happens before the menu is displayed the menu will not be loaded. To fix this, wait for the menu to be ready.
 
-        fill-me-in
-        
+      (when (message.ready "specifications-menu") []
+        (message.send "specifications-menu" nenu)
+      )        
 The menu itself is a dictionary with the format:
 
      (var test-menu
