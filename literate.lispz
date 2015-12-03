@@ -1,0 +1,157 @@
+### literate: literate - Literate Programming
+  **Lispz** supports a form of Donald Knuth's Literate programming. Use the
+  *literate* annotation and document to your heart's content. The line of
+  the annotation is the title.
+
+  The body of the documentation is written in Github style markdown with all
+  the typographic features markdown provides.
+###
+(using [net cdnjs dict list]
+  (var build (lambda [target-repo]
+    (return (cdnjs.build target-repo "showdown" [[
+      {repo: "showdown" files: [[
+        {include: '/showdown.js$/'}
+      ]]}
+    ]]))
+  ))
+  (var loaded (net.script "ext/showdown.js"))
+  (catch loaded [] (export {build}))
+  (when  loaded []
+    ### literate: literate >> to-html
+      The core process is to initialise the markdown to html compiler provide
+      the conversion with ```to-html```. The options default if not provided.
+      The full list is available on
+      [the showdown wiki](https://github.com/showdownjs/showdown#valid-options).
+
+          (using literate
+            ## markdown list is [[{title: "One" body: markdown} ...]]
+            (literate.to-html markdown-list)
+            ## or
+            (literate.to-html markdown-list {headerLevelStart: 1})
+          )
+
+      For the lowdown on the markdown syntax provided, have a gander at
+      [The Showdown Wiki](https://github.com/showdownjs/showdown/wiki/Showdown's-Markdown-syntax)
+      or check out the Jasmine tests below.
+    ###
+    (var to-html (lambda [sections options]
+      ((chain find-full-titles parse-titles sort-by-title merge-titles) sections)
+      (var markdown (section.map (lambda [section]
+        (return (section.markdown.append section.body))
+      )))
+      (return ((converter options).makeHtml ((list.flatten markdown).join "")))
+    ))
+    ### literate: literate >> options
+      You can pass in a dictionary of options that will change how markdown
+      is converted to HTML. Most are explicit:
+
+          omitExtraWLInCodeBlocks, noHeaderId, prefixHeaderId, headerLevelStart,
+          simplifiedAutoLink, literalMidWordUnderscores, strikethrough, tables,
+          tablesHeaderId
+
+      while others require a tiny bit of explanation:
+
+          parseImgDimensions - ![foo](foo.jpg =100x80) px, em, % or * for auto
+          ghCodeBlocks - triple-backtick instead of indenting
+          smoothLivePreview - not used by Lispz at this point
+    ###
+    (var converter (lambda [options]
+      (var defaults {
+        omitExtraWLInCodeBlocks:    false
+        noHeaderId:                 false
+        prefixHeaderId:             false
+        parseImgDimensions:         false   ## 100x80, 100x*, 80%x5em
+        headerLevelStart:           2
+        simplifiedAutoLink:         true    ## GFM recognizing urls in text
+        literalMidWordUnderscores:  false
+        strikethrough:              true    ## ~~strikethrough~~
+        tables:                     true    ## |h1|h2... |:--... |te1|te2
+        tablesHeaderId:             true
+        ghCodeBlocks:               true    ## GFM style code-blocks
+        smoothLivePreview:          false
+      })
+      (showdown.Converter (dict.merge defaults options))
+    ))
+    ### literate: literate >> title-syntax -- Title Syntax
+      Literate programming requires the documentation to be with the code.
+      In most cases the code clearly defines the how without additional
+      comments. Thw why, however, is still in the province of documentation.
+      Also, documentation when being read later is usually in a different order
+      to the code it is following. For this reason, literate annotations
+      include titles - on the same line as the annotation.
+
+      Sections are reference by a key word, with a double-right-arrow
+      between inner sections.
+
+            ##(#) literate: test -- The title of a test section
+            ##(#) literate: test >> details -- A detailed test title
+            ##(#) literate: test >> details >> more
+    ###
+    (var parse-titles (lambda [sections]
+      (var headings {})
+      (return (sections.map (lambda [section]
+        (var title (section.title.split '/\s+>>\s+/'))
+        (var title (title-parts.map (lambda [part]
+          (var split (part.split '/\s+--\s+/'))
+          (return-if (is split.length 1) part)
+          (var key (split.first)  title (split.rest))
+          (dict.update! headings key title)
+          (return key)
+        )))
+        (return {title sort: (title.join " ") body: section.body})
+      )))
+    ))
+    ### literate: literate >> title-referencing -- Title Referencing
+      To make it easier to repeat titles, they are key-word references.
+      Before they can be used they need to expand to the full title.
+      At some point when that title section is the last on the chain,
+      append a double-minus and the full title name.
+
+          ##(#) literate: test >> details >> more -- More Details
+    ###
+    (var titles {})
+    (var find-full-titles (lambda [sections]
+      (sections.map (lambda [section]
+        (section.title.forEach (lambda [title]
+          (var kvp (title.split '/\s+--\s+/'))
+          (var full-title (default? (get kvp 1) title))
+          (dict.update! titles (get kvp 0) find-full-titles)
+        ))
+      ))
+      (return sections)
+    ))
+    ### literate: literate >> sort-by-title -- Sort document by title
+      Literate sections in the soure may need to be put together in a
+      different order to make the document. In this way sections will
+      only show once, even if they are referenced in different places
+      when defining sub-sections.
+    ###
+    (var sort-by-title (lambda [sections]
+      ### literate:
+        Note that this changes the contents of the parameter - not perfect
+        but acceptable since the array was created by the preceding function.
+      ###
+      (sections.sort (lambda [a b] (a.sort.localCompare b.sort)))
+      (return sections)
+    ))
+    ### literate: literate >> merge-titles -- Merge titles into the Markdown
+      In the end a title is a title - being lines starting with one or more
+      hashes where the number indicates the heading level. We must inspect
+      each title and remove the common ancestores before printing the
+      remaining title lines.
+    ###
+    (var merge-titles (lambda [sections]
+      (var parent [[]])
+      (return (sections.map (lambda [section]
+        (var markdown [[]])
+        (section.title.forEach (lambda [key idx]
+          (cond (is (get parent idx) key) (do (set! parent [[]]) (return)))
+          (var title (get titles key)  hashes ("######".slice 0 (+ idx 1)))
+          (markdown.push hashes " " title "\n")
+        ))
+        (return {markdown body: section.body})
+      )))
+    ))
+    (export {build to-html})
+  )
+)

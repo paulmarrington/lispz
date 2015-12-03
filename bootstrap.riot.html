@@ -24,9 +24,9 @@
     panel .panel-body {
       position: absolute;
       top: 40px;
-      bottom: 10px;
+      bottom: 2px;
       left: 0;
-      right: 0;
+      right: 2px;
     }
   </style>
 
@@ -93,7 +93,7 @@
       <li each={ items } class={ dropdown-header: header && title,
           divider: divider, disabled: disabled }><a onclick={ goto } href="#">
           <span class="pointer right float-right" if={ children }></span>
-          { title }
+          { title }&nbsp;&nbsp;&nbsp;
       </a></li>
     </ul>
   </div>
@@ -111,6 +111,7 @@
         (tag.update)
       ))
       (($ tag.dropdown).on "show.bs.dropdown" (=>
+        (message.send (+ opts.name "-open"))
         (set! tag.items root)
         (tag.update)
       ))

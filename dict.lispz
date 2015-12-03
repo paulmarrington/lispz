@@ -30,7 +30,7 @@
 ))
 
 (var map (lambda [dict action=>]
-  (Object.keys dict)(.map (lambda [k] (return (action=> k (get dict k)))))
+  (return ((Object.keys dict).map (lambda [k] (return (action=> k (get dict k))))))
 ))
 
 (export {merge from-list insert! for-each map})

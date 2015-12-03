@@ -132,7 +132,7 @@ var lispz = function() {
   },
   compile_error = function(msg, data) {
     var errloc = module.name+".lispz:"+module.line
-    console.log(errloc, msg, data)
+    console.log(errloc, msg, data || "")
     return ['throw "compile error for ' + errloc.replace(/["\n]/g," ") +
             " -- " + msg.replace(/"/g,"'") + '"\n']
   },
@@ -161,7 +161,7 @@ var lispz = function() {
       var js = parse_to_ast(source).map(ast_to_js)
       module = last_module
       return js
-    } catch (err) { return compile_error(err.message, source) }
+    } catch (err) { return compile_error(err.message, name) }
   },
   run = function(name, source) { return compile(name, source).map(eval) },
   //######################### Script Loader ####################################//
@@ -228,7 +228,7 @@ var lispz = function() {
   },
   //##################    where to get scripts    #############################//
   lispz_url = document.querySelector('script[src*="lispz.js"]').getAttribute('src'),
-  lispz_base_path = /^(.*?)(?:ext\/)?lispz.js/.exec(lispz_url)[1],
+  lispz_base_path = /^(.*?)(?:ext\/)?lispz.js/.exec(lispz_url)[1] || "./",
   css = function(uri) {
     el = document.createElement("link")
     el.setAttribute("type", "text/css")
@@ -243,12 +243,33 @@ var lispz = function() {
     el.addEventListener("error", function(evt) { console.log(evt); when_loaded(evt) })
     el.setAttribute("src", lispz_base_path+uri)
   }
+  other_window_onload = window.onload
   window.onload = function() {
+    my_window_onload = window.onload
+    if (other_window_onload) other_window_onload()
     var q = lispz_url.split('#')
     load(((q.length == 1) ? "core" : "core," + q.pop()),
       function() {
+        var to_load = [], to_run = []
         slice.call(document.querySelectorAll('script[type="text/lispz"]')).forEach(
-          function (script) { run("script", script.textContent) })
+          function (script) {
+            var src = script.getAttribute("src")
+            if (src) {
+              var parts = src.split(".")
+              if (parts.pop() == "lispz") src = parts.join(".")
+              to_load.push(src)
+            } else {
+              to_run.push(script.textContent)
+            }
+          })
+        var end_run = function() {
+          if (to_run.length) {
+            to_run.forEach(function(code) { run("script", code) })
+          }
+          if (window.onload != my_window_onload) window.onload()
+        }
+        if (to_load.length) load(to_load.join(","), end_run)
+        else                end_run()
     })
   }
   //#########################    Helpers    ####################################//
@@ -270,5 +291,6 @@ var lispz = function() {
   return { compile: compile, run: run, parsers: parsers, load: load,
            macros: macros, cache: cache, http_request: http_request,
            clone: clone, manifest: manifest, script: script, css: css,
-           synonyms: synonyms, globals: globals, tags: {} }
+           synonyms: synonyms, globals: globals, tags: {},
+           path_base: lispz_base_path }
 }()

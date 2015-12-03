@@ -1,14 +1,49 @@
 (using  [net cdnjs]
 
+  (macro spy          [func]
+    (return ((createSpy (#join '' '"' func '"') func).and.callThrough))
+  )
+  (macro spy-method   [cls method] (spyOn cls (#join '' '"' method '"')))
+  (macro spy-off      [method]     (method .reset))
+
+  (macro create-spy   [title]      (createSpy title))
+  (macro create-spy-obj [title methods] (createSpyObj title methods))
+  (macro call-through [spied]      (spied .and.callThrough))
+  (macro return-value [spied val]  (spied .and.returnValue val))
+  (macro call-fake    [spied fake] (spied .and.callFake fake))
+  (macro throw-error  [spied err]  (spied .and.throwError err))
+  (macro return-values [spied, *vals] (spied .and.returnValues *vals))
+  (macro expect-to-have-been-called [spied] (('expect' spied).toHaveBeenCalled))
+  (macro expect-to-have-been-called-with [spied *params]
+    (('expect' spied).toHaveBeenCalled *params)
+  )
+  (macro calls?        [method]     (method .calls.any))
+  (macro call-count    [method]     (method .calls.count))
+  (macro args-for      [method idx] (method .calls.argsFor idx))
+  (macro all-args      [method]     (method .calls.allArgs))
+  (macro call-contexts [method]     (method.calls.all))
+  (macro call-first-context [method] (method.calls.first))
+  (macro call-last-context  [method] (method.calls.mostRecent))
+
+  (macro install-clock []           (jasmine.clock.install))
+  (macro uninstall-clock []         (jasmine.clock.uninstall))
+  (macro advance-clock [ms]         (jasmine.clock.tick ms))
+  (macro mock-date     [date]       (jasmine.clock.mockData date))
+
+  (set! document.body.onclick (lambda [ev]
+    (debug ev)
+    (ev.preventDefault)
+  ))
+
   (var build (lambda [target-repo]
     (return (cdnjs.build target-repo "jasmine" [[
       {repo: "jasmine" files: [[
         {include: '/jasmine\.(css|js)$/'}
-        {include: '/jasmine-html.js$|boot.js$/'}
+        {include: '/jasmine-html.js$/'}
+        {include: '/boot.js$/'}
       ]]}
     ]]))
   ))
-
   (lispz.css "ext/jasmine.css")
   (catch (when (net.script "ext/jasmine.js") []
     (export { build })

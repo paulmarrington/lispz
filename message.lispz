@@ -13,6 +13,11 @@
         (do ((get expecting address)) (delete (get expecting address))))
 ))
 
+(var ready (promise [address]
+  (return-if (length (exchange address)) (promise.resolved))
+  (dict.update! expecting address resolve-promise)
+))
+
 ## remove a recipient from all attached addresses
 (var remove (lambda [recipient]
   (dict.update! exchange address
@@ -22,23 +27,18 @@
   )
 ))
 
-(var send (lambda [address packet reply=>]
-  (var reply (default? reply=> (=>)))
+(var send (lambda [address packet]
   ## take a copy so that it does not change during processing
+  (var result null)
   (((exchange address).slice).forEach (lambda [recipient]
-    (yield (reply (recipient.listener=> packet)))
+    (var result (recipient.listener=> packet))
     (cond recipient.once (remove recipient))
   ))
+  (return (promise? result))
 ))
 
 (var expect (lambda [address listener=>]
   (add address {once: true listener=>})
-))
-
-## Only add expect if no other listeners - otherwise respond immediately
-(var wait-for (lambda [address listener=>]
-  (return-if (length (exchange address)) (listener=>))
-  (dict.update! expecting address listener=>)
 ))
 
 (var listen (lambda [address listener=>]
@@ -48,8 +48,8 @@
 (var dispatch (lambda [address actions]
   (listen address (lambda [packet]
     (var action (get actions packet.action))
-    (return-if (not action) false)
-    (action packet)
+    (return-if (not action) (promise.resolved false))
+    (return (action packet))
   ))
 ))
 
@@ -63,4 +63,4 @@
   (console.log packet.level "-" packet.text)
 ))
 
-(export {exchange send expect listen dispatch wait-for})
+(export {exchange send expect listen dispatch ready})

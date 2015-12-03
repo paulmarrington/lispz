@@ -30,10 +30,10 @@
       (using "firebase message jquery"
         (firebase.register "default" "https://sizzling-heat-3048.firebaseio.com")
         (using "riot"
-          (message.wait-for "firepad/test" (=>
+          (when (message.ready "firepad/test") []
             (message.send "firepad/test"
               {action: "open" key: "test-1.riot.html" contents})
-          ))
+          )
         )
       )
     </script>

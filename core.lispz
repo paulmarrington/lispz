@@ -1,6 +1,31 @@
-(macro debug [msg] (console.trace msg))
+### section: Lispz >> Core Functions ###
+### literate: developer >> debug
+  `(debug)` is a development helper macro. It will print a stack trace
+  and the contents of any parameters on the console. If you left-align it
+  then it will be easy to find later to delete.
+###
+### spec: debug
+  (describe "(debug [p1, p2, ...]) ## macro to display stack and messages" (=>
+    (it "displays a stack trace and the parameters provided" (=>
+      (spy-method console trace)
+      (debug "multiple" "parameters")
+      ((expect console.trace).toHaveBeenCalled)
+    ))
+  ))
+###
+(macro debug [*msg] (console.trace (#join ',' *msg)))
 
-### Supporting function definition ###
+(macro var  (*list) (#join '' 'var ' (#pairs *list '=' ',') ';'))
+
+### spec: function
+  (describe "(lambda [p1 p2 *rest]) ## function definition" (=>
+    (it "defines an anonymous function that can be called" (=>
+      (var f1 (lambda [a b] (return (* a b))))
+      (var result (f1 2 3))
+      ((expect result).toBe 6)
+    ))
+  ))
+###
 (macro lambda [params *body] (#join '' '(function(' params '){' *body '})'))
 (macro =>     [*body]        (#join '' '(function(){' *body '})'))
 (macro *arguments [from] ([[]].slice.call arguments from))
@@ -11,11 +36,38 @@
 (macro return  [value] (#join '' 'return ' value '\n'))
 (macro return? [value] (cond value (return value)))
 (macro return-if [test value] (cond test (return value)))
-(macro new [cls params] (#join '' '(new ' cls '(' params '))'))
+(macro new [cls *params] (#join '' '(new ' cls '(' (#join ',' *params) '))'))
+### literate: functions >> chaining -- Chaining functions
+  In a functional style we often call multiple functions to incrementally move
+  from problem to solution. Each step takes the results from the step before and
+  transforms it. It is allways a good idea to have short functions that do one
+  thing - for testing, maintenance and readability. Speaking of readability,
+  chain makes the sequence of events clear.
+
+      (parse-titles (lambda [sections] (return (sections.map ...)))
+      (sort-titles  (lambda [sections] (return (sections.map ...)))
+      (merge-titles (lambda [sections] (return (sections.map ...)))
+
+      ((chain parse-titles sort-titles merge-titles) sections)
+###
+### spec: chain
+  (describe "chain: run each function with the results from the one before" (=>
+    (it "(chain f1 f2 ...)" (=>
+      (var f1 (lambda [a] (return (* a 2))))
+      (var f2 (lambda [a] (return (+ a 3))))
+      (var f3 (lambda [a] (return (* a 10))))
+      (var result (chain f1 f2 f3) 2)
+      ((expect result).toBe 70)
+    ))
+  ))
+###
+(global chain (lambda [functions]
+  (var link (lambda [arg func] (return (func arg))))
+  (return (lambda [arg] (return ((*arguments 0).reduce link arg))))
+))
 
 ### Pure functional programming wants immutability - but we live in an impure world ###
 (macro set! [name value] (#join '' name '=' value ';'))
-(macro var  (*list) (#join '' 'var ' (#pairs *list '=' ',') ';'))
 (macro dict.update! [dict key value] (#join '' dict '[' key ']' '=' value ';'))
 
 ### Retrieval - can be used for objects and arrays ###
@@ -92,6 +144,10 @@
   *body
 ))
 (global promise.resolved (promise [pact] (resolve-promise pact)))
+(global promise? (lambda [pledge]
+  (return-if (and pledge pledge.then) pledge)
+  (return (promise.resolved pledge))
+))
 
 (macro when  [pledge params *body] (pledge .then  (lambda params *body)))
 (macro catch [pledge errors *body] (pledge .catch (lambda errors *body)))

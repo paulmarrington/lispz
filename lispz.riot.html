@@ -1,0 +1,40 @@
+<!-- using bootstrap code-editor specifications -->
+<lispz>
+  <bootstrap class=riot>
+    <page-content fluid=true>
+      <!--div class=col-sm-6>
+        <code-editor class=riot name=literate height=48% />
+      </div-->
+      <div class=col-sm-6>
+        <code-editor class=riot name=code height=48% />
+      </div>
+      <div class=col-sm-6>
+        <specifications class=riot name=specifications height=48% />
+      </div>
+      <!--div class=col-sm-6>
+        <code-editor class=riot name=specs height=48% />
+      </div-->
+    </page-content>
+  </bootstrap>
+
+  <script type="text/lispz">
+    (using [message riot dict]
+      (set! lispz.debug true)
+      (when (message.ready "code-editor/scratch") []
+        (message.send "code-editor/scratch"
+          {action: "open" key: "scratchpad.lispz" contents: null})
+      )
+      (var topic "specifications")
+      (message.listen "specifications-menu-open" (=>
+        (var menu (dict.map lispz_modules (lambda [title source]
+          (return {topic title source})
+        )))
+        (message.send "specifications-menu" (menu.sort))
+      ))
+      (when (message.ready "specifications/specifications") []
+        (message.send "specifications/specifications"
+          {action: "open" name: "scratchpad" scripts: [[]]})
+      )
+    )
+  </script>
+</lispz>

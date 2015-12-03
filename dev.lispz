@@ -23,7 +23,8 @@
     ))
     (var build-modules (promise [names]
       (var load-module (lambda [name]
-        (return (when (read-file (+ name ".lispz")) [text]
+        (var uri (+ name ".lispz"))
+        (return (when (read-file uri) [text]
           (var contents (text.replace '/[\\"]/g' "\\$&"))
           (var contents (contents.replace '/\n/g' "\\n"))
           (return [["\nlispz_modules['" name "']=\"" contents "\"\n"]])

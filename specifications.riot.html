@@ -1,0 +1,61 @@
+<specifications>
+  <panel height={ opts.height } heading={ heading } menu={ menu } owner={ _id }>
+    <iframe name=iframe class=iframe></iframe>
+  </panel>
+  <style>
+    jasmine .panel-body {
+      bottom: 0;
+      left: 1px;
+      right: 1px;
+      padding: 0;
+      padding-bottom: 1px;
+    }
+    jasmine .iframe {
+      position: absolute;
+      height: 100%;
+      width: 100%;
+    }
+  </style>
+  <script type=text/lispz>
+    (var tag this)
+    (set! tag.heading "Specifications")
+    (set! tag.menu "specs-menu")
+    (var owner tag._id)
+    (tag.on "mount" (=> (using  [message annotations literate]
+      (var iframe tag.tags.panel.iframe)
+      (var iframe-doc (or iframe.contentDocument iframe.contentWindow.document))
+
+      (var open (lambda [packet]
+        (var name (last (packet.name.split '/:\s*/')))
+        (set! tag.heading (+ name " Specifications"))
+        (iframe-doc.open)
+        (var add-documentation (=>
+          (var docs (annotations.retrieve "literate" packet.source))
+          (return (literate.to-html docs))
+        ))
+        (var add-specs (=>
+          (var specs (annotations.retrieve "spec" packet.source))
+          (var specs (specs.map (lambda [spec] (return spec.body))))
+          (return (specs.join "\n\n"))
+        ))
+        (iframe-doc.write (+
+          "<!DOCTYPE html><html><head><meta charset='utf-8'>"
+          "<link rel='shortcut icon' type='image/png' href='"
+            lispz.path-base "ext/jasmine_favicon.png'>"
+          "<script src='" lispz.path-base "lispz.js#jasmine'></" "script>"
+          "<script type='text/lispz'>" (add-specs) "</" "script>"
+          "</head><body>"
+          "<a href=#jasmine style='float:right' class=title></a>"
+          (add-documentation) "<div id=jasmine></div></body></html>"
+        ))
+        (iframe-doc.close)
+        (tag.update)
+      ))
+
+      (message.dispatch (+ "specifications/" opts.name) { open })
+      (message.listen (+ owner "-" "specifications") (lambda [packet]
+        (open {name: packet.item.title source: packet.item.source})
+      ))
+    )))
+  </script>
+</specifications>

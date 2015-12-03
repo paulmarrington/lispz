@@ -1,0 +1,12 @@
+  (var retrieve (lambda [type source]
+    (var re (new RegExp (+ "###\\s*" type ":\\s*(.*)\\n((?:.|\\n)*?)###") "g"))
+    (var annotations [[]])
+    (var scan (=>
+      (var res (re.exec source))
+      (return? (not res))
+      (annotations.push {title: (get res 1)  body: (get res 2)})
+      (scan)
+    ))(scan)
+    (return annotations)
+  ))
+  (export {retrieve})
