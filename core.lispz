@@ -85,6 +85,12 @@ defines a 'var' of the same name it will be distinct and hide the outer referenc
 
 ### Pure functional programming wants immutability - but we live in an impure world ###
 (macro set! [name value] (#join '' name '=' value ';'))
+### literate: list >> dict >> Updating Dictionary Entries
+If you need to update a dictionary, use set! or dict.update!. Be aware of and keep referential integrity.
+
+    (set! exporting.error "it broke")
+    (dict.update! exporting key "new key)
+###
 (macro dict.update! [dict key value] (#join '' dict '[' key ']' '=' value ';'))
 
 ### Retrieval - can be used for objects and arrays ###
