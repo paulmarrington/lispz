@@ -17,25 +17,6 @@ If the key is known, using dot syntax is clearer
 
     exporting.error
     (get exporting key)
-    
-Lispz provides some more functional referentially transparent functions.
-
-    (var list [[{key: 1 value: 2} {key: 3 value: 4}]]
-    (dict.from-list list "key")    # {1: {key: 1 value: 2} 3: {key: 3 value: 4})
-    
-    (dict.for-each dict-1 (lambda [key value] ...))
-    
-or not referentially transparent :)
-
-    (dict.insert! dict-1 dict-2 dict-3)      ## changes dict-1
-    
-Sometimes we want to process each element in a dictionary one after another:
-
-    (using [dict]
-      (var for-each (lambda [key value next=>] ... (next=>))
-      (var on-completion (=> (console.log "All done")))
-      (dict.sequential my-dict for-each=> on-completion=>)
-    )
 ###
 
 (var insert (lambda [target dictionaries]
@@ -46,6 +27,7 @@ Sometimes we want to process each element in a dictionary one after another:
   ))
   (return target)
 ))
+
 ### literate: lists >> dict >> Merging Dictionaries
 There is often need to merge multiple dictionaries together to create a new combined one.
 
@@ -55,10 +37,19 @@ There is often need to merge multiple dictionaries together to create a new comb
   (return (insert {} (*arguments 0)))
 ))
 
+### literate: lists >> dict >> Inserting One Dictionary in Another
+**Warning** This is not referentially transparent
+
+    (dict.insert! dict-1 dict-2 dict-3)      ## changes dict-1
+###
 (var insert! (lambda [target dictionaries]
   (return (insert target (*arguments 0)))
 ))
 
+### literate: lists >> dict >> Create a Dictionary from a List
+    (var list [[{key: 1 value: 2} {key: 3 value: 4}]]
+    (dict.from-list list "key")    # {1: {key: 1 value: 2} 3: {key: 3 value: 4})
+###
 (var from-list (lambda [list key]
   (var dictionary {})
   (cond list
@@ -67,10 +58,15 @@ There is often need to merge multiple dictionaries together to create a new comb
   (return dictionary)
 ))
 
+### literate: lists >> dict >> For Each Entry...
+    (dict.for-each dict-1 (lambda [key value] ...))
+###
 (var for-each (lambda [dict action=>]
   (Object.keys dict)(.forEach (lambda [k] (action=> k (get dict k))))
 ))
 
+### literate: lists >> dict >> Morphing One Dictionary into Another
+###
 (var map (lambda [dict action=>]
   (return ((Object.keys dict).map (lambda [k] (return (action=> k (get dict k))))))
 ))
