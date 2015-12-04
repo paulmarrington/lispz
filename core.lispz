@@ -1,4 +1,20 @@
-### section: Lispz >> Core Functions ###
+### literate: basics >> Syntax
+# Syntax
+One of the really cool things about a lisp language is that there is very little syntax.
+On the flip-side one of the disadantages of minimal syntax is the need for work-arounds -
+and by definition a work-around is syntax. The core for lispz is 4 sorts of lists
+
+    (action a b c ...) ## functional list
+    [a b c]            ## raw list (typically parameters for a function definition)
+    [[a b c]]          ## an array list
+    {a: 1 b c}         ## an associative array or dictionary
+    
+Named references are created using 'var'. They exist only inside the module or function
+in which they are first defined. This includes inner functions, but if the inner function
+defines a 'var' of the same name it will be distinct and hide the outer reference.
+
+    (var ref 23)
+    
 ### literate: developer >> debug
   `(debug)` is a development helper macro. It will print a stack trace
   and the contents of any parameters on the console. If you left-align it
