@@ -19,6 +19,15 @@ If the key is known, using dot syntax is clearer
     (get exporting key)
 ###
 
+### literate: lists >> dict >> Internals >> Insert
+Dictionary merges and inserts take a list of dictionaries in order to push to the target.
+This means that when they have common keys, the last dictionary that has the key takes
+precedence.
+
+    ## command-line options overwrite config options of the same name. If neither is
+    ## found, the default option is used.
+    (dict.merge default-options config-file-options cl-options)
+###
 (var insert (lambda [target dictionaries]
   (dictionaries.forEach (lambda [dictionary]
     ((Object.keys dictionary).forEach (lambda [key]
