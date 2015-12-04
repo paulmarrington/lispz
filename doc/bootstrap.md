@@ -112,4 +112,9 @@ This menu type displays three horizontal bars - sometime call a _hamburger_. Cli
 The owner is prepended to the response to a menu selection so that the correct component can respond.
 
 # Trees
+
+A tree provides an identical interface to a menu. Visually all levels to the current selection remain displayed. Selecting a branch will toggle it opened or closed. Selecting a leaf will send a message to the owning component.
+
 # Side-bar
+
+A side-bar is a slide-in draw. When hidden it displays a string down the left side of the screen. Clicking on the 3-bars icon at the top will slide the panel in and out.
