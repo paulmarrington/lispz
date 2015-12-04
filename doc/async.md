@@ -47,11 +47,68 @@ A function that creates a promise uses the 'promise' keyword instead of 'lambda'
     (var read (promise [addr param1 param2]
       (http-get (+ addr "?&" param1 "&" param2) (lambda [err response]
         (return-if err (reject-promise err))
-        (resolve-promise response.text)
+        (resolve-promise response)
       ))
     ))
     
+Because it is common to turn a callback into a promise, lispz provides a helper macro. The following provides identical functionality. One of the benefits of a language with real macros :)
 
+    (var read (promise.callback [addr param1 param2]
+      (http-get (+ addr "?&" param1 "&" param2) callback)
+    ))
+    
+Now that we have a promise, we can use it just like a callback if we want:
+
+    (var reading (read "http://blat.com/blah" 1 2))
+    (when reading (lambda [result] (return (process result))))
+    (catch reading (lambda [err] (console.log "ERROR: "+err)))
+    
+Even without further knowledge, promises clean up errors and exceptions. If you do not catch errors, exceptions thrown in the asynchronous function can be caught in the code containing the promise.
+
+The power of promises starts to become clearer with the understanding that 'when' can return a promise.
+
+    (var processed (when reading (lambda [result] (return (process result)))))
+    (when processed (console.log "All done"))
+
+So far this adds very little at the cost of a relatively large supporting library. if we start thinking functionally instead of sequentially, promises provides a way to clarify our code (a little).
+
+    # change branch we will be working with
+    (var update-mode (github.update lispz-repo))
+    # Once in update mode we can retrieve lispz.js and ask for a list of other file in parallel
+    (var lispz-js    (when update-mode [] (read-file "lispz.js")))
+    (var listing     (when update-mode [] (github.list-dir lispz-repo "")))
+    # We can only sort files once we have a listing from the server
+    (var groups      (when listing [files] (group files)))
+    # but then we can process the different groups in parallel (retrieving source as needed)
+    (var modules     (when groups [files] (return (build-modules files.modules))))
+    (var riots       (when groups [files] (return (build-riots files.riots))))
+    
+    # Now to pull it all together into a single file
+    (var  source     [["window.lispz_modules={}"]])
+    # promise.sequence forces the order.
+    (var all-loaded  (promise.sequence
+      (when modules  [sources] (source.concat sources) (return (promise.resolved))
+      # lisp.js is added after modules and lisp-js are resolved
+      (when lispz-js [code]    (source.push code) (return (promise.resolved))
+      # riot tags are added after lisp.js and lisp-js is added and riots promise is resolved
+      (when riots    [sources] (source.concat sources) (return (promise.resolved))
+    ))
+    # Only write the result when the sequence above is complete
+    (return (when all-loaded [] (write-lispz)))
+    # returns a promise that is complete once the results are written
+    
+In summary we have
+
+1. **(promise [params...] ...)** is a macro that generates a function that returns a promise
+  1. **(resolve-promise results...)** sets results used in **when [results...] ...** macros
+  2. **(reject-promise err)** sets results used in **(catch [err] ...)** macros
+2. **(promise.callback [params...] ...)** is a macro to creates promises from traditional callbacks
+  1. **callback** is a function reference to use where callbacks would normally be defined
+3. **(promise.resolved results)** Will return a promise that will always provide the results supplied to when. Use it to turn a synchronous function into a promise to use in sequences.
+4. **(when a-promise [results...] ...)** is a macro that works like a lambda where the function body is executed with the results supplied once (and if) the promise is resolved. If a **when** statement returns a promise it can be used for chaining.
+5. **(catch a-promise [err] ...) is a macro that works like a lambda where the function body is executed if any of a set of chained promises uses **reject-promise** to indicate an error.
+6. **(promise.all promise-1 promise-2 [[promises]])** will return a promise that is fulfilled when all the promises specified are resolved or rejected. It will flatten arrays of promises.
+7. **(promise.sequence promise-1 promise-2 [[promises]])** will return a promise that is fulfilled when all the promises specified are resolved or rejected. Unlike **all**, each promise is triggered when the preceding promise is resolved.
 
 ## Benefits
 1. Separates cause and effect more clearly
@@ -63,6 +120,41 @@ A function that creates a promise uses the 'promise' keyword instead of 'lambda'
 2. Still fairly highly coupled
 3. Only allows one action - not for repetitive events
 4. Developer view needs to change from sequential perspective
+5. Being selective about errors and exceptions is painful. Once a promise is resolved it cannot change. Any promises that rely on a rejected promise will themselves be rejected causing a cascade of failures. To be selective you need to wrap a promise catch in an outer promise and resolve the outer one if the error itself can be resolved. Don't forget to resolve the outer promise with the data from the inner one when there are no errors.
 
 # Events
+
+Events follow [the observer pattern](https://en.wikipedia.org/wiki/Observer_pattern). Lispz provides access to the light-weight version in Riot. If you use Riot for UI components, the custom tags are always observers. You don't need to use riot to make use of events. You can either create an observable or make any object in the system observable.
+
+    (using [riot]
+      (var observable-1 (riot.observable))
+      (var element (get-my-element))
+      (riot.observable element)
+    )
+    
+Once that is out of the way, tell the observable what to do if it receives an event either once or every time.
+
+    (observable-1.on "event-name" (lambda [params...] what to do...))
+    (element.one "focus" (lambda [contents] (element.set contents)))
+    
+One observable can have many listeners for the same or different events. Use 'trigger' to wake an observable.
+
+    (observable-1.trigger "event-name" param1 param2)
+    
+Finally there needs to be a way to stop listening.
+
+    (observable-1.off "event-name" event-function-reference) ## stops one listener
+    (observable-1.off "event-name") ## stops all listeners to an event
+    (observable-1.off "*")          ## stops all listeners to all events for observable
+
+## Benefits
+1. Decouples the code to whatever extent is necessary.
+2. Associates code and data (such as the DOM).
+3. Allows multiple invocations
+
+## Disadvantages
+1. Too convoluted to use as an easy replacement for callbacks
+2. One-way communication
+3. No way of knowing if event was processed as expected.
+
 # Messaging
