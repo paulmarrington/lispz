@@ -34,6 +34,41 @@ Parameters that start with star must be the last in the list and encapsulate all
     (lambda [a b] (var c (+ a b)) (return c))
 
 # #join
+Many macros translate lispz directly to JavaScript by mixing pure JavaScript with macro parameters that can convert themselves to JavaScript. It is an immediate function - being one that runs during the compile phase. The first parameter is the text to be used between the segments. In this context it is usually empty. The first parameter along with the JavaScript are wrapped in single quotes so that they are left as-is in the JavaScript output.
+
+    (macro set! [name value] (#join '' name '=' value ';'))
+
 # #pairs
-# #binop
+Pairs is more rarely used. It takes a list and creates output based on pairs in that list. Hmmm, that is not very clear. Best use an example then. 
+
+    (macro var (*list) (#join '' 'var ' (#pairs *list '=' ',') ';'))
+    (var a 12  b "hi") ##js=> var a=12,b="hi";
+    
+Pairs takes a list, the code within each pair and the string between pairs. In this example, = is between the two items in the pair and , is between pairs. If you need it clearer than that, try meditating on the two sample lines above - or don't use #pairs.
+
 # immediate
+
+Macros allow you to change lispz by adding new build-in commands. By their nature, macros allow the use of lispz at compile time to generate the resulting lispz code. Most macros are to generate JavaScipt
+
+    (macro return [value] (#join '' 'return ' value '\n'))
+
+or just substitution
+
+    (macro return? [value] (cond value (return value)))
+    
+Double-check substitution macros. The one above must be a macro, but may could be easily converted into global functions
+
+    (macro empty? [list] (not list.length))
+    # is functionally the same as
+    (global empty? [list] (return (not list.length)))
+    
+The built-ins #join and #pairs are example of immediate functions - ones that operate during the compile phase. Lispz would not be complete if you could not also create immediate functions.
+
+    (immediate 'alert("Hi")')
+    
+Works but has no point. I added immediate for language completeness. I have not yet found a use for it.
+
+    (global #join2 (lambda [sep parts]
+      (immediate (*arguments 1) '.map(lispz.ast_to_js).join(lispz.ast_to_js(sep)')
+    ))
+
