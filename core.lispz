@@ -1,5 +1,4 @@
 ### literate: basics >> Syntax
-# Syntax
 One of the really cool things about a lisp language is that there is very little syntax.
 On the flip-side one of the disadantages of minimal syntax is the need for work-arounds -
 and by definition a work-around is syntax. The core for lispz is 4 sorts of lists
@@ -14,7 +13,28 @@ in which they are first defined. This includes inner functions, but if the inner
 defines a 'var' of the same name it will be distinct and hide the outer reference.
 
     (var ref 23)
+    
+### literate: basics >> Operators
 
+A pure lisp system does not have any operators. Everything is a function or a macro.
+Because Lispz compiles to JavaScript, all unary and many binary operators are exposed.
+
+    (delete dict.key)  ## JS==> delete dict.key
+    debugger           ## JS==> debugger
+    (+ 2 3 4)          ## JS==> (2 + 3 + 4)
+    
+While unary operators are transparent to Lispz and convert directly, binary operators
+are expanced with macros. Some operators have convenience names.
+
+    (and a b c)        ## JS==> a && b && c 
+    (or a b c)         ## JS==> a || b || c 
+    (is a 12)          ## JS==> a === 12
+    (isnt a 12)        ## JS==> a !== 12
+    
+Thanks to JavaScript 'and' and 'or' short-circuit - meaning that they will stop when
+they find truth for and or false for or.
+
+    (return (or value "default value string"))
     
 ### literate: developer >> debug
   `(debug)` is a development helper macro. It will print a stack trace
