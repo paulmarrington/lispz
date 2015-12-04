@@ -14,6 +14,7 @@ in which they are first defined. This includes inner functions, but if the inner
 defines a 'var' of the same name it will be distinct and hide the outer reference.
 
     (var ref 23)
+
     
 ### literate: developer >> debug
   `(debug)` is a development helper macro. It will print a stack trace
