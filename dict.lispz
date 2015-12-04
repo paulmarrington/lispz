@@ -1,4 +1,4 @@
-## lists >> dict -- The Associative Array List (Dictionary)
+### lists >> dict -- The Associative Array List (Dictionary)
 
 Are also called dictionaries or hashmaps. Because lispz is a functional language it is not
 uncommon for functions to return a dictionary of values. To make them clearer, if a key is
@@ -20,8 +20,6 @@ If the key is known, using dot syntax is clearer
     
 Lispz provides some more functional referentially transparent functions.
 
-    (var big-dict (dict.merge dict-1 dict-2 dict-3))
-    
     (var list [[{key: 1 value: 2} {key: 3 value: 4}]]
     (dict.from-list list "key")    # {1: {key: 1 value: 2} 3: {key: 3 value: 4})
     
@@ -38,7 +36,7 @@ Sometimes we want to process each element in a dictionary one after another:
       (var on-completion (=> (console.log "All done")))
       (dict.sequential my-dict for-each=> on-completion=>)
     )
-
+###
 
 (var insert (lambda [target dictionaries]
   (dictionaries.forEach (lambda [dictionary]
@@ -48,13 +46,15 @@ Sometimes we want to process each element in a dictionary one after another:
   ))
   (return target)
 ))
-###
-# There is often need to merge multiple dictionaries together to create a new
-# combined one.
+### literate: lists >> dict >> Merging Dictionaries
+There is often need to merge multiple dictionaries together to create a new combined one.
+
+    (var big-dict (dict.merge dict-1 dict-2 dict-3))
 ###
 (var merge (lambda [dictionaries]
   (return (insert {} (*arguments 0)))
 ))
+
 (var insert! (lambda [target dictionaries]
   (return (insert target (*arguments 0)))
 ))
