@@ -1,41 +1,40 @@
 ### literate: basics >> Syntax
-One of the really cool things about a lisp language is that there is very little syntax.
-On the flip-side one of the disadantages of minimal syntax is the need for work-arounds -
-and by definition a work-around is syntax. The core for lispz is 4 sorts of lists
-
-    (action a b c ...) ## functional list
-    [a b c]            ## raw list (typically parameters for a function definition)
-    [[a b c]]          ## an array list
-    {a: 1 b c}         ## an associative array or dictionary
+    One of the really cool things about a lisp language is that there is very little syntax.
+    On the flip-side one of the disadantages of minimal syntax is the need for work-arounds -
+    and by definition a work-around is syntax. The core for lispz is 4 sorts of lists
     
-Named references are created using 'var'. They exist only inside the module or function
-in which they are first defined. This includes inner functions, but if the inner function
-defines a 'var' of the same name it will be distinct and hide the outer reference.
-
-    (var ref 23)
+        (action a b c ...) ## functional list
+        [a b c]            ## raw list (typically parameters for a function definition)
+        [[a b c]]          ## an array list
+        {a: 1 b c}         ## an associative array or dictionary
+        
+    Named references are created using 'var'. They exist only inside the module or function
+    in which they are first defined. This includes inner functions, but if the inner function
+    defines a 'var' of the same name it will be distinct and hide the outer reference.
     
+        (var ref 23)
+###
 ### literate: basics >> Operators
-
-A pure lisp system does not have any operators. Everything is a function or a macro.
-Because Lispz compiles to JavaScript, all unary and many binary operators are exposed.
-
-    (delete dict.key)  ## JS==> delete dict.key
-    debugger           ## JS==> debugger
-    (+ 2 3 4)          ## JS==> (2 + 3 + 4)
+    A pure lisp system does not have any operators. Everything is a function or a macro.
+    Because Lispz compiles to JavaScript, all unary and many binary operators are exposed.
     
-While unary operators are transparent to Lispz and convert directly, binary operators
-are expanced with macros. Some operators have convenience names.
-
-    (and a b c)        ## JS==> a && b && c 
-    (or a b c)         ## JS==> a || b || c 
-    (is a 12)          ## JS==> a === 12
-    (isnt a 12)        ## JS==> a !== 12
+        (delete dict.key)  ## JS==> delete dict.key
+        debugger           ## JS==> debugger
+        (+ 2 3 4)          ## JS==> (2 + 3 + 4)
+        
+    While unary operators are transparent to Lispz and convert directly, binary operators
+    are expanced with macros. Some operators have convenience names.
     
-Thanks to JavaScript 'and' and 'or' short-circuit - meaning that they will stop when
-they find truth for and or false for or.
-
-    (return (or value "default value string"))
+        (and a b c)        ## JS==> a && b && c 
+        (or a b c)         ## JS==> a || b || c 
+        (is a 12)          ## JS==> a === 12
+        (isnt a 12)        ## JS==> a !== 12
+        
+    Thanks to JavaScript 'and' and 'or' short-circuit - meaning that they will stop when
+    they find truth for and or false for or.
     
+        (return (or value "default value string"))
+###    
 ### literate: developer >> debug
   `(debug)` is a development helper macro. It will print a stack trace
   and the contents of any parameters on the console. If you left-align it
@@ -71,8 +70,21 @@ they find truth for and or false for or.
   (macro name [&params] (#join '' 'lispz.globals.' name '(' &params ')')))
 (macro closure [params *body] (#join '' '(function(' params '){' *body '})(' params ')'))
 (macro return  [value] (#join '' 'return ' value '\n'))
+### literate: basics >> functions >> Return if Exists
+    As a functional language, most decisions are made by small single-focus functions.
+    As such, conditional returns are a useful shortcut. To this end, return? returns
+    a value if it not false, null or an empty container.
+    
+        (return? calculated-value)
+###
 (macro return? [value] (cond value (return value)))
+### literate: basics >> functions >> Return if ...
+    While return-if has aconditional pair. If the first is true the second is returned.
+    
+        (return-if (not calculated-value) default-value)
+###
 (macro return-if [test value] (cond test (return value)))
+
 (macro new [cls *params] (#join '' '(new ' cls '(' (#join ',' *params) '))'))
 ### literate: functions >> chaining -- Chaining functions
   In a functional style we often call multiple functions to incrementally move
@@ -124,12 +136,39 @@ If you need to update a dictionary, use set! or dict.update!. Be aware of and ke
 ### conditional processing ###
 (macro empty? [list] (not list.length))
 (macro defined? [field] (!== (typeof field) "undefined"))
+
+### basics -- Conditionals
+    Lispz boasts only one traditional conditional operator plus a number of
+    macros for conditional assignment and function return. The operator,
+    cond takes pairs of lists where the first is the condition and the
+    second the action. Evaluation stops after the first true condition.
+    There is an else macro that evaluates to true to catch situations not
+    covered specifically. The default? function takes a value and returns
+    it if it exists and is not empty, otherwise it returns the default value.
+    
+        (cond (is v "One")  (return 1)
+              (not v)       (return 0)
+              (else)        (return -1)
+        )
+        
+    Because conditionals work with list pairs, it is necessary to wrap the actions
+    if there are more than one. Lispz provides 'do' for that.
+    
+        (cond ok? (do (finish-up) (return true)))
+    
+    The standard conditional tests (< > <= >=, etc) are augmented by aliases (is isnt not).
+###
 (macro cond [*list] (#join '' 'switch(false){case !' (#pairs *list  ':' ';break;case !') '}'))
 (macro else [] 'true')
+
 (macro contains [str substr] (isnt -1 (str .indexOf substr)))
 ## Javascript does not (yet) have tail recursion - it is scheduled for 2016
 (macro while [test body] (#join '' 'while(' test '){' body '}'))
-
+### literate: basic >> conditionals >> Providing a Default Value
+    (var value (default? basic-value "I am empty"))
+    (default? array)  ## true if the array does not have any elements
+    (defined? item)   ## true if the item exists and is non-empty
+###
 (global default? (lambda [value default-value]
   (cond value (return value)) (return default-value)
 ))
