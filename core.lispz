@@ -53,6 +53,27 @@
 
 (macro var  (*list) (#join '' 'var ' (#pairs *list '=' ',') ';'))
 
+### basic >> Functions
+    
+    As I am sure I mentioned before the default lisp/lispz element is the list surrounded by brackets.
+    In most cases in lisp and all cases in list the first element of the list is a reference to a function.
+    In JavaScript perspective this makes a lispz list a JavaScript function where the first element
+    is the reference and the rest a list of parameters.
+    
+    This allows us to call JavaScript functions at any time we can get to them.
+    
+        (console.log "This is the" count "log message")
+        
+    Anonymous functions are created with the lambda key-word (which is actually a macro - confused yet?).
+    The parameters are referenced in another list form - that between square brackets.
+    For later use, assign it to or in a variable. A function will return undefined
+    unless a specific return statement is used.
+    
+        (var +1 (lambda [number] (return (+ number 1))))
+        ...
+        a = 12
+        (console.log a (+1 a))  ## 12 13
+###
 ### spec: function
   (describe "(lambda [p1 p2 *rest]) ## function definition" (=>
     (it "defines an anonymous function that can be called" (=>
@@ -63,8 +84,23 @@
   ))
 ###
 (macro lambda [params *body] (#join '' '(function(' params '){' *body '})'))
+
+### basic >> functions >> Functions without Parameters
+    While I normally avoid short-cuts that don't clarify the code, I made an exception for functions
+    without parameters. I kept forgetting the enpty square brackets.
+    
+        (var random-number (=> (Math.random))
+###
 (macro =>     [*body]        (#join '' '(function(){' *body '})'))
+
+### basic >> functions >> Variable Parameter Lists
+    Like JavaScript, lispz function definitions specify a fixed number of arguments.
+    To gain access to the full list of arguments, use *arguments, with a starting index.
+    
+        (lambda [type rest] (console.log type "=" (*arguments 1)))
+###
 (macro *arguments [from] ([[]].slice.call arguments from))
+
 (macro global [name value]
   (#join '' 'lispz.globals.' name '=' value)
   (macro name [&params] (#join '' 'lispz.globals.' name '(' &params ')')))
