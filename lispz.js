@@ -245,7 +245,7 @@ var lispz = function() {
   }
   other_window_onload = window.onload
   window.onload = function() {
-    my_window_onload = window.onload
+    window.onload = null
     if (other_window_onload) other_window_onload()
     var q = lispz_url.split('#')
     load(((q.length == 1) ? "core" : "core," + q.pop()),
@@ -266,7 +266,7 @@ var lispz = function() {
           if (to_run.length) {
             to_run.forEach(function(code) { run("script", code) })
           }
-          if (window.onload != my_window_onload) window.onload()
+          if (window.onload) window.onload() // someome else set it
         }
         if (to_load.length) load(to_load.join(","), end_run)
         else                end_run()

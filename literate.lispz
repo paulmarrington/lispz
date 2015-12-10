@@ -35,9 +35,10 @@
       or check out the Jasmine tests below.
     ###
     (var to-html (lambda [sections options]
-      ((chain find-full-titles parse-titles sort-by-title merge-titles) sections)
-      (var markdown (section.map (lambda [section]
-        (return (section.markdown.append section.body))
+      (var seed (=> (return sections)))
+      (var sections (chain seed parse-titles sort-by-title merge-titles))
+      (var markdown (sections.map (lambda [section]
+        (return (section.markdown.push section.body))
       )))
       (return ((converter options).makeHtml ((list.flatten markdown).join "")))
     ))
@@ -70,7 +71,7 @@
         ghCodeBlocks:               true    ## GFM style code-blocks
         smoothLivePreview:          false
       })
-      (showdown.Converter (dict.merge defaults options))
+      (return (new showdown.Converter (dict.merge defaults (or options {}))))
     ))
     ### literate: literate >> title-syntax -- Title Syntax
       Literate programming requires the documentation to be with the code.
@@ -86,22 +87,7 @@
             ##(#) literate: test -- The title of a test section
             ##(#) literate: test >> details -- A detailed test title
             ##(#) literate: test >> details >> more
-    ###
-    (var parse-titles (lambda [sections]
-      (var headings {})
-      (return (sections.map (lambda [section]
-        (var title (section.title.split '/\s+>>\s+/'))
-        (var title (title-parts.map (lambda [part]
-          (var split (part.split '/\s+--\s+/'))
-          (return-if (is split.length 1) part)
-          (var key (split.first)  title (split.rest))
-          (dict.update! headings key title)
-          (return key)
-        )))
-        (return {title sort: (title.join " ") body: section.body})
-      )))
-    ))
-    ### literate: literate >> title-referencing -- Title Referencing
+
       To make it easier to repeat titles, they are key-word references.
       Before they can be used they need to expand to the full title.
       At some point when that title section is the last on the chain,
@@ -110,16 +96,20 @@
           ##(#) literate: test >> details >> more -- More Details
     ###
     (var titles {})
-    (var find-full-titles (lambda [sections]
-      (sections.map (lambda [section]
-        (section.title.forEach (lambda [title]
-          (var kvp (title.split '/\s+--\s+/'))
-          (var full-title (default? (get kvp 1) title))
-          (dict.update! titles (get kvp 0) find-full-titles)
-        ))
-      ))
-      (return sections)
+
+    (var parse-titles (lambda [sections]
+      (return (sections.map (lambda [section]
+        (var title ((section.title.split '/\s+>>\s+/').map (lambda [part]
+          (var split (part.split '/\s+--\s+/'))
+          (return-if (is split.length 1) part)
+          (var key (first split)  title (rest split))
+          (dict.update! titles key title)
+          (return key)
+        )))
+        (return {title sort: (title.join " ") body: section.body})
+      )))
     ))
+
     ### literate: literate >> sort-by-title -- Sort document by title
       Literate sections in the soure may need to be put together in a
       different order to make the document. In this way sections will
@@ -131,7 +121,7 @@
         Note that this changes the contents of the parameter - not perfect
         but acceptable since the array was created by the preceding function.
       ###
-      (sections.sort (lambda [a b] (a.sort.localCompare b.sort)))
+      (sections.sort (lambda [a b] (a.sort.localeCompare b.sort)))
       (return sections)
     ))
     ### literate: literate >> merge-titles -- Merge titles into the Markdown

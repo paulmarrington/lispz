@@ -1,50 +1,51 @@
-## lists >> The Functional List
+### literate: lists >> The Functional List
 In Lispz the braces are reserved for function-like calls - being traditional functions and lisp macros. The atom immediately after the open brace is the name of the function or macro.
 
     (console.log "Hello world")   ## calling a javascript function to write to the console
     (debug "Hello world")         ## a macro that writes the current function call stack then a message
-    
+
 The first 'atom' can also be an anonymous function.
 
     ((lambda [] (console.log "Hello world")))
     ## is the same as
     (var hw (lambda [] (console.log "Hello world")))
     (hw)
-    
+
 Internally functional lists are either expanded into more lispz statements by a macro or are converted to a Javascript function. The list becomes the function arguments.
 
     (console.log "Hello" "world")  ## JS==> console.log("Hello", "world")
-    
+
 Macros are amazing things. Addition does not expand to a function but to in-line code:
 
     (+ 1 2 3) ## JS==> 1 + 2 + 3
-## Raw List
+###
+### literate: lists >> The Raw List
 
 At the risk of repeating myself (and at the risk of repeating myself), Lispz is a lightweight compiler to JavaScript. A raw list is an sequence of atoms. When compiled to Javascript the sequence will be comma separated. It is most commonly used for parameters in a function definition:
 
     (var expect (lambda [address listener=>]
       (add address {once: true listener=>})
     ))
-    
-The defined function, expect takes 2 parameters, being a string address and a function reference. The => at the end of this function reference is not syntax, just convenience text to show that this is a callback function.
 
-## lists >> Array as a List
+The defined function, expect takes 2 parameters, being a string address and a function reference. The => at the end of this function reference is not syntax, just convenience text to show that this is a callback function.
+###
+### literate: lists >> Array as a List
 
 For a traditional list or array, use [[]]. This will translate into a normal JavaScript array with standard functional support suchs as forEach and map.
 
     (var list [[1 2 6 9]])
     (var double (list.map [item] (return (* item 2)))) ## JS==> [2, 4, 12, 18]
-    
+
 Use the get command to retrieve entries
 
     (var second (get double 2))
-    
+
 All the JavaScript list processing functions (every, filter, forEach, ...) are available. See the [List Processing](list-processing.md) section for more details.
 
 To see if an array contains an element, use 'in':
 
     (return-if (12 in list) "has dozen")
-
+###
 ### literate: lists >> flatten - Flattening Lists of Lists
 ###
 (var flatten (lambda [list]
