@@ -3,9 +3,25 @@
   When you have state that can be changed from outside, then any function that reads from it
   no longer has referential integrity. This means that identical calls may not return identical
   results.
+  
+  But we need state. Without it the system is fully enclosed without input or output.
+  A referentially integrous :) function can be replaced by it's return value,
+  so why ever run it?
+  
+  The aim is to be like any machine with the internals always working the same.
+  Think of a clock. The input is someone setting the time.
+  After that the external gearing, etc is meant to work consistently so that the
+  time advances at the correct pace. The current time is state. You can build and
+  test the entire device without the state. It is on the very outside. Once the
+  mechanism is working as expected, add a clock face and hands. Changing the hands
+  is input and displaying the time output. The latter can be considered a
+  side-effect.
+  
+  
 ###
 
-(#join '' 'function State(){} State.prototype={set:function(k,v){this[k]=v}}')
-(var state (lambda [seed] (return (new State
+(var state (lambda [seed] (return (Object.create Object.prototype seed))))
+(var set (lambda [state! value] (#join '' state! '=' value ';')
+(set state.set set) ## so we can pass back the 'constructor'
 
 (export state)
