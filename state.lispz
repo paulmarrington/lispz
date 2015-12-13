@@ -5,4 +5,7 @@
   results.
 ###
 
+(#join '' 'function State(){} State.prototype={set:function(k,v){this[k]=v}}')
+(var state (lambda [seed] (return (new State
+
 (export state)
