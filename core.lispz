@@ -150,26 +150,26 @@
   side-effect.
   
   The state container for lispz relies on polite access, not enforced rules. By custom an
-  object holding state that may break referential integrity ends in an exclamation mark.
+  function that changes ends in an exclamation mark. Use this to highlight review.
   The default builder return an empty JavaScript dictionary.
 
       (describe "Create a new stateful object -- (var ref (state seed))" (=>
-        (var options (state {name!: "undefined" address!: "nowhere"}))
-        (it "is able to read members directly -- stateful.member!" (=>
-          ((expect options.name!).toBeEqual "undefined")
+        (var options (state {name: "undefined" address: "nowhere"}))
+        (it "is able to read members directly -- stateful.member" (=>
+          ((expect options.name).toBeEqual "undefined")
         ))
         (it "is able to read members by key -- stateful[key]" (=>
-          ((expect options["name!"]).toBeEqual "undefined")
+          ((expect options["name"]).toBeEqual "undefined")
         ))
-        (it "is able to change member values -- (state.set stateful.member! value)" (=>
-          (state.set options.name! "Fred Flinstone")
-          ((expect options.name!).toBeEqual "Fred Flinstone")
+        (it "is able to change member values -- (state.set stateful.member value)" (=>
+          (state.set! options.name "Fred Flinstone")
+          ((expect options.name).toBeEqual "Fred Flinstone")
         ))
         (it (+ "is able to merge a dictionary of changes -- "
-          "(state.merge stateful {a: dictionary})") (=>
-            (state.merge options {name!: "Barney Rubble" address!: "Next Door"})
-            ((expect options.name!).toBeEqual "Barney Rubble")
-            ((expect options.address!).toBeEqual "Next Door")
+          "(state.merge! stateful {a: dictionary})") (=>
+            (state.merge! options {name: "Barney Rubble" address: "Next Door"})
+            ((expect options.name).toBeEqual "Barney Rubble")
+            ((expect options.address).toBeEqual "Next Door")
           )
         )
       ))
@@ -178,18 +178,18 @@
   If you want to cheat, then on your head be it.
 ###
 
-(macro state.set [state! value] (#join '' state! '=' value ';'))
-(var merge (lambda [stateful update]
+(macro state.set! [state! value] (#join '' state! '=' value ';'))
+(var merge! (lambda [stateful update]
   ((Object.keys update).forEach (lambda [key]
-    (state.set (get stateful key) (get update key))
+    (state.set! (get stateful key) (get update key))
   ))
 ))
 (global state (lambda [seed]
   (var state! (new Object))
-  (cond seed (merge state! seed))
+  (cond seed (merge! state! seed))
   (return state!)
 ))
-(global state.merge merge)
+(global state.merge! merge!)
 
 ### literate: basic >> functions >> Functions without Parameters
     While I normally avoid short-cuts that don't clarify the code, I made an exception for functions
@@ -334,7 +334,7 @@ For arrays, JavaScript provides an excellent set documented in [List Processing]
 (global promise {})
 (macro promise [params *body] (lambda params
   (var #callbacks (state {ok: (=>) fail: (=>)}))
-  (var #pledge (new Promise (lambda [ok fail] (state.merge #callbacks {ok fail}))))
+  (var #pledge (new Promise (lambda [ok fail] (state.merge! #callbacks {ok fail}))))
   (var resolve-promise (lambda [] (#callbacks.ok.apply null (*arguments 0))))
   (var reject-promise (lambda [err] (#callbacks.fail err)))
   ## (#join '' 'try{' *body '}catch(err){' (reject-promise err) '}')
