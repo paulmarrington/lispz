@@ -17,7 +17,8 @@
   is input and displaying the time output. The latter can be considered a
   side-effect.
   
-  
+  The state monad for lispz relies on polite access, not enforced rules. By custom an
+  object holding state that may break referential integrity ends in an exclamation mark.
 ###
 
 (var state (lambda [seed] (return (Object.create Object.prototype seed))))
