@@ -17,8 +17,42 @@
   is input and displaying the time output. The latter can be considered a
   side-effect.
   
-  The state monad for lispz relies on polite access, not enforced rules. By custom an
+  The state container for lispz relies on polite access, not enforced rules. By custom an
   object holding state that may break referential integrity ends in an exclamation mark.
+  The default builder return an empty JavaScript dictionary.
+
+      (describe "Create a new stateful object -- (var ref (state seed))" (=>
+        (using [state]
+          (var options (state {name!: "undefined" address!: "nowhere"}))
+          (it "is able to read members directly -- stateful.member!" (=>
+            ((expect options.name!).toBeEqual "undefined")
+          ))
+          (it "is able to read members by key -- stateful[key]" (=>
+            ((expect options["name!"]).toBeEqual "undefined")
+          ))
+          (it "is able to change member values -- (state.set stateful.member! value)" (=>
+            (state.set options.name! "Fred Flinstone")
+            ((expect options.name!).toBeEqual "Fred Flinstone")
+          ))
+        )
+      ))
+      
+  Javascript lives in the world of objects as well as functions. Sometimes to work in this world
+  objects need to be labelled as stateful.
+  
+      (describe "Creating a stateful reference -- (var ref (state.morph this))" (=>
+        (using [state]
+          (var that {a: 1 b: 2})
+          (var context (state.morph that))
+          (it "looks the same as the original object" (=>
+            ((expect context.a).toBeEqual that.a)
+          ))
+          (it "reflects changes to the original object" (=>
+            (state.set context.a 99)
+            ((expect that.a).toBeEqual 99)
+          ))
+        )
+      ))
 ###
 
 (var state (lambda [seed] (return (Object.create Object.prototype seed))))
