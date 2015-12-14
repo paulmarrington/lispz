@@ -161,13 +161,9 @@
         (it "is able to read members by key -- stateful[key]" (=>
           ((expect options["name"]).toBeEqual "undefined")
         ))
-        (it "is able to change member values -- (state.set stateful.member value)" (=>
-          (state.set! options.name "Fred Flinstone")
-          ((expect options.name).toBeEqual "Fred Flinstone")
-        ))
         (it (+ "is able to update a dictionary with changes -- "
-          "(state.update! stateful {a: dictionary})") (=>
-            (state.update! options {name: "Barney Rubble" address: "Next Door"})
+          "(stateful.update! {a: dictionary})") (=>
+            (options.update! {name: "Barney Rubble" address: "Next Door"})
             ((expect options.name).toBeEqual "Barney Rubble")
             ((expect options.address).toBeEqual "Next Door")
           )
@@ -178,18 +174,25 @@
   If you want to cheat, then on your head be it.
 ###
 
-(macro state.set! [state! value] (#join '' state! '=' value ';'))
-(var update! (lambda [stateful update]
+(macro #set! [state! value] (#join '' state! '=' value ';'))
+
+(var #update! (lambda [stateful update]
   ((Object.keys update).forEach (lambda [key]
     (state.set! (get stateful key) (get update key))
   ))
 ))
-(global state (lambda [seed]
-  (var state! (new Object))
-  (cond seed (update! state! seed))
-  (return state!)
+(var #morph! (lambda [obj]
+  (Object.defineProperties obj {
+    update!: {value: #update!}
+  })
 ))
-(global state.update! update!)
+(global state (lambda [seed]
+  (var obj (new Object))
+  (#morph! obj)
+  (cond seed (#update! obj seed))
+  (return obj)
+))
+(global state.morph! #morph!)
 
 ### literate: basic >> functions >> Functions without Parameters
     While I normally avoid short-cuts that don't clarify the code, I made an exception for functions
@@ -334,7 +337,7 @@ For arrays, JavaScript provides an excellent set documented in [List Processing]
 (global promise {})
 (macro promise [params *body] (lambda params
   (var #callbacks (state {ok: (=>) fail: (=>)}))
-  (var #pledge (new Promise (lambda [ok fail] (state.update! #callbacks {ok fail}))))
+  (var #pledge (new Promise (lambda [ok fail] (#callbacks.update! {ok fail}))))
   (var resolve-promise (lambda [] (#callbacks.ok.apply null (*arguments 0))))
   (var reject-promise (lambda [err] (#callbacks.fail err)))
   ## (#join '' 'try{' *body '}catch(err){' (reject-promise err) '}')
