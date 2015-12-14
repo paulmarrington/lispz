@@ -1,4 +1,4 @@
-### literate: basic >> State
+### literate: basic >> state -- State Monad
   State is the elephant in the room - particularly in the functional programming paradigm.
   When you have state that can be changed from outside, then any function that reads from it
   no longer has referential integrity. This means that identical calls may not return identical
