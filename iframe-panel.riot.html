@@ -18,14 +18,14 @@
   </style>
   <script type=text/lispz>
     (var tag (state.morph this))
-    (state.set! tag.menu opts.menu)
+    (tag.update! {menu: opts.menu})
     (tag.on "mount" (=> (using  [message]
       (var iframe tag.tags.panel.iframe)
       (var iframe-doc (or iframe.contentDocument iframe.contentWindow.document))
 
-      (set! tag.open (lambda [packet]
-        (state.set! tag.heading packet.heading)
-        (cond packet.menu (state.set! tag.menu packet.menu))
+      (tag.update! {open: (lambda [packet]
+        (tag.update! {heading: packet.heading)
+        (cond packet.menu (tag.update! {menu: packet.menu}))
         (iframe-doc.open)
         (iframe-doc.write (+
           "<!DOCTYPE html><html><head><meta charset='utf-8'>"
@@ -33,7 +33,7 @@
         ))
         (iframe-doc.close)
         (tag.update)
-      ))
+      )})
     )))
   </script>
 </iframe-panel>
