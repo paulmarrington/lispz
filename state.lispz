@@ -36,9 +36,21 @@
           ))
         )
       ))
-      
+  
+  Be polite and use this container responsibly. Adding protection adds overhead. If
+  you want to cheat, then so be it.
+###
+
+(var state (lambda [seed] (return (Object.create Object.prototype seed))))
+(var set (lambda [state! value] (#join '' state! '=' value ';')
+(set state.set set) ## so we can pass back the 'constructor'
+
+(export state)
+
+### not implemented
   Javascript lives in the world of objects as well as functions. Sometimes to work in this world
-  objects need to be labelled as stateful.
+  objects need to be labelled as stateful. Use this approach as sparingly as possible. Always
+  consider other alternatives first.
   
       (describe "Creating a stateful reference -- (var ref (state.morph this))" (=>
         (using [state]
@@ -54,9 +66,3 @@
         )
       ))
 ###
-
-(var state (lambda [seed] (return (Object.create Object.prototype seed))))
-(var set (lambda [state! value] (#join '' state! '=' value ';')
-(set state.set set) ## so we can pass back the 'constructor'
-
-(export state)
