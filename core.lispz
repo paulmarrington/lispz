@@ -169,7 +169,23 @@
           )
         )
       ))
+
+  Javascript lives in the world of objects as well as functions. Sometimes to work in this world
+  objects need to be labelled as stateful. Use this approach as sparingly as possible. Always
+  consider other alternatives first.
   
+      (describe "Creating a stateful reference -- (var ref (state.morph! this))" (=>
+        (var that {a: 1 b: 2})
+        (var context (state.morph! that))
+        (it "looks the same as the original object" (=>
+          ((expect context.a).toBeEqual that.a)
+        ))
+        (it "reflects changes to the original object" (=>
+          (context.update! {a: 99})
+          ((expect that.a).toBeEqual 99)
+        ))
+      ))
+      
   Be polite and use this container responsibly. Adding protection adds overhead.
   If you want to cheat, then on your head be it.
 ###
