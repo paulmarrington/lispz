@@ -165,9 +165,9 @@
           (state.set! options.name "Fred Flinstone")
           ((expect options.name).toBeEqual "Fred Flinstone")
         ))
-        (it (+ "is able to merge a dictionary of changes -- "
-          "(state.merge! stateful {a: dictionary})") (=>
-            (state.merge! options {name: "Barney Rubble" address: "Next Door"})
+        (it (+ "is able to update a dictionary with changes -- "
+          "(state.update! stateful {a: dictionary})") (=>
+            (state.update! options {name: "Barney Rubble" address: "Next Door"})
             ((expect options.name).toBeEqual "Barney Rubble")
             ((expect options.address).toBeEqual "Next Door")
           )
@@ -179,17 +179,17 @@
 ###
 
 (macro state.set! [state! value] (#join '' state! '=' value ';'))
-(var merge! (lambda [stateful update]
+(var update! (lambda [stateful update]
   ((Object.keys update).forEach (lambda [key]
     (state.set! (get stateful key) (get update key))
   ))
 ))
 (global state (lambda [seed]
   (var state! (new Object))
-  (cond seed (merge! state! seed))
+  (cond seed (update! state! seed))
   (return state!)
 ))
-(global state.merge! merge!)
+(global state.update! update!)
 
 ### literate: basic >> functions >> Functions without Parameters
     While I normally avoid short-cuts that don't clarify the code, I made an exception for functions
@@ -334,7 +334,7 @@ For arrays, JavaScript provides an excellent set documented in [List Processing]
 (global promise {})
 (macro promise [params *body] (lambda params
   (var #callbacks (state {ok: (=>) fail: (=>)}))
-  (var #pledge (new Promise (lambda [ok fail] (state.merge! #callbacks {ok fail}))))
+  (var #pledge (new Promise (lambda [ok fail] (state.update! #callbacks {ok fail}))))
   (var resolve-promise (lambda [] (#callbacks.ok.apply null (*arguments 0))))
   (var reject-promise (lambda [err] (#callbacks.fail err)))
   ## (#join '' 'try{' *body '}catch(err){' (reject-promise err) '}')
