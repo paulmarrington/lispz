@@ -63,6 +63,73 @@
   (#join '' 'lispz.globals.' name '=' value)
   (macro name [&params] (#join '' 'lispz.globals.' name '(' &params ')')))
 
+### literate: basic >> Functions
+
+    As I am sure I mentioned before the default lisp/lispz element is the list surrounded by brackets.
+    In most cases in lisp and all cases in list the first element of the list is a reference to a function.
+    In JavaScript perspective this makes a lispz list a JavaScript function where the first element
+    is the reference and the rest a list of parameters.
+
+    This allows us to call JavaScript functions at any time we can get to them.
+
+        (console.log "This is the" count "log message")
+
+    Anonymous functions are created with the lambda key-word (which is actually a macro - confused yet?).
+    The parameters are referenced in another list form - that between square brackets.
+    For later use, assign it to or in a variable. A function will return undefined
+    unless a specific return statement is used.
+
+        (var +1 (lambda [number] (return (+ number 1))))
+        ...
+        a = 12
+        (console.log a (+1 a))  ## 12 13
+###
+### spec: function
+  (describe "(lambda [p1 p2 *rest]) ## function definition" (=>
+    (it "defines an anonymous function that can be called" (=>
+      (var f1 (lambda [a b] (return (* a b))))
+      (var result (f1 2 3))
+      ((expect result).toBe 6)
+    ))
+  ))
+###
+(macro lambda [params *body] (#join '' '(function(' params '){' *body '})'))
+
+### literate: basic >> Retrieval - can be used for objects and arrays
+  @TODO
+###
+(macro get [dict *key] (#join '' dict '[' (#join '][' *key) ']'))
+
+### conditional processing ###
+(macro empty? [list] (not list.length))
+(macro defined? [field] (!== (typeof field) "undefined"))
+
+### basics -- Conditionals
+    Lispz boasts only one traditional conditional operator plus a number of
+    macros for conditional assignment and function return. The operator,
+    cond takes pairs of lists where the first is the condition and the
+    second the action. Evaluation stops after the first true condition.
+    There is an else macro that evaluates to true to catch situations not
+    covered specifically. The default? function takes a value and returns
+    it if it exists and is not empty, otherwise it returns the default value.
+
+        (cond (is v "One")  (return 1)
+              (not v)       (return 0)
+              (else)        (return -1)
+        )
+
+    Because conditionals work with list pairs, it is necessary to wrap the actions
+    if there are more than one. Lispz provides 'do' for that.
+
+        (cond ok? (do (finish-up) (return true)))
+
+    The standard conditional tests (< > <= >=, etc) are augmented by aliases (is isnt not).
+###
+(macro cond [*list]
+  (#join '' 'switch(false){case !' (#pairs *list  ':' ';break;case !') '}')
+)
+(macro else [] 'true')
+
 ### literate: basic >> state -- Stateful Containers
   State is the elephant in the room - particularly in the functional programming paradigm.
   When you have state that can be changed from outside, then any function that reads from it
@@ -98,57 +165,31 @@
           (state.set options.name! "Fred Flinstone")
           ((expect options.name!).toBeEqual "Fred Flinstone")
         ))
-        (it "is able to merge a dictionary of changes -- (state.merge stateful {a: dictionary})" (=>
-          (state.merge options {name!: "Barney Rubble" address!: "Next Door"})
-          ((expect options.name!).toBeEqual "Barney Rubble")
-          ((expect options.address!).toBeEqual "Next Door")
-        ))
+        (it (+ "is able to merge a dictionary of changes -- "
+          "(state.merge stateful {a: dictionary})") (=>
+            (state.merge options {name!: "Barney Rubble" address!: "Next Door"})
+            ((expect options.name!).toBeEqual "Barney Rubble")
+            ((expect options.address!).toBeEqual "Next Door")
+          )
+        )
       ))
   
-  Be polite and use this container responsibly. Adding protection adds overhead. If
-  you want to cheat, then so be it.
+  Be polite and use this container responsibly. Adding protection adds overhead.
+  If you want to cheat, then on your head be it.
 ###
 
-(global state (lambda [seed] (return (Object.create Object.prototype seed))))
-(var set (lambda [state! value] (#join '' state! '=' value ';')
-(set state.set set) ## so we can pass back the 'constructor'
-(set state.merge (lambda [stateful update]
+(macro state.set [state! value] (#join '' state! '=' value ';'))
+(var merge (lambda [stateful update]
   ((Object.keys update).forEach (lambda [key]
-    (set (get stateful key) (get update key))
+    (state.set (get stateful key) (get update key))
   ))
 ))
-
-### literate: basic >> Functions
-
-    As I am sure I mentioned before the default lisp/lispz element is the list surrounded by brackets.
-    In most cases in lisp and all cases in list the first element of the list is a reference to a function.
-    In JavaScript perspective this makes a lispz list a JavaScript function where the first element
-    is the reference and the rest a list of parameters.
-
-    This allows us to call JavaScript functions at any time we can get to them.
-
-        (console.log "This is the" count "log message")
-
-    Anonymous functions are created with the lambda key-word (which is actually a macro - confused yet?).
-    The parameters are referenced in another list form - that between square brackets.
-    For later use, assign it to or in a variable. A function will return undefined
-    unless a specific return statement is used.
-
-        (var +1 (lambda [number] (return (+ number 1))))
-        ...
-        a = 12
-        (console.log a (+1 a))  ## 12 13
-###
-### spec: function
-  (describe "(lambda [p1 p2 *rest]) ## function definition" (=>
-    (it "defines an anonymous function that can be called" (=>
-      (var f1 (lambda [a b] (return (* a b))))
-      (var result (f1 2 3))
-      ((expect result).toBe 6)
-    ))
-  ))
-###
-(macro lambda [params *body] (#join '' '(function(' params '){' *body '})'))
+(global state (lambda [seed]
+  (var state! (new Object))
+  (cond seed (merge state! seed))
+  (return state!)
+))
+(global state.merge merge)
 
 ### literate: basic >> functions >> Functions without Parameters
     While I normally avoid short-cuts that don't clarify the code, I made an exception for functions
@@ -215,6 +256,7 @@
   (return (functions.reduce link null))
 ))
 
+## TODO replace with state
 ### Pure functional programming wants immutability - but we live in an impure world ###
 (macro set! [name value] (#join '' name '=' value ';'))
 ### literate: list >> dict >> Updating Dictionary Entries
@@ -226,41 +268,10 @@
 ###
 (macro dict.update! [dict key value] (#join '' dict '[' key ']' '=' value ';'))
 
-### Retrieval - can be used for objects and arrays ###
-(macro get [dict *key] (#join '' dict '[' (#join '][' *key) ']'))
-
 ### Operators ###
 (macro not [value] (#join '' '!(' value ')'))
 (macro in [test against] (#join '' '(' test ' in ' against ')'))
 (macro instance-of [type obj] (#join '' '(' obj ' instanceof ' type ')'))
-
-### conditional processing ###
-(macro empty? [list] (not list.length))
-(macro defined? [field] (!== (typeof field) "undefined"))
-
-### basics -- Conditionals
-    Lispz boasts only one traditional conditional operator plus a number of
-    macros for conditional assignment and function return. The operator,
-    cond takes pairs of lists where the first is the condition and the
-    second the action. Evaluation stops after the first true condition.
-    There is an else macro that evaluates to true to catch situations not
-    covered specifically. The default? function takes a value and returns
-    it if it exists and is not empty, otherwise it returns the default value.
-
-        (cond (is v "One")  (return 1)
-              (not v)       (return 0)
-              (else)        (return -1)
-        )
-
-    Because conditionals work with list pairs, it is necessary to wrap the actions
-    if there are more than one. Lispz provides 'do' for that.
-
-        (cond ok? (do (finish-up) (return true)))
-
-    The standard conditional tests (< > <= >=, etc) are augmented by aliases (is isnt not).
-###
-(macro cond [*list] (#join '' 'switch(false){case !' (#pairs *list  ':' ';break;case !') '}'))
-(macro else [] 'true')
 
 (macro contains [str substr] (isnt -1 (str .indexOf substr)))
 ###
@@ -281,14 +292,6 @@ For arrays, JavaScript provides an excellent set documented in [List Processing]
 ###
 ## Javascript does not (yet) have tail recursion - it is scheduled for 2016
 (macro while [test body] (#join '' 'while(' test '){' body '}'))
-### literate: basic >> conditionals >> Providing a Default Value
-    (var value (default? basic-value "I am empty"))
-    (default? array)  ## true if the array does not have any elements
-    (defined? item)   ## true if the item exists and is non-empty
-###
-(global default? (lambda [value default-value]
-  (cond value (return value)) (return default-value)
-))
 
 ### List and dictionary manipulation ###
 (macro length [list] (#join '' list '.length'))
@@ -298,7 +301,8 @@ For arrays, JavaScript provides an excellent set documented in [List Processing]
 (global slice (lambda [list from to]  (return ([[]].slice.call list from to))))
 ### module import ###
 (macro using [modules *on_ready] (lispz.load (#join '' '"' modules '"')
-  (=> (#requires modules) *on_ready)))
+  (=> (#requires modules) *on_ready)
+))
 
 ### Modules must export to continue processing ###
 (macro export [exports] (#join '' '__module_ready__(' exports ')'))
@@ -318,7 +322,9 @@ For arrays, JavaScript provides an excellent set documented in [List Processing]
 # the passing in of variables that are effectively copied and cannot be changed
 # from outside.
 ###
-(macro contain [contain#args *contain#body] ((lambda contain#args *contain#body) contain#args))
+(macro contain [contain#args *contain#body]
+  ((lambda contain#args *contain#body) contain#args)
+)
 ###
 # Return a random integer between 0 and the range given
 ###
@@ -328,7 +334,7 @@ For arrays, JavaScript provides an excellent set documented in [List Processing]
 (global promise {})
 (macro promise [params *body] (lambda params
   (var #callbacks (state {ok: (=>) fail: (=>)}))
-  (var #pledge (new Promise (lambda [ok fail] (state.merge #callbacks  {ok fail}))))
+  (var #pledge (new Promise (lambda [ok fail] (state.merge #callbacks {ok fail}))))
   (var resolve-promise (lambda [] (#callbacks.ok.apply null (*arguments 0))))
   (var reject-promise (lambda [err] (#callbacks.fail err)))
   ## (#join '' 'try{' *body '}catch(err){' (reject-promise err) '}')

@@ -41,7 +41,7 @@
   ))
   (var update (lambda [repo]
     (return-if (is repo.lispz.branch repo.lispz.username) (promise.resolved))
-    (var branch-name (default? repo.lispz.username "master"))
+    (var branch-name (or repo.lispz.username "master"))
     (return (branch repo branch-name))
   ))
   (var write (promise.callback [repo path contents comment]
@@ -82,7 +82,7 @@
   ## Load the contents of the files we need from a single repo
   (var process-repo (lambda [source-repo files actors]
     (return (promise.all (files.map (promise [meta]
-      (var base (default? meta.base ""))
+      (var base (or meta.base ""))
       (when (actors.list-all source-repo base meta.single-level) [file-list]
         (var files (filter file-list meta.include meta.exclude))
         (resolve-promise (promise.all (files.map (promise [path]
@@ -156,14 +156,14 @@
   (var build (builder.bind null github-actors))
   ## Use gruntfile to decide which files to include and it what order
   (var grunt-build (promise [meta]
-    (var js [[(default? meta.pre "")]])
+    (var js [[(or meta.pre "")]])
     (var read-all (promise.all (meta.files.map (promise []
       (when (github-actors.read source-repo path) [data]
         (js.push data) (resolve-promise)
       )
     ))))
     (when read-all []
-      (js.push (default? meta.post ""))
+      (js.push (or meta.post ""))
       (var contents (js.join "\n"))
       (when (write target-repo (+ "ext/" meta.target) contents comment) []
         (resolve-promise)
@@ -172,7 +172,7 @@
   ))
   (var grunt-copy (promise [files]
     (var copy-all (promise.all (files.map (promise [item]
-      (var path (default? item.src item))
+      (var path (or item.src item))
       (when (github-actors.read source-repo path) [contents]
         (var path (+ "ext/" (last (path.split "/"))))
         (when (write target-repo path contents comment) [] (resolve-promise))
