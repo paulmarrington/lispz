@@ -112,7 +112,11 @@
 (global state (lambda [seed] (return (Object.create Object.prototype seed))))
 (var set (lambda [state! value] (#join '' state! '=' value ';')
 (set state.set set) ## so we can pass back the 'constructor'
-(set state.merge (
+(set state.merge (lambda [stateful update]
+  ((Object.keys update).forEach (lambda [key]
+    (set (get stateful key) (get update key))
+  ))
+))
 
 ### literate: basic >> Functions
 
