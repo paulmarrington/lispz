@@ -2,6 +2,8 @@
   (var append! (lambda [parent element]
     (document.querySelector parent) (.appendChild element)
   ))
+  
+  (var style! (lambda [style to] (#set! style to)))
 
   (var element (lambda [tag-name attributes]
     (var elem (document.createElement tag-name))
@@ -19,5 +21,5 @@
     (var add (=> (element.addEventListener event listener)))
   ))
 
-  (export {append! element event-throttle})
+  (export {append! element event-throttle style!})
 )
