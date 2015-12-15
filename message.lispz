@@ -1,4 +1,4 @@
-(var store (state)  expecting (state))
+(var store (stateful)  expecting (stateful))
 
 (var exchange (lambda [address]
   (var envelope (get store address))
