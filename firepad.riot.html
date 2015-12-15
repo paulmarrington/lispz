@@ -21,13 +21,13 @@
     div.firepad-toolbar { margin-top: -25px; }
   </style>
   <script type=text/lispz>
-    (var tag (state.morph! this))
+    (var tag (stateful.morph! this))
     (tag.update! {menu: "CodeMirror-menu"})
     (tag.update! {heading: "Edit"})
     (tag.on "mount" (=> (using  [firebase codemirror firepad message dict]
       (var filename-key (+ "codemirror/" opts.name "/filename"))
       (var cm (codemirror.open tag._id tag.tags.panel.wrapper))
-      (tag.update! {pad: (state {
+      (tag.update! {pad: (stateful {
         setText:  (lambda [contents] (cm.setValue contents))
         on-ready: (lambda [act] (act))
       })})
@@ -43,7 +43,7 @@
       (cond
         opts.db (do
           (var db (firebase.attach (+ "firepads/" opts.name) opts.db))
-          (tag.update! {pad: (state.morph (Firepad.fromCodeMirror db cm
+          (tag.update! {pad: (stateful.morph (Firepad.fromCodeMirror db cm
             {richTextShortcuts: false richTextToolbar: false}
           ))})
           (tag.pad.update! {on-ready: (lambda [act] (tag.pad.on "ready" act))})
