@@ -31,7 +31,7 @@
   </style>
 
   <script type=text/lispz>
-    (var tag (state.morph! this))
+    (var tag (stateful.morph! this))
     (tag.on "mount" (=> (using [dom]
       (tag.update! {context: (+ "panel-" (or opts.context "default"))})
       (cond opts.height (do
@@ -71,7 +71,7 @@
   <style>
   </style>
   <script type=text/lispz>
-    (var tag (state.morph! this))
+    (var tag (stateful.morph! this))
     (cond opts.buttons (do
       (tag.update! {buttons: [[]]})
       ((opts.buttons.split ",").forEach (lambda [title]
@@ -103,7 +103,7 @@
     bars-menu a.dropdown-toggle { cursor: pointer }
   </style>
   <script type=text/lispz>
-    (var tag (state.morph! this))
+    (var tag (stateful.morph! this))
     (tag.on "mount" (=> (using [message riot]
       (message.listen opts.name (lambda [items]
         (riot.update! tag {items root: (or items [[]])})
@@ -129,7 +129,7 @@
 <tree>
   <tree-component name=base/>
   <script type=text/lispz>
-    (var tag (state.morph! this))
+    (var tag (stateful.morph! this))
     (using [message riot]
       (message.listen opts.name (lambda [items]
         (riot.update! tag {children: {base: {children: items}}})
@@ -169,7 +169,7 @@
     }
   </style>
   <script type=text/lispz>
-    (var tag (state.morph! this))
+    (var tag (stateful.morph! this))
     (using [message dict]
       (tag.on "update" (lambda [data]
         (cond (and opts.name tag.parent.children) (do
@@ -222,7 +222,7 @@
     #sidebar.toggled { width: auto; padding-right: 15px; }
   </style>
   <script type=text/lispz>
-    (var tag (state.morph! this)  hamburger (state.morph! tag.hamburger))
+    (var tag (stateful.morph! this)  hamburger (stateful.morph! tag.hamburger))
     (using [message dom]
       (hamburger.update: {onclick: (=>
         (tag.sidebar.classList.toggle "toggled")
@@ -287,7 +287,7 @@
     }
   </style>
   <script type=text/lispz>
-    (var tag (state.morph! this))
+    (var tag (stateful.morph! this))
     (using  [dom net jquery riot message bootstrap]
       (var bootswatch-themes [[ "cerulean" "cosmo" "cyborg" "darkly" "flatly"
         "journal" "lumen" "paper" "readable" "sandstone" "simplex" "slate"
