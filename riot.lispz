@@ -1,13 +1,13 @@
 (using  [jquery net github dict]
   (var compile (lambda [html to-js] (return (riot.compile html to-js))))
 
-  (var processed-tags {})
+  (var processed-tags (stateful {}))
 
   (var load (promise [name uri]
     (var load-tags-used (lambda [tags]
       (var new-tags (tags.filter (lambda [tag]
         (return-if (get processed-tags tag) false)
-        (return (dict.update! processed-tags tag true))
+        (return (processed-tags.update! tag true))
       )))
       (var loaded (promise.all (new-tags.map (lambda [tag] (return (load tag))))))
       (when loaded [] (resolve-promise))
