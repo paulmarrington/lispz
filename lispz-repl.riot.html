@@ -10,8 +10,8 @@
     lispz-repl .hidden {display: none}
   </style>
   <script type=text/lispz>
-      (var tag this)
-      (set! tag.hidden true)
+      (var tag (state.morph this))
+      (tag.update! {hidden: true})
       (var run (=>
         (var source (((tag.usings.value.split " ").map (lambda [pkg]
           (cond (is (first pkg) "*") (do
@@ -30,7 +30,7 @@
       ))
 
       (var toggle-show-repl (=>
-        (set! tag.hidden (not tag.hidden)) (tag.update)
+        (tag.update! {hidden: (not tag.hidden)}) (tag.update)
         (tag.code.focus) (tag.code.select)
       ))
 
