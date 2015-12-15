@@ -24,7 +24,7 @@
       (var iframe-doc (or iframe.contentDocument iframe.contentWindow.document))
 
       (tag.update! {open: (lambda [packet]
-        (tag.update! {heading: packet.heading)
+        (tag.update! {heading: packet.heading})
         (cond packet.menu (tag.update! {menu: packet.menu}))
         (iframe-doc.open)
         (iframe-doc.write (+

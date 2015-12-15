@@ -39,7 +39,7 @@
         (cond (is "%" (opts.height.slice -1))
           (var px (/ (* window.innerHeight (opts.height.slice 0 -1)) 100))
         )
-        (dom.style tag.outer.style.height (+ px "px"))
+        (dom.style! tag.outer.style.height (+ px "px"))
       ))
     )))
   </script>

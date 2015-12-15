@@ -441,7 +441,8 @@
       )
     ))
   ))
-  (dict.insert! CodeMirror.commands {
+  (var code-mirror-commands (state.morph CodeMirror.commands))
+  (code-mirror-commands.update! {
     ## paredit keys that defer if not in lisp code
     subpar_backward_delete:        (subpart "backward_delete")
     subpar_forward_delete:         (subpart "forward_delete")
@@ -528,7 +529,7 @@
     (when (net.script "ext/codemirror-modes.js") []
       (cond window.CodeMirror (do ## in case we haven't built it yet
         (dict.for-each extra-commands (lambda [key value]
-          (dict.update! CodeMirror.commands key value)
+          code-mirror-commands.update! key value)
         ))
         (init-lispz-mode)
       ))

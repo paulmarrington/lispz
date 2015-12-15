@@ -59,7 +59,7 @@ There is often need to merge multiple dictionaries together to create a new comb
 ###
 (var from-list (lambda [list key]
   (var dictionary (state))
-  (cond list (list.forEach (lambda [item] (dictionary.update! item)))
+  (cond list (list.forEach (lambda [item] (dictionary.update! item))))
   (return dictionary)
 ))
 

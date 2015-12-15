@@ -191,21 +191,24 @@
 ###
 
 (macro #set! [state! value] (#join '' state! '=' value ';'))
-
-(var #update! (lambda [stateful update]
-  ((Object.keys update).forEach (lambda [key]
-    (state.set! (get stateful key) (get update key))
-  ))
-))
 (var #morph! (lambda [obj]
   (Object.defineProperties obj {
-    update!: {value: #update!}
+    update!: {value: (lambda [update]
+      (var stateful this)
+      (cond (is arguments.length 1)
+        ((Object.keys update).forEach (lambda [key]
+          (#set! (get stateful key) (get update key))
+        ))
+      (else)
+        ()
+      )
+    )}
   })
+  (return obj)
 ))
 (global state (lambda [seed]
-  (var obj (new Object))
-  (#morph! obj)
-  (cond seed (#update! obj seed))
+  (var obj (#morph! (new Object)))
+  (cond seed (obj.update! seed))
   (return obj)
 ))
 (global state.morph! #morph!)
