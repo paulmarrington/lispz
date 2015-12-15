@@ -38,6 +38,10 @@
   ))
 
   (var mount (lambda [tags] (riot.mount.apply riot argument)))
+  (var update! (lambda [tag changes]
+    (tag.update! changes)
+    (tag.update) ## repaint
+  ))
 
   (when (net.script "ext/riot.js") []
     (return-if (not window.riot) (export {build}))
@@ -51,7 +55,7 @@
     ))))
     (when load-all [mounts]
       (riot.mount "*")
-      (export {build compile load mount})
+      (export {build compile load mount update!})
     )
   )
 )
