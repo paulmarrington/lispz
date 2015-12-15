@@ -3,7 +3,7 @@
 (var exchange (lambda [address]
   (var envelope (get store address))
   (return? envelope)
-  (return (dict.update! store address [[]]))
+  (return (store.update! address (stateful.morph! [[]])))
 ))
 
 (var add (lambda [address envelope]
@@ -15,12 +15,12 @@
 
 (var ready (promise [address]
   (return-if (length (exchange address)) (promise.resolved))
-  (dict.update! expecting address resolve-promise)
+  (expecting.update! address resolve-promise)
 ))
 
 ## remove a recipient from all attached addresses
 (var remove (lambda [recipient]
-  (dict.update! exchange address
+  ((exchange address).update!
     ((exchange address).filter (lambda [possibility]
       (return (isnt recipient possibility))
     ))
