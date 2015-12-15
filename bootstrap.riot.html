@@ -104,15 +104,13 @@
   </style>
   <script type=text/lispz>
     (var tag (state.morph! this))
-    (tag.on "mount" (=> (using [message]
+    (tag.on "mount" (=> (using [message riot]
       (message.listen opts.name (lambda [items]
-        (tag.update! {items root: (or items [[]])})
-        (tag.update)
+        (riot.update! tag {items root: (or items [[]])})
       ))
       (($ tag.dropdown).on "show.bs.dropdown" (=>
         (message.send (+ opts.name "-open"))
-        (tag.update! {items: root})
-        (tag.update)
+        (riot.update! tag {items: root})
       ))
       (tag.update! {goto: (lambda [ev]
         (cond ev.item.topic (message.send
@@ -132,10 +130,10 @@
   <tree-component name=base/>
   <script type=text/lispz>
     (var tag (state.morph! this))
-    (using [message]
+    (using [message riot]
       (message.listen opts.name (lambda [items]
-        (tag.update! {children: {base: {children: items}}})
-        (tag.update) (tag.update)
+        (riot.update! tag {children: {base: {children: items}}})
+        (tag.update) ## once more for luck
       ))
     )
   </script>
