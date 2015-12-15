@@ -4,9 +4,9 @@
   <style>
   </style>
   <script type=text/lispz>
-    (var tag this)
+    (var tag (state.morph this))
     (tag.on "mount" (=> (using  [codemirror]
-      (set! tag.cm (CodeMirror tag.wrapper opts))
+      (tag.update! {cm: (CodeMirror tag.wrapper opts)})
     )))
   </script>
 </codemirror>
