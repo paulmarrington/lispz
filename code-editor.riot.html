@@ -27,18 +27,18 @@
       (var open (lambda [packet]
         (codemirror.set-mode cm packet.key)
         (tag.update! {heading: (last (packet.key.split "/"))})
-        (set! (get localStorage filename-key) packet.key)
+        (localStorage.setItem filename-key packet.key)
         (cond packet.contents (cm.setValue packet.contents))
         (tag.update)
       ))
 
-      (var contents (+ "code-editor/" opts.name "/contents"))
-      (var filename (get localStorage filename-key))
+      (var contents-key (+ "code-editor/" opts.name "/contents"))
+      (var filename (localStorage.getItem filename-key))
       (cond filename (delay 100
-        (open {key: filename contents: (get localStorage contents)})
+        (open {key: filename contents: (localStorage.getItem contents-key)})
       ))
       (cm.on "change" (=>
-        (set! (get localStorage contents) (cm.getValue))
+        (localStorage.setItem contents-key (cm.getValue))
       ))
 
       (message.dispatch (+ "code-editor/" opts.name) { open })
