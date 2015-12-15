@@ -153,16 +153,16 @@
   function that changes ends in an exclamation mark. Use this to highlight review.
   The default builder return an empty JavaScript dictionary.
 
-      (describe "Create a new stateful object -- (var ref (state seed))" (=>
-        (var options (state {name: "undefined" address: "nowhere"}))
-        (it "is able to read members directly -- stateful.member" (=>
+      (describe "Create a new stateful object -- (var context (stateful seed))" (=>
+        (var options (stateful {name: "undefined" address: "nowhere"}))
+        (it "is able to read members directly -- context.member" (=>
           ((expect options.name).toBeEqual "undefined")
         ))
-        (it "is able to read members by key -- stateful[key]" (=>
+        (it "is able to read members by key -- context[key]" (=>
           ((expect options["name"]).toBeEqual "undefined")
         ))
         (it (+ "is able to update a dictionary with changes -- "
-          "(stateful.update! {a: dictionary})") (=>
+          "(context.update! {a: dictionary})") (=>
             (options.update! {name: "Barney Rubble" address: "Next Door"})
             ((expect options.name).toBeEqual "Barney Rubble")
             ((expect options.address).toBeEqual "Next Door")
@@ -190,7 +190,7 @@
   If you want to cheat, then on your head be it.
 ###
 
-(macro #set! [state! value] (#join '' state! '=' value ';'))
+(macro #set! [to-change! value] (#join '' to-change! '=' value ';'))
 (var #morph! (lambda [obj]
   (Object.defineProperties obj {
     update!: {value: (lambda [update]
@@ -359,7 +359,7 @@ For arrays, JavaScript provides an excellent set documented in [List Processing]
 ### Promises ###
 (global promise {})
 (macro promise [params *body] (lambda params
-  (var #callbacks (state {ok: (=>) fail: (=>)}))
+  (var #callbacks (stateful {ok: (=>) fail: (=>)}))
   (var #pledge (new Promise (lambda [ok fail] (#callbacks.update! {ok fail}))))
   (var resolve-promise (lambda [] (#callbacks.ok.apply null (*arguments 0))))
   (var reject-promise (lambda [err] (#callbacks.fail err)))
