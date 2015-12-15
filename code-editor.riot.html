@@ -18,16 +18,15 @@
     }
   </style>
   <script type=text/lispz>
-    (var tag this)
-    (set! tag.menu "CodeMirror-menu")
-    (set! tag.heading "Edit")
+    (var tag (state.morph this))
+    (tag.update! {menu: "CodeMirror-menu" heading: "Edit"})
     (tag.on "mount" (=> (using  [codemirror message dict]
       (var filename-key (+ "code-editor/" opts.name "/filename"))
       (var cm (codemirror.open tag._id tag.tags.panel.wrapper))
 
       (var open (lambda [packet]
         (codemirror.set-mode cm packet.key)
-        (set! tag.heading (last (packet.key.split "/")))
+        (tag.update! {heading: (last (packet.key.split "/"))})
         (set! (get localStorage filename-key) packet.key)
         (cond packet.contents (cm.setValue packet.contents))
         (tag.update)
