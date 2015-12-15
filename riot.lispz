@@ -43,7 +43,7 @@
     data using the state component.
     
       <script type=text/lispz>
-        (var tag (state.morph this))
+        (var tag (stateful.morph this))
         ...
         (var async-set-title (lambda [title]
           (tag.update! {title})
