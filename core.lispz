@@ -199,9 +199,13 @@
         ((Object.keys update).forEach (lambda [key]
           (#set! (get stateful key) (get update key))
         ))
-      (else)
-        ()
-      )
+      (else) (do
+        (var list (*arguments 0))
+        (list.forEach (lambda [value idx] (cond (% idx 2)
+          (var key (get list (- idx 1)))
+          (#set! (get stateful key) value)
+        )))
+      ))
     )}
   })
   (return obj)

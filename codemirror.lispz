@@ -528,9 +528,7 @@
   (when (net.script "ext/codemirror.js") []
     (when (net.script "ext/codemirror-modes.js") []
       (cond window.CodeMirror (do ## in case we haven't built it yet
-        (dict.for-each extra-commands (lambda [key value]
-          code-mirror-commands.update! key value)
-        ))
+        (code-mirror-commands.update! extra-commands)
         (init-lispz-mode)
       ))
       (export {options open close set-mode build})
