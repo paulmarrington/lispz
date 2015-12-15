@@ -19,7 +19,7 @@
 
   <script type="text/lispz">
     (using [message riot dict]
-      ((state.morph lispz) {debug: true})
+      ((stateful.morph lispz) {debug: true})
       (when (message.ready "code-editor/scratch") []
         (message.send "code-editor/scratch"
           {action: "open" key: "scratchpad.lispz" contents: null})
