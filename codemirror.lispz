@@ -1,6 +1,6 @@
 (using  [net diff_match_patch message dict github]
-  (var options (localStorage.getItem "CodeMirror-options"))
-  (cond options (var options (JSON.parse options))
+  (var options-string (localStorage.getItem "CodeMirror-options"))
+  (cond options (var options (JSON.parse options-string))
         (else)  (var options {
     lineNumbers:        true
     foldGutter:         true
@@ -86,6 +86,7 @@
       'Alt-Enter':        "lispz_run_selection"
      }
   }))
+  (var options (stateful.morph options))
   ## write changed options back to persistent storage
   (var update-options (=>
     (localStorage.setItem "CodeMirror-options" (JSON.stringify options))
@@ -298,7 +299,7 @@
     )
     set_option: (lambda [cm name value]
       (cm.setOption name value)
-      (dict.update! options name value)
+      (options.update! name value)
       (update-options)
     )
     set_mode: (lambda [cm mode]
@@ -418,12 +419,13 @@
   })
   (CodeMirror.defineMIME "text/lispz" "lispz")
   ## Update htmlmixed to understand lispz scripts
-  (cond (is (typeof (get CodeMirror.mimeModes "text/html")) "string")
-        (dict.update! CodeMirror.mimeModes "text/html" {name: "htmlmixed"}))
-  (var mode (get CodeMirror.mimeModes "text/html"))
+  (var mimeModes (stateful.morph CodeMirror.mimeModes)
+  (cond (is (typeof (get mimeModes "text/html")) "string")
+        (mimeModes.update! "text/html" {name: "htmlmixed"}))
+  (var mode (get mimeModes "text/html"))
   (cond (not mode.scriptTypes) (set! mode.scriptTypes [[]]))
   (mode.scriptTypes.push {matches: '/^text\/lispz$/' mode: "lispz"})
-  (set! CodeMirror.mimeModes.htmlmixed mode)
+  (mimeModes.update! {htmlmixed: mode})
 
   ## paredit keys that defer if not in lisp code
   (var lisp-modes {lispz: true clojure: true commonlisp: true scheme: true})
