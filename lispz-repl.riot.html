@@ -10,7 +10,7 @@
     lispz-repl .hidden {display: none}
   </style>
   <script type=text/lispz>
-      (var tag (state.morph this))
+      (var tag (stateful.morph this))
       (tag.update! {hidden: true})
       (var run (=>
         (var source (((tag.usings.value.split " ").map (lambda [pkg]
