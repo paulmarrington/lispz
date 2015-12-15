@@ -1,8 +1,8 @@
 (using  [net]
-  ( var databases (JSON.parse (or (localStorage.getItem "firebases") "{}")))
+  ( var databases (stateful.morph! (JSON.parse (or (localStorage.getItem "firebases") "{}"))))
 
   (var register (lambda [key uri]
-    (dict.update! databases key uri)
+    (databases.update! key uri)
     (localStorage.setItem "firebases" (JSON.stringify databases))
   ))
 
