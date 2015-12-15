@@ -18,7 +18,7 @@
     }
   </style>
   <script type=text/lispz>
-    (var tag (state.morph this))
+    (var tag (state.morph! this))
     (tag.update! {menu: "CodeMirror-menu" heading: "Edit"})
     (tag.on "mount" (=> (using  [codemirror message dict]
       (var filename-key (+ "code-editor/" opts.name "/filename"))
