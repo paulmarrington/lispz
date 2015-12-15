@@ -1,4 +1,4 @@
-(using  [net cdnjs]
+(using  [net cdnjs dom]
 
   (macro spy          [func]
     (return ((createSpy (#join '' '"' func '"') func).and.callThrough))
@@ -30,7 +30,7 @@
   (macro advance-clock [ms]         (jasmine.clock.tick ms))
   (macro mock-date     [date]       (jasmine.clock.mockData date))
 
-  (set! document.body.onclick (lambda [ev]
+  (document.body.addEventListener "click" (lambda [ev]
     (debug ev)
     (ev.preventDefault)
   ))
