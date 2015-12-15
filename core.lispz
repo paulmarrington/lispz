@@ -174,9 +174,9 @@
   objects need to be labelled as stateful. Use this approach as sparingly as possible. Always
   consider other alternatives first.
   
-      (describe "Creating a stateful reference -- (var ref (state.morph! this))" (=>
+      (describe "Creating a stateful reference -- (var context (stateful.morph! this))" (=>
         (var that {a: 1 b: 2})
-        (var context (state.morph! that))
+        (var context (stateful.morph! that))
         (it "looks the same as the original object" (=>
           ((expect context.a).toBeEqual that.a)
         ))
@@ -210,12 +210,12 @@
   })
   (return obj)
 ))
-(global state (lambda [seed]
+(global stateful (lambda [seed]
   (var obj (#morph! (new Object)))
   (cond seed (obj.update! seed))
   (return obj)
 ))
-(global state.morph! #morph!)
+(global stateful.morph! #morph!)
 
 ### literate: basic >> functions >> Functions without Parameters
     While I normally avoid short-cuts that don't clarify the code, I made an exception for functions
