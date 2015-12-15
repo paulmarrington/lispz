@@ -31,17 +31,17 @@
   </style>
 
   <script type=text/lispz>
-    (var tag this)
-    (tag.on "mount" (=>
-      (set! tag.context (+ "panel-" (or opts.context "default")))
-        (cond opts.height (do
-          (var px opts.height)
-          (cond (is "%" (opts.height.slice -1))
-            (var px (/ (* window.innerHeight (opts.height.slice 0 -1)) 100))
-          )
-          (set! tag.outer.style.height (+ px "px"))
-        ))
-    ))
+    (var tag (state.morph this))
+    (tag.on "mount" (=> (using [dom]
+      (tag.update! {context: (+ "panel-" (or opts.context "default"))})
+      (cond opts.height (do
+        (var px opts.height)
+        (cond (is "%" (opts.height.slice -1))
+          (var px (/ (* window.innerHeight (opts.height.slice 0 -1)) 100))
+        )
+        (dom.style tag.outer.style.height (+ px "px"))
+      ))
+    )))
   </script>
 </panel>
 
@@ -71,9 +71,9 @@
   <style>
   </style>
   <script type=text/lispz>
-    (var tag this)
+    (var tag (state.morph this))
     (cond opts.buttons (do
-      (set! tag.buttons [[]])
+      (tag.update! {buttons: [[]]})
       ((opts.buttons.split ",").forEach (lambda [title]
         (var primary (is "*" (first title))  type "default")
         (cond primary (do (var type "primary") (title.shift)))
@@ -103,28 +103,27 @@
     bars-menu a.dropdown-toggle { cursor: pointer }
   </style>
   <script type=text/lispz>
-    (var tag this root null)
+    (var tag (state.morph this))
     (tag.on "mount" (=> (using [message]
       (message.listen opts.name (lambda [items]
-        (set! root (or items [[]]))
-        (set! tag.items items)
+        (tag.update! {items root: (or items [[]])})
         (tag.update)
       ))
       (($ tag.dropdown).on "show.bs.dropdown" (=>
         (message.send (+ opts.name "-open"))
-        (set! tag.items root)
+        (tag.update! {items: root})
         (tag.update)
       ))
-      (set! tag.goto (lambda [ev]
+      (tag.update! {goto: (lambda [ev]
         (cond ev.item.topic (message.send
           (+ opts.owner "-" ev.item.topic)
           {item: ev.item owner: opts.owner action: "select"}))
         (cond ev.item.children (do
-          (set! tag.items ev.item.children)
+          (tag.update! items ev.item.children)
           (ev.currentTarget.blur)
           (ev.stopPropagation)
         ))
-      ))
+      )})
     )))
   </script>
 </bars-menu>
@@ -132,10 +131,10 @@
 <tree>
   <tree-component name=base/>
   <script type=text/lispz>
-    (var tag this)
+    (var tag (state.morph this))
     (using [message]
       (message.listen opts.name (lambda [items]
-        (set! tag.children {base: {children: items}})
+        (tag.update! {children: {base: {children: items}}})
         (tag.update) (tag.update)
       ))
     )
@@ -172,18 +171,18 @@
     }
   </style>
   <script type=text/lispz>
-    (var tag this)
+    (var tag (state.morph this))
     (using [message dict]
       (tag.on "update" (lambda [data]
         (cond (and opts.name tag.parent.children) (do
-          (set! tag.items (get tag.parent.children opts.name "children"))
+          (tag.update! {items: (get tag.parent.children opts.name "children")})
           (cond (and tag.items tag.items.length)
-                (set! tag.children (dict.from-list tag.items "title"))
+                (tag.update! {children: (dict.from-list tag.items "title")})
           )
         ))
       ))
 
-      (set! tag.goto (lambda [ev]
+      (tag.update! {goto: (lambda [ev]
         (var item ev.item.item)
         (var topic (or item.topic item.title ))
         (cond topic (message.send topic
@@ -194,7 +193,7 @@
           (tree.parentElement.classList.toggle "bg-info")
         ))
         (ev.stopPropagation)
-      ))
+      )})
     )
   </script>
 </tree-component>
@@ -225,14 +224,14 @@
     #sidebar.toggled { width: auto; padding-right: 15px; }
   </style>
   <script type=text/lispz>
-    (var tag this)
+    (var tag (state.morph this)  hamburger (state.morph tag.hamburger))
     (using [message dom]
-      (set! tag.hamburger.onclick (=>
+      (hamburger.update: {onclick: (=>
         (tag.sidebar.classList.toggle "toggled")
         (delay 300 ## must be after slide action
           (message.send "page-content-wrapper-padding" tag.sidebar.offsetWidth)
         )
-      ))
+      )})
       (tag.on "mount" (delay 300
         (message.send "page-content-wrapper-padding" tag.sidebar.offsetWidth)
       ))
@@ -254,9 +253,9 @@
   </style>
   <script type=text/lispz>
     (var tag this)
-    (using [message]
+    (using [message dom]
       (message.listen "page-content-wrapper-padding" (lambda [px]
-        (set! tag.page-content-wrapper.style.paddingLeft (+ px "px"))
+        (dom.style! tag.page-content-wrapper.style.paddingLeft (+ px "px"))
       ))
     )
   </script>
@@ -290,7 +289,7 @@
     }
   </style>
   <script type=text/lispz>
-    (var tag this)
+    (var tag (state.morph this))
     (using  [dom net jquery riot message bootstrap]
       (var bootswatch-themes [[ "cerulean" "cosmo" "cyborg" "darkly" "flatly"
         "journal" "lumen" "paper" "readable" "sandstone" "simplex" "slate"
