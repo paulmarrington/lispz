@@ -95,7 +95,7 @@
 
           ##(#) literate: test >> details >> more -- More Details
     ###
-    (var titles {})
+    (var titles (stateful {}))
 
     (var parse-titles (lambda [sections]
       (return (sections.map (lambda [section]
@@ -103,7 +103,7 @@
           (var split (part.split '/\s+--\s+/'))
           (return-if (is split.length 1) part)
           (var key (first split)  title (rest split))
-          (dict.update! titles key title)
+          (titles.update! key title)
           (return key)
         )))
         (return {title sort: (title.join " ") body: section.body})
