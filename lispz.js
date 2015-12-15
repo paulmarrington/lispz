@@ -164,12 +164,13 @@ var lispz = function() {
     } catch (err) { return compile_error(err.message, name) }
   },
   run = function(name, source) { return compile(name, source).map(eval) },
+  debug = function(debugging) { lispz.debugging = debugging }
   //######################### Script Loader ####################################//
   cache = {}, manifest = [], pending = {},
   http_request = function(uri, type, callback) {
     var req = new XMLHttpRequest()
     req.open(type, uri, true)
-    if (lispz.debug && uri.indexOf(":") == -1)
+    if (lispz.debugging && uri.indexOf(":") == -1)
       req.setRequestHeader("Cache-Control", "no-cache")
     req.onerror = function(err) {
       callback(err)
