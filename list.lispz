@@ -1,4 +1,4 @@
-### literate: lists -- Lists and Arrays
+### spec: lists -- Lists and Arrays
     Lisp was named as a shorter form of 'list processing'. When I first heard of lisp in the early 80's, I did not follow up on it as I did not see the value for my work in a language that gave priority to lists. Who needs specialised list processing when we have loops? This at a time I was using FORTH without thinking that I was treating the stack as a list. Time has moved on (a lot) and with the era of multiple cores starts, functional programming has gained new ground.
     
     Lispz compiles to JavaScript on the browser, so has very little opportunity at this time to use multiple cores. It will work happily with web workers once they become ubiquitous, but that is more the architecture of the workers than the language to use.
@@ -61,7 +61,7 @@
         
     There is a matching sequential operation for dictionaries.
 ###
-### literate: lists >> The Functional List
+### spec: lists >> The Functional List
 In Lispz the braces are reserved for function-like calls - being traditional functions and lisp macros. The atom immediately after the open brace is the name of the function or macro.
 
     (console.log "Hello world")   ## calling a javascript function to write to the console
@@ -82,7 +82,7 @@ Macros are amazing things. Addition does not expand to a function but to in-line
 
     (+ 1 2 3) ## JS==> 1 + 2 + 3
 ###
-### literate: lists >> The Raw List
+### spec: lists >> The Raw List
 
 At the risk of repeating myself (and at the risk of repeating myself), Lispz is a lightweight compiler to JavaScript. A raw list is an sequence of atoms. When compiled to Javascript the sequence will be comma separated. It is most commonly used for parameters in a function definition:
 
@@ -92,7 +92,7 @@ At the risk of repeating myself (and at the risk of repeating myself), Lispz is 
 
 The defined function, expect takes 2 parameters, being a string address and a function reference. The => at the end of this function reference is not syntax, just convenience text to show that this is a callback function.
 ###
-### literate: lists >> Array as a List
+### spec: lists >> Array as a List
 
 For a traditional list or array, use [[]]. This will translate into a normal JavaScript array with standard functional support suchs as forEach and map.
 
@@ -109,7 +109,7 @@ To see if an array contains an element, use 'in':
 
     (return-if (12 in list) "has dozen")
 ###
-### literate: lists >> flatten - Flattening Lists of Lists
+### spec: lists >> flatten - Flattening Lists of Lists
 ###
 (var flatten (lambda [list]
   (return (list.reduce (lambda [a b]
