@@ -1,4 +1,4 @@
-### literate: basics >> Syntax
+### spec: basics >> Syntax
     One of the really cool things about a lisp language is that there is very little syntax.
     On the flip-side one of the disadantages of minimal syntax is the need for work-arounds -
     and by definition a work-around is syntax. The core for lispz is 4 sorts of lists
@@ -14,7 +14,7 @@
 
         (var ref 23)
 ###
-### literate: basics >> Operators
+### spec: basics >> Operators
     A pure lisp system does not have any operators. Everything is a function or a macro.
     Because Lispz compiles to JavaScript, all unary and many binary operators are exposed.
 
@@ -35,7 +35,7 @@
 
         (return (or value "default value string"))
 ###
-### literate: developer >> debug
+### spec: developer >> debug
   `(debug)` is a development helper macro. It will print a stack trace
   and the contents of any parameters on the console. If you left-align it
   then it will be easy to find later to delete.
@@ -51,19 +51,19 @@
 ###
 (macro debug [*msg] (console.trace (#join ',' *msg)))
 
-### literate: basic >> References
+### spec: basic >> References
   @TODO
 ###
 (macro var [*list] (#join '' 'var ' (#pairs *list '=' ',') ';'))
 
-### literate: basic >> References >> Global References
+### spec: basic >> References >> Global References
   @TODO
 ###
 (macro global [name value]
   (#join '' 'lispz.globals.' name '=' value)
   (macro name [&params] (#join '' 'lispz.globals.' name '(' &params ')')))
 
-### literate: basic >> Functions
+### spec: basic >> Functions
 
     As I am sure I mentioned before the default lisp/lispz element is the list surrounded by brackets.
     In most cases in lisp and all cases in list the first element of the list is a reference to a function.
@@ -95,16 +95,16 @@
 ###
 (macro lambda [params *body] (#join '' '(function(' params '){' *body '})'))
 
-### literate: basic >> Retrieval - can be used for objects and arrays
+### spec: basic >> Retrieval - can be used for objects and arrays
   @TODO
 ###
 (macro get [dict *key] (#join '' dict '[' (#join '][' *key) ']'))
 
-### literate: conditional processing ###
+### spec: conditional processing ###
 (macro empty? [list] (not list.length))
 (macro defined? [field] (!== (typeof field) "undefined"))
 
-### literate: basics -- Conditionals
+### spec: basics -- Conditionals
     Lispz boasts only one traditional conditional operator plus a number of
     macros for conditional assignment and function return. The operator,
     cond takes pairs of lists where the first is the condition and the
@@ -130,7 +130,7 @@
 )
 (macro else [] 'true')
 
-### literate: basic >> state -- Stateful Containers
+### spec: basic >> state -- Stateful Containers
   State is the elephant in the room - particularly in the functional programming paradigm.
   When you have state that can be changed from outside, then any function that reads from it
   no longer has referential integrity. This means that identical calls may not return identical
@@ -217,7 +217,7 @@
 ))
 (global stateful.morph! #morph!)
 
-### literate: basic >> functions >> Functions without Parameters
+### spec: basic >> functions >> Functions without Parameters
     While I normally avoid short-cuts that don't clarify the code, I made an exception for functions
     without parameters. I kept forgetting the enpty square brackets.
 
@@ -225,7 +225,7 @@
 ###
 (macro =>     [*body]        (#join '' '(function(){' *body '})'))
 
-### literate: basic >> functions >> Variable Parameter Lists
+### spec: basic >> functions >> Variable Parameter Lists
     Like JavaScript, lispz function definitions specify a fixed number of arguments.
     To gain access to the full list of arguments, use *arguments, with a starting index.
 
@@ -236,7 +236,7 @@
 (macro closure [params *body] (#join '' '(function(' params '){' *body '})(' params ')'))
 (macro return  [value] (#join '' 'return ' value '\n'))
 
-### literate: basics >> functions >> Return if Exists
+### spec: basics >> functions >> Return if Exists
     As a functional language, most decisions are made by small single-focus functions.
     As such, conditional returns are a useful shortcut. To this end, return? returns
     a value if it not false, null or an empty container.
@@ -245,7 +245,7 @@
 ###
 (macro return? [value] (cond value (return value)))
 
-### literate: basics >> functions >> Return if ...
+### spec: basics >> functions >> Return if ...
     While return-if has aconditional pair. If the first is true the second is returned.
 
         (return-if (not calculated-value) default-value)
@@ -254,7 +254,7 @@
 
 (macro new [cls *params] (#join '' '(new ' cls '(' (#join ',' *params) '))'))
 
-### literate: functions >> chaining -- Chaining functions
+### spec: functions >> chaining -- Chaining functions
   In a functional style we often call multiple functions to incrementally move
   from problem to solution. Each step takes the results from the step before and
   transforms it. It is allways a good idea to have short functions that do one
@@ -282,13 +282,14 @@
   (return (functions.reduce link null))
 ))
 
-### literate: basics >> Operators ###
+### spec: basics >> Operators ###
 (macro not [value] (#join '' '!(' value ')'))
 (macro in [test against] (#join '' '(' test ' in ' against ')'))
 (macro instance-of [type obj] (#join '' '(' obj ' instanceof ' type ')'))
 
 (macro contains [str substr] (isnt -1 (str .indexOf substr)))
-### literate: basics >> Iteration
+
+### spec: basics >> Iteration
 
 In the functional way of programming, loop style iteration is (almost) never needed.
 Because of the 'almost' and to provide for those week on functional will,
@@ -306,18 +307,18 @@ For arrays, JavaScript provides an excellent set documented in [List Processing]
 ## Javascript does not (yet) have tail recursion - it is scheduled for 2016
 (macro while [test body] (#join '' 'while(' test '){' body '}'))
 
-### literate: List and dictionary manipulation ###
+### spec: List and dictionary manipulation ###
 (macro length [list] (#join '' list '.length'))
 (macro first [list] (get list 0))
 (macro rest [list] (list .slice 1))
 (macro last [list] (get (list .slice -1) 0))
 (global slice (lambda [list from to]  (return ([[]].slice.call list from to))))
 
-### literate: Modules >> Module Structure
+### spec: Modules >> Module Structure
 
 All Lispz source files are modules. They are loaded on first request by client code. Subsequent requests returns a cached reference to the exports.
-
-### literate: Modules >> Module Usage
+###
+### spec: Modules >> Module Usage
 
 Every module must include an export statement including a dictionary of symbols to be exported
 
@@ -366,7 +367,7 @@ To access external modules, wrap your code in 'using'. Data and functions export
 ###
 (global random (lambda [range] (return (Math.floor (* (Math.random) range)))))
 
-### literate: async -- Asynchronous Support
+### spec: async -- Asynchronous Support
 There are three kinds of people in the world - those that can count and those who can't. And there are two ways to treat asynchronous events at the language/platform level. Either stop the process while waiting for something...
 
     (while (read) (print)) ## this won't work in a JavaScript engine
@@ -381,7 +382,7 @@ By contrast the second approach is called asynchronous. It takes the mind-bendin
 
 One more tale before getting back to lispz. Microsoft Windows prior to '95 used what they called "cooperative multi-processing". This meant that the operating system never took the CPU away from a program without the program first giving permission. Hmmm, very similar to a JavaScript machine based on asynchronous methods, isn't it. The complaint then is that badly behaved applications could freeze the UI by not releasing the CPU often enough. Since JavaScript runs on the UI thread it can also freeze the UI in the same way. A well behaved program, on the other hand, is more efficient and far easier to write.
 ###
-### literate: async >> Callbacks
+### spec: async >> Callbacks
 Callbacks provide the simplest mechanism for asynchronous responses. Any function that want to initiate something that will complete at an undetermined later time can take a reference to a function to call at that time (or thereabouts)
 
     (delay 2000 (=> (console.log "delay over")))
@@ -405,7 +406,7 @@ Many callbacks producers follow the node-js approach of providing error and resp
 4. Exceptions are lost if not processed within the callback
 5. Actions triggered before the callback is set are lost
 ###
-### literate: async >> Promises
+### spec: async >> Promises
 ES2015 has introduced native promises into the language. As of November 2015 it is available on all mainstream browsers. Even if not, there are shims that work in an identical(ish) manner.
 
 Functions that want to return information in an asynchronous manner return a promise object. This object can be passed around and whoever needs the data it will or does contain can ask for it with a callback function.
