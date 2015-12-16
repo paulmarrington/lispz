@@ -1,17 +1,17 @@
-### literate: Introduction ###
-### literate: basics -- The Basics ###
-### literate: lists -- List Processing ###
-### literate: Macros ###
-### literate: Modules ###
-### literate: async -- Asynchronous Programming ###
-### literate: riot -- UI Components with RIOT ###
-### literate: bootstrap -- Bootstrap Integration ###
-### literate: codemirror -- CodeMirror Integration ###
-### literate: developer -- Developer Tools ###
-### literate: Deployment ###
-### literate:  ###
+### spec: Introduction ###
+### spec: basics -- The Basics ###
+### spec: lists -- List Processing ###
+### spec: Macros ###
+### spec: Modules ###
+### spec: async -- Asynchronous Programming ###
+### spec: riot -- UI Components with RIOT ###
+### spec: bootstrap -- Bootstrap Integration ###
+### spec: codemirror -- CodeMirror Integration ###
+### spec: developer -- Developer Tools ###
+### spec: Deployment ###
+### spec:  ###
 
-### literate: Introduction
+### spec: Introduction
 # Why another *&^% language?
 **For Fun:**
 It is fun to create something new - even when you are following paths well trodden by others for decades.
