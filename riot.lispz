@@ -1,4 +1,4 @@
-### literate: Riot
+### spec: Riot
 
 [Riot](http://riotjs.com) is a tiny UI library then provides the best of Web components (polymer) and react in a package 15% of the size.
 
@@ -10,7 +10,7 @@ Riot, like React it works with a virtual DOM and only updates changes to the rea
 
 Small tight API that provides all needed web component functionality for reactive views, events and routing.
 
-### literate: Riot >> Structure of a RIOT/Lispz Program
+### spec: Riot >> Structure of a RIOT/Lispz Program
 
 Riot components have the extension *.riot.html*. They are loaded from the HTML file or from another component. In the HTML, give a custom tag the class or *riot* and it will load a component file of the same name - including any other tags in the file. The html below will load *bootstrap.riot.html* and *code-editor.riot.html*, while *page-content* does not need a riot class as it is defined withing *bootstrap*.
 
@@ -40,7 +40,7 @@ Riot uses plain JavaScript inside {} as a templating solution. The *opts* dictio
 
 Styles are global (unlike *true* web components). This is easily overcome using explicit name-spacing as above.
 
-### literate: Riot >> Using other languages
+### spec: Riot >> Using other languages
 
 Scripting can be any language of choice that runs on the browser. JavaScript, Lispz, Es6 (with babel) and CoffeeScript are available out-of-the-box. For the latter two you will need to load the compiler by *(using babel coffeescript)* in the startup code. Other languages can be added as long as they compile code on the browser.
 
@@ -89,7 +89,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
 
   (var mount (lambda [tags] (riot.mount.apply riot argument)))
   
-  ### literate: riot >> Trigger Display Changes
+  ### spec: riot >> Trigger Display Changes
     Given a component context called *tag*, it is possible to change context
     data using the state component.
     
@@ -120,7 +120,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
     (tag.update) ## repaint
   ))
   
-  ### literate: async >> Events
+  ### spec: async >> Events
     Events follow [the observer pattern](https://en.wikipedia.org/wiki/Observer_pattern). Lispz provides access to the light-weight version in Riot. If you use Riot for UI components, the custom tags are always observers. You don't need to use riot to make use of events. You can either create an observable or make any object in the system observable.
     
         (using [riot]
