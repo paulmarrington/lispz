@@ -1,4 +1,4 @@
-### literate: literate - Literate Programming
+### spec: literate - Literate Programming
   **Lispz** supports a form of Donald Knuth's Literate programming. Use the
   *literate* annotation and document to your heart's content. The line of
   the annotation is the title.
@@ -17,7 +17,7 @@
   (var loaded (net.script "ext/showdown.js"))
   (catch loaded [] (export {build}))
   (when  loaded []
-    ### literate: literate >> to-html
+    ### spec: literate >> to-html
       The core process is to initialise the markdown to html compiler provide
       the conversion with ```to-html```. The options default if not provided.
       The full list is available on
@@ -42,7 +42,7 @@
       )))
       (return ((converter options).makeHtml ((list.flatten markdown).join "")))
     ))
-    ### literate: literate >> options
+    ### spec: literate >> options
       You can pass in a dictionary of options that will change how markdown
       is converted to HTML. Most are explicit:
 
@@ -73,7 +73,7 @@
       })
       (return (new showdown.Converter (dict.merge defaults (or options {}))))
     ))
-    ### literate: literate >> title-syntax -- Title Syntax
+    ### spec: literate >> title-syntax -- Title Syntax
       Literate programming requires the documentation to be with the code.
       In most cases the code clearly defines the how without additional
       comments. Thw why, however, is still in the province of documentation.
@@ -84,16 +84,16 @@
       Sections are reference by a key word, with a double-right-arrow
       between inner sections.
 
-            ##(#) literate: test -- The title of a test section
-            ##(#) literate: test >> details -- A detailed test title
-            ##(#) literate: test >> details >> more
+            ##(#) spec: test -- The title of a test section
+            ##(#) spec: test >> details -- A detailed test title
+            ##(#) spec: test >> details >> more
 
       To make it easier to repeat titles, they are key-word references.
       Before they can be used they need to expand to the full title.
       At some point when that title section is the last on the chain,
       append a double-minus and the full title name.
 
-          ##(#) literate: test >> details >> more -- More Details
+          ##(#) spec: test >> details >> more -- More Details
     ###
     (var titles (stateful {}))
 
@@ -110,21 +110,21 @@
       )))
     ))
 
-    ### literate: literate >> sort-by-title -- Sort document by title
+    ### spec: literate >> sort-by-title -- Sort document by title
       Literate sections in the soure may need to be put together in a
       different order to make the document. In this way sections will
       only show once, even if they are referenced in different places
       when defining sub-sections.
     ###
     (var sort-by-title (lambda [sections]
-      ### literate:
+      ### spec:
         Note that this changes the contents of the parameter - not perfect
         but acceptable since the array was created by the preceding function.
       ###
       (sections.sort (lambda [a b] (a.sort.localeCompare b.sort)))
       (return sections)
     ))
-    ### literate: literate >> merge-titles -- Merge titles into the Markdown
+    ### spec: literate >> merge-titles -- Merge titles into the Markdown
       In the end a title is a title - being lines starting with one or more
       hashes where the number indicates the heading level. We must inspect
       each title and remove the common ancestores before printing the
