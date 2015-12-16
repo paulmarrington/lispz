@@ -312,11 +312,34 @@ For arrays, JavaScript provides an excellent set documented in [List Processing]
 (macro rest [list] (list .slice 1))
 (macro last [list] (get (list .slice -1) 0))
 (global slice (lambda [list from to]  (return ([[]].slice.call list from to))))
-### literate: module import ###
+
+### literate: Modules >> Module Structure
+
+All Lispz source files are modules. They are loaded on first request by client code. Subsequent requests returns a cached reference to the exports.
+
+### literate: Modules >> Module Usage
+
+Every module must include an export statement including a dictionary of symbols to be exported
+
+    (var one (=> ...)
+    (var two 22)
+    (export {one two})
+
+If a module requires other asynchronous operations it can defer the export statement until they are ready.
+
+    (lispz.script "ext/jquery.js" (=> (export { ... })))
+
+To access external modules, wrap your code in 'using'. Data and functions exported from a module are linked to the import name.
+
+    (using [dict net list]
+      (var combined (dict.merge d1 d2 d3))
+    )
+    
+...and that is all there is to it.
+###
 (macro using [modules *on_ready] (lispz.load (#join '' '"' modules '"')
   (=> (#requires modules) *on_ready)
 ))
-
 ### Modules must export to continue processing ###
 (macro export [exports] (#join '' '__module_ready__(' exports ')'))
 
