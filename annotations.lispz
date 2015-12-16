@@ -9,7 +9,7 @@
   
       (describe "(annotations.retrieve \"spec\" source-code)" (=>
         (using [annotations]
-          (it "retrieves a list {title: \"..\" body: \"..\"" (=>
+          (it "retrieves a list {title: \"..\" body: \"..\"}" (=>
             (var source window.lispz_modules.annotations)
             (var list (annotations.retrieve "spec" source)
             (expect list.length).toBeGreaterThan(0)
