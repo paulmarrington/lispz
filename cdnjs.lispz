@@ -1,4 +1,10 @@
-### Load packages from CDN and other web sources - listing them when possible ###
+### spec: Packages >> External >> CDNJS
+  Lispz stands on the shoulders of giants. Creating a system using Lispz will require
+  access to other JavaScript and CSS packaged from the Internet. The lispz packaging
+  system will create, update and combine external code and save it locally. One of the
+  major sources for code is [cdnjs.com](https://cdnjs.com/). It includes an API so
+  that the most recent non-alpha version can be chose on create or refresh.
+###
 (using [net github]
   (var cdnjs-actors {
     list-all: (promise [repo path]
