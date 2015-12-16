@@ -38,7 +38,7 @@
   ))
 
   (var mount (lambda [tags] (riot.mount.apply riot argument)))
-  ### riot >> Trigger Display Changes
+  ### literate: riot >> Trigger Display Changes
     Given a component context called *tag*, it is possible to change context
     data using the state component.
     
@@ -69,7 +69,7 @@
     (tag.update) ## repaint
   ))
   
-  ### async >> Events
+  ### literate: async >> Events
     Events follow [the observer pattern](https://en.wikipedia.org/wiki/Observer_pattern). Lispz provides access to the light-weight version in Riot. If you use Riot for UI components, the custom tags are always observers. You don't need to use riot to make use of events. You can either create an observable or make any object in the system observable.
     
         (using [riot]
