@@ -18,7 +18,7 @@
 ###
 ### spec: annotations >> Processing Source Code
   The retrieve function processes source files one at a time. It returns an
-  array of objects
+  array of objects containing title and body members.
   
       (describe "(annotations.retrieve \"spec\" source-code)" (=>
         (it "retrieves a list {title: \"..\" body: \"..\"}" (=>
