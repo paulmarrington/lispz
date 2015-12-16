@@ -1,4 +1,4 @@
-### literate: macros >> What is a Macro?
+### spec: macros >> What is a Macro?
 
 The term "macro" includes text substitution (e.g. ASM and C) and syntactic macros. Lisp has had the latter proposed 1963 or soon after. By working on the abstract syntax tree (AST), a macro has the full faculties and syntax of the language to effectively extend the language. Another way of looking at it is that lisp macros run lisp code during the compile to modify the resulting program. Yes, I know this is still not clear. Read https://en.wikipedia.org/wiki/Macro_%28computer_science%29 for a more informative perspective.
 
@@ -19,7 +19,7 @@ This example would also work with a text substitution macro system, but this one
 This generates the JavaScript output directly as #join is an immediate function called during the
 ast to JavaScript phase.
 
-### literate: macros >> Defining a Macro
+### spec: macros >> Defining a Macro
 
 A macro is defined by giving it a name, list of parameters and a body. In it's simplest form the parameters are substituted into the body at reference time. It is like a function expanded in-line.
 
@@ -33,12 +33,12 @@ Parameters that start with star must be the last in the list and encapsulate all
 
     (lambda [a b] (var c (+ a b)) (return c))
 
-### literate: macros >> #join
+### spec: macros >> #join
 Many macros translate lispz directly to JavaScript by mixing pure JavaScript with macro parameters that can convert themselves to JavaScript. It is an immediate function - being one that runs during the compile phase. The first parameter is the text to be used between the segments. In this context it is usually empty. The first parameter along with the JavaScript are wrapped in single quotes so that they are left as-is in the JavaScript output.
 
     (macro set! [name value] (#join '' name '=' value ';'))
 
-### literate: macros >> #pairs
+### spec: macros >> #pairs
 Pairs is more rarely used. It takes a list and creates output based on pairs in that list. Hmmm, that is not very clear. Best use an example then. 
 
     (macro var (*list) (#join '' 'var ' (#pairs *list '=' ',') ';'))
@@ -46,7 +46,7 @@ Pairs is more rarely used. It takes a list and creates output based on pairs in 
     
 Pairs takes a list, the code within each pair and the string between pairs. In this example, = is between the two items in the pair and , is between pairs. If you need it clearer than that, try meditating on the two sample lines above - or don't use #pairs.
 
-### literate: macros >> immediate
+### spec: macros >> immediate
 
 Macros allow you to change lispz by adding new build-in commands. By their nature, macros allow the use of lispz at compile time to generate the resulting lispz code. Most macros are to generate JavaScipt
 
