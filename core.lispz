@@ -100,11 +100,11 @@
 ###
 (macro get [dict *key] (#join '' dict '[' (#join '][' *key) ']'))
 
-### conditional processing ###
+### literate: conditional processing ###
 (macro empty? [list] (not list.length))
 (macro defined? [field] (!== (typeof field) "undefined"))
 
-### basics -- Conditionals
+### literate: basics -- Conditionals
     Lispz boasts only one traditional conditional operator plus a number of
     macros for conditional assignment and function return. The operator,
     cond takes pairs of lists where the first is the condition and the
@@ -282,14 +282,13 @@
   (return (functions.reduce link null))
 ))
 
-### Operators ###
+### literate: basics >> Operators ###
 (macro not [value] (#join '' '!(' value ')'))
 (macro in [test against] (#join '' '(' test ' in ' against ')'))
 (macro instance-of [type obj] (#join '' '(' obj ' instanceof ' type ')'))
 
 (macro contains [str substr] (isnt -1 (str .indexOf substr)))
-###
-# basics >> Iteration
+### literate: basics >> Iteration
 
 In the functional way of programming, loop style iteration is (almost) never needed.
 Because of the 'almost' and to provide for those week on functional will,
@@ -307,13 +306,13 @@ For arrays, JavaScript provides an excellent set documented in [List Processing]
 ## Javascript does not (yet) have tail recursion - it is scheduled for 2016
 (macro while [test body] (#join '' 'while(' test '){' body '}'))
 
-### List and dictionary manipulation ###
+### literate: List and dictionary manipulation ###
 (macro length [list] (#join '' list '.length'))
 (macro first [list] (get list 0))
 (macro rest [list] (list .slice 1))
 (macro last [list] (get (list .slice -1) 0))
 (global slice (lambda [list from to]  (return ([[]].slice.call list from to))))
-### module import ###
+### literate: module import ###
 (macro using [modules *on_ready] (lispz.load (#join '' '"' modules '"')
   (=> (#requires modules) *on_ready)
 ))
@@ -344,7 +343,7 @@ For arrays, JavaScript provides an excellent set documented in [List Processing]
 ###
 (global random (lambda [range] (return (Math.floor (* (Math.random) range)))))
 
-### async -- Asynchronous Support
+### literate: async -- Asynchronous Support
 There are three kinds of people in the world - those that can count and those who can't. And there are two ways to treat asynchronous events at the language/platform level. Either stop the process while waiting for something...
 
     (while (read) (print)) ## this won't work in a JavaScript engine
@@ -359,7 +358,7 @@ By contrast the second approach is called asynchronous. It takes the mind-bendin
 
 One more tale before getting back to lispz. Microsoft Windows prior to '95 used what they called "cooperative multi-processing". This meant that the operating system never took the CPU away from a program without the program first giving permission. Hmmm, very similar to a JavaScript machine based on asynchronous methods, isn't it. The complaint then is that badly behaved applications could freeze the UI by not releasing the CPU often enough. Since JavaScript runs on the UI thread it can also freeze the UI in the same way. A well behaved program, on the other hand, is more efficient and far easier to write.
 ###
-### async >> Callbacks
+### literate: async >> Callbacks
 Callbacks provide the simplest mechanism for asynchronous responses. Any function that want to initiate something that will complete at an undetermined later time can take a reference to a function to call at that time (or thereabouts)
 
     (delay 2000 (=> (console.log "delay over")))
@@ -383,7 +382,7 @@ Many callbacks producers follow the node-js approach of providing error and resp
 4. Exceptions are lost if not processed within the callback
 5. Actions triggered before the callback is set are lost
 ###
-### async >> Promises
+### literate: async >> Promises
 ES2015 has introduced native promises into the language. As of November 2015 it is available on all mainstream browsers. Even if not, there are shims that work in an identical(ish) manner.
 
 Functions that want to return information in an asynchronous manner return a promise object. This object can be passed around and whoever needs the data it will or does contain can ask for it with a callback function.
