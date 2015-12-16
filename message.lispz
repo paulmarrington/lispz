@@ -1,4 +1,4 @@
-### async >> Messaging
+### literate: async >> Messaging
 Lispz includes a complete decoupled communications solution based on messaging. The base version is in-browser, but the API is designed to work across systems with RESTful or WebSockets. The UI components use messaging to communicate between components that are not linked, so cannot make more direct connections.
 
 Here a code editor will wait on messages to open a new 'file'. THe message includes a name unique to each code editor. The dictionary at the end can include any number of named requests. Each associated function takes a packet whose content format is known by clients and services.
