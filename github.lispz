@@ -4,19 +4,18 @@
     (return (+ "https://cdn.rawgit.com/" project "/" version "/" filepath))
   ))
   (var repo (lambda [username password project]
-    (var github (new Github {username password auth: "basic"}))
-    (var repo (github.getRepo.apply null (project.split "/")))
-    (set! repo.lispz {github username password project branch: "master"})
-    (return repo)
+    (var auth (new Github {username password auth: "basic"}))
+    (var github (auth.getRepo.apply null (project.split "/")))
+    (return (stateful {github auth username password project branch: "master"}))
   ))
   ## Set the branch to use for repo - defaults to master
   (var branch (promise [repo branch-name]
-    (set! repo.lispz.branch branch-name)
-    (repo.branch branch-name (lambda [err result] (resolve-promise)))
+    (repo.update! {branch: branch-name})
+    (repo.github branch branch-name (lambda [err result] (resolve-promise)))
   ))
   ## list files in a specific path on the repo
   (var list-dir (promise.callback [repo path]
-    (repo.contents repo.lispz.branch path callback)
+    (repo.github.contents repo.branch path callback)
   ))
   (var list-all (promise [repo path single-level]
     (var result [[]])
@@ -37,17 +36,17 @@
     (when (list-path path) [] (resolve-promise result))
   ))
   (var read (promise.callback [repo path]
-    (repo.read repo.lispz.branch path callback)
+    (repo.github.read repo.branch path callback)
   ))
   (var update (lambda [repo]
-    (return-if (is repo.lispz.branch repo.lispz.username) (promise.resolved))
-    (var branch-name (or repo.lispz.username "master"))
+    (return-if (is repo.branch repo.username) (promise.resolved))
+    (var branch-name (or repo.username "master"))
     (return (branch repo branch-name))
   ))
   (var write (promise.callback [repo path contents comment]
     (return-if (not contents.length) (promise.resolved))
     (var encoded (unescape (encodeURIComponent contents)))
-    (repo.write repo.lispz.branch path encoded comment callback)
+    (repo.github.write repo.branch path encoded comment callback)
   ))
   ## preprocess a file to generate css or js dependent on extension
   (var preprocessors {
@@ -148,8 +147,8 @@
   (var github-actors {
     list-all read
     repo: (lambda [target-repo name]
-      (return (repo target-repo.lispz.username
-        target-repo.lispz.password name
+      (return (repo target-repo.username
+        target-repo.password name
       ))
     )
   })
@@ -217,10 +216,10 @@
       branch list-all list-dir cdn-uri build builder repo read write update
       build-github retriever grunt preprocessors
       move: (promise.callback [repo from to]
-        (repo.move repo.lispz.branch from to callback)
+        (repo.github.move repo.branch from to callback)
       )
       delete: (promise.callback [repo path]
-        (repo.remove repo.lispz.branch path script callback)
+        (repo.github.remove repo.branch path script callback)
       )
     })
   )
