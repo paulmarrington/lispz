@@ -346,7 +346,9 @@
     (CodeMirror.autoLoadMode cm mode)
   ))
 
-  ## CodeMirror lispz mode
+  ### codemirror >> codemirror-lispz-mode -- CodeMirror Lispz Mode
+    @TODO
+  ###
   (var define-lispz-editing-mode (=>
     (CodeMirror.defineSimpleMode "lispz" {
       start: [[
@@ -377,7 +379,28 @@
       ]]
       meta: { lineComment: "## " dontIndentStates: [["comment" "string"]] }
     })
+    (var token (lambda [stream state]
+      ## TBD
+    ))
+    (var indent (lambda [state]
+      (return (or state.indentation 0))
+    ))
+    (var closeBrackets {pairs: "()[]{}\"\"''"})
+    (var lineComment "## ")
+    (var blockCommentStart "###")
+    (var blockCommentEnd "###")
+    (var blockCommentLead "")
+    (var blankLine (lambda [state]))
+    (var copyState (lambda [state]
+      (return (CodeMirror.copyState state.mode state))
+    ))
+    (var electricChars "") ## or electricInput regexp
+    (var innerMode (lambda [state]
+      (return {state mode: state.mode})
+    ))
+    
     (CodeMirror.defineMode "lispz" (lambda [config mode]
+      (var startState (=> (return {config mode})))
       (return {startState token indent closeBrackets lineComment
         blockCommentStart blockCommentEnd blockCommentLead
         blankLine copyState indent electricChars innerMode
