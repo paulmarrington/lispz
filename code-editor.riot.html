@@ -1,3 +1,8 @@
+<!-- ### spec: components >> Code Editor
+  This is a web component with a header, footer, menu and code editor.
+  At the moment it wraps CodeMirror, but it could just as easily
+  support Ace or FirePad.
+  ### -->
 <code-editor>
   <panel height={ opts.height } heading={ heading }
       menu={ menu } owner={ _id }>
@@ -18,7 +23,7 @@
     }
   </style>
   <script type=text/lispz>
-    (var tag (state.morph! this))
+    (var tag (stateful.morph! this))
     (tag.update! {menu: "CodeMirror-menu" heading: "Edit"})
     (tag.on "mount" (=> (using  [codemirror message dict]
       (var filename-key (+ "code-editor/" opts.name "/filename"))
