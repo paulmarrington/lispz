@@ -42,48 +42,8 @@
       'Ctrl-Home':        "goLineLeft"
       'Ctrl-Shift-Home':  "goLineLeftSmart"
       'Ctrl-End':         "goLineRight"
-      ## paredit keys that defer if not in lisp code
-      'Backspace':        "subpar_backward_delete"
-      'Delete':           "subpar_forward_delete"
-      'Ctrl-D':           "subpar_forward_delete"
 
-      'Shift-9':          "subpar_open_bracket"
-      '[':                "subpar_open_square_bracket"
-      'Shift-[':          "subpar_open_braces"
-
-      'Shift-0':          "subpar_close_bracket"
-      ']':                "subpar_close_square_bracket"
-      'Shift-]':          "subpar_close_braces"
-
-      'Shift-\'':          "subpar_double_quote"
-
-      'Ctrl-Alt-F':       "subpar_forward"
-      'Ctrl-Alt-B':       "subpar_backward"
-      'Ctrl-Alt-U':       "subpar_backward_up"
-      'Ctrl-Alt-D':       "subpar_forward_down"
-      'Ctrl-Alt-P':       "subpar_backward_down"
-      'Ctrl-Alt-N':       "subpar_forward_up"
-
-      'Shift-Ctrl-[':     "subpar_backward_barf"
-      'Ctrl-Alt-Right':   "subpar_backward_barf"
-      'Ctrl-]':           "subpar_backward_barf"
-
-      'Shift-Ctrl-]':     "subpar_forward_barf"
-      'Ctrl-Left':        "subpar_forward_barf"
-
-      'Shift-Ctrl-9':     "subpar_backward_slurp"
-      'Ctrl-Alt-Left':    "subpar_backward_slurp"
-      'Ctrl-[':           "subpar_backward_slurp"
-
-      'Shift-Ctrl-0':     "subpar_forward_slurp"
-      'Ctrl-Right':       "subpar_forward_slurp"
-
-      'Alt-Up':           "subpar_splice_delete_backward"
-      'Alt-Down':         "subpar_splice_delete_forward"
-      'Alt-S':            "subpar_splice"
-      'Ctrl-Alt-/':       "subpar_indent_selection"
-
-      'Alt-Enter':        "lispz_run_selection"
+      'Alt-Enter':        "run_selection"
      }
   }))
   (var options (stateful.morph options))
@@ -428,67 +388,25 @@
   (mimeModes.update! {htmlmixed: mode})
 
   ## paredit keys that defer if not in lisp code
-  (var lisp-modes {lispz: true clojure: true commonlisp: true scheme: true})
-  (set! subpar.core.run_selection (lambda [cm]
+  (var run_selection (lambda [cm]
     (cond (cm.somethingSelected) (var source (cm.doc.getSelection))
           (else)                 (var source (cm.doc.getValue))
     )
-    (console.log (lispz.run "lispz-repl" source))
+    (var mode (cm.getModeAt (cm.getCursor))  result mode)
+    (cond
+      (is "lispz" mode)  (var result (lispz.run "lispz-repl" source))
+    )
+    (console.log result)
   ))
-  (var subpart (lambda [cmd opt]
-    (return (lambda [cm]
+  (var lisp-modes {lispz: true clojure: true commonlisp: true scheme: true})
+  (var is-lisp-like (lambda [cm]
       (var mode (cm.getModeAt (cm.getCursor)))
-      (cond (get lisp-modes mode.name)  ((get subpar.core cmd) cm opt)
-            (else)                      (return CodeMirror.Pass)
-      )
-    ))
+      (return (get lisp-modes mode.name))
   ))
   (var code-mirror-commands (state.morph CodeMirror.commands))
   (code-mirror-commands.update! {
-    ## paredit keys that defer if not in lisp code
-    subpar_backward_delete:        (subpart "backward_delete")
-    subpar_forward_delete:         (subpart "forward_delete")
-    subpar_forward_delete:         (subpart "forward_delete")
-
-    subpar_open_bracket:           (subpart "open_expression" "()")
-    subpar_open_square_bracket:    (subpart "open_expression" "[]")
-    subpar_open_braces:            (subpart "open_expression" "{}")
-
-    subpar_close_bracket:          (subpart "close_expression" ")")
-    subpar_close_square_bracket:   (subpart "close_expression" "]")
-    subpar_close_braces:           (subpart "close_expression" "}")
-
-    subpar_double_quote:           (subpart "double_quote")
-
-    subpar_forward:                (subpart "forward")
-    subpar_backward:               (subpart "backward")
-    subpar_backward_up:            (subpart "backward_up")
-    subpar_forward_down:           (subpart "forward_down")
-    subpar_backward_down:          (subpart "backward_down")
-    subpar_forward_up:             (subpart "forward_up")
-
-    subpar_backward_barf:          (subpart "backward_barf")
-    subpar_backward_barf:          (subpart "backward_barf")
-    subpar_backward_barf:          (subpart "backward_barf")
-
-    subpar_forward_barf:           (subpart "forward_barf")
-    subpar_forward_barf:           (subpart "forward_barf")
-
-    subpar_backward_slurp:         (subpart "backward_slurp")
-    subpar_backward_slurp:         (subpart "backward_slurp")
-    subpar_backward_slurp:         (subpart "backward_slurp")
-
-    subpar_forward_slurp:          (subpart "forward_slurp")
-    subpar_forward_slurp:          (subpart "forward_slurp")
-
-    subpar_splice_delete_backward: (subpart "splice_delete_backward")
-    subpar_splice_delete_forward:  (subpart "splice_delete_forward")
-    subpar_splice:                 (subpart "splice")
-    subpar_indent_selection:       (subpart "indent_selection")
-
-    lispz_run_selection:           (subpart "run_selection")
+    run_selection:           run_selection
   })
-  ))
 
   ## elm script has a bug - restore for a later version.
   ## tern is for javascript features - overrides console.log
