@@ -379,8 +379,29 @@
       ]]
       meta: { lineComment: "## " dontIndentStates: [["comment" "string"]] }
     })
+    
+    (var in-multi-line-string (lambda [stream state]
+      (cond (not (stream.skipTo "\"")) (do (stream.skipToEnd) (return "string")))
+      (cond (isnt ((stream.current).slice -2) "\\\"")
+        (do (state.update! {context: null})) (return "string")
+      )
+      (return (in-multi-line-string stream state))
+    ))
+    
+    (var in-multi-line-comment (lambda [stream state]
+      (cond (not (stream.skipTo "#")) (do (stream.skipToEnd) (return "comment")))
+      (cond (stream.match "###")      (do (state.update! {context: null})) (return "comment"))
+      (return (in-multi-line-comment stream state))
+    ))
+
     (var token (lambda [stream state]
-      ## TBD
+      (cond (stream.sol) (state.update! {indentation: (stream.indentation)}))
+      (return? (not (stream.eatSpace)))
+      (cond
+        (is state.context "string")  (return (in-multi-line-string stream state)))
+        (is state.context "comment") (return (in-multi-line-comment stream state)))
+        (else)
+      )
     ))
     (var indent (lambda [state]
       (return (or state.indentation 0))
@@ -392,7 +413,7 @@
     (var blockCommentLead "")
     (var blankLine (lambda [state]))
     (var copyState (lambda [state]
-      (return (CodeMirror.copyState state.mode state))
+      (return (stateful.morph (CodeMirror.copyState state.mode state)))
     ))
     (var electricChars "") ## or electricInput regexp
     (var innerMode (lambda [state]
@@ -400,7 +421,7 @@
     ))
     
     (CodeMirror.defineMode "lispz" (lambda [config mode]
-      (var startState (=> (return {config mode})))
+      (var startState (=> (return (stateful {config mode}))))
       (return {startState token indent closeBrackets lineComment
         blockCommentStart blockCommentEnd blockCommentLead
         blankLine copyState indent electricChars innerMode
