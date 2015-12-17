@@ -1,4 +1,4 @@
-(using  [net diff_match_patch message dict github]
+(using  [net message dict github]
   (var options-string (localStorage.getItem "CodeMirror-options"))
   (cond options (var options (JSON.parse options-string))
         (else)  (var options {
