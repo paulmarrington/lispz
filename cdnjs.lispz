@@ -1,9 +1,21 @@
 ### spec: Packages >> External >> CDNJS
   Lispz stands on the shoulders of giants. Creating a system using Lispz will require
-  access to other JavaScript and CSS packaged from the Internet. The lispz packaging
+  access to other JavaScript and CSS packages from the Internet. The lispz packaging
   system will create, update and combine external code and save it locally. One of the
   major sources for code is [cdnjs.com](https://cdnjs.com/). It includes an API so
   that the most recent non-alpha version can be chose on create or refresh.
+  
+  This code uses a site specific driver supplied to a bithub builder to retrieve and
+  process files. Modules that rely on an external package provide a build method. The
+  resulting file can incorporate files from different repositories with commands to
+  explicitly exclude or include files with regular expressions. The resulting file
+  is saved to /ext in the current project.
+  
+      (var build (lambda [target-repo]
+        (return (cdnjs.build target-repo "jquery" [[
+          {repo: "jquery" files: [[{exclude: '/\.map$|\.min.js$/'}]]}
+        ]]))
+      ))
 ###
 (using [net github]
   (var cdnjs-actors {
@@ -29,7 +41,7 @@
       (var uri (+ repo.base path))
       (when (net.http-get uri) [response] (resolve-promise response))
     )
-    repo: (lambda [target-repo name] (return {name lispz: {}}))
+    repo: (lambda [target-repo name] (return {name}))
   })
 
   (export {
