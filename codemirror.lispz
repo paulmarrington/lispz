@@ -377,6 +377,12 @@
       ]]
       meta: { lineComment: "## " dontIndentStates: [["comment" "string"]] }
     })
+    (CodeMirror.defineMode "lispz" (lambda [config mode]
+      (return {startState token indent closeBrackets lineComment
+        blockCommentStart blockCommentEnd blockCommentLead
+        blankLine copyState indent electricChars innerMode
+      })
+    ))
     (CodeMirror.defineMIME "text/lispz" "lispz")
   ))
   (var update-html-mixed (=>
