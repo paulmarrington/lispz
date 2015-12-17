@@ -347,67 +347,70 @@
   ))
 
   ## CodeMirror lispz mode
+  (var define-lispz-editing-mode (=>
+    (CodeMirror.defineSimpleMode "lispz" {
+      start: [[
+        {regex: '/""/'                                 token: "string"}
+        {regex: '/"/'                   next: "string" token: "string"}
+        {regex: '/\'(?:[^\\]|\\.)*?\'/'                token: "variable-2"}
+        {regex: '/###/'                next: "comment" token: "comment" }
+        {regex: '/(\()([!\s\(\[\{\)\}\]]*?!)/'
+                                  indent: true  token: [[null "error"]]}
+        {regex: '/(\()([^\s\(\[\{\)\}\]]+)/'
+                                  indent: true  token: [[null "keyword"]]}
+        {regex: '/true|false|null|undefined|debugger/' token: "atom"}
+        {regex: '/0x[a-f\d]+|[-+]?(?:\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/i'
+                                                       token: "number"}
+        {regex: '/## .*/'                              token: "comment"}
+        {regex: '/[\{\(\[]/'        indent: true}
+        {regex: '/[\}\)\]]/'      dedent: true}
+        {regex: '/[^\s\(\{\[\)\]\}]+/'                 token: "variable"}
+        {regex: '/\s+/' next: "start"}
+      ]]
+      comment: [[
+        {regex: '/###/' token: "comment" next: "start"}
+        {regex: '/.*/' token: "comment"}
+      ]]
+      string: [[
+        {regex: '/[^\\]"/' token: "string" next: "start"}
+        {regex: '/./' token: "string"}
+      ]]
+      meta: { lineComment: "## " dontIndentStates: [["comment" "string"]] }
+    })
+    (CodeMirror.defineMIME "text/lispz" "lispz")
+  ))
+  (var update-html-mixed (=>
+    ## Update htmlmixed to understand lispz scripts
+    (var mimeModes (stateful.morph CodeMirror.mimeModes))
+    (cond (is (typeof (get mimeModes "text/html")) "string")
+          (mimeModes.update! "text/html" {name: "htmlmixed"})
+    )
+    (var mode (get mimeModes "text/html"))
+    (cond (not mode.scriptTypes) (set! mode.scriptTypes [[]]))
+    (mode.scriptTypes.push {matches: '/^text\/lispz$/' mode: "lispz"})
+    (mimeModes.update! {htmlmixed: mode})
+  ))
+  (var add-run-selection (=>
+    (var run_selection (lambda [cm]
+      (cond (cm.somethingSelected) (var source (cm.doc.getSelection))
+            (else)                 (var source (cm.doc.getValue))
+      )
+      (var mode (cm.getModeAt (cm.getCursor))  result mode)
+      (cond
+        (is "lispz" mode)  (var result (lispz.run "lispz-repl" source))
+      )
+      (console.log result)
+    ))
+    (var code-mirror-commands (state.morph CodeMirror.commands))
+    (code-mirror-commands.update! {
+      run_selection:           run_selection
+    })
+  ))
   (var init-lispz-mode (=>
-  (CodeMirror.defineSimpleMode "lispz" {
-    start: [[
-      {regex: '/""/'                                 token: "string"}
-      {regex: '/"/'                   next: "string" token: "string"}
-      {regex: '/\'(?:[^\\]|\\.)*?\'/'                token: "variable-2"}
-      {regex: '/###/'                next: "comment" token: "comment" }
-      {regex: '/(\()([!\s\(\[\{\)\}\]]*?!)/'
-                                indent: true  token: [[null "error"]]}
-      {regex: '/(\()([^\s\(\[\{\)\}\]]+)/'
-                                indent: true  token: [[null "keyword"]]}
-      {regex: '/true|false|null|undefined|debugger/' token: "atom"}
-      {regex: '/0x[a-f\d]+|[-+]?(?:\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/i'
-                                                     token: "number"}
-      {regex: '/## .*/'                              token: "comment"}
-      {regex: '/[\{\(\[]/'        indent: true}
-      {regex: '/[\}\)\]]/'      dedent: true}
-      {regex: '/[^\s\(\{\[\)\]\}]+/'                 token: "variable"}
-      {regex: '/\s+/' next: "start"}
-    ]]
-    comment: [[
-      {regex: '/###/' token: "comment" next: "start"}
-      {regex: '/.*/' token: "comment"}
-    ]]
-    string: [[
-      {regex: '/[^\\]"/' token: "string" next: "start"}
-      {regex: '/./' token: "string"}
-    ]]
-    meta: { lineComment: "## " dontIndentStates: [["comment" "string"]] }
-  })
-  (CodeMirror.defineMIME "text/lispz" "lispz")
-  ## Update htmlmixed to understand lispz scripts
-  (var mimeModes (stateful.morph CodeMirror.mimeModes)
-  (cond (is (typeof (get mimeModes "text/html")) "string")
-        (mimeModes.update! "text/html" {name: "htmlmixed"}))
-  (var mode (get mimeModes "text/html"))
-  (cond (not mode.scriptTypes) (set! mode.scriptTypes [[]]))
-  (mode.scriptTypes.push {matches: '/^text\/lispz$/' mode: "lispz"})
-  (mimeModes.update! {htmlmixed: mode})
-
-  ## paredit keys that defer if not in lisp code
-  (var run_selection (lambda [cm]
-    (cond (cm.somethingSelected) (var source (cm.doc.getSelection))
-          (else)                 (var source (cm.doc.getValue))
-    )
-    (var mode (cm.getModeAt (cm.getCursor))  result mode)
-    (cond
-      (is "lispz" mode)  (var result (lispz.run "lispz-repl" source))
-    )
-    (console.log result)
+    (define-lispz-editing-mode)
+    (add-run-selection)
+    (update-html-mixed)
   ))
-  (var lisp-modes {lispz: true clojure: true commonlisp: true scheme: true})
-  (var is-lisp-like (lambda [cm]
-      (var mode (cm.getModeAt (cm.getCursor)))
-      (return (get lisp-modes mode.name))
-  ))
-  (var code-mirror-commands (state.morph CodeMirror.commands))
-  (code-mirror-commands.update! {
-    run_selection:           run_selection
-  })
-
   ## elm script has a bug - restore for a later version.
   ## tern is for javascript features - overrides console.log
   (var build-base (lambda [target-repo]
