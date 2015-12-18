@@ -396,6 +396,17 @@
       (cond (stream.match "###")      (do (state.update! {context: null})) (return "comment"))
       (return (in-multi-line-comment stream state))
     ))
+    
+    (var eat-comment (lambda [stream state]
+      (cond (not (stream.eat "#")) (do (stream.backup 1) (return false)))
+      (cond (stream.eat "#") (state.update! {context: "comment"}) (else) (stream.skipToEnd))
+      (return "comment")
+    ))
+    
+    (var eat-word (lambda [stream state]
+      (stream.match '/^[^\s\(\[\{]*/')
+      (state.update! {context: null})
+    ))
 
     ## header quote keyword atom number def variable variable-2 variable-3
     ## property operator comment string string-2 meta qualifier builtin
@@ -407,12 +418,27 @@
       (cond
         (is state.context "string")  (return (in-multi-line-string stream state)))
         (is state.context "comment") (return (in-multi-line-comment stream state)))
+        (is state.context "keyword") (do (eat-word stream state) (return "keyword"))
       )
       (var ch (stream.next))
       (cond
         (is ch "\"") (do (state.update {context: "string"}) (return "string"))
         (is ch "'")  (do (eat-to "'" stream) (return "string-2"))
+        (is ch "(")  (do (state.update {context: "keyword"}) (return "bracket"))
       )
+      (stream.backup 1)
+      (cond
+        (stream.match '/^-?\d+(?:\.\d+)/')                (return "number")
+        (stream.match '/^[\{\}\]]/')                      (return "bracket")
+        (stream.match '/^##\s/')   (do (stream.skipToEnd) (return "comment"))
+        (stream.match '/^###\s/')  (do (state.update! {context: "comment"}) (return "comment"))
+        (stream.match '/^\[\[/')                          (return "bracket")
+        (stream.match '/^\[/')                            (return "bracket")
+      )
+      @@ TODO indentation stack
+      (eat-word stream state)
+      (return "variable")
+      @@ TODO different variable type if starts with #, ends with !, etc (same goes with keyword!)
     ))
     (var indent (lambda [state]
       (return (or state.indentation 0))
