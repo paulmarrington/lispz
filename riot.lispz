@@ -71,9 +71,10 @@
 
   (when (net.script "ext/riot.js") []
     (return-if (not window.riot) (export {build}))
-    (set! riot.parsers.js.lispz
+    (stateful.morph riot.parsers.js)
+    (riot.parsers.js.update! {lispz:
       (lambda [source] (return ((lispz.compile "riot-tags" source).join "\n")))
-    )
+    })
     (var riot-elements (slice (document.getElementsByClassName "riot")))
     (var load-all (promise.all (riot-elements.map (lambda [element]
       (var name (element.tagName.toLowerCase))

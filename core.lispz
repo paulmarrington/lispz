@@ -192,6 +192,7 @@
 
 (macro #set! [to-change! value] (#join '' to-change! '=' value ';'))
 (var #morph! (lambda [obj]
+  (return-if obj.update! obj) ## in case we have done it before
   (Object.defineProperties obj {
     update!: {value: (lambda [update]
       (var stateful this)

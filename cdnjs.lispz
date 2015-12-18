@@ -10,10 +10,10 @@
         )))
         ((get filtered 0).assets.some (lambda [it]
           (return-if (contains it.version "alpha") false)
-          (set! repo.base (+
+          (repo.update! {base: (+
             "https://cdnjs.cloudflare.com/ajax/libs/"
             repo.name "/" it.version "/"
-          ))
+          )})
           (resolve-promise it.files)
           (return true) ## found the one we want
         ))
@@ -23,7 +23,7 @@
       (var uri (+ repo.base path))
       (when (net.http-get uri) [response] (resolve-promise response))
     )
-    repo: (lambda [target-repo name] (return {name lispz: {}}))
+    repo: (lambda [target-repo name] (return (stateful {}))
   })
 
   (export {

@@ -256,8 +256,8 @@
     ((get CodeMirror.commands command).apply CodeMirror args)
   ))
   (var open (lambda [owner wrapper]
-    (var cm (CodeMirror wrapper options))
-    (set! cm.listener (lambda [data] (listener cm data)))
+    (var cm (stateful.morph (CodeMirror wrapper options)))
+    (cm.update! {listener: (lambda [data] (listener cm data))})
     (message.send "CodeMirror-menu" menu)
     (message.listen (+ owner "-" "CodeMirror-command") cm.listener)
     (return cm)
@@ -283,9 +283,9 @@
         ))
       ))
       (one-map cm.options.extraKeys)
-      (var core (get CodeMirror.keyMap cm.options.keyMap))
+      (var core (stateful.morph (get CodeMirror.keyMap cm.options.keyMap)))
       (cond (not core.fallthrough)
-        (set! core.fallthrough CodeMirror.keyMap.default.fallthrough))
+        (core.update! {fallthrough: CodeMirror.keyMap.default.fallthrough}))
       (one-map core)
       (window.open
         (+ "data:text/html," (encodeURIComponent (keys.join "<br>")))
@@ -311,8 +311,7 @@
         (return-if (isnt result.list.length 1) result)
         (var size (- result.to.ch result.from.ch))
         (return-if (isnt (do (get list 0).length) size) result)
-        (set! result.list [[]])
-        (return result)
+        (return ((stateful.morph result) {list: [[]]}))
       ))
     )
   })
@@ -422,19 +421,20 @@
   (var mimeModes (stateful.morph CodeMirror.mimeModes)
   (cond (is (typeof (get mimeModes "text/html")) "string")
         (mimeModes.update! "text/html" {name: "htmlmixed"}))
-  (var mode (get mimeModes "text/html"))
-  (cond (not mode.scriptTypes) (set! mode.scriptTypes [[]]))
+  (var mode (stateful.morph (get mimeModes "text/html")))
+  (cond (not mode.scriptTypes) (mode.update! {scriptTypes [[]]}))
   (mode.scriptTypes.push {matches: '/^text\/lispz$/' mode: "lispz"})
   (mimeModes.update! {htmlmixed: mode})
 
   ## paredit keys that defer if not in lisp code
   (var lisp-modes {lispz: true clojure: true commonlisp: true scheme: true})
-  (set! subpar.core.run_selection (lambda [cm]
+  (stateful.morph subpar.core)
+  (subpar.core.update! {run_selection: (lambda [cm]
     (cond (cm.somethingSelected) (var source (cm.doc.getSelection))
           (else)                 (var source (cm.doc.getValue))
     )
     (console.log (lispz.run "lispz-repl" source))
-  ))
+  )})
   (var subpart (lambda [cmd opt]
     (return (lambda [cm]
       (var mode (cm.getModeAt (cm.getCursor)))

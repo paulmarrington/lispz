@@ -131,11 +131,13 @@
       remaining title lines.
     ###
     (var merge-titles (lambda [sections]
-      (var parent [[]])
+      (var context (stateful.morph {parent: [[]]}))
       (return (sections.map (lambda [section]
         (var markdown [[]])
         (section.title.forEach (lambda [key idx]
-          (cond (is (get parent idx) key) (do (set! parent [[]]) (return)))
+          (cond (is (get context.parent idx) key)
+            (return (parent.update! (parent: [[]]}))
+          )
           (var title (get titles key)  hashes ("######".slice 0 (+ idx 1)))
           (markdown.push hashes " " title "\n")
         ))
