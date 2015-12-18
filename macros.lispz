@@ -1,0 +1,76 @@
+### spec: macros >> What is a Macro?
+
+The term "macro" includes text substitution (e.g. ASM and C) and syntactic macros. Lisp has had the latter proposed 1963 or soon after. By working on the abstract syntax tree (AST), a macro has the full faculties and syntax of the language to effectively extend the language. Another way of looking at it is that lisp macros run lisp code during the compile to modify the resulting program. Yes, I know this is still not clear. Read https://en.wikipedia.org/wiki/Macro_%28computer_science%29 for a more informative perspective.
+
+Perhaps the best road to undertanding is by example.
+
+    (macro return? [value] (cond value (return value)))
+    
+creates a new language element that only returns if the value is a truthy, as in
+
+    (var result ....)
+    (return? result)
+    ## try something else
+    
+This example would also work with a text substitution macro system, but this one doesn't:
+
+    (macro closure [params *body] (#join '' '(function(' params '){' *body '})(' params ')'))
+    
+This generates the JavaScript output directly as #join is an immediate function called during the
+ast to JavaScript phase.
+
+### spec: macros >> Defining a Macro
+
+A macro is defined by giving it a name, list of parameters and a body. In it's simplest form the parameters are substituted into the body at reference time. It is like a function expanded in-line.
+
+    (macro return-if [test value] (cond test (return value)))
+    
+Immediate actions are required to modify the JavaScript output during the compile stage (ast to JavaScript).
+
+    (macro lambda [params *body] (#join '' '(function(' params '){' *body '})'))
+    
+Parameters that start with star must be the last in the list and encapsulate all the remaining parameters in the expansion. This is why lambda works:
+
+    (lambda [a b] (var c (+ a b)) (return c))
+
+### spec: macros >> #join
+Many macros translate lispz directly to JavaScript by mixing pure JavaScript with macro parameters that can convert themselves to JavaScript. It is an immediate function - being one that runs during the compile phase. The first parameter is the text to be used between the segments. In this context it is usually empty. The first parameter along with the JavaScript are wrapped in single quotes so that they are left as-is in the JavaScript output.
+
+    (macro set! [name value] (#join '' name '=' value ';'))
+
+### spec: macros >> #pairs
+Pairs is more rarely used. It takes a list and creates output based on pairs in that list. Hmmm, that is not very clear. Best use an example then. 
+
+    (macro var (*list) (#join '' 'var ' (#pairs *list '=' ',') ';'))
+    (var a 12  b "hi") ##js=> var a=12,b="hi";
+    
+Pairs takes a list, the code within each pair and the string between pairs. In this example, = is between the two items in the pair and , is between pairs. If you need it clearer than that, try meditating on the two sample lines above - or don't use #pairs.
+
+### spec: macros >> immediate
+
+Macros allow you to change lispz by adding new build-in commands. By their nature, macros allow the use of lispz at compile time to generate the resulting lispz code. Most macros are to generate JavaScipt
+
+    (macro return [value] (#join '' 'return ' value '\n'))
+
+or just substitution
+
+    (macro return? [value] (cond value (return value)))
+    
+Double-check substitution macros. The one above must be a macro, but may could be easily converted into global functions
+
+    (macro empty? [list] (not list.length))
+    # is functionally the same as
+    (global empty? [list] (return (not list.length)))
+    
+The built-ins #join and #pairs are example of immediate functions - ones that operate during the compile phase. Lispz would not be complete if you could not also create immediate functions.
+
+    (immediate 'alert("Hi")')
+    
+Works but has no point. I added immediate for language completeness. I have not yet found a use for it.
+
+    (global #join2 (lambda [sep parts]
+      (immediate (*arguments 1) '.map(lispz.ast_to_js).join(lispz.ast_to_js(sep)')
+    ))
+
+
+(export {})

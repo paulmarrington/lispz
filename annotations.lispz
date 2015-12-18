@@ -1,3 +1,38 @@
+### spec: Annotations
+  In this context, annotations are comments in source files that can be processed
+  by an external system for processing outside normal compilation and running.
+  
+  An annotation is a line containing **##<span>#</span> type: ** followed by
+  lines of text ending in ###. Annotation processors use a 
+  type to define which annotations they retrieve. They then receive a list of
+  objects with _title_ and _body_ elements.
+  
+  Source code can be any language that supports multi-line comments:
+  
+      <!-- ### spec: Annotations in HTML or XML
+            ...
+           ### --&gt;
+      /* ### spec: Annotations in a C, C++, Java, etc
+          ...
+         ### */
+###
+### spec: annotations >> Processing Source Code
+  The retrieve function processes source files one at a time. It returns an
+  array of objects containing title and body members.
+  
+      (describe "(annotations.retrieve \"spec\" source-code)" (=>
+        (it "retrieves a list {title: \"..\" body: \"..\"}" (=>
+          (using [annotations]
+            (var source window.lispz_modules.annotations)
+            (var list (annotations.retrieve "spec" source)
+            (expect list.length).toBeGreaterThan(0)
+            (var annotation (first list))
+            (expect annotation.title).toBe("Annotations")
+            (expect annotation.body.length).toBeGreaterThan(100)
+          )
+        ))
+      ))
+###
   (var retrieve (lambda [type source]
     (var re (new RegExp (+ "###\\s*" type ":\\s*(.*)\\n((?:.|\\n)*?)###") "g"))
     (var annotations [[]])

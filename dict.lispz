@@ -1,4 +1,4 @@
-### lists >> dict -- The Associative Array List (Dictionary)
+### spec: lists >> dict -- The Associative Array List (Dictionary)
 
 Are also called dictionaries or hashmaps. Because lispz is a functional language it is not
 uncommon for functions to return a dictionary of values. To make them clearer, if a key is
@@ -19,7 +19,7 @@ If the key is known, using dot syntax is clearer
     (get exporting key)
 ###
 
-### literate: lists >> dict >> Internals >> Insert
+### spec: lists >> dict >> Internals >> Insert
 Dictionary merges and inserts take a list of dictionaries in order to push to the target.
 This means that when they have common keys, the last dictionary that has the key takes
 precedence.
@@ -35,7 +35,7 @@ precedence.
   (return target)
 ))
 
-### literate: lists >> dict >> Merging Dictionaries
+### spec: lists >> dict >> Merging Dictionaries
 There is often need to merge multiple dictionaries together to create a new combined one.
 
     (var big-dict (dict.merge dict-1 dict-2 dict-3))
@@ -44,7 +44,7 @@ There is often need to merge multiple dictionaries together to create a new comb
   (return (insert {} (*arguments 0)))
 ))
 
-### literate: lists >> dict >> Inserting One Dictionary in Another
+### spec: lists >> dict >> Inserting One Dictionary in Another
 **Warning** This is not referentially transparent
 
     (dict.insert! dict-1 dict-2 dict-3)      ## changes dict-1
@@ -53,7 +53,7 @@ There is often need to merge multiple dictionaries together to create a new comb
   (return (insert target (*arguments 0)))
 ))
 
-### literate: lists >> dict >> Create a Dictionary from a List
+### spec: lists >> dict >> Create a Dictionary from a List
     (var list [[{key: 1 value: 2} {key: 3 value: 4}]]
     (dict.from-list list "key")    # {1: {key: 1 value: 2} 3: {key: 3 value: 4})
 ###
@@ -63,14 +63,14 @@ There is often need to merge multiple dictionaries together to create a new comb
   (return dictionary)
 ))
 
-### literate: lists >> dict >> For Each Entry...
+### spec: lists >> dict >> For Each Entry...
     (dict.for-each dict-1 (lambda [key value] ...))
 ###
 (var for-each (lambda [dict action=>]
   (Object.keys dict)(.forEach (lambda [k] (action=> k (get dict k))))
 ))
 
-### literate: lists >> dict >> Morphing One Dictionary into Another
+### spec: lists >> dict >> Morphing One Dictionary into Another
 ###
 (var map (lambda [dict action=>]
   (return ((Object.keys dict).map (lambda [k] (return (action=> k (get dict k))))))

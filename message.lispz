@@ -1,3 +1,44 @@
+### spec: async >> Messaging
+Lispz includes a complete decoupled communications solution based on messaging. The base version is in-browser, but the API is designed to work across systems with RESTful or WebSockets. The UI components use messaging to communicate between components that are not linked, so cannot make more direct connections.
+
+Here a code editor will wait on messages to open a new 'file'. THe message includes a name unique to each code editor. The dictionary at the end can include any number of named requests. Each associated function takes a packet whose content format is known by clients and services.
+
+    (using [message]
+      (var open (lambda [packet] ...)
+      (message.dispatch (+ "code-editor/" opts.name) { open })
+    
+The client will send a command to open a new file for display. If the editor is called 'scratch':
+
+    (message.send "code-editor/scratch" {action: "open" key: "scratchpad.lispz" contents: null})
+        
+If it is possible that a client will send an important request before the service has had the opportunity to initialise, wrap 'send' in 'wait-for':
+
+    (message.wait-for "code-editor/scratch" (=>
+      (message.send "code-editor/scratch" {action: "open" key: "scratchpad.lispz" contents: null})
+
+'dispatch' uses an entry called 'action' to decide on which function to call. For raw processing, use 'listen' instead. The following example changes the left padding on a DOM element if asked.
+
+    (message.listen "page-content-wrapper-padding" (lambda [px]
+      (set! tag.page-content-wrapper.style.paddingLeft (+ px "px"))
+        
+For a one-off message, use 'expect' rather than 'listen':
+
+    (message.expect "editor-loaded" (=> ...)
+        
+Lispz uses exchanges defined as part of the address. Plain string addresses as used so far will use a local in-browser exchange. The address can include details that will define different exchanges (when implemented).
+
+It is possible to remove listeners if you have access to the callback used to create the listener
+
+    (message.remove "my-message" my-message-listener=>)
+
+Messages also includes a common log processor. The following two calls behave in an identical manner.
+
+    (message.log "message: message-text")
+    (message.send "logging" {level: "message"  text: "message-text"})
+
+The default processor sends them to the browser console. Add additional listeners for modal dialogs, error messages, etc.
+###
+
 (var store (stateful)  expecting (stateful))
 
 (var exchange (lambda [address]

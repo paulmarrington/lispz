@@ -1,3 +1,8 @@
+### spec: bootstrap - Twitter Bootstrap
+  Bootstrap is a popular CSS framework open sourced by Twitter. It includes skins
+  so all bootstrap driven sites do not have to look alike. It provides support
+  for differing screen sizes and is relatively mobile friendly.
+###
 (using [net github]
   (var build (lambda [target-repo]
     (return (github.build target-repo "bootstrap" [[
