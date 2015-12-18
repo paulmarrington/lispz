@@ -380,12 +380,15 @@
       meta: { lineComment: "## " dontIndentStates: [["comment" "string"]] }
     })
     
+    (var eat-to (lambda [ch stream]
+      (cond (not (stream.skipTo ch)) (do (stream.skipToEnd) (return false)))
+      (cond (isnt ((stream.current).slice -2 -1) "\\") (return true))
+      (return (eat-to ch stream))
+    ))
+    
     (var in-multi-line-string (lambda [stream state]
-      (cond (not (stream.skipTo "\"")) (do (stream.skipToEnd) (return "string")))
-      (cond (isnt ((stream.current).slice -2) "\\\"")
-        (do (state.update! {context: null})) (return "string")
-      )
-      (return (in-multi-line-string stream state))
+      (eat-to "\"" stream)
+      (return "string")
     ))
     
     (var in-multi-line-comment (lambda [stream state]
@@ -394,13 +397,21 @@
       (return (in-multi-line-comment stream state))
     ))
 
+    ## header quote keyword atom number def variable variable-2 variable-3
+    ## property operator comment string string-2 meta qualifier builtin
+    ## bracket tag attribute hr link special error
+    
     (var token (lambda [stream state]
       (cond (stream.sol) (state.update! {indentation: (stream.indentation)}))
       (return? (not (stream.eatSpace)))
       (cond
         (is state.context "string")  (return (in-multi-line-string stream state)))
         (is state.context "comment") (return (in-multi-line-comment stream state)))
-        (else)
+      )
+      (var ch (stream.next))
+      (cond
+        (is ch "\"") (do (state.update {context: "string"}) (return "string"))
+        (is ch "'")  (do (eat-to "'" stream) (return "string-2"))
       )
     ))
     (var indent (lambda [state]
