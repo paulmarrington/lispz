@@ -18,8 +18,8 @@
   </bootstrap>
 
   <script type="text/lispz">
-    (using [message riot dict]
-      ((stateful.morph lispz) {debug: true})
+    (riot-tag [message riot dict]
+      (stateful.morph! lispz) (lispz.update! {debug: true})
       (when (message.ready "code-editor/scratch") []
         (message.send "code-editor/scratch"
           {action: "open" key: "scratchpad.lispz" contents: null})

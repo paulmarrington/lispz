@@ -42,9 +42,11 @@ The default processor sends them to the browser console. Add additional listener
 (var store (stateful)  expecting (stateful))
 
 (var exchange (lambda [address]
-  (var envelope (get store address))
-  (return? envelope)
-  (return (store.update! address (stateful.morph! [[]])))
+  (var envelopes (get store address))
+  (return? envelopes)
+  (var envelopes (stateful.morph! []))
+  (store.update! address envelopes)
+  (return envelopes)
 ))
 
 (var add (lambda [address envelope]
@@ -61,8 +63,9 @@ The default processor sends them to the browser console. Add additional listener
 
 ## remove a recipient from all attached addresses
 (var remove (lambda [recipient]
-  ((exchange address).update!
-    ((exchange address).filter (lambda [possibility]
+  (var envelopes (exchange address))
+  (store.update! address
+    (envelopes.filter (lambda [possibility]
       (return (isnt recipient possibility))
     ))
   )

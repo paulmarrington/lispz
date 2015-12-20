@@ -23,7 +23,7 @@
       (var uri (+ repo.base path))
       (when (net.http-get uri) [response] (resolve-promise response))
     )
-    repo: (lambda [target-repo name] (return (stateful {}))
+    repo: (lambda [target-repo name] (return (stateful {})))
   })
 
   (export {

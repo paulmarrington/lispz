@@ -83,7 +83,7 @@ var lispz = function() {
   // processing pairs of list elements
   pairs_to_js = function(pairs, tween, sep) {
     var el = [], tween = ast_to_js(tween);
-    if (!(pairs.length % 2)) throw {message:"Unmatched pairs"}
+    if (!(pairs.length % 2)) throw {message:"Unmatched pairs",pairs:pairs}
     for (var i = 1, l = pairs.length; i < l; i += 2) {
         el.push(ast_to_js(pairs[i]) + tween + ast_to_js(pairs[i + 1]))
     }

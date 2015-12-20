@@ -9,6 +9,7 @@ The *panel* tags is a Riot wrapper around bootstrap panels.
 Riot, like React it works with a virtual DOM and only updates changes to the real DOM. Like React it compiles to JavaScript. It can be supported on older browsers.
 
 Small tight API that provides all needed web component functionality for reactive views, events and routing.
+###
 
 ### spec: Riot >> Structure of a RIOT/Lispz Program
 
@@ -39,6 +40,7 @@ For riot component files that rely on other files for sub-components, Start the 
 Riot uses plain JavaScript inside {} as a templating solution. The *opts* dictionary matches the attributes when the custom tag is referenced. Any inner tag with a *name* or *id* attribute can be referenced by the same name. Each component has a unique *_id*.
 
 Styles are global (unlike *true* web components). This is easily overcome using explicit name-spacing as above.
+###
 
 ### spec: Riot >> Using other languages
 
@@ -119,6 +121,21 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
     (tag.update! changes)
     (tag.update) ## repaint
   ))
+
+  ### spec: riot >> Tag support
+    Riot uses _this_ as context for codes within a tag. Also, when errors are
+    found it throws excepts that are difficult to track. Lispz provides help
+    with a riot-tag macro which invokes _using_,  provides a _context_ reference
+    and wraps the code in a _try/catch_ to provide improved error reporting.
+    
+      @TODO example
+  ###
+  (macro riot-tag [modules *body]
+    'var context=this;'
+    (using modules
+      (#join '' 'try {' *body '}catch(err){console.log(err,context)}')
+    )
+  )
   
   ### spec: async >> Events
     Events follow [the observer pattern](https://en.wikipedia.org/wiki/Observer_pattern). Lispz provides access to the light-weight version in Riot. If you use Riot for UI components, the custom tags are always observers. You don't need to use riot to make use of events. You can either create an observable or make any object in the system observable.
@@ -157,7 +174,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
 
   (when (net.script "ext/riot.js") []
     (return-if (not window.riot) (export {build}))
-    (stateful.morph riot.parsers.js)
+    (stateful.morph! riot.parsers.js)
     (riot.parsers.js.update! {lispz:
       (lambda [source] (return ((lispz.compile "riot-tags" source).join "\n")))
     })

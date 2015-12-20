@@ -50,6 +50,9 @@
   ))
 ###
 (macro debug [*msg] (console.trace (#join ',' *msg)))
+### spec: basic >> do
+###
+(macro do [*body] *body)
 
 ### spec: basic >> References
   @TODO
@@ -130,6 +133,21 @@
 )
 (macro else [] 'true')
 
+### spec: basic >> functions >> Variable Parameter Lists
+    Like JavaScript, lispz function definitions specify a fixed number of arguments.
+    To gain access to the full list of arguments, use *arguments, with a starting index.
+
+        (lambda [type rest] (console.log type "=" (*arguments 1)))
+###
+(macro *arguments [from] ([[]].slice.call arguments from))
+
+### spec: basics >> functions >> Return if ...
+    While return-if has aconditional pair. If the first is true the second is returned.
+
+        (return-if (not calculated-value) default-value)
+###
+(macro return-if [test value] (cond test (return value)))
+
 ### spec: basic >> state -- Stateful Containers
   State is the elephant in the room - particularly in the functional programming paradigm.
   When you have state that can be changed from outside, then any function that reads from it
@@ -166,8 +184,8 @@
             (options.update! {name: "Barney Rubble" address: "Next Door"})
             ((expect options.name).toBeEqual "Barney Rubble")
             ((expect options.address).toBeEqual "Next Door")
-          )
         )
+          )
       ))
 
   Javascript lives in the world of objects as well as functions. Sometimes to work in this world
@@ -195,17 +213,17 @@
   (return-if obj.update! obj) ## in case we have done it before
   (Object.defineProperties obj {
     update!: {value: (lambda [update]
-      (var stateful this)
+      (var context this)
       (cond (is arguments.length 1)
         ((Object.keys update).forEach (lambda [key]
-          (#set! (get stateful key) (get update key))
+          (#set! (get context key) (get update key))
         ))
       (else) (do
         (var list (*arguments 0))
-        (list.forEach (lambda [value idx] (cond (% idx 2)
+        (list.forEach (lambda [value idx] (cond (% idx 2) (do
           (var key (get list (- idx 1)))
-          (#set! (get stateful key) value)
-        )))
+          (#set! (get context key) value)
+        ))))
       ))
     )}
   })
@@ -226,14 +244,6 @@
 ###
 (macro =>     [*body]        (#join '' '(function(){' *body '})'))
 
-### spec: basic >> functions >> Variable Parameter Lists
-    Like JavaScript, lispz function definitions specify a fixed number of arguments.
-    To gain access to the full list of arguments, use *arguments, with a starting index.
-
-        (lambda [type rest] (console.log type "=" (*arguments 1)))
-###
-(macro *arguments [from] ([[]].slice.call arguments from))
-
 (macro closure [params *body] (#join '' '(function(' params '){' *body '})(' params ')'))
 (macro return  [value] (#join '' 'return ' value '\n'))
 
@@ -245,13 +255,6 @@
         (return? calculated-value)
 ###
 (macro return? [value] (cond value (return value)))
-
-### spec: basics >> functions >> Return if ...
-    While return-if has aconditional pair. If the first is true the second is returned.
-
-        (return-if (not calculated-value) default-value)
-###
-(macro return-if [test value] (cond test (return value)))
 
 (macro new [cls *params] (#join '' '(new ' cls '(' (#join ',' *params) '))'))
 
@@ -347,7 +350,6 @@ To access external modules, wrap your code in 'using'. Data and functions export
 
 (macro delay [ms *body] (setTimeout (=> *body) ms))
 (macro yield [*body] (delay 0 *body))
-(macro do [*body] *body)
 (global wait-for (lambda [test]
   (var waiter (=>
     (return? (test))
