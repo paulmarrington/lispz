@@ -1,25 +1,25 @@
 ### spec: Annotations
   In this context, annotations are comments in source files that can be processed
   by an external system for processing outside normal compilation and running.
-  
+
   An annotation is a line containing **##<span>#</span> type: ** followed by
-  lines of text ending in ###. Annotation processors use a 
+  lines of text ending in ##<span>#</span>. Annotation processors use a
   type to define which annotations they retrieve. They then receive a list of
   objects with _title_ and _body_ elements.
-  
+
   Source code can be any language that supports multi-line comments:
-  
-      <!-- ### spec: Annotations in HTML or XML
+
+      &lt;!-- ##<span>#</span> spec: Annotations in HTML or XML
             ...
-           ### --&gt;
-      /* ### spec: Annotations in a C, C++, Java, etc
+           ##<span>#</span> --&gt;
+      /* ##<span>#</span> spec: Annotations in a C, C++, Java, etc
           ...
-         ### */
+         ##<span>#</span> */
 ###
 ### spec: annotations >> Processing Source Code
   The retrieve function processes source files one at a time. It returns an
   array of objects containing title and body members.
-  
+
       (describe "(annotations.retrieve \"spec\" source-code)" (=>
         (it "retrieves a list {title: \"..\" body: \"..\"}" (=>
           (using [annotations]

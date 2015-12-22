@@ -12,7 +12,7 @@
       (var open (lambda [packet]
         (var name (last (packet.name.split '/:\s*/')))
         (var heading (+ name " Specifications"))
-        
+
         (var add-documentation (=>
           (var docs (annotations.retrieve "literate" packet.source))
           (return (literate.to-html docs))
@@ -22,13 +22,13 @@
           (var specs (specs.map (lambda [spec] (return spec.body))))
           (return (specs.join "\n\n"))
         ))
-        
+
         (var head (+ "<link rel='shortcut icon' type='image/png' href='"
           lispz.path-base "ext/jasmine_favicon.png'>"
           "<script src='" lispz.path-base "lispz.js#jasmine'></" "script>"
           "<script type='text/lispz'>" (add-specs) "</" "script>"))
         (var body "")
-        (tag.tags.iframe.open {head body})
+        ((get tag.tags "iframe-panel").open {head body})
       ))
 
       (message.dispatch (+ "specifications/" opts.name) { open })

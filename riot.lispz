@@ -36,7 +36,7 @@ For riot component files that rely on other files for sub-components, Start the 
       <style>code-editor .wrapper {...}</style>
       <script type=text/lispz>(var tag this) ...</script>
     </code-editor>
-    
+
 Riot uses plain JavaScript inside {} as a templating solution. The *opts* dictionary matches the attributes when the custom tag is referenced. Any inner tag with a *name* or *id* attribute can be referenced by the same name. Each component has a unique *_id*.
 
 Styles are global (unlike *true* web components). This is easily overcome using explicit name-spacing as above.
@@ -59,7 +59,8 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
     (var load-tags-used (lambda [tags]
       (var new-tags (tags.filter (lambda [tag]
         (return-if (get processed-tags tag) false)
-        (return (processed-tags.update! tag true))
+        (processed-tags.update! tag true)
+        (return true)
       )))
       (var loaded (promise.all (new-tags.map (lambda [tag] (return (load tag))))))
       (when loaded [] (resolve-promise))
@@ -67,7 +68,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
     (var usings (lambda [source]
       (var tags ('/<!--\s*using\s*(.*?)\s*-->/'.exec source))
       (cond
-        tags   (do (load-tags-used ((last tags).split '/\s+/')))
+        tags   (load-tags-used ((last tags).split '/\s+/'))
         (else) (resolve-promise)
       )
     ))
@@ -90,11 +91,11 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
   ))
 
   (var mount (lambda [tags] (riot.mount.apply riot argument)))
-  
+
   ### spec: riot >> Trigger Display Changes
     Given a component context called *tag*, it is possible to change context
     data using the state component.
-    
+
       <script type=text/lispz>
         (var tag (stateful.morph this))
         ...
@@ -103,13 +104,13 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
           (tag.update)
         )
       </script>
-      
+
     For the confused, *update!* changes entries in the stateful context,
     while *update* is a riot function to update the display for bound
     data changes. Continue to use this approach where the data has logic
     around the change, but for the common situation where data is changed
     at the end of the logic, use *riot.update!*.
-    
+
       (using [riot]
         ...
         (var async-set-titles (lambda [title footer]
@@ -127,7 +128,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
     found it throws excepts that are difficult to track. Lispz provides help
     with a riot-tag macro which invokes _using_,  provides a _context_ reference
     and wraps the code in a _try/catch_ to provide improved error reporting.
-    
+
       @TODO example
   ###
   (macro riot-tag [modules *body]
@@ -136,36 +137,36 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
       (#join '' 'try {' *body '}catch(err){console.log(err,context)}')
     )
   )
-  
+
   ### spec: async >> Events
     Events follow [the observer pattern](https://en.wikipedia.org/wiki/Observer_pattern). Lispz provides access to the light-weight version in Riot. If you use Riot for UI components, the custom tags are always observers. You don't need to use riot to make use of events. You can either create an observable or make any object in the system observable.
-    
+
         (using [riot]
           (var observable-1 (riot.observable))
           (var element (get-my-element))
           (riot.observable element)
         )
-        
+
     Once that is out of the way, tell the observable what to do if it receives an event either once or every time.
-    
+
         (observable-1.on "event-name" (lambda [params...] what to do...))
         (element.one "focus" (lambda [contents] (element.set contents)))
-        
+
     One observable can have many listeners for the same or different events. Use 'trigger' to wake an observable.
-    
+
         (observable-1.trigger "event-name" param1 param2)
-        
+
     Finally there needs to be a way to stop listening.
-    
+
         (observable-1.off "event-name" event-function-reference) ## stops one listener
         (observable-1.off "event-name") ## stops all listeners to an event
         (observable-1.off "*")          ## stops all listeners to all events for observable
-    
+
     ## Benefits
     1. Decouples the code to whatever extent is necessary.
     2. Associates code and data (such as the DOM).
     3. Allows multiple invocations
-    
+
     ## Disadvantages
     1. Too convoluted to use as an easy replacement for callbacks
     2. One-way communication

@@ -2,8 +2,12 @@
   (var append! (lambda [parent element]
     (document.querySelector parent) (.appendChild element)
   ))
-  
-  (var style! (lambda [style to] (#set! style to)))
+
+  (var style! (lambda [el styles]
+    (dict.for-each styles(lambda [name value]
+      (#set! (get el.style name) value))
+    ))
+  )
 
   (var element (lambda [tag-name attributes]
     (var elem (document.createElement tag-name))

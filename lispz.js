@@ -138,21 +138,28 @@ var lispz = function() {
   },
   parse_to_ast = function(source) {
     var env = { ast: [], stack: [] }
-    env.node = env.ast
-    tkre.lastIndex = 0
-    while ((env.atom = tkre.exec(source.toString())) && (env.atom = env.atom[1])) {
-      module.line += (env.atom.match(/\n/g) || []).length
-      if (!comment(env.atom) && !parsers.some(function(parser) {
-          if (!parser[0].test(env.atom)) return false
-          parser[1](env)
-          return true
-        })) { env.node.push(env.atom); } }
-    if (env.stack.length != 0) return compile_error("missing close brace", env)
-    return env.ast
+    try {
+      env.node = env.ast
+      tkre.lastIndex = 0
+      while ((env.atom = tkre.exec(source.toString())) && (env.atom = env.atom[1])) {
+        module.line += (env.atom.match(/\n/g) || []).length
+        if (!comment(env.atom) && !parsers.some(function(parser) {
+            if (!parser[0].test(env.atom)) return false
+            parser[1](env)
+            return true
+          })) { env.node.push(env.atom); } }
+      if (env.stack.length != 0) {
+        console.log(env);
+        throw "missing close brace"
+      }
+      return env.ast
+    } catch (err) { console.log(env); throw err; }
   },
   ast_to_js = function(ast) {
-    return (ast instanceof Array) ? macros[ast[0]] ?
-      macros[ast[0]].apply(this, ast.slice(1)) : list_to_js(ast) : jsify(ast)
+    try {
+      return (ast instanceof Array) ? macros[ast[0]] ?
+        macros[ast[0]].apply(this, ast.slice(1)) : list_to_js(ast) : jsify(ast)
+    } catch (err) { console.log(ast); throw err; }
   },
   compile = function(name, source) {
     try {
@@ -161,12 +168,14 @@ var lispz = function() {
       var js = parse_to_ast(source).map(ast_to_js)
       module = last_module
       return js
-    } catch (err) { return compile_error(err.message, name) }
+    } catch (err) {
+      return compile_error(err.message, "for "+module.name+":"+module.line)
+    }
   },
   run = function(name, source) { return compile(name, source).map(eval) },
   debug = function(debugging) { lispz.debugging = debugging }
   //######################### Script Loader ####################################//
-  cache = {}, manifest = [], pending = {},
+  cache = {}, manifest = [], pending_module = {},
   http_request = function(uri, type, callback) {
     var req = new XMLHttpRequest()
     req.open(type, uri, true)
@@ -188,15 +197,15 @@ var lispz = function() {
     init_func = new Function('__module_ready__', js)
     init_func(function(exports) {
       cache[uri.split('/').pop()] = cache[uri] = exports
-      var on_readies = pending[uri]
-      delete pending[uri]
+      var on_readies = pending_module[uri]
+      delete pending_module[uri]
       on_readies.forEach(function(call_module) {call_module(exports)})
     })
   },
   load_one = function(uri, on_ready) {
     if (cache[uri]) return on_ready()
-    if (pending[uri]) return pending[uri].push(on_ready)
-    pending[uri] = [on_ready]; var js = ""
+    if (pending_module[uri]) return pending_module[uri].push(on_ready)
+    pending_module[uri] = [on_ready]; var js = ""
     if (lispz_modules[uri]) return module_init(uri)
     http_request(uri + ".lispz", 'GET', function(err, response_text) {
       try {
@@ -205,7 +214,7 @@ var lispz = function() {
         lispz_modules[uri] = response_text
         module_init(uri)
       } catch (e) {
-        delete pending[uri]
+        delete pending_module[uri]
         console.log(e)
         throw uri+": "+e
       }

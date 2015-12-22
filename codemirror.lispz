@@ -86,7 +86,7 @@
       'Alt-Enter':        "lispz_run_selection"
      }
   }))
-  (var options (stateful.morph options))
+  (var options (stateful.morph! options))
   ## write changed options back to persistent storage
   (var update-options (=>
     (localStorage.setItem "CodeMirror-options" (JSON.stringify options))
@@ -256,7 +256,7 @@
     ((get CodeMirror.commands command).apply CodeMirror args)
   ))
   (var open (lambda [owner wrapper]
-    (var cm (stateful.morph (CodeMirror wrapper options)))
+    (var cm (stateful.morph! (CodeMirror wrapper options)))
     (cm.update! {listener: (lambda [data] (listener cm data))})
     (message.send "CodeMirror-menu" menu)
     (message.listen (+ owner "-" "CodeMirror-command") cm.listener)
@@ -283,7 +283,7 @@
         ))
       ))
       (one-map cm.options.extraKeys)
-      (var core (stateful.morph (get CodeMirror.keyMap cm.options.keyMap)))
+      (var core (stateful.morph! (get CodeMirror.keyMap cm.options.keyMap)))
       (cond (not core.fallthrough)
         (core.update! {fallthrough: CodeMirror.keyMap.default.fallthrough}))
       (one-map core)
@@ -311,7 +311,7 @@
         (return-if (isnt result.list.length 1) result)
         (var size (- result.to.ch result.from.ch))
         (return-if (isnt (do (get list 0).length) size) result)
-        (return ((stateful.morph result) {list: [[]]}))
+        (return ((stateful.morph! result) {list: [[]]}))
       ))
     )
   })
@@ -418,17 +418,17 @@
   })
   (CodeMirror.defineMIME "text/lispz" "lispz")
   ## Update htmlmixed to understand lispz scripts
-  (var mimeModes (stateful.morph CodeMirror.mimeModes)
+  (var mimeModes (stateful.morph! CodeMirror.mimeModes))
   (cond (is (typeof (get mimeModes "text/html")) "string")
         (mimeModes.update! "text/html" {name: "htmlmixed"}))
-  (var mode (stateful.morph (get mimeModes "text/html")))
-  (cond (not mode.scriptTypes) (mode.update! {scriptTypes [[]]}))
+  (var mode (stateful.morph! (get mimeModes "text/html")))
+  (cond (not mode.scriptTypes) (mode.update! {scriptTypes: [[]]}))
   (mode.scriptTypes.push {matches: '/^text\/lispz$/' mode: "lispz"})
   (mimeModes.update! {htmlmixed: mode})
 
   ## paredit keys that defer if not in lisp code
   (var lisp-modes {lispz: true clojure: true commonlisp: true scheme: true})
-  (stateful.morph subpar.core)
+  (stateful.morph! subpar.core)
   (subpar.core.update! {run_selection: (lambda [cm]
     (cond (cm.somethingSelected) (var source (cm.doc.getSelection))
           (else)                 (var source (cm.doc.getValue))
@@ -443,8 +443,7 @@
       )
     ))
   ))
-  (var code-mirror-commands (state.morph CodeMirror.commands))
-  (code-mirror-commands.update! {
+  (CodeMirror.commands.update! {
     ## paredit keys that defer if not in lisp code
     subpar_backward_delete:        (subpart "backward_delete")
     subpar_forward_delete:         (subpart "forward_delete")
@@ -530,7 +529,8 @@
   (when (net.script "ext/codemirror.js") []
     (when (net.script "ext/codemirror-modes.js") []
       (cond window.CodeMirror (do ## in case we haven't built it yet
-        (code-mirror-commands.update! extra-commands)
+        (stateful.morph! CodeMirror.commands)
+        (CodeMirror.commands.update! extra-commands)
         (init-lispz-mode)
       ))
       (export {options open close set-mode build})
