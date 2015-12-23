@@ -5,13 +5,14 @@
   <style>
   </style>
   <script type=text/lispz>
-    (var tag this)
+    (var tag (stateful.morph! this))
+    (tag.update! {heading: "Specifications"))
     (var owner tag._id)
     (tag.on "mount" (=> (using  [message annotations literate]
 
       (var open (lambda [packet]
         (var name (last (packet.name.split '/:\s*/')))
-        (var heading (+ name " Specifications"))
+        (tag.update! {heading: (+ name " Specifications")))
 
         (var add-documentation (=>
           (var docs (annotations.retrieve "literate" packet.source))

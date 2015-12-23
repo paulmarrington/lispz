@@ -1,5 +1,5 @@
 <iframe-panel>
-  <panel height={ opts.height } heading={ heading } menu={ menu } owner={ _id }>
+  <panel height={ opts.height } heading={ opts.heading } menu={ menu } owner={ _id }>
     <iframe name=iframe class=iframe></iframe>
   </panel>
   <style>
@@ -18,8 +18,8 @@
   </style>
   <script type=text/lispz>
     (var tag (stateful.morph! this))
-    (tag.update! {menu: opts.menu})
-    (tag.on "mount" (=> (using  [message]
+    (tag.update! {menu: opts.menu heading: opts.heading})
+    (tag.on "mount" (=> (using [message]
       (var iframe tag.tags.panel.iframe)
       (var iframe-doc (or iframe.contentDocument iframe.contentWindow.document))
 
