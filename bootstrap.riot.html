@@ -212,14 +212,14 @@
       ))
       (($ tag.dropdown).on "show.bs.dropdown" (=>
         (message.send (+ opts.name "-open"))
-        (riot.update! tag {items: root})
+        (riot.update! tag {items: tag.root})
       ))
       (tag.update! {goto: (lambda [ev]
         (cond ev.item.topic (message.send
           (+ opts.owner "-" ev.item.topic)
           {item: ev.item owner: opts.owner action: "select"}))
         (cond ev.item.children (do
-          (tag.update! items ev.item.children)
+          (tag.update! {items: ev.item.children})
           (ev.currentTarget.blur)
           (ev.stopPropagation)
         ))
