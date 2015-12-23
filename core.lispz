@@ -153,11 +153,11 @@
   When you have state that can be changed from outside, then any function that reads from it
   no longer has referential integrity. This means that identical calls may not return identical
   results.
-  
+
   But we need state. Without it the system is fully enclosed without input or output.
   A referentially integrous :) function can be replaced by it's return value,
   so why ever run it?
-  
+
   The aim is to be like any machine with the internals always working the same.
   Think of a clock. The input is someone setting the time.
   After that the external gearing, etc is meant to work consistently so that the
@@ -166,7 +166,7 @@
   mechanism is working as expected, add a clock face and hands. Changing the hands
   is input and displaying the time output. The latter can be considered a
   side-effect.
-  
+
   The state container for lispz relies on polite access, not enforced rules. By custom an
   function that changes ends in an exclamation mark. Use this to highlight review.
   The default builder return an empty JavaScript dictionary.
@@ -191,7 +191,7 @@
   Javascript lives in the world of objects as well as functions. Sometimes to work in this world
   objects need to be labelled as stateful. Use this approach as sparingly as possible. Always
   consider other alternatives first.
-  
+
       (describe "Creating a stateful reference -- (var context (stateful.morph! this))" (=>
         (var that {a: 1 b: 2})
         (var context (stateful.morph! that))
@@ -203,7 +203,7 @@
           ((expect that.a).toBeEqual 99)
         ))
       ))
-      
+
   Be polite and use this container responsibly. Adding protection adds overhead.
   If you want to cheat, then on your head be it.
 ###
@@ -247,14 +247,18 @@
 (macro closure [params *body] (#join '' '(function(' params '){' *body '})(' params ')'))
 (macro return  [value] (#join '' 'return ' value '\n'))
 
-### spec: basics >> functions >> Return if Exists
+### spec: basics >> functions >> Return if not false
     As a functional language, most decisions are made by small single-focus functions.
     As such, conditional returns are a useful shortcut. To this end, return? returns
     a value if it not false, null or an empty container.
 
         (return? calculated-value)
+
+    > The return? macro assigns the supplied value to a temporary reference
+    > before using the reference. This stops the value from being evaluated
+    > twice if it is not a simple reference.
 ###
-(macro return? [value] (cond value (return value)))
+(macro return? [value] (do (var v value) (cond v (return v))))
 
 (macro new [cls *params] (#join '' '(new ' cls '(' (#join ',' *params) '))'))
 
@@ -339,7 +343,7 @@ To access external modules, wrap your code in 'using'. Data and functions export
     (using [dict net list]
       (var combined (dict.merge d1 d2 d3))
     )
-    
+
 ...and that is all there is to it.
 ###
 (macro using [modules *on_ready] (lispz.load (#join '' '"' modules '"')
@@ -374,11 +378,11 @@ To access external modules, wrap your code in 'using'. Data and functions export
 There are three kinds of people in the world - those that can count and those who can't. And there are two ways to treat asynchronous events at the language/platform level. Either stop the process while waiting for something...
 
     (while (read) (print)) ## this won't work in a JavaScript engine
-    
+
 ...or provide actions to do when an event happens...
 
     (read (=> (print))) ## Call an anonymous function when event fires.
-    
+
 For some reason the first approach is called synchronous. In practice it means you can't do anything until the event you are waiting for occurs. Systems that work this way compensate by making it easy to create multiple threads - allowing code to appear to work in parallel. The developer does not have much control on when the processor switches from one thread to another. This means that data can appear to change like magic between two instructions on one thread because another thread has been active. Not only does this make referential integrity impossible, but it makes for the need for locks and semaphores and other mind-bending and program-slowing mechanisms.
 
 By contrast the second approach is called asynchronous. It takes the mind-bending from an apparently optional later process and makes it important from the start. This is because we humans have been trained to think in a synchronous manner when solving problems or writing programs.
@@ -389,14 +393,14 @@ One more tale before getting back to lispz. Microsoft Windows prior to '95 used 
 Callbacks provide the simplest mechanism for asynchronous responses. Any function that want to initiate something that will complete at an undetermined later time can take a reference to a function to call at that time (or thereabouts)
 
     (delay 2000 (=> (console.log "delay over")))
-    
+
 Many callbacks producers follow the node-js approach of providing error and response parameters.
 
     (read my-url (lambda [err response]
       (cond err (throw "read failed"))
       (return response.text)
     )
-    
+
 ## Benefits
 1. Very simple with minimal overheads
 2. Can be called many times
@@ -422,19 +426,19 @@ A function that creates a promise uses the 'promise' keyword instead of 'lambda'
         (resolve-promise response)
       ))
     ))
-    
+
 Because it is common to turn a callback into a promise, lispz provides a helper macro. The following provides identical functionality. One of the benefits of a language with real macros :)
 
     (var read (promise.callback [addr param1 param2]
       (http-get (+ addr "?&" param1 "&" param2) callback)
     ))
-    
+
 Now that we have a promise, we can use it just like a callback if we want:
 
     (var reading (read "http://blat.com/blah" 1 2))
     (when reading (lambda [result] (return (process result))))
     (catch reading (lambda [err] (console.log "ERROR: "+err)))
-    
+
 Even without further knowledge, promises clean up errors and exceptions. If you do not catch errors, exceptions thrown in the asynchronous function can be caught in the code containing the promise.
 
 The power of promises starts to become clearer with the understanding that 'when' can return a promise.
@@ -454,7 +458,7 @@ So far this adds very little at the cost of a relatively large supporting librar
     # but then we can process the different groups in parallel (retrieving source as needed)
     (var modules     (when groups [files] (return (build-modules files.modules))))
     (var riots       (when groups [files] (return (build-riots files.riots))))
-    
+
     # Now to pull it all together into a single file
     (var  source     [["window.lispz_modules={}"]])
     # promise.sequence forces the order.
@@ -468,7 +472,7 @@ So far this adds very little at the cost of a relatively large supporting librar
     # Only write the result when the sequence above is complete
     (return (when all-loaded [] (write-lispz)))
     # returns a promise that is complete once the results are written
-    
+
 In summary we have
 
 1. **(promise [params...] ...)** is a macro that generates a function that returns a promise
