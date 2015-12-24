@@ -594,7 +594,61 @@ return ''}
 
 /*firepad*/
 
-lispz.tags['firepad']=function(){riot.tag('firepad', ' <panel height="{ opts.height }" heading="{ heading }" menu="{ menu }" owner="{ _id }"> <div name=wrapper class=wrapper></div> </panel>', 'firepad .wrapper { position: absolute; top: 0; bottom: 0; left: 0; right: 0; height: initial; } firepad .CodeMirror { position: absolute; top: 0; bottom: 0; left: 5px; right: 0; height: initial; } a.powered-by-firepad { display: none; } div.firepad-toolbar { margin-top: -25px; }', function(opts) {throw "compile error for riot-tags.lispz:15 -- atom.replace is not a function"
+lispz.tags['firepad']=function(){riot.tag('firepad', ' <panel height="{ opts.height }" heading="{ heading }" menu="{ menu }" owner="{ _id }"> <div name=wrapper class=wrapper></div> </panel>', 'firepad .wrapper { position: absolute; top: 0; bottom: 0; left: 0; right: 0; height: initial; } firepad .CodeMirror { position: absolute; top: 0; bottom: 0; left: 5px; right: 0; height: initial; } a.powered-by-firepad { display: none; } div.firepad-toolbar { margin-top: -25px; }', function(opts) {var tag=lispz.globals.stateful.morph_$_(this);//#riot-tags:2
+
+tag.update_$_({'menu':"CodeMirror-menu"})//#riot-tags:3
+
+tag.update_$_({'heading':"Edit"})//#riot-tags:4
+
+tag.on("mount",(function(){lispz.load("firebase,codemirror,firepad,message,dict"//#core:349
+,(function(){var firebase=lispz.cache["firebase"],codemirror=lispz.cache["codemirror"],firepad=lispz.cache["firepad"],message=lispz.cache["message"],dict=lispz.cache["dict"];
+var filename_key=("codemirror/"+opts.name+"/filename");//#riot-tags:6
+
+var cm=codemirror.open(tag._id,tag.tags.panel.wrapper);//#riot-tags:7
+
+tag.update_$_({'pad':lispz.globals.stateful({'setText':(function(contents){cm.setValue(contents)})//#riot-tags:9
+,'on_ready':(function(act){act()})//#riot-tags:10
+})})//#riot-tags:11
+//#riot-tags:12
+
+var open=(function(packet){codemirror.set_mode(cm,packet.key)//#riot-tags:14
+
+tag.update_$_({'heading':heading,'undefined':packet.key.split("/").slice(-1)[0]})//#riot-tags:15
+
+localStorage.setItem(filename_key,packet.key)//#riot-tags:16
+
+switch(false){case !packet.contents:tag.pad.setText(packet.contents)}//#core:132
+//#riot-tags:17
+
+tag.update()//#riot-tags:18
+});//#riot-tags:19
+//#riot-tags:20
+
+switch(false){case !opts.db:var db=firebase.attach(("firepads/"+opts.name),opts.db);//#riot-tags:23
+
+tag.update_$_({'pad':stateful.morph(Firepad.fromCodeMirror(db,cm,{'richTextShortcuts':false,'richTextToolbar':false}//#riot-tags:25
+))})//#riot-tags:26
+
+tag.pad.update_$_({'on_ready':(function(act){tag.pad.on("ready",act)})})//#riot-tags:27
+;break;case !true:var contents_key=("codemirror/"+opts.name+"/contents");//#riot-tags:29
+
+var filename=localStorage.getItem(filename_key);//#riot-tags:30
+
+switch(false){case !filename:setTimeout((function(){open({'key':filename,'contents':localStorage.getItem(contents_key)})//#riot-tags:33
+}),100)}//#core:132
+//#riot-tags:34
+
+cm.on("change",(function(){localStorage.setItem(contents_key,cm.getValue())//#riot-tags:36
+}))//#riot-tags:37
+//#riot-tags:38
+}//#core:132
+//#riot-tags:39
+//#riot-tags:40
+
+tag.pad.on_ready((function(){message.dispatch(("firepad/"+opts.name),{'open':open})//#riot-tags:42
+}))//#riot-tags:43
+})//#core:350
+)}))//#riot-tags:44
 
 });
 
