@@ -34,7 +34,7 @@
 
       (var open (lambda [packet]
         (codemirror.set-mode cm packet.key)
-        (tag.update! {heading (last (packet.key.split "/"))})
+        (tag.update! {heading: (last (packet.key.split "/"))})
         (localStorage.setItem filename-key packet.key)
         (cond packet.contents (tag.pad.setText packet.contents))
         (tag.update)

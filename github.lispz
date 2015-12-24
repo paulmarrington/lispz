@@ -11,7 +11,7 @@
   ## Set the branch to use for repo - defaults to master
   (var branch (promise [repo branch-name]
     (repo.update! {branch: branch-name})
-    (repo.github branch branch-name (lambda [err result] (resolve-promise)))
+    (repo.github.branch branch-name (lambda [err result] (resolve-promise)))
   ))
   ## list files in a specific path on the repo
   (var list-dir (promise.callback [repo path]
@@ -120,12 +120,12 @@
     )
   ))
   ## Given a file type, save the concatenated source contents
-  (var save (promise [target-repo store name ext comment]
+  (var save-store (promise [target-repo store name ext comment]
     (var contents ((get store ext).join ""))
     (return (write target-repo (+ "ext/" name "." ext) contents comment))
   ))
   ## copy files identified as needed as-is
-  (var copy (lambda [target-repo store comment]
+  (var copy-store (lambda [target-repo store comment]
     (return (promise.all (store.copies.map (lambda [entry]
       (return (write target-repo entry.path entry.code comment))
     ))))
@@ -136,9 +136,9 @@
       (var comment (store.from.join " "))
       (var saved (when (update target-repo) []
         (return (promise.all
-          (save target-repo store name "js"  comment)
-          (save target-repo store name "css" comment)
-          (copy target-repo store            comment)
+          (save-store target-repo store name "js"  comment)
+          (save-store target-repo store name "css" comment)
+          (copy-store target-repo store            comment)
         ))
       ))
       (when saved [] (resolve-promise))

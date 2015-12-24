@@ -8,6 +8,7 @@
         (var filtered (json.results.filter (lambda [it]
           (return (=== it.name repo.name))
         )))
+        (return-if (not filtered.length) false)
         ((get filtered 0).assets.some (lambda [it]
           (return-if (contains it.version "alpha") false)
           (repo.update! {base: (+

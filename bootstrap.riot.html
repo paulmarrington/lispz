@@ -402,20 +402,6 @@
   <script type=text/lispz>
     (var tag (stateful.morph! this))
     (using  [dom net jquery riot message bootstrap]
-      (var bootswatch-themes [[ "cerulean" "cosmo" "cyborg" "darkly" "flatly"
-        "journal" "lumen" "paper" "readable" "sandstone" "simplex" "slate"
-        "spacelab" "superhero" "united" "yeti" ]])
-      ###
-      # https://bootswatch.com
-      # Loads a bootswatch theme to make the page look different.
-      # If no theme is provided, a random one is selected.
-      ###
-      (message.listen "change-bootstrap-theme" (lambda [theme]
-        (cond (not (defined? theme))
-          (var theme (get bootswatch-themes (random bootswatch-themes.length)))
-        )
-        (net.css (+ "https://bootswatch.com/" theme "/bootstrap.css"))
-      ))
       (dom.append! "head" (dom.element "meta"
         {name: "viewport" content: "width=device-width, initial-scale=1"}
       ))

@@ -11,14 +11,19 @@ var lispz = function() {
   module = {line:0, name:"boot"}, globals = {}, load_index = 0,
   synonyms = {and:'&&',or:'||',is:'===',isnt:'!=='},
   jsify = function(atom) {
-    if (/^'\/(?:.|\n)*'$/.test(atom)) return atom.slice(1, -1).replace(/\n/g, '\\n')
-    if (/^'.*'$/.test(atom)) return atom.slice(1, -1).replace(/\\n/g, '\n')
-    if (/^"(?:.|\r*\n)*"$/.test(atom)) return atom.replace(/\r*\n/g, '\\n')
-    switch (atom[0]) {
-      case '-': return atom // unary minus or negative number
-      default:  return atom.replace(/\W/g, function(c) {
-        var t = "$hpalcewqgutkri"["!#%&+:;<=>?@\\^~".indexOf(c)];
-        return t ? ("_"+t+"_") : (c === "-") ? "_" : c })
+    try {
+      if (/^'\/(?:.|\n)*'$/.test(atom)) return atom.slice(1, -1).replace(/\n/g, '\\n')
+      if (/^'.*'$/.test(atom)) return atom.slice(1, -1).replace(/\\n/g, '\n')
+      if (/^"(?:.|\r*\n)*"$/.test(atom)) return atom.replace(/\r*\n/g, '\\n')
+      switch (atom[0]) {
+        case '-': return atom // unary minus or negative number
+        default:  return atom.replace(/\W/g, function(c) {
+          var t = "$hpalcewqgutkri"["!#%&+:;<=>?@\\^~".indexOf(c)];
+          return t ? ("_"+t+"_") : (c === "-") ? "_" : c })
+      }
+    } catch (err) {
+      console.log(err)
+      compile_error("Expecting an atom, found", atom)
     }
   },
   call_to_js = function(func, params) {
@@ -169,6 +174,7 @@ var lispz = function() {
       module = last_module
       return js
     } catch (err) {
+      console.log(err)
       return compile_error(err.message, "for "+module.name+":"+module.line)
     }
   },
