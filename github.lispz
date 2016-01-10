@@ -211,7 +211,9 @@
     ]])
     (return (build target-repo "github" sources))
   ))
-  (when (net.script "ext/github.js") []
+  (var loaded (net.script "ext/github.js" (=> (return window.Github))))
+  ## (catch loaded (export {build}))
+  (when loaded []
     (export {
       branch list-all list-dir cdn-uri build builder repo read write update
       build-github retriever grunt preprocessors

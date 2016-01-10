@@ -39,7 +39,9 @@
     (net.css (+ "ext/bootstrap-" theme ".css"))
   ))
 
-  (when (net.script "ext/bootstrap.js") [] (export {build themes}))
+  (var loaded (net.script "ext/bootstrap.js" (=> (return (($).modal)))))
+  (when  loaded [] (export {build themes}))
+  (catch loaded [] (export {build}))
 )
 
 ### spec: Bootstrap >> Bootstrap/RIOT/Lispz Combo

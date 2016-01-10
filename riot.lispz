@@ -76,6 +76,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
       (var url (or uri (+ (name.toLowerCase) ".riot.html")))
       (when (net.http-get url) [tag] (usings (compile tag)))
     ))
+
     (cond
       (get lispz.tags name) (usings ((get lispz.tags name)))
       (else)                (retrieve-and-compile)
@@ -173,8 +174,9 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
     3. No way of knowing if event was processed as expected.
   ###
 
-  (when (net.script "ext/riot.js") []
-    (return-if (not window.riot) (export {build}))
+  (var   loaded (net.script "ext/riot.js" (=> (return window.riot))))
+  (catch loaded [] (export {build}))
+  (when  loaded []
     (stateful.morph! riot.parsers.js)
     (riot.parsers.js.update! {lispz:
       (lambda [source] (return ((lispz.compile "riot-tags" source).join "\n")))
@@ -184,7 +186,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
       (var name (element.tagName.toLowerCase))
       (return (load name (element.getAttribute "uri")))
     ))))
-    (when load-all [mounts]
+    (when load-all []
       (riot.mount "*")
       (export {build compile load mount update!})
     )

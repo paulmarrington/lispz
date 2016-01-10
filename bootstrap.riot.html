@@ -52,8 +52,8 @@
 
   <script type=text/lispz>
     (var tag (stateful.morph! this))
+    (tag.update! {context: (+ "panel-" (or opts.context "default"))})
     (tag.on "mount" (=> (using [dom]
-      (tag.update! {context: (+ "panel-" (or opts.context "default"))})
       (cond opts.height (do
         (var px opts.height)
         (cond (is "%" (opts.height.slice -1))
@@ -64,6 +64,24 @@
     )))
   </script>
 </panel>
+
+<panels>
+  <yield/>
+  <style>
+    /* show the move cursor as the user moves the mouse over the panel header.*/
+    panels .panel-title { cursor: move; }
+  </style>
+  <script type=text/lispz>
+    (var tag (stateful.morph! this))
+    (tag.on "mount" (=> (using [sortable]
+      (sortable.create tag.root (or opts.name "sortable") {
+        draggable:  ".draggable"
+        handle:     ".panel-title"
+        dataIdAttr: "name"
+      })
+    )))
+  </script>
+</panels>
 
 <modal>
   <!-- ### spec: bootstrap >> Modals

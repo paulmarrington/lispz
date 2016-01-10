@@ -1,5 +1,10 @@
 (using [list dom]
-  (var script (promise.callback [uri] (lispz.script uri callback)))
+  (var script (promise.callback [uri check max-ms] (lispz.script uri (=>
+    (cond (not check) (return (callback)))
+    (var initialised (wait-for check max-ms))
+    (when  initialised [] (callback))
+    (catch initialised [] (debug (+ uri "didn't load")))
+  ))))
 
   (var css (lambda [uri]
     (var el (dom.element "link" {

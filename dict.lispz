@@ -29,6 +29,7 @@ precedence.
     (dict.merge default-options config-file-options cl-options)
 ###
 (var insert (lambda [target dictionaries]
+  (var target (stateful target))
   (dictionaries.forEach (lambda [dictionary]
     (target.update! dictionary)
   ))

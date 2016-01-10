@@ -354,12 +354,6 @@ To access external modules, wrap your code in 'using'. Data and functions export
 
 (macro delay [ms *body] (setTimeout (=> *body) ms))
 (macro yield [*body] (delay 0 *body))
-(global wait-for (lambda [test]
-  (var waiter (=>
-    (return? (test))
-    (delay 10 waiter)
-  )) (waiter)
-))
 ###
 # Use contain to contain state changes. Any var inside a contain can be changed
 # no matter how many times the contain is called concurrently. It is also allows
@@ -414,11 +408,17 @@ Many callbacks producers follow the node-js approach of providing error and resp
 5. Actions triggered before the callback is set are lost
 ###
 ### spec: async >> Promises
-ES2015 has introduced native promises into the language. As of November 2015 it is available on all mainstream browsers. Even if not, there are shims that work in an identical(ish) manner.
+ES2015 has introduced native promises into the language. As of November 2015 it
+is available on all mainstream browsers. Even if not, there are shims that work
+in an identical(ish) manner.
 
-Functions that want to return information in an asynchronous manner return a promise object. This object can be passed around and whoever needs the data it will or does contain can ask for it with a callback function.
+Functions that want to return information in an asynchronous manner return a
+promise object. This object can be passed around and whoever needs the data it
+will or does contain can ask for it with a callback function.
 
-A function that creates a promise uses the 'promise' keyword instead of 'lambda'. Whe the promise is fulfilled it will call (resolve-promise data). If it fails it calls (reject-promise err).
+A function that creates a promise uses the 'promise' keyword instead of 'lambda'.
+When the promise is fulfilled it will call (resolve-promise data). If it fails
+it calls (reject-promise err).
 
     (var read (promise [addr param1 param2]
       (http-get (+ addr "?&" param1 "&" param2) (lambda [err response]
@@ -427,7 +427,25 @@ A function that creates a promise uses the 'promise' keyword instead of 'lambda'
       ))
     ))
 
-Because it is common to turn a callback into a promise, lispz provides a helper macro. The following provides identical functionality. One of the benefits of a language with real macros :)
+In _promise_ the function is run immediately. In many situations it is nice to
+have a promise that only runs when it is first needed. You may, for example,
+create a file object that may or may not ever ask a server for the contents.
+
+    (var file {
+      read: (promise.deferred [addr param1 param2]
+        (http-get (+ addr "?&" param1 "&" param2) (lambda [err response]
+          (return-if err (reject-promise err))
+          (resolve-promise response)
+        ))
+      )
+    })
+    ...
+    ## This will trigger a server request...
+    (when file.read (lambda [response] (console.log response)))
+
+Because it is common to turn a callback into a promise, lispz provides a helper
+macro. The following provides identical functionality. One of the benefits of a
+language with real macros :)
 
     (var read (promise.callback [addr param1 param2]
       (http-get (+ addr "?&" param1 "&" param2) callback)
@@ -508,6 +526,20 @@ In summary we have
   *body
   (return #pledge)
 ))
+(macro promise.deferred [params *body] (=>
+  (var args (*arguments 0))
+  (var #callbacks (stateful {ok: (=>) fail: (=>)}))
+  (var #pledge (stateful.morph!
+    (new Promise (lambda [ok fail] (#callbacks.update! {ok fail})))
+  ))
+  (#pledge.update! {deferred: (=>
+    (var resolve-promise (lambda [] (#callbacks.ok.apply null args)))
+    (var reject-promise (lambda [err] (#callbacks.fail err)))
+    ## (#join '' 'try{' *body '}catch(err){' (reject-promise err) '}')
+    *body
+  )})
+  (return #pledge)
+))
 (macro promise.callback [params *body] (promise params
   (var callback (lambda [err result]
     (return-if err (reject-promise err))
@@ -521,8 +553,21 @@ In summary we have
   (return (promise.resolved pledge))
 ))
 
-(macro when  [pledge params *body] (pledge .then  (lambda params *body)))
-(macro catch [pledge errors *body] (pledge .catch (lambda errors *body)))
+(global #resolve-deferred (lambda [pledge]
+  (cond pledge.deferred (do
+    (var deferred pledge.deferred)
+    (delete pledge.deferred)
+    (deferred)
+  ))
+  (return pledge)
+))
+
+(macro when  [pledge params *body]
+  ((#resolve-deferred pledge).then (lambda params *body))
+)
+(macro catch [pledge errors *body]
+  ((#resolve-deferred pledge).catch (lambda errors *body))
+)
 
 (using [list]
   (global promise.all (=> (return (Promise.all (list.flatten (*arguments 0))))))
@@ -535,4 +580,24 @@ In summary we have
   ))
   (return chain-link null (*arguments 0))
 ))
+
+(global countdown (lambda [from by]
+  (var from (stateful from))
+  (return (=>
+    (from.update! (- from by))
+    (return (<= from 0))
+  ))
+))
+
+(global wait-for (promise [test max-ms]
+  (var timed-out (countdown (or max-ms 5000) 10))
+  (var waiter (=>
+    (cond
+      (test)      (return (resolve-promise))
+      (timed-out) (return (reject-promise))
+      (else)      (delay 10 waiter)
+    )
+  )) (waiter)
+))
+
 (export {})

@@ -13,5 +13,6 @@
   ))
 
   (lispz.css "ext/firepad.css")
-  (when (net.script "ext/firepad.js") [] (export {build}))
+  (var loaded (net.script "ext/firepad.js"(=> (return window.FirePad))))
+  (when loaded [] (export {build}))
 )

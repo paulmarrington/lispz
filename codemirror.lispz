@@ -526,15 +526,16 @@
   ))
 
   (lispz.css "ext/codemirror.css")
-  (when (net.script "ext/codemirror.js") []
-    (when (net.script "ext/codemirror-modes.js") []
-      (cond window.CodeMirror (do ## in case we haven't built it yet
-        (stateful.morph! CodeMirror.commands)
-        (CodeMirror.commands.update! extra-commands)
-        (init-lispz-mode)
-      ))
+  (var loaded (net.script "ext/codemirror.js"(=> (return window.CodeMirror))))
+  (when loaded []
+    (var modes-loaded (net.script "ext/codemirror-modes.js" (=> (return CodeMirror.modes.z80))))
+    (when modes-loaded []
+      (stateful.morph! CodeMirror.commands)
+      (CodeMirror.commands.update! extra-commands)
+      (init-lispz-mode)
       (export {options open close set-mode build})
     )
+    (catch loaded [] (export {build}))
   )
   (delay 100 (lispz.css "ext/codemirror-themes.css"))
 )

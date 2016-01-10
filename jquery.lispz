@@ -6,5 +6,7 @@
       ]]}
     ]]))
   ))
-  (when (net.script "ext/jquery.js") [] (export {build}))
+  (var loaded (net.script "ext/jquery.js" (=> (return window.jQuery))))
+  (when  loaded [] (export {build}))
+  (catch loaded [] (export {build}))
 )

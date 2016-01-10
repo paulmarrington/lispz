@@ -28,7 +28,7 @@ var lispz = function() {
   },
   call_to_js = function(func, params) {
     params = slice.call(arguments, 1)
-    contexts.some(function(pre){if (macros[pre+'.'+func]) {func = pre+'.'+func; return true}})
+    //contexts.some(function(pre){if (macros[pre+'.'+func]) {func = pre+'.'+func; return true}})
     if (synonyms[func]) func = synonyms[func]
     if (macros[func]) return macros[func].apply(lispz, params)
     func = ast_to_js(func)
@@ -253,6 +253,8 @@ var lispz = function() {
     document.head.appendChild(el)
   },
   script = function(uri, when_loaded) {
+    if (cache[uri]) return when_loaded()
+    cache[uri] = true
     el = document.createElement("script")
     document.head.appendChild(el)
     el.addEventListener("load",  function(evt) { setTimeout(when_loaded, 20) })
