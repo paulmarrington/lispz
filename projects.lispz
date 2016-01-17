@@ -4,7 +4,7 @@
     a Github project - warts and all. A best effort is made to keep the local
     copy and that on Github in sync.
   ###
-  (var db (new Dexie "Empiric-Projects"))
+  (ref db (new Dexie "Empiric-Projects"))
   ((db.version 1).stores {
     projects: "&name"
     files: "++,project,path"
@@ -15,16 +15,16 @@
     Once a project has been added to the system on this browser, it can be
     opened by name. Returned is an object with the cached project meta-data
     and a reference for accessing the GitHub repository.
-      (describe "Open a project that does not exist" (=>
-        (var project (projects.open "I don't exist"))
+      (describe "Open a project that does not exist" (==>
+        (ref project (projects.open "I don't exist"))
       ))
-      (describe "Open an existing project" (=>
-        (var project (projects.open "Empiric"))
+      (describe "Open an existing project" (==>
+        (ref project (projects.open "Empiric"))
       ))
   ###
-  (var open (lambda [name]
+  (ref open ([name]==>
     (return (when (db.projects.get name) [data]
-      (var repo (github.repo data.username data.password data.project-name))
+      (ref repo (github.repo data.username data.password data.project-name))
       (return {meta-data: data repo})
     ))
   ))
@@ -34,10 +34,10 @@
     Most specifically this includes the necessaries to contact the GitHub
     source of truth for this project.
   ###
-  (var add (lambda [name username password project-name]
-    (var project (db.projects.get name))
-    (var update! (lambda [data]
-      (var data (stateful.morph data))
+  (ref add ([name username password project-name]==>
+    (ref project (db.projects.get name))
+    (ref update! ([data]==>
+      (ref data (stateful.morph data))
       (data.update! username password project-name)
       (return (db.projects.put data))
     ))
@@ -49,15 +49,15 @@
     Return a promise that when fulfilled will provide an array of project
     meta-data. It returns a promise.
 
-        (describe "List Projects" (=>
-          (it "will return a list of known projects" (=>
-            (when (projects.list) [list] (=>
+        (describe "List Projects" (==>
+          (it "will return a list of known projects" (==>
+            (when (projects.list) [list] (==>
               ((expect list.length).toBeGreaterThan 0)
             ))
           ))
         ))
   ###
-  (var list (=> (return (db.projects.toArray))))
+  (ref list (==> (return (db.projects.toArray))))
 
   (export open)
 )

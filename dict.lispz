@@ -4,13 +4,13 @@ Are also called dictionaries or hashmaps. Because lispz is a functional language
 uncommon for functions to return a dictionary of values. To make them clearer, if a key is
 supplied without a following colon then it is placed into the dictionary with a value of the same name.
 
-    (var exported-method-1 (=> ...))
-    (var key "whatever I want"}
+    (ref exported-method-1 (==> ...))
+    (ref key "whatever I want"}
     (export {exported-method-1 key error: false date: (new Date))
     
 will create a JavaScript dictionary of the form
 
-    (var exporting {exported_method_1: exported_method_1, key: key, error: false, date: (new Date)})
+    (ref exporting {exported_method_1: exported_method_1, key: key, error: false, date: (new Date)})
     
 access with a key is identical to arrays except that it is a key rather than an index.
 If the key is known, using dot syntax is clearer
@@ -28,9 +28,9 @@ precedence.
     ## found, the default option is used.
     (dict.merge default-options config-file-options cl-options)
 ###
-(var insert (lambda [target dictionaries]
-  (var target (stateful target))
-  (dictionaries.forEach (lambda [dictionary]
+(ref insert ([target dictionaries]==>
+  (ref target (stateful target))
+  (dictionaries.forEach ([dictionary]==>
     (target.update! dictionary)
   ))
   (return target)
@@ -39,9 +39,9 @@ precedence.
 ### spec: lists >> dict >> Merging Dictionaries
 There is often need to merge multiple dictionaries together to create a new combined one.
 
-    (var big-dict (dict.merge dict-1 dict-2 dict-3))
+    (ref big-dict (dict.merge dict-1 dict-2 dict-3))
 ###
-(var merge (lambda [dictionaries]
+(ref merge ([dictionaries]==>
   (return (insert {} (*arguments 0)))
 ))
 
@@ -50,31 +50,31 @@ There is often need to merge multiple dictionaries together to create a new comb
 
     (dict.insert! dict-1 dict-2 dict-3)      ## changes dict-1
 ###
-(var insert! (lambda [target dictionaries]
+(ref insert! ([target dictionaries]==>
   (return (insert target (*arguments 0)))
 ))
 
 ### spec: lists >> dict >> Create a Dictionary from a List
-    (var list [[{key: 1 value: 2} {key: 3 value: 4}]]
+    (ref list [[{key: 1 value: 2} {key: 3 value: 4}]]
     (dict.from-list list "key")    # {1: {key: 1 value: 2} 3: {key: 3 value: 4})
 ###
-(var from-list (lambda [list key]
-  (var dictionary (state))
-  (cond list (list.forEach (lambda [item] (dictionary.update! item))))
+(ref from-list ([list key]==>
+  (ref dictionary (state))
+  (cond list (list.forEach ([item]==> (dictionary.update! item))))
   (return dictionary)
 ))
 
 ### spec: lists >> dict >> For Each Entry...
-    (dict.for-each dict-1 (lambda [key value] ...))
+    (dict.for-each dict-1 ([key value]==> ...))
 ###
-(var for-each (lambda [dict action=>]
-  (Object.keys dict)(.forEach (lambda [k] (action=> k (get dict k))))
+(ref for-each ([dict action=>]==>
+  (Object.keys dict)(.forEach ([k]==> (action=> k (get dict k))))
 ))
 
 ### spec: lists >> dict >> Morphing One Dictionary into Another
 ###
-(var map (lambda [dict action=>]
-  (return ((Object.keys dict).map (lambda [k] (return (action=> k (get dict k))))))
+(ref map ([dict action=>]==>
+  (return ((Object.keys dict).map ([k]==> (return (action=> k (get dict k))))))
 ))
 
 (export {merge from-list insert! for-each map})

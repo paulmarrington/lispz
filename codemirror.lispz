@@ -1,7 +1,7 @@
 (using  [net diff_match_patch message dict github]
-  (var options-string (localStorage.getItem "CodeMirror-options"))
-  (cond options (var options (JSON.parse options-string))
-        (else)  (var options {
+  (ref options-string (localStorage.getItem "CodeMirror-options"))
+  (cond options (ref options (JSON.parse options-string))
+        (else)  (ref options {
     lineNumbers:        true
     foldGutter:         true
 ##  gutters:            ["CodeMirror-lint-markers"
@@ -83,17 +83,17 @@
       'Alt-S':            "subpar_splice"
       'Ctrl-Alt-/':       "subpar_indent_selection"
 
-      'Alt-Enter':        "lispz_run_selection"
+      'Alt-Enter':        "run_selection"
      }
   }))
-  (var options (stateful.morph! options))
+  (ref options (stateful.morph! options))
   ## write changed options back to persistent storage
-  (var update-options (=>
+  (ref update-options (==>
     (localStorage.setItem "CodeMirror-options" (JSON.stringify options))
   ))
   ## Context menu for code editor
-  (var topic "CodeMirror-command")
-  (var menu [[
+  (ref topic "CodeMirror-command")
+  (ref menu [[
     ### {title: "File" children: [[
       {topic meta: "save" title: "Save"}
     ]]} ###
@@ -249,33 +249,33 @@
       {topic meta: "toggle_option,lineWrapping" title: "Toggle Line Wrap"}
     ]]}
   ]])
-  (var listener (lambda [cm data]
-    (var args (data.item.meta.split ","))
-    (var command (args.shift))
+  (ref listener ([cm data]==>
+    (ref args (data.item.meta.split ","))
+    (ref command (args.shift))
     (args.unshift cm)
     ((get CodeMirror.commands command).apply CodeMirror args)
   ))
-  (var open (lambda [owner wrapper]
-    (var cm (stateful.morph! (CodeMirror wrapper options)))
-    (cm.update! {listener: (lambda [data] (listener cm data))})
+  (ref open ([owner wrapper]==>
+    (ref cm (stateful.morph! (CodeMirror wrapper options)))
+    (cm.update! {listener: ([data]==> (listener cm data))})
     (message.send "CodeMirror-menu" menu)
     (message.listen (+ owner "-" "CodeMirror-command") cm.listener)
     (return cm)
   ))
-  (var close (lambda [cm]
+  (ref close ([cm]==>
     (message.remove cm.listener)
   ))
-  (var spaces "                ")
-  (var extra-commands {
-    view_keyboard_shortcuts: (lambda [cm]
-      (var keys [[]])
-      (var one-map (lambda [map]
-        ((Object.keys map).forEach (lambda [key]
+  (ref spaces "                ")
+  (ref extra-commands {
+    view_keyboard_shortcuts: ([cm]==>
+      (ref keys [[]])
+      (ref one-map ([map]==>
+        ((Object.keys map).forEach ([key]==>
           (cond
             (is key "fallthrough") (do
-                (var more (get map key))
-                (cond (is (typeof more) "string") (var more [[more]]))
-                (more.forEach (lambda [map]
+                (ref more (get map key))
+                (cond (is (typeof more) "string") (ref more [[more]]))
+                (more.forEach ([map]==>
                   (one-map (get CodeMirror.keyMap map))))
               )
             (else) (keys.push (+ key ": " (get map key)))
@@ -283,7 +283,7 @@
         ))
       ))
       (one-map cm.options.extraKeys)
-      (var core (stateful.morph! (get CodeMirror.keyMap cm.options.keyMap)))
+      (ref core (stateful.morph! (get CodeMirror.keyMap cm.options.keyMap)))
       (cond (not core.fallthrough)
         (core.update! {fallthrough: CodeMirror.keyMap.default.fallthrough}))
       (one-map core)
@@ -291,32 +291,32 @@
         (+ "data:text/html," (encodeURIComponent (keys.join "<br>")))
         "Keys" "width=300,height=600")
     )
-    fold_at_cursor: (lambda [cm]
+    fold_at_cursor: ([cm]==>
       (cm.foldCode (cm.getCursor))
     )
-    toggle_option: (lambda [cm name]
+    toggle_option: ([cm name]==>
       (CodeMirror.commands.set_option cm name (not (cm.getOption name)))
     )
-    set_option: (lambda [cm name value]
+    set_option: ([cm name value]==>
       (cm.setOption name value)
       (options.update! name value)
       (update-options)
     )
-    set_mode: (lambda [cm mode]
+    set_mode: ([cm mode]==>
       (CodeMirror.commands.set_option cm "keyMap" mode)
     )
-    auto_complete: (lambda [cm]
-      (var not-only (lambda []
-        (var result (CodeMirror.hint.anyword.apply null arguments))
+    auto_complete: ([cm]==>
+      (ref not-only ([]==>
+        (ref result (CodeMirror.hint.anyword.apply null arguments))
         (return-if (isnt result.list.length 1) result)
-        (var size (- result.to.ch result.from.ch))
+        (ref size (- result.to.ch result.from.ch))
         (return-if (isnt (do (get list 0).length) size) result)
         (return ((stateful.morph! result) {list: [[]]}))
       ))
     )
   })
   ## Editing modes dependent on file type
-  (var mode-extensions {
+  (ref mode-extensions {
     apl: "apl" as3: "apl" asf: "apl"
     c: "clike" cpp: "clike" h: "clike" cs: "clike"
     chh: "clike" hh: "clike" h__: "clike" hpp: "clike"
@@ -363,20 +363,20 @@
     xquery: "xquery" xq: "xquery" xqy: "xquery"
     yaml: "yaml" yml: "yaml" z80: "z80" asm: "z80"
   })
-  (var saved-mode-extensions localStorage.CodeMirror-mode-extensions)
-  (cond saved-mode-extensions (var mode-extensions
+  (ref saved-mode-extensions localStorage.CodeMirror-mode-extensions)
+  (cond saved-mode-extensions (ref mode-extensions
     (dict.merge mode-extensions saved-mode-extensions)
   ))
 
-  (var set-mode (lambda [cm name]
-    (var try-mode (lambda [exts]
-      (var ext (exts.join "."))
+  (ref set-mode ([cm name]==>
+    (ref try-mode ([exts]==>
+      (ref ext (exts.join "."))
       (return? (get mode-extensions ext))
       (return-if (get CodeMirror.modes ext) ext)
       (return false)
     ))
-    (var mode ((=>
-      (var parts (name.split "."))
+    (ref mode ((==>
+      (ref parts (name.split "."))
       (cond (> parts.length 2) (return? (try-mode (parts.slice -2))))
       (return? (try-mode (parts.slice -1)))
       (return  "text")
@@ -386,7 +386,7 @@
   ))
 
   ## CodeMirror lispz mode
-  (var init-lispz-mode (=>
+  (ref init-lispz-mode (==>
   (CodeMirror.defineSimpleMode "lispz" {
     start: [[
       {regex: '/""/'                                 token: "string"}
@@ -418,26 +418,52 @@
   })
   (CodeMirror.defineMIME "text/lispz" "lispz")
   ## Update htmlmixed to understand lispz scripts
-  (var mimeModes (stateful.morph! CodeMirror.mimeModes))
+  (ref mimeModes (stateful.morph! CodeMirror.mimeModes))
   (cond (is (typeof (get mimeModes "text/html")) "string")
         (mimeModes.update! "text/html" {name: "htmlmixed"}))
-  (var mode (stateful.morph! (get mimeModes "text/html")))
+  (ref mode (stateful.morph! (get mimeModes "text/html")))
   (cond (not mode.scriptTypes) (mode.update! {scriptTypes: [[]]}))
   (mode.scriptTypes.push {matches: '/^text\/lispz$/' mode: "lispz"})
   (mimeModes.update! {htmlmixed: mode})
 
-  ## paredit keys that defer if not in lisp code
-  (var lisp-modes {lispz: true clojure: true commonlisp: true scheme: true})
-  (stateful.morph! subpar.core)
-  (subpar.core.update! {run_selection: (lambda [cm]
-    (cond (cm.somethingSelected) (var source (cm.doc.getSelection))
-          (else)                 (var source (cm.doc.getValue))
+  (ref run_selection ([cm]==>
+    (ref compiler (get compilers (cm.getModeAt (cm.getCursor))))
+    (cond (not compiler) (return CodeMirror.Pass))
+
+    (cond (cm.somethingSelected) (ref source (cm.doc.getSelection))
+          (else)                 (ref source (cm.doc.getValue))
     )
-    (console.log (lispz.run "lispz-repl" source))
-  )})
-  (var subpart (lambda [cmd opt]
-    (return (lambda [cm]
-      (var mode (cm.getModeAt (cm.getCursor)))
+    (ref js (compiler.compile name source))
+    (message.send "code-editor-run/js" {
+      name source js: (compile.to-string js)
+    })
+    (message.send "code-editor-run/output" {
+      name source output: (compile.run js)
+    })
+  ))
+  ### spec: codemirror >> Compiling Code
+    To send the compiler output to anywhere but the console, use a copy of the
+    following code.
+      (message.listen "code-editor-compile/js" ([compiled]==>
+        ## compiled: {name source js}
+      ))
+  ###
+  (message.listen "code-editor-compile/js" ([compiled]==>))
+  ### spec:
+    To process the console output from running compiled code:
+      (message.listen "code-editor-run/output" ([run]==>
+        ## run: {name source output}
+      ))
+  ###
+  (message.listen "code-editor-run/output" ([run]==>
+    (console.log run.output)
+  ))
+
+  (ref lisp-modes {lispz: true clojure: true commonlisp: true scheme: true})
+
+  (ref subpart ([cmd opt]==>
+    (return ([cm]==>
+      (ref mode (cm.getModeAt (cm.getCursor)))
       (cond (get lisp-modes mode.name)  ((get subpar.core cmd) cm opt)
             (else)                      (return CodeMirror.Pass)
       )
@@ -485,13 +511,13 @@
     subpar_splice:                 (subpart "splice")
     subpar_indent_selection:       (subpart "indent_selection")
 
-    lispz_run_selection:           (subpart "run_selection")
+    run_selection:                 run_selection
   })
   ))
 
   ## elm script has a bug - restore for a later version.
   ## tern is for javascript features - overrides console.log
-  (var build-base (lambda [target-repo]
+  (ref build-base ([target-repo]==>
     (return (github.build target-repo "codemirror" [[
       {repo: "codemirror/CodeMirror" files: [[
         {base: "lib" include: '/codemirror\.(js|css)$/'}
@@ -507,28 +533,28 @@
       ]]}
     ]]))
   ))
-  (var build-themes (lambda [target-repo]
+  (ref build-themes ([target-repo]==>
     (return (github.build target-repo "codemirror-themes" [[
       {repo: "codemirror/CodeMirror" files: [[
         {base: "theme"}
       ]]}
     ]]))
   ))
-  (var build-mode (lambda [target-repo]
+  (ref build-mode ([target-repo]==>
     (return (github.build target-repo "codemirror-modes" [[
       {repo: "codemirror/CodeMirror" files: [[
         {base: "mode" exclude: '/htmlmixed|javascript|css|elm.js$|test.js$/'}
       ]]}
     ]]))
   ))
-  (var build (lambda [target-repo]
+  (ref build ([target-repo]==>
     (return (promise.all build-base build-themes build-mode))
   ))
 
   (lispz.css "ext/codemirror.css")
-  (var loaded (net.script "ext/codemirror.js"(=> (return window.CodeMirror))))
+  (ref loaded (net.script "ext/codemirror.js"(==> (return window.CodeMirror))))
   (when loaded []
-    (var modes-loaded (net.script "ext/codemirror-modes.js" (=> (return CodeMirror.modes.z80))))
+    (ref modes-loaded (net.script "ext/codemirror-modes.js" (==> (return CodeMirror.modes.z80))))
     (when modes-loaded []
       (stateful.morph! CodeMirror.commands)
       (CodeMirror.commands.update! extra-commands)

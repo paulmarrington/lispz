@@ -51,13 +51,13 @@
   </style>
 
   <script type=text/lispz>
-    (var tag (stateful.morph! this))
+    (ref tag (stateful.morph! this))
     (tag.update! {context: (+ "panel-" (or opts.context "default"))})
     (tag.on "mount" (=> (using [dom]
       (cond opts.height (do
-        (var px opts.height)
+        (ref px opts.height)
         (cond (is "%" (opts.height.slice -1))
-          (var px (/ (* window.innerHeight (opts.height.slice 0 -1)) 100))
+          (ref px (/ (* window.innerHeight (opts.height.slice 0 -1)) 100))
         )
         (dom.style! tag.outer {height: (+ px "px")})
       ))
@@ -72,7 +72,7 @@
     panels .panel-title { cursor: move; }
   </style>
   <script type=text/lispz>
-    (var tag (stateful.morph! this))
+    (ref tag (stateful.morph! this))
     (tag.on "mount" (=> (using [sortable]
       (sortable.create tag.root (or opts.name "sortable") {
         draggable:  ".draggable"
@@ -126,13 +126,13 @@
   <style>
   </style>
   <script type=text/lispz>
-    (var tag (stateful.morph! this))
+    (ref tag (stateful.morph! this))
     (cond opts.buttons (do
       (tag.update! {buttons: [[]]})
-      ((opts.buttons.split ",").forEach (lambda [title]
-        (var primary (is "*" (first title))  type "default")
-        (cond primary (do (var type "primary") (title.shift)))
-        (var name title)
+      ((opts.buttons.split ",").forEach ([title]==>
+        (ref primary (is "*" (first title))  type "default")
+        (cond primary (do (ref type "primary") (title.shift)))
+        (ref name title)
         (tag.buttons.push { title type name })
       ))
     ))
@@ -151,7 +151,7 @@
   Use this if the menu contents change between uses.
 
         (message.listen "specifications-menu-open" (=>
-          (var menu (dict.map lispz_modules (lambda [title source]
+          (ref menu (dict.map lispz_modules ([title source]==>
             (return {topic: "specifications" title source})
           )))
           (message.send "specifications-menu" (menu.sort))
@@ -173,7 +173,7 @@
         )
   The menu itself is a dictionary with the format:
 
-       (var test-menu
+       (ref test-menu
           [[
             { header: true title: "Heading 1" }
             { title: "Item 1" topic: "Test menu item 1" }
@@ -192,7 +192,7 @@
   If a menu item has a topic entry, a message will be sent to that an address
   made up of the component owner, dash, topic.
 
-      (message.listen "Test Panel 2 - Test menu item 1" (lambda [data] (debug data)))
+      (message.listen "Test Panel 2 - Test menu item 1" ([data]==> (debug data)))
 
   ###
   ### spec: bootstrap >> Menus >> bars-menu
@@ -223,16 +223,16 @@
     bars-menu a.dropdown-toggle { cursor: pointer }
   </style>
   <script type=text/lispz>
-    (var tag (stateful.morph! this))
+    (ref tag (stateful.morph! this))
     (tag.on "mount" (=> (using [message riot]
-      (message.listen opts.name (lambda [items]
+      (message.listen opts.name ([items]==>
         (riot.update! tag {items root: (or items [[]])})
       ))
       (($ tag.dropdown).on "show.bs.dropdown" (=>
         (message.send (+ opts.name "-open"))
         (riot.update! tag {items: tag.root})
       ))
-      (tag.update! {goto: (lambda [ev]
+      (tag.update! {goto: ([ev]==>
         (cond ev.item.topic (message.send
           (+ opts.owner "-" ev.item.topic)
           {item: ev.item owner: opts.owner action: "select"}))
@@ -255,9 +255,9 @@
   ### -->
   <tree-component name=base/>
   <script type=text/lispz>
-    (var tag (stateful.morph! this))
+    (ref tag (stateful.morph! this))
     (using [message riot]
-      (message.listen opts.name (lambda [items]
+      (message.listen opts.name ([items]==>
         (riot.update! tag {children: {base: {children: items}}})
         (tag.update) ## once more for luck
       ))
@@ -295,9 +295,9 @@
     }
   </style>
   <script type=text/lispz>
-    (var tag (stateful.morph! this))
+    (ref tag (stateful.morph! this))
     (using [message dict]
-      (tag.on "update" (lambda [data]
+      (tag.on "update" ([data]==>
         (cond (and opts.name tag.parent.children) (do
           (tag.update! {items: (get tag.parent.children opts.name "children")})
           (cond (and tag.items tag.items.length)
@@ -306,13 +306,13 @@
         ))
       ))
 
-      (tag.update! {goto: (lambda [ev]
-        (var item ev.item.item)
-        (var topic (or item.topic item.title ))
+      (tag.update! {goto: ([ev]==>
+        (ref item ev.item.item)
+        (ref topic (or item.topic item.title ))
         (cond topic (message.send topic
           {item action: "select"}))
         (cond item.children (do
-          (var tree ev.currentTarget.nextElementSibling)
+          (ref tree ev.currentTarget.nextElementSibling)
           (tree.classList.toggle "open")
           (tree.parentElement.classList.toggle "bg-info")
         ))
@@ -353,7 +353,7 @@
     #sidebar.toggled { width: auto; padding-right: 15px; }
   </style>
   <script type=text/lispz>
-    (var tag (stateful.morph! this)  hamburger (stateful.morph! tag.hamburger))
+    (ref tag (stateful.morph! this)  hamburger (stateful.morph! tag.hamburger))
     (using [message dom]
       (hamburger.update: {onclick: (=>
         (tag.sidebar.classList.toggle "toggled")
@@ -381,9 +381,9 @@
     }
   </style>
   <script type=text/lispz>
-    (var tag this)
+    (ref tag this)
     (using [message dom]
-      (message.listen "page-content-wrapper-padding" (lambda [px]
+      (message.listen "page-content-wrapper-padding" ([px]==>
         (dom.style! tag.page-content-wrapper {paddingLeft: (+ px "px")})
       ))
     )
@@ -418,7 +418,7 @@
     }
   </style>
   <script type=text/lispz>
-    (var tag (stateful.morph! this))
+    (ref tag (stateful.morph! this))
     (using  [dom net jquery riot message bootstrap]
       (dom.append! "head" (dom.element "meta"
         {name: "viewport" content: "width=device-width, initial-scale=1"}

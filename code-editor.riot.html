@@ -18,13 +18,13 @@
     }
   </style>
   <script type=text/lispz>
-    (var tag (stateful.morph! this))
+    (ref tag (stateful.morph! this))
     (tag.update! {menu: "CodeMirror-menu" heading: (or opts.heading "Edit")})
     (tag.on "mount" (=> (using  [codemirror message dict]
-      (var filename-key (+ "code-editor/" opts.name "/filename"))
-      (var cm (codemirror.open tag._id tag.tags.panel.wrapper))
+      (ref filename-key (+ "code-editor/" opts.name "/filename"))
+      (ref cm (codemirror.open tag._id tag.tags.panel.wrapper))
 
-      (var open (lambda [packet]
+      (ref open ([packet]==>
         (codemirror.set-mode cm packet.key)
         (tag.update! {heading: (last (packet.key.split "/"))})
         (localStorage.setItem filename-key packet.key)
@@ -32,8 +32,8 @@
         (tag.update)
       ))
 
-      (var contents-key (+ "code-editor/" opts.name "/contents"))
-      (var filename (localStorage.getItem filename-key))
+      (ref contents-key (+ "code-editor/" opts.name "/contents"))
+      (ref filename (localStorage.getItem filename-key))
       (cond filename (delay 100
         (open {key: filename contents: (localStorage.getItem contents-key)})
       ))

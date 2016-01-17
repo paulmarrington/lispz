@@ -20,24 +20,24 @@
   The retrieve function processes source files one at a time. It returns an
   array of objects containing title and body members.
 
-      (describe "(annotations.retrieve \"spec\" source-code)" (=>
-        (it "retrieves a list {title: \"..\" body: \"..\"}" (=>
+      (describe "(annotations.retrieve \"spec\" source-code)" (==>
+        (it "retrieves a list {title: \"..\" body: \"..\"}" (==>
           (using [annotations]
-            (var source window.lispz_modules.annotations)
-            (var list (annotations.retrieve "spec" source)
+            (ref source window.lispz_modules.annotations)
+            (ref list (annotations.retrieve "spec" source)
             (expect list.length).toBeGreaterThan(0)
-            (var annotation (first list))
+            (ref annotation (first list))
             (expect annotation.title).toBe("Annotations")
             (expect annotation.body.length).toBeGreaterThan(100)
           )
         ))
       ))
 ###
-  (var retrieve (lambda [type source]
-    (var re (new RegExp (+ "###\\s*" type ":\\s*(.*)\\n((?:.|\\n)*?)###") "g"))
-    (var annotations [[]])
-    (var scan (=>
-      (var res (re.exec source))
+  (ref retrieve ([type source]==>
+    (ref re (new RegExp (+ "###\\s*" type ":\\s*(.*)\\n((?:.|\\n)*?)###") "g"))
+    (ref annotations [[]])
+    (ref scan (==>
+      (ref res (re.exec source))
       (return? (not res))
       (annotations.push {title: (get res 1)  body: (get res 2)})
       (scan)

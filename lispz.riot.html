@@ -14,21 +14,16 @@
   <script type="text/lispz">
     (riot-tag [message riot dict]
       (stateful.morph! lispz) (lispz.update! {debug: true})
-      (when (message.ready "code-editor/scratch") []
-        (message.send "code-editor/scratch"
+      (when (message.ready "code-editor/code") []
+        (message.send "code-editor/code"
           {action: "open" key: "scratchpad.lispz" contents: null})
       )
-      (var topic "specifications")
-      (message.listen "specifications-menu-open" (=>
-        (var menu (dict.map lispz_modules (lambda [title source]
-          (return {topic title source})
-        )))
-        (message.send "specifications-menu" (menu.sort))
-      ))
-      (when (message.ready "specifications/specifications") []
-        (message.send "specifications/specifications"
-          {action: "open" name: "scratchpad" scripts: [[]]})
-      )
+      
+      (message.clear "code-editor-compile/js")
+      (message.link "code-editor-compile/js" "code-editor/compiled")
+
+      (message.clear "code-editor-compile/output")
+      (message.link "code-editor-run/output" "code-editor/output")
     )
   </script>
 </lispz>

@@ -1,32 +1,32 @@
 ## https://github.com/RubaXa/Sortable
 (using [net cdnjs dict]
 
-  (var sortable-defaults {
+  (ref sortable-defaults {
     dataIdAttr: name
     store: {
-      get: (lambda [sortable]
-        (var items (localStorage.getItem sortable.options.group))
+      get: ([sortable]==>
+        (ref items (localStorage.getItem sortable.options.group))
         (return ((or items "").split "|"))
       )
-      set: (lambda [sortable]
+      set: ([sortable]==>
         (localStorage.setItem sortable.options.group ((sortable.toArray).join "|"))
       )
     }
   })
   ### spec: DOM >> Sortable Components
   ###
-  (var create (lambda [container name options]
+  (ref create ([container name options]==>
     (return (Sortable.create container
       (dict.merge  sortable-defaults {group: (or name (Math.random))} options)
     ))
   ))
 
-  (var build (lambda [target-repo]
+  (ref build ([target-repo]==>
     (return (cdnjs.build target-repo "sortable" [[
       {repo: "sortable" files: [[{include '/Sortable.js/'}]]}
     ]]))
   ))
-  (var loaded (net.script "ext/sortable.js" (=> (return window.Sortable))))
+  (ref loaded (net.script "ext/sortable.js" (==> (return window.Sortable))))
   (when  loaded [] (export {build create}))
   (catch loaded [] (export {build}))
 )

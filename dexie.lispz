@@ -1,6 +1,6 @@
 (using  [net github]
 
-  (var build (lambda [target-repo]
+  (ref build ([target-repo]==>
     (return (github.build target-repo "dexie" [[
       {repo: "dfahlander/Dexie.js" files: [[
         {base: "dist/latest" include: '/Dexie.js$/'}
@@ -8,5 +8,5 @@
     ]]))
   ))
 
-  (lispz.script "ext/dexie.js" (=> (export { build })))
+  (lispz.script "ext/dexie.js" (==> (export { build })))
 )

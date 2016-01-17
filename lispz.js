@@ -9,7 +9,7 @@ var lispz = function() {
   tkre = new RegExp('(' + stringRE + '\\' + delims + "|[^\\s" + not_delims + "]+)", 'g'),
   opens = new Set("({["), closes = new Set(")}]"), ast_to_js, slice = [].slice, contexts = [],
   module = {line:0, name:"boot"}, globals = {}, load_index = 0,
-  synonyms = {and:'&&',or:'||',is:'===',isnt:'!=='},
+  synonyms = {and:'&&',or:'||',is:'===',isnt:'!==','==>':'function', '=>':'function'},
   jsify = function(atom) {
     try {
       if (/^'\/(?:.|\n)*'$/.test(atom)) return atom.slice(1, -1).replace(/\n/g, '\\n')
@@ -28,19 +28,42 @@ var lispz = function() {
   },
   call_to_js = function(func, params) {
     params = slice.call(arguments, 1)
-    //contexts.some(function(pre){if (macros[pre+'.'+func]) {func = pre+'.'+func; return true}})
+    if (func instanceof Array && func[0] == "[") {
+      var real_func = params[0] // ([p1 p2] func ...) === (func [p1 p2] ...)
+      params[0] = func
+      func = real_func
+    }
     if (synonyms[func]) func = synonyms[func]
     if (macros[func]) return macros[func].apply(lispz, params)
     func = ast_to_js(func)
     if (params[0] && params[0][0] === '.') func += params.shift()
     return func + '(' + params.map(ast_to_js).join(',') + ')'
   },
+  drop_line_number = function(ast) {
+    return (ast instanceof Array && ast[0] === "\n") ? ast.slice(3) : ast
+  },
+  function_to_js = function(params, body) {
+    params = drop_line_number(params)
+    if (params instanceof Array && params[0] == "[") {
+      body = slice.call(arguments, 1)
+    } else {
+      body = slice.call(arguments, 0)
+      params = ["["]  // empty parameter list for macro
+    }
+    var header = "function("+params.slice(1).map(jsify).join(",")+")"
+    body = "{"+body.map(ast_to_js).join("\n")+"}\n"
+    return header + body
+  },
   macro_to_js = function(name, pnames, body) {
-    body = slice.call(arguments, 2)
-    if (pnames[0] === "\n") pnames = pnames.slice(3) // drop line number component
+    pnames = drop_line_number(pnames)
+    if (pnames instanceof Array && pnames[0] == "[") {
+      body = slice.call(arguments, 2)
+    } else {
+      body = slice.call(arguments, 1)
+      pnames = ["["]  // empty parameter list for macro
+    }
     macros[name] = function(pvalues) {
-      pvalues = slice.call(arguments)
-      if (pvalues[0] === "\n") pvalues = pvalues.slice(3) // drop line number component
+      pvalues = drop_line_number(slice.call(arguments))
       var args = {}
       pnames.slice(1).forEach(function(pname, i) {
         args[pname] = (pname[0] === '*') ? ["list"].concat(pvalues.slice(i)) :
@@ -301,7 +324,7 @@ var lispz = function() {
     '(': call_to_js, '[': array_to_js, '{': dict_to_js, 'macro': macro_to_js,
     '#join': join_to_js, '#pairs': pairs_to_js, '#binop': binop_to_js,
     '#requires': requires_to_js, 'list': list_to_js,
-    '\n': eol_to_js, 'immediate': immediate_to_js
+    '\n': eol_to_js, 'immediate': immediate_to_js, 'function': function_to_js
   }
   // add all standard binary operations (+, -, etc)
   "+,-,*,/,&&,||,==,===,<=,>=,!=,!==,<,>,^,%".split(',').forEach(binop_to_js)
@@ -309,6 +332,6 @@ var lispz = function() {
   return { compile: compile, run: run, parsers: parsers, load: load,
            macros: macros, cache: cache, http_request: http_request,
            clone: clone, manifest: manifest, script: script, css: css,
-           synonyms: synonyms, globals: globals, tags: {},
+           synonyms: synonyms, globals: globals, tags: {}, slice,
            path_base: lispz_base_path }
 }()

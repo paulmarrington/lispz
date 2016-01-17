@@ -4,11 +4,11 @@
   for differing screen sizes and is relatively mobile friendly.
 ###
 (using [net github cdnjs message]
-  (var bootswatch-themes [["cerulean" "cosmo" "cyborg" "darkly" "flatly"
+  (ref bootswatch-themes [["cerulean" "cosmo" "cyborg" "darkly" "flatly"
     "journal" "lumen" "paper" "readable" "sandstone" "simplex" "slate"
     "spacelab" "superhero" "united" "yeti" "default"]])
 
-  (var build (lambda [target-repo]
+  (ref build ([target-repo]==>
     (return (promise.all
       (github.build target-repo "bootstrap" [[
         {repo: "twbs/bootstrap" files: [[
@@ -16,7 +16,7 @@
           {base: "dist/fonts" copy-to: "fonts"}
         ]]}
       ]])
-      (bootswatch-themes.map (lambda [theme]
+      (bootswatch-themes.map ([theme]==>
         (return (cdnjs.build target-repo (+ "bootstrap-" theme) [[
           {repo: "bootswatch" files: [[{include: (+ theme "/bootstrap.css")}]]}
         ]]))
@@ -25,21 +25,21 @@
   ))
 
   (lispz.css "ext/bootstrap.css")
-  (var themes bootswatch-themes)
+  (ref themes bootswatch-themes)
 
   ###
   # https://bootswatch.com
   # Loads a bootswatch theme to make the page look different.
   # If no theme is provided, a random one is selected.
   ###
-  (message.listen "change-bootstrap-theme" (lambda [theme]
+  (message.listen "change-bootstrap-theme" ([theme]==>
     (cond (not (defined? theme))
-      (var theme (get bootswatch-themes (random themes.length)))
+      (ref theme (get bootswatch-themes (random themes.length)))
     )
     (net.css (+ "ext/bootstrap-" theme ".css"))
   ))
 
-  (var loaded (net.script "ext/bootstrap.js" (=> (return (($).modal)))))
+  (ref loaded (net.script "ext/bootstrap.js" (==> (return (($).modal)))))
   (when  loaded [] (export {build themes}))
   (catch loaded [] (export {build}))
 )

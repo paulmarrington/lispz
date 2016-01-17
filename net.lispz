@@ -1,23 +1,23 @@
 (using [list dom]
-  (var script (promise.callback [uri check max-ms] (lispz.script uri (=>
+  (ref script (promise.callback [uri check max-ms] (lispz.script uri (==>
     (cond (not check) (return (callback)))
-    (var initialised (wait-for check max-ms))
+    (ref initialised (wait-for check max-ms))
     (when  initialised [] (callback))
     (catch initialised [] (debug (+ uri "didn't load")))
   ))))
 
-  (var css (lambda [uri]
-    (var el (dom.element "link" {
+  (ref css ([uri]==>
+    (ref el (dom.element "link" {
       type: "text/css" rel: "stylesheet" href: uri
     }))
     (dom.append! "head" el)
   ))
 
-  (var http-get (promise.callback [uri]
+  (ref http-get (promise.callback [uri]
     (lispz.http_request uri "GET" callback)
   ))
 
-  (var json-request (promise [uri]
+  (ref json-request (promise [uri]
     (when (http-get uri) [response] (resolve-promise (JSON.parse response)))
   ))
 

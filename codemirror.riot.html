@@ -4,7 +4,7 @@
   <style>
   </style>
   <script type=text/lispz>
-    (var tag (stateful.morph! this))
+    (ref tag (stateful.morph! this))
     (tag.on "mount" (=> (using  [codemirror]
       (tag.update! {cm: (CodeMirror tag.wrapper opts)})
     )))

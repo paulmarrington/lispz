@@ -1,26 +1,26 @@
 (using  [net]
   ( var databases (stateful.morph! (JSON.parse (or (localStorage.getItem "firebases") "{}"))))
 
-  (var register (lambda [key uri]
+  (ref register ([key uri]==>
     (databases.update! key uri)
     (localStorage.setItem "firebases" (JSON.stringify databases))
   ))
 
-  (var encode (lambda [before]
-    (var uri (before.replace '/\./g' ":"))
-    (var uri (uri.replace    '/#/g'  "_hash_"))
-    (var uri (uri.replace    '/\$/g' "_dollar_"))
+  (ref encode ([before]==>
+    (ref uri (before.replace '/\./g' ":"))
+    (ref uri (uri.replace    '/#/g'  "_hash_"))
+    (ref uri (uri.replace    '/\$/g' "_dollar_"))
     (return uri)
   ))
 
-  (var attach (lambda [collection db]
-    (var uri (get databases (or db "default")))
+  (ref attach ([collection db]==>
+    (ref uri (get databases (or db "default")))
     (return-if (not uri) null)
     (return (new Firebase (+ uri "/" (encode collection))))
   ))
 
-  (var loaded (net.script "https://cdn.firebase.com/js/client/2.2.9/firebase.js"
-    (=> (return window.Firebase))
+  (ref loaded (net.script "https://cdn.firebase.com/js/client/2.2.9/firebase.js"
+    (==> (return window.Firebase))
   ))
   (when  loaded (export {register attach databases}))
   ## (catch loaded (export {}))
