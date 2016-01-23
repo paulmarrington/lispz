@@ -8,7 +8,7 @@
     "journal" "lumen" "paper" "readable" "sandstone" "simplex" "slate"
     "spacelab" "superhero" "united" "yeti" "default"]])
 
-  (ref build ([target-repo]==>
+  (ref build (lambda [target-repo]
     (return (promise.all
       (github.build target-repo "bootstrap" [[
         {repo: "twbs/bootstrap" files: [[
@@ -16,7 +16,7 @@
           {base: "dist/fonts" copy-to: "fonts"}
         ]]}
       ]])
-      (bootswatch-themes.map ([theme]==>
+      (bootswatch-themes.map (lambda [theme]
         (return (cdnjs.build target-repo (+ "bootstrap-" theme) [[
           {repo: "bootswatch" files: [[{include: (+ theme "/bootstrap.css")}]]}
         ]]))
@@ -32,14 +32,14 @@
   # Loads a bootswatch theme to make the page look different.
   # If no theme is provided, a random one is selected.
   ###
-  (message.listen "change-bootstrap-theme" ([theme]==>
+  (message.listen "change-bootstrap-theme" (lambda [theme]
     (cond (not (defined? theme))
       (ref theme (get bootswatch-themes (random themes.length)))
     )
     (net.css (+ "ext/bootstrap-" theme ".css"))
   ))
 
-  (ref loaded (net.script "ext/bootstrap.js" (==> (return (($).modal)))))
+  (ref loaded (net.script "ext/bootstrap.js" (lambda [] (return (($).modal)))))
   (when  loaded [] (export {build themes}))
   (catch loaded [] (export {build}))
 )

@@ -41,8 +41,8 @@
   then it will be easy to find later to delete.
 ###
 ### spec: debug
-  (describe "(debug [p1, p2, ...]) ## macro to display stack and messages" (==>
-    (it "displays a stack trace and the parameters provided" (==>
+  (describe "(debug [p1, p2, ...]) ## macro to display stack and messages" (lambda []
+    (it "displays a stack trace and the parameters provided" (lambda []
       (spy-method console trace)
       (debug "multiple" "parameters")
       ((expect console.trace).toHaveBeenCalled)
@@ -83,32 +83,32 @@
     it to or in a variable. A function will return undefined
     unless a specific return statement is used.
 
-        (ref +1 ([number]==> (return (+ number 1))))
+        (ref +1 (lambda [number] (return (+ number 1))))
         ...
         a = 12
         (console.log a (+1 a))  ## 12 13
 ###
 ### spec: function
-  (describe "(function [p1 p2 ...] ...) ## function definition" (==>
-    (it "defines an anonymous function that can be called" (==>
-      (ref f1 (function [a b] (return (* a b))))
+  (describe "(lambda [p1 p2 ...] ...) ## function definition" (lambda []
+    (it "defines an anonymous function that can be called" (lambda []
+      (ref f1 (lambda [a b] (return (* a b))))
       (ref result (f1 2 3))
       ((expect result).toBe 6)
     ))
-    (it "has optional parameters" (==>
-      (ref f2 (function (return 333)))
+    (it "has optional parameters" (lambda []
+      (ref f2 (lambda (return 333)))
       (ref result (f2))
       ((expect result).toBe 333)
     ))
   ))
-  (describe "([p1 p2 ...]==> ...) ## alternate function definition" (==>
-    (it "defines an anonymous function that can be called" (==>
-      (ref f1 ([a b]==> (return (* a b))))
+  (describe "(lambda [p1 p2 ...] ...) ## alternate function definition" (lambda []
+    (it "defines an anonymous function that can be called" (lambda []
+      (ref f1 (lambda [a b] (return (* a b))))
       (ref result (f1 2 3))
       ((expect result).toBe 6)
     ))
-    (it "has optional parameters" (==>
-      (ref f2 (==> (return 222)))
+    (it "has optional parameters" (lambda []
+      (ref f2 (lambda [] (return 222)))
       (ref result (f2))
       ((expect result).toBe 222)
     ))
@@ -154,7 +154,7 @@
     Like JavaScript, lispz function definitions specify a fixed number of arguments.
     To gain access to the full list of arguments, use *arguments, with a starting index.
 
-        ([type rest]==> (console.log type "=" (*arguments 1)))
+        (lambda [type rest] (console.log type "=" (*arguments 1)))
 ###
 (macro *arguments [from] (lispz.slice.call arguments from))
 
@@ -188,16 +188,16 @@
   function that changes ends in an exclamation mark. Use this to highlight review.
   The default builder return an empty JavaScript dictionary.
 
-      (describe "Create a new stateful object -- (ref context (stateful seed))" (==>
+      (describe "Create a new stateful object -- (ref context (stateful seed))" (lambda []
         (ref options (stateful {name: "undefined" address: "nowhere"}))
-        (it "is able to read members directly -- context.member" (==>
+        (it "is able to read members directly -- context.member" (lambda []
           ((expect options.name).toBeEqual "undefined")
         ))
-        (it "is able to read members by key -- context[key]" (==>
+        (it "is able to read members by key -- context[key]" (lambda []
           ((expect options["name"]).toBeEqual "undefined")
         ))
         (it (+ "is able to update a dictionary with changes -- "
-          "(context.update! {a: dictionary})") (==>
+          "(context.update! {a: dictionary})") (lambda []
             (options.update! {name: "Barney Rubble" address: "Next Door"})
             ((expect options.name).toBeEqual "Barney Rubble")
             ((expect options.address).toBeEqual "Next Door")
@@ -209,13 +209,13 @@
   objects need to be labelled as stateful. Use this approach as sparingly as possible. Always
   consider other alternatives first.
 
-      (describe "Creating a stateful reference -- (ref context (stateful.morph! this))" (==>
+      (describe "Creating a stateful reference -- (ref context (stateful.morph! this))" (lambda []
         (ref that {a: 1 b: 2})
         (ref context (stateful.morph! that))
-        (it "looks the same as the original object" (==>
+        (it "looks the same as the original object" (lambda []
           ((expect context.a).toBeEqual that.a)
         ))
-        (it "reflects changes to the original object" (==>
+        (it "reflects changes to the original object" (lambda []
           (context.update! {a: 99})
           ((expect that.a).toBeEqual 99)
         ))
@@ -226,18 +226,18 @@
 ###
 
 (macro #set! [to-change! value] (#join '' to-change! '=' value ';'))
-(ref #morph! ([obj]==>
+(ref #morph! (lambda [obj]
   (return-if obj.update! obj) ## in case we have done it before
   (Object.defineProperties obj {
-    update!: {value: ([update]==>
+    update!: {value: (lambda [update]
       (ref context this)
       (cond (is arguments.length 1)
-        ((Object.keys update).forEach ([key]==>
+        ((Object.keys update).forEach (lambda [key]
           (#set! (get context key) (get update key))
         ))
       (else) (do
         (ref list (*arguments 0))
-        (list.forEach ([value idx]==> (cond (% idx 2) (do
+        (list.forEach (lambda [value idx] (cond (% idx 2) (do
           (ref key (get list (- idx 1)))
           (#set! (get context key) value)
         ))))
@@ -246,14 +246,14 @@
   })
   (return obj)
 ))
-(global stateful ([seed]==>
+(global stateful (lambda [seed]
   (ref obj (#morph! (new Object)))
   (cond seed (obj.update! seed))
   (return obj)
 ))
 (global stateful.morph! #morph!)
 
-(macro closure [params *body] (#join '' '(function(' params '){' *body '})(' params ')'))
+(macro closure [params *body] (#join '' '(lambda(' params '){' *body '})(' params ')'))
 (macro return  [value] (#join '' 'return ' value '\n'))
 
 ### spec: basics >> functions >> Return if not false
@@ -278,25 +278,25 @@
   thing - for testing, maintenance and readability. Speaking of readability,
   chain makes the sequence of events clear.
 
-      (parse-titles ([sections]==> (return (sections.map ...)))
-      (sort-titles  ([sections]==> (return (sections.map ...)))
-      (merge-titles ([sections]==> (return (sections.map ...)))
+      (parse-titles (lambda [sections] (return (sections.map ...)))
+      (sort-titles  (lambda [sections] (return (sections.map ...)))
+      (merge-titles (lambda [sections] (return (sections.map ...)))
 
       ((chain parse-titles sort-titles merge-titles) sections)
 ###
 ### spec: chain
-  (describe "chain: run each function with the results from the one before" (==>
-    (it "(chain f1 f2 ...)" (==>
-      (ref f1 ([a]==> (return 2)))
-      (ref f2 ([a]==> (return (+ a 3))))
-      (ref f3 ([a]==> (return (* a 10))))
+  (describe "chain: run each function with the results from the one before" (lambda []
+    (it "(chain f1 f2 ...)" (lambda []
+      (ref f1 (lambda [a] (return 2)))
+      (ref f2 (lambda [a] (return (+ a 3))))
+      (ref f3 (lambda [a] (return (* a 10))))
       ((expect (chain f1 f2 f3)).toBe 50)
     ))
   ))
 ###
-(global chain (==> (ref functions (*arguments 0))
-  (ref link ([arg func]==> (return (func arg))))
-  (return (functions.reduce link null))
+(global chain (lambda [] (ref functions (*arguments 0))
+  (ref link (lambda [arg func] (return (func arg))))
+  (return (lambdas.reduce link null))
 ))
 
 ### spec: basics >> Operators ###
@@ -329,7 +329,7 @@ For arrays, JavaScript provides an excellent set documented in [List Processing]
 (macro first [list] (get list 0))
 (macro rest [list] (list .slice 1))
 (macro last [list] (get (list .slice -1) 0))
-(global slice ([list from to]==>  (return (lispz.slice.call list from to))))
+(global slice (lambda [list from to]  (return (lispz.slice.call list from to))))
 
 ### spec: Modules >> Module Structure
 
@@ -339,13 +339,13 @@ All Lispz source files are modules. They are loaded on first request by client c
 
 Every module must include an export statement including a dictionary of symbols to be exported
 
-    (ref one (==> ...)
+    (ref one (lambda [] ...)
     (ref two 22)
     (export {one two})
 
 If a module requires other asynchronous operations it can defer the export statement until they are ready.
 
-    (lispz.script "ext/jquery.js" (==> (export { ... })))
+    (lispz.script "ext/jquery.js" (lambda [] (export { ... })))
 
 To access external modules, wrap your code in 'using'. Data and functions exported from a module are linked to the import name.
 
@@ -356,12 +356,12 @@ To access external modules, wrap your code in 'using'. Data and functions export
 ...and that is all there is to it.
 ###
 (macro using [modules *on_ready] (lispz.load (#join '' '"' modules '"')
-  (==> (#requires modules) *on_ready)
+  (lambda [] (#requires modules) *on_ready)
 ))
 ### Modules must export to continue processing ###
 (macro export [exports] (#join '' '__module_ready__(' exports ')'))
 
-(macro delay [ms *body] (setTimeout (==> *body) ms))
+(macro delay [ms *body] (setTimeout (lambda [] *body) ms))
 (macro yield [*body] (delay 0 *body))
 ###
 # Use contain to contain state changes. Any var inside a contain can be changed
@@ -370,12 +370,12 @@ To access external modules, wrap your code in 'using'. Data and functions export
 # from outside.
 ###
 (macro contain [contain#args *contain#body]
-  ((function contain#args *contain#body) contain#args)
+  ((lambda contain#args *contain#body) contain#args)
 )
 ###
 # Return a random integer between 0 and the range given
 ###
-(global random ([range]==> (return (Math.floor (* (Math.random) range)))))
+(global random (lambda [range] (return (Math.floor (* (Math.random) range)))))
 
 ### spec: async -- Asynchronous Support
 There are three kinds of people in the world - those that can count and those who can't. And there are two ways to treat asynchronous events at the language/platform level. Either stop the process while waiting for something...
@@ -384,7 +384,7 @@ There are three kinds of people in the world - those that can count and those wh
 
 ...or provide actions to do when an event happens...
 
-    (read (==> (print))) ## Call an anonymous function when event fires.
+    (read (lambda [] (print))) ## Call an anonymous function when event fires.
 
 For some reason the first approach is called synchronous. In practice it means you can't do anything until the event you are waiting for occurs. Systems that work this way compensate by making it easy to create multiple threads - allowing code to appear to work in parallel. The developer does not have much control on when the processor switches from one thread to another. This means that data can appear to change like magic between two instructions on one thread because another thread has been active. Not only does this make referential integrity impossible, but it makes for the need for locks and semaphores and other mind-bending and program-slowing mechanisms.
 
@@ -395,11 +395,11 @@ One more tale before getting back to lispz. Microsoft Windows prior to '95 used 
 ### spec: async >> Callbacks
 Callbacks provide the simplest mechanism for asynchronous responses. Any function that want to initiate something that will complete at an undetermined later time can take a reference to a function to call at that time (or thereabouts)
 
-    (delay 2000 (==> (console.log "delay over")))
+    (delay 2000 (lambda [] (console.log "delay over")))
 
 Many callbacks producers follow the node-js approach of providing error and response parameters.
 
-    (read my-url ([err response]==>
+    (read my-url (lambda [err response]
       (cond err (throw "read failed"))
       (return response.text)
     )
@@ -430,7 +430,7 @@ When the promise is fulfilled it will call (resolve-promise data). If it fails
 it calls (reject-promise err).
 
     (ref read (promise [addr param1 param2]
-      (http-get (+ addr "?&" param1 "&" param2) ([err response]==>
+      (http-get (+ addr "?&" param1 "&" param2) (lambda [err response]
         (return-if err (reject-promise err))
         (resolve-promise response)
       ))
@@ -442,7 +442,7 @@ create a file object that may or may not ever ask a server for the contents.
 
     (ref file {
       read: (promise.deferred [addr param1 param2]
-        (http-get (+ addr "?&" param1 "&" param2) ([err response]==>
+        (http-get (+ addr "?&" param1 "&" param2) (lambda [err response]
           (return-if err (reject-promise err))
           (resolve-promise response)
         ))
@@ -450,7 +450,7 @@ create a file object that may or may not ever ask a server for the contents.
     })
     ...
     ## This will trigger a server request...
-    (when file.read ([response]==> (console.log response)))
+    (when file.read (lambda [response] (console.log response)))
 
 Because it is common to turn a callback into a promise, lispz provides a helper
 macro. The following provides identical functionality. One of the benefits of a
@@ -463,14 +463,14 @@ language with real macros :)
 Now that we have a promise, we can use it just like a callback if we want:
 
     (ref reading (read "http://blat.com/blah" 1 2))
-    (when reading ([result]==> (return (process result))))
-    (catch reading ([err]==> (console.log "ERROR: "+err)))
+    (when reading (lambda [result] (return (process result))))
+    (catch reading (lambda [err] (console.log "ERROR: "+err)))
 
 Even without further knowledge, promises clean up errors and exceptions. If you do not catch errors, exceptions thrown in the asynchronous function can be caught in the code containing the promise.
 
 The power of promises starts to become clearer with the understanding that 'when' can return a promise.
 
-    (ref processed (when reading ([result]==> (return (process result)))))
+    (ref processed (when reading (lambda [result] (return (process result)))))
     (when processed (console.log "All done"))
 
 So far this adds very little at the cost of a relatively large supporting library. if we start thinking functionally instead of sequentially, promises provides a way to clarify our code (a little).
@@ -526,43 +526,43 @@ In summary we have
 5. Being selective about errors and exceptions is painful. Once a promise is resolved it cannot change. Any promises that rely on a rejected promise will themselves be rejected causing a cascade of failures. To be selective you need to wrap a promise catch in an outer promise and resolve the outer one if the error itself can be resolved. Don't forget to resolve the outer promise with the data from the inner one when there are no errors.
 ###
 (global promise {})
-(macro promise [params *body] (function params
-  (ref #callbacks (stateful {ok: (==>) fail: (==>)}))
-  (ref #pledge (new Promise ([ok fail]==> (#callbacks.update! {ok fail}))))
-  (ref resolve-promise ([]==> (#callbacks.ok.apply null (*arguments 0))))
-  (ref reject-promise ([err]==> (#callbacks.fail err)))
+(macro promise [params *body] (lambda params
+  (ref #callbacks (stateful {ok: (lambda []) fail: (lambda [])}))
+  (ref #pledge (new Promise (lambda [ok fail] (#callbacks.update! {ok fail}))))
+  (ref resolve-promise (lambda [] (#callbacks.ok.apply null (*arguments 0))))
+  (ref reject-promise (lambda [err] (#callbacks.fail err)))
   ## (#join '' 'try{' *body '}catch(err){' (reject-promise err) '}')
   *body
   (return #pledge)
 ))
-(macro promise.deferred [params *body] (==>
+(macro promise.deferred [params *body] (lambda []
   (ref args (*arguments 0))
-  (ref #callbacks (stateful {ok: (==>) fail: (==>)}))
+  (ref #callbacks (stateful {ok: (lambda []) fail: (lambda [])}))
   (ref #pledge (stateful.morph!
-    (new Promise ([ok fail]==> (#callbacks.update! {ok fail})))
+    (new Promise (lambda [ok fail] (#callbacks.update! {ok fail})))
   ))
-  (#pledge.update! {deferred: (==>
-    (ref resolve-promise ([]==> (#callbacks.ok.apply null args)))
-    (ref reject-promise ([err]==> (#callbacks.fail err)))
+  (#pledge.update! {deferred: (lambda []
+    (ref resolve-promise (lambda [] (#callbacks.ok.apply null args)))
+    (ref reject-promise (lambda [err] (#callbacks.fail err)))
     ## (#join '' 'try{' *body '}catch(err){' (reject-promise err) '}')
     *body
   )})
   (return #pledge)
 ))
 (macro promise.callback [params *body] (promise params
-  (ref callback ([err result]==>
+  (ref callback (lambda [err result]
     (return-if err (reject-promise err))
     (resolve-promise result)
   ))
   *body
 ))
 (global promise.resolved (promise [pact] (resolve-promise pact)))
-(global promise? ([pledge]==>
+(global promise? (lambda [pledge]
   (return-if (and pledge pledge.then) pledge)
   (return (promise.resolved pledge))
 ))
 
-(global #resolve-deferred ([pledge]==>
+(global #resolve-deferred (lambda [pledge]
   (cond pledge.deferred (do
     (ref deferred pledge.deferred)
     (delete pledge.deferred)
@@ -572,17 +572,17 @@ In summary we have
 ))
 
 (macro when  [pledge params *body]
-  ((#resolve-deferred pledge).then (function params *body))
+  ((#resolve-deferred pledge).then (lambda params *body))
 )
 (macro catch [pledge errors *body]
-  ((#resolve-deferred pledge).catch (function errors *body))
+  ((#resolve-deferred pledge).catch (lambda errors *body))
 )
 
 (using [list]
-  (global promise.all (==> (return (Promise.all (list.flatten (*arguments 0))))))
+  (global promise.all (lambda [] (return (Promise.all (list.flatten (*arguments 0))))))
 )
-(global promise.chain (==>
-  (ref chain-link ([input functions]==>
+(global promise.chain (lambda []
+  (ref chain-link (lambda [input functions]
     (return-if (not functions.length) (promise? input))
     (ref pledge (promise? ((first functions) input)))
     (when pledge [output] (chain-link output (rest functions)))
@@ -590,9 +590,9 @@ In summary we have
   (return chain-link null (*arguments 0))
 ))
 
-(global countdown ([from by]==>
+(global countdown (lambda [from by]
   (ref from (stateful from))
-  (return (==>
+  (return (lambda []
     (from.update! (- from by))
     (return (<= from 0))
   ))
@@ -600,7 +600,7 @@ In summary we have
 
 (global wait-for (promise [test max-ms]
   (ref timed-out (countdown (or max-ms 5000) 10))
-  (ref waiter (==>
+  (ref waiter (lambda []
     (cond
       (test)      (return (resolve-promise))
       (timed-out) (return (reject-promise))

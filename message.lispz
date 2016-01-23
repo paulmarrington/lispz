@@ -10,7 +10,7 @@
   whose content format is known by clients and services.
 
       (using [message]
-        (ref open ([packet]==> ...)
+        (ref open (lambda [packet] ...)
         (message.dispatch (+ "code-editor/" opts.name) { open })
 
   The client will send a command to open a new file for display. If the editor
@@ -23,7 +23,7 @@
   If it is possible that a client will send an important request before the
   service has had the opportunity to initialise, wrap 'send' in 'wait-for':
 
-      (message.wait-for "code-editor/scratch" (==>
+      (message.wait-for "code-editor/scratch" (lambda []
         (message.send "code-editor/scratch"
           {action: "open" key: "scratchpad.lispz" contents: null}
         )
@@ -32,12 +32,12 @@
   For raw processing, use 'listen' instead. The following example changes the
   left padding on a DOM element if asked.
 
-      (message.listen "page-content-wrapper-padding" ([px]==>
+      (message.listen "page-content-wrapper-padding" (lambda [px]
         (set! tag.page-content-wrapper.style.paddingLeft (+ px "px"))
 
   For a one-off message, use 'expect' rather than 'listen':
 
-      (message.expect "editor-loaded" (==> ...)
+      (message.expect "editor-loaded" (lambda [] ...)
 
   Lispz uses exchanges defined as part of the address. Plain string addresses as
   used so far will use a local in-browser exchange. The address can include
@@ -60,7 +60,7 @@
 (using [list]
   (ref store (stateful)  expecting (stateful)  links (stateful))
   
-  (ref exchange ([address]==>
+  (ref exchange (lambda [address]
     (ref envelopes (get store address))
     (return? envelopes)
     (ref envelopes (stateful.morph! []))
@@ -68,10 +68,10 @@
     (return envelopes)
   ))
   
-  (ref add ([address envelope]==>
+  (ref add (lambda [address envelope]
     (ref envelopes (exchange address))
     (envelopes.push envelope)
-    (cond (and (is envelopes.length 1) (get expecting address))
+    (cond (and (is envelopes.length 1)  (get expecting address))
           (do ((get expecting address)) (delete (get expecting address))))
   ))
   
@@ -81,58 +81,58 @@
   ))
   
   ## remove a recipient from all attached addresses
-  (ref remove ([address recipient]==>
+  (ref remove (lambda [address recipient]
     (ref envelopes (exchange address))
     (store.update! address
-      (envelopes.filter ([possibility]==>
+      (envelopes.filter (lambda [possibility]
         (return (isnt recipient possibility))
       ))
     )
   ))
   
   ## clear all listeners for an address
-  (ref clear ([address]==> (store.update! address [[]])))
+  (ref clear (lambda [address] (store.update! address null)))
   
-  (ref link ([primary secondary]==>
+  (ref link (lambda [primary secondary]
     (cond (not (get links primary)) (links.update! primary [[]]))
     ((get links primary).push secondary)
   ))
-  
-    (ref send ([address packet]==>
-      ## take a copy so that it does not change during processing
-      (ref result null)
-      (ref sender ([recipient]==>
-        (ref result (recipient.listener=> packet))
-        (cond recipient.once (remove recipient))
-      ))
-      (((exchange address).slice).forEach sender)
-      (list.for-each (get links address) ([link]==> (send link packet)))
-      (return (promise? result))
+
+  (ref send (lambda [address packet]
+    ## take a copy so that it does not change during processing
+    (ref result null)
+    (ref sender (lambda [recipient]
+      (ref result (recipient.listener=> packet))
+      (cond recipient.once (remove recipient))
     ))
+    (((exchange address).slice).forEach sender)
+    (list.for-each (get links address) (lambda [link] (send link packet)))
+    (return (promise? result))
+  ))
   
-  (ref expect ([address listener=>]==>
+  (ref expect (lambda [address listener=>]
     (add address {once: true listener=>})
   ))
   
-  (ref listen ([address listener=>]==>
+  (ref listen (lambda [address listener=>]
     (add address {listener=>})
   ))
   
-  (ref dispatch ([address actions]==>
-    (listen address ([packet]==>
+  (ref dispatch (lambda [address actions]
+    (listen address (lambda [packet]
       (ref action (get actions packet.action))
       (return-if (not action) (promise.resolved false))
       (return (action packet))
     ))
   ))
   
-  (ref log ([text]==>
+  (ref log (lambda [text]
     (ref parts (text.split '/\s*:\s*/'))
     (cond (is 1 parts.length) (parts.unshift "message"))
     (send "logging" {level: (get parts 0) text: (get parts 1)})
   ))
   
-  (listen "logging" ([packet]==>
+  (listen "logging" (lambda [packet]
     (console.log packet.level "-" packet.text)
   ))
   

@@ -1,12 +1,12 @@
 (using [list dom]
-  (ref script (promise.callback [uri check max-ms] (lispz.script uri (==>
+  (ref script (promise.callback [uri check max-ms] (lispz.script uri (lambda []
     (cond (not check) (return (callback)))
     (ref initialised (wait-for check max-ms))
     (when  initialised [] (callback))
     (catch initialised [] (debug (+ uri "didn't load")))
   ))))
 
-  (ref css ([uri]==>
+  (ref css (lambda [uri]
     (ref el (dom.element "link" {
       type: "text/css" rel: "stylesheet" href: uri
     }))

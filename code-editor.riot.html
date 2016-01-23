@@ -20,16 +20,18 @@
   <script type=text/lispz>
     (ref tag (stateful.morph! this))
     (tag.update! {menu: "CodeMirror-menu" heading: (or opts.heading "Edit")})
-    (tag.on "mount" (=> (using  [codemirror message dict]
+    (tag.on "mount" (lambda [] (using  [codemirror message dict]
       (ref filename-key (+ "code-editor/" opts.name "/filename"))
       (ref cm (codemirror.open tag._id tag.tags.panel.wrapper))
 
-      (ref open ([packet]==>
+      (ref open (lambda [packet]
         (codemirror.set-mode cm packet.key)
-        (tag.update! {heading: (last (packet.key.split "/"))})
-        (localStorage.setItem filename-key packet.key)
-        (cond packet.contents (cm.setValue packet.contents))
-        (tag.update)
+        (cond (isnt (get packet.key 0) ".") (do
+          (tag.update! {heading: (last (packet.key.split "/"))})
+          (localStorage.setItem filename-key packet.key)
+          (cond packet.contents (cm.setValue packet.contents))
+          (tag.update)
+        ))
       ))
 
       (ref contents-key (+ "code-editor/" opts.name "/contents"))
@@ -37,11 +39,15 @@
       (cond filename (delay 100
         (open {key: filename contents: (localStorage.getItem contents-key)})
       ))
-      (cm.on "change" (=>
+      (cm.on "change" (lambda []
         (localStorage.setItem contents-key (cm.getValue))
       ))
 
-      (message.dispatch (+ "code-editor/" opts.name) { open })
+      (ref append (lambda [packet]
+        (cm.replaceRange packet.contents (CodeMirror.Pos (cm.lastLine)))
+      ))
+      
+      (message.dispatch (+ "code-editor/" opts.name) { open append })
     )))
   </script>
 </code-editor>

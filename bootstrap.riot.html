@@ -53,7 +53,7 @@
   <script type=text/lispz>
     (ref tag (stateful.morph! this))
     (tag.update! {context: (+ "panel-" (or opts.context "default"))})
-    (tag.on "mount" (=> (using [dom]
+    (tag.on "mount" (lambda [] (using [dom]
       (cond opts.height (do
         (ref px opts.height)
         (cond (is "%" (opts.height.slice -1))
@@ -73,7 +73,7 @@
   </style>
   <script type=text/lispz>
     (ref tag (stateful.morph! this))
-    (tag.on "mount" (=> (using [sortable]
+    (tag.on "mount" (lambda [] (using [sortable]
       (sortable.create tag.root (or opts.name "sortable") {
         draggable:  ".draggable"
         handle:     ".panel-title"
@@ -99,7 +99,7 @@
 
       <modal name=login-dialog title="..." buttons="Log in,Cancel">...</modal>
       ....
-      (message.listen "login-dialog/Log in/button" (=> ...)
+      (message.listen "login-dialog/Log in/button" (lambda [] ...)
 
         <modal name=n [title=heading-text] [buttons=a,*b]>
           modal-body-content-html
@@ -129,7 +129,7 @@
     (ref tag (stateful.morph! this))
     (cond opts.buttons (do
       (tag.update! {buttons: [[]]})
-      ((opts.buttons.split ",").forEach ([title]==>
+      ((opts.buttons.split ",").forEach (lambda [title]
         (ref primary (is "*" (first title))  type "default")
         (cond primary (do (ref type "primary") (title.shift)))
         (ref name title)
@@ -150,8 +150,8 @@
   It is up to a listener to provide the data requested.
   Use this if the menu contents change between uses.
 
-        (message.listen "specifications-menu-open" (=>
-          (ref menu (dict.map lispz_modules ([title source]==>
+        (message.listen "specifications-menu-open" (lambda []
+          (ref menu (dict.map lispz_modules (lambda [title source]
             (return {topic: "specifications" title source})
           )))
           (message.send "specifications-menu" (menu.sort))
@@ -192,7 +192,7 @@
   If a menu item has a topic entry, a message will be sent to that an address
   made up of the component owner, dash, topic.
 
-      (message.listen "Test Panel 2 - Test menu item 1" ([data]==> (debug data)))
+      (message.listen "Test Panel 2 - Test menu item 1" (lambda [data] (debug data)))
 
   ###
   ### spec: bootstrap >> Menus >> bars-menu
@@ -224,15 +224,15 @@
   </style>
   <script type=text/lispz>
     (ref tag (stateful.morph! this))
-    (tag.on "mount" (=> (using [message riot]
-      (message.listen opts.name ([items]==>
+    (tag.on "mount" (lambda [] (using [message riot]
+      (message.listen opts.name (lambda [items]
         (riot.update! tag {items root: (or items [[]])})
       ))
-      (($ tag.dropdown).on "show.bs.dropdown" (=>
+      (($ tag.dropdown).on "show.bs.dropdown" (lambda []
         (message.send (+ opts.name "-open"))
         (riot.update! tag {items: tag.root})
       ))
-      (tag.update! {goto: ([ev]==>
+      (tag.update! {goto: (lambda [ev]
         (cond ev.item.topic (message.send
           (+ opts.owner "-" ev.item.topic)
           {item: ev.item owner: opts.owner action: "select"}))
@@ -257,7 +257,7 @@
   <script type=text/lispz>
     (ref tag (stateful.morph! this))
     (using [message riot]
-      (message.listen opts.name ([items]==>
+      (message.listen opts.name (lambda [items]
         (riot.update! tag {children: {base: {children: items}}})
         (tag.update) ## once more for luck
       ))
@@ -297,7 +297,7 @@
   <script type=text/lispz>
     (ref tag (stateful.morph! this))
     (using [message dict]
-      (tag.on "update" ([data]==>
+      (tag.on "update" (lambda [data]
         (cond (and opts.name tag.parent.children) (do
           (tag.update! {items: (get tag.parent.children opts.name "children")})
           (cond (and tag.items tag.items.length)
@@ -306,7 +306,7 @@
         ))
       ))
 
-      (tag.update! {goto: ([ev]==>
+      (tag.update! {goto: (lambda [ev]
         (ref item ev.item.item)
         (ref topic (or item.topic item.title ))
         (cond topic (message.send topic
@@ -355,7 +355,7 @@
   <script type=text/lispz>
     (ref tag (stateful.morph! this)  hamburger (stateful.morph! tag.hamburger))
     (using [message dom]
-      (hamburger.update: {onclick: (=>
+      (hamburger.update: {onclick: (lambda []
         (tag.sidebar.classList.toggle "toggled")
         (delay 300 ## must be after slide action
           (message.send "page-content-wrapper-padding" tag.sidebar.offsetWidth)
@@ -383,7 +383,7 @@
   <script type=text/lispz>
     (ref tag this)
     (using [message dom]
-      (message.listen "page-content-wrapper-padding" ([px]==>
+      (message.listen "page-content-wrapper-padding" (lambda [px]
         (dom.style! tag.page-content-wrapper {paddingLeft: (+ px "px")})
       ))
     )

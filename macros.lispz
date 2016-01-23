@@ -14,7 +14,7 @@ creates a new language element that only returns if the value is a truthy, as in
     
 This example would also work with a text substitution macro system, but this one doesn't:
 
-    (macro closure [params *body] (#join '' '(function(' params '){' *body '})(' params ')'))
+    (macro closure [params *body] (#join '' '(lambda(' params '){' *body '})(' params ')'))
     
 This generates the JavaScript output directly as #join is an immediate function called during the
 ast to JavaScript phase.
@@ -27,11 +27,11 @@ A macro is defined by giving it a name, list of parameters and a body. In it's s
     
 Immediate actions are required to modify the JavaScript output during the compile stage (ast to JavaScript).
 
-    (macro function [params *body] (#join '' '(function(' params '){' *body '})'))
+    (macro function [params *body] (#join '' '(lambda(' params '){' *body '})'))
     
 Parameters that start with star must be the last in the list and encapsulate all the remaining parameters in the expansion. This is why function works:
 
-    ([a b]==> (ref c (+ a b)) (return c))
+    (lambda [a b] (ref c (+ a b)) (return c))
 
 ### spec: macros >> #join
 Many macros translate lispz directly to JavaScript by mixing pure JavaScript with macro parameters that can convert themselves to JavaScript. It is an immediate function - being one that runs during the compile phase. The first parameter is the text to be used between the segments. In this context it is usually empty. The first parameter along with the JavaScript are wrapped in single quotes so that they are left as-is in the JavaScript output.
@@ -68,7 +68,7 @@ The built-ins #join and #pairs are example of immediate functions - ones that op
     
 Works but has no point. I added immediate for language completeness. I have not yet found a use for it.
 
-    (global #join2 ([sep parts]==>
+    (global #join2 (lambda [sep parts]
       (immediate (*arguments 1) '.map(lispz.ast_to_js).join(lispz.ast_to_js(sep)')
     ))
 

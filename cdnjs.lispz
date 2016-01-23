@@ -5,11 +5,11 @@
       (ref base "http://api.cdnjs.com/libraries?fields=assets&search=")
       (when (net.json-request (+ base repo.name)) [json]
         ## select the correct repo for the name
-        (ref filtered (json.results.filter ([it]==>
+        (ref filtered (json.results.filter (lambda [it]
           (return (=== it.name repo.name))
         )))
         (return-if (not filtered.length) false)
-        ((get filtered 0).assets.some ([it]==>
+        ((get filtered 0).assets.some (lambda [it]
           (return-if (contains it.version "alpha") false)
           (repo.update! {base: (+
             "https://cdnjs.cloudflare.com/ajax/libs/"
@@ -24,7 +24,7 @@
       (ref uri (+ repo.base path))
       (when (net.http-get uri) [response] (resolve-promise response))
     )
-    repo: ([target-repo name]==> (return (stateful {})))
+    repo: (lambda [target-repo name] (return (stateful {})))
   })
 
   (export {

@@ -9,7 +9,7 @@ var lispz = function() {
   tkre = new RegExp('(' + stringRE + '\\' + delims + "|[^\\s" + not_delims + "]+)", 'g'),
   opens = new Set("({["), closes = new Set(")}]"), ast_to_js, slice = [].slice, contexts = [],
   module = {line:0, name:"boot"}, globals = {}, load_index = 0,
-  synonyms = {and:'&&',or:'||',is:'===',isnt:'!==','==>':'function', '=>':'function'},
+  synonyms = {and:'&&',or:'||',is:'===',isnt:'!=='},
   jsify = function(atom) {
     try {
       if (/^'\/(?:.|\n)*'$/.test(atom)) return atom.slice(1, -1).replace(/\n/g, '\\n')
@@ -28,11 +28,6 @@ var lispz = function() {
   },
   call_to_js = function(func, params) {
     params = slice.call(arguments, 1)
-    if (func instanceof Array && func[0] == "[") {
-      var real_func = params[0] // ([p1 p2] func ...) === (func [p1 p2] ...)
-      params[0] = func
-      func = real_func
-    }
     if (synonyms[func]) func = synonyms[func]
     if (macros[func]) return macros[func].apply(lispz, params)
     func = ast_to_js(func)
@@ -198,7 +193,7 @@ var lispz = function() {
       return js
     } catch (err) {
       console.log(err)
-      return compile_error(err.message, "for "+module.name+":"+module.line)
+      return compile_error(err.message || err, "for "+module.name+":"+module.line)
     }
   },
   run = function(name, source) { return compile(name, source).map(eval) },
@@ -324,7 +319,7 @@ var lispz = function() {
     '(': call_to_js, '[': array_to_js, '{': dict_to_js, 'macro': macro_to_js,
     '#join': join_to_js, '#pairs': pairs_to_js, '#binop': binop_to_js,
     '#requires': requires_to_js, 'list': list_to_js,
-    '\n': eol_to_js, 'immediate': immediate_to_js, 'function': function_to_js
+    '\n': eol_to_js, 'immediate': immediate_to_js, 'lambda': function_to_js
   }
   // add all standard binary operations (+, -, etc)
   "+,-,*,/,&&,||,==,===,<=,>=,!=,!==,<,>,^,%".split(',').forEach(binop_to_js)

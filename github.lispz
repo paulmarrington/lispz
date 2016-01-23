@@ -1,9 +1,9 @@
 (using  [net dict list]
   (ref version null)
-  (ref cdn-uri ([project version filepath]==>
+  (ref cdn-uri (lambda [project version filepath]
     (return (+ "https://cdn.rawgit.com/" project "/" version "/" filepath))
   ))
-  (ref repo ([username password project]==>
+  (ref repo (lambda [username password project]
     (ref auth (new Github {username password auth: "basic"}))
     (ref github (auth.getRepo.apply null (project.split "/")))
     (return (stateful {github auth username password project branch: "master"}))
@@ -11,7 +11,7 @@
   ## Set the branch to use for repo - defaults to master
   (ref branch (promise [repo branch-name]
     (repo.update! {branch: branch-name})
-    (repo.github.branch branch-name ([err result]==> (resolve-promise)))
+    (repo.github.branch branch-name (lambda [err result] (resolve-promise)))
   ))
   ## list files in a specific path on the repo
   (ref list-dir (promise.callback [repo path]
@@ -19,10 +19,10 @@
   ))
   (ref list-all (promise [repo path single-level]
     (ref result [[]])
-    (ref list-path ([path]==>
+    (ref list-path (lambda [path]
       (return (when (list-dir repo path) [paths]
         (ref children [[]])
-        (paths.forEach ([entry]==>
+        (paths.forEach (lambda [entry]
           (cond
             (is "dir"  entry.type)
               (cond (not single-level) (children.push (list-path entry.path)))
@@ -38,7 +38,7 @@
   (ref read (promise.callback [repo path]
     (repo.github.read repo.branch path callback)
   ))
-  (ref update ([repo]==>
+  (ref update (lambda [repo]
     (return-if (is repo.branch repo.username) (promise.resolved))
     (ref branch-name (or repo.username "master"))
     (return (branch repo branch-name))
@@ -50,11 +50,11 @@
   ))
   ## preprocess a file to generate css or js dependent on extension
   (ref preprocessors {
-    lispz: ([name code]==>
+    lispz: (lambda [name code]
       (return {path ext: "js" code: (window.lispz.compile name code)})
     )
   })
-  (ref preprocess ([path code]==>
+  (ref preprocess (lambda [path code]
     (ref ext (last (path.split ".")))
     (ref preprocessor (get preprocessors ext))
     (return-if (not preprocessor) {path ext code})
@@ -62,24 +62,24 @@
   ))
   ## Build and save a dependency list
   ## We will need to filter the dependencies
-  (ref filter ([before include exclude]==>
+  (ref filter (lambda [before include exclude]
     (ref after before)
     (cond include (ref after
-      (after.filter ([file]==> (return (include.test file))))
+      (after.filter (lambda [file] (return (include.test file))))
     ))
     (cond exclude (ref after
-      (after.filter ([file]==> (return (not (exclude.test file)))))
+      (after.filter (lambda [file] (return (not (exclude.test file)))))
     ))
     (return after)
   ))
   ## and see which to save and which to copy
-  (ref copy ([copy-to path code]==>
+  (ref copy (lambda [copy-to path code]
     ## not working yet for binary files
     (ref filename (last (path.split "/")))
     (return {path code copy: (+ copy-to "/" filename)})
   ))
   ## Load the contents of the files we need from a single repo
-  (ref process-repo ([source-repo files actors]==>
+  (ref process-repo (lambda [source-repo files actors]
     (return (promise.all (files.map (promise [meta]
       (ref base (or meta.base ""))
       (when (actors.list-all source-repo base meta.single-level) [file-list]
@@ -96,8 +96,8 @@
     ))))
   ))
   ## Given a list of repos, go through them all for files in need
-  (ref process-repos ([target-repo sources actors]==>
-    (return (promise.all (sources.map ([source]==>
+  (ref process-repos (lambda [target-repo sources actors]
+    (return (promise.all (sources.map (lambda [source]
       (ref source-repo (actors.repo target-repo source.repo))
       (return (process-repo source-repo source.files actors))
     ))))
@@ -106,9 +106,9 @@
   (ref retriever (promise [target-repo sources actors]
     (when (process-repos target-repo sources actors) [entry-tree]
       (ref store {js: [[]] css: [[]]  copies: [[]] from:
-        (sources.map ([source]==> (return source.repo)))})
+        (sources.map (lambda [source] (return source.repo)))})
       (store.from.unshift "Gathered from: ")
-      ((list.flatten entry-tree).forEach ([entry]==>
+      ((list.flatten entry-tree).forEach (lambda [entry]
         (cond
           (get store entry.ext)
             ((get store entry.ext).push "\n\n/* " entry.path " */\n" entry.code)
@@ -125,8 +125,8 @@
     (return (write target-repo (+ "ext/" name "." ext) contents comment))
   ))
   ## copy files identified as needed as-is
-  (ref copy-store ([target-repo store comment]==>
-    (return (promise.all (store.copies.map ([entry]==>
+  (ref copy-store (lambda [target-repo store comment]
+    (return (promise.all (store.copies.map (lambda [entry]
       (return (write target-repo entry.path entry.code comment))
     ))))
   ))
@@ -146,7 +146,7 @@
   ))
   (ref github-actors {
     list-all read
-    repo: ([target-repo name]==>
+    repo: (lambda [target-repo name]
       (return (repo target-repo.username
         target-repo.password name
       ))
@@ -190,8 +190,8 @@
       (ref grunt-config ((Function
         (+ "var module={};" (last store.js) "return module.exports"))))
       (grunt-config {
-        loadNpmTasks: (==>) registerTask: (==>)
-        initConfig: ([config-data]==>
+        loadNpmTasks: (lambda []) registerTask: (lambda [])
+        initConfig: (lambda [config-data]
           (ref grunt-processor {
             build: grunt-build
             copy:  grunt-copy
@@ -203,7 +203,7 @@
       })
     )
   ))
-  (ref build-github ([target-repo]==>
+  (ref build-github (lambda [target-repo]
     (ref sources [[
       {repo: "michael/github" files: [[
         {include: '/github.js$/'}
@@ -211,7 +211,7 @@
     ]])
     (return (build target-repo "github" sources))
   ))
-  (ref loaded (net.script "ext/github.js" (==> (return window.Github))))
+  (ref loaded (net.script "ext/github.js" (lambda [] (return window.Github))))
   ## (catch loaded (export {build}))
   (when loaded []
     (export {

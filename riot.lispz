@@ -47,32 +47,32 @@ Styles are global (unlike *true* web components). This is easily overcome using 
 Scripting can be any language of choice that runs on the browser. JavaScript, Lispz, Es6 (with babel) and CoffeeScript are available out-of-the-box. For the latter two you will need to load the compiler by *(using babel coffeescript)* in the startup code. Other languages can be added as long as they compile code on the browser.
 
     (set! riot.parsers.js.lispz
-      ([source]==> (return ((lispz.compile "riot-tags" source).join "\n")))
+      (lambda [source] (return ((lispz.compile "riot-tags" source).join "\n")))
     )
 ###
 (using  [jquery net github dict]
-  (ref compile ([html to-js]==> (return (riot.compile html to-js))))
+  (ref compile (lambda [html to-js] (return (riot.compile html to-js))))
 
   (ref processed-tags (stateful {}))
 
   (ref load (promise [name uri]
-    (ref load-tags-used ([tags]==>
-      (ref new-tags (tags.filter ([tag]==>
+    (ref load-tags-used (lambda [tags]
+      (ref new-tags (tags.filter (lambda [tag]
         (return-if (get processed-tags tag) false)
         (processed-tags.update! tag true)
         (return true)
       )))
-      (ref loaded (promise.all (new-tags.map ([tag]==> (return (load tag))))))
+      (ref loaded (promise.all (new-tags.map (lambda [tag] (return (load tag))))))
       (when loaded [] (resolve-promise))
     ))
-    (ref usings ([source]==>
+    (ref usings (lambda [source]
       (ref tags ('/<!--\s*using\s*(.*?)\s*-->/'.exec source))
       (cond
         tags   (load-tags-used ((last tags).split '/\s+/'))
         (else) (resolve-promise)
       )
     ))
-    (ref retrieve-and-compile (==>
+    (ref retrieve-and-compile (lambda []
       (ref url (or uri (+ (name.toLowerCase) ".riot.html")))
       (when (net.http-get url) [tag] (usings (compile tag)))
     ))
@@ -83,7 +83,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
     )
   ))
 
-  (ref build ([target-repo]==>
+  (ref build (lambda [target-repo]
     (return (github.build target-repo "riot" [[
       {repo: "riot/riot" files: [[
         {include: '/^riot\+compiler.js$/'}
@@ -91,7 +91,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
     ]]))
   ))
 
-  (ref mount ([tags]==> (riot.mount.apply riot argument)))
+  (ref mount (lambda [tags] (riot.mount.apply riot argument)))
 
   ### spec: riot >> Trigger Display Changes
     Given a component context called *tag*, it is possible to change context
@@ -100,7 +100,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
       <script type=text/lispz>
         (ref tag (stateful.morph this))
         ...
-        (ref async-set-title ([title]==>
+        (ref async-set-title (lambda [title]
           (tag.update! {title})
           (tag.update)
         )
@@ -114,12 +114,12 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
 
       (using [riot]
         ...
-        (ref async-set-titles ([title footer]==>
+        (ref async-set-titles (lambda [title footer]
           (riot.update! tag {title footer})
         )
       )
   ###
-  (ref update! ([tag changes]==>
+  (ref update! (lambda [tag changes]
     (tag.update! changes)
     (tag.update) ## repaint
   ))
@@ -150,8 +150,8 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
 
     Once that is out of the way, tell the observable what to do if it receives an event either once or every time.
 
-        (observable-1.on "event-name" ([params...]==> what to do...))
-        (element.one "focus" ([contents]==> (element.set contents)))
+        (observable-1.on "event-name" (lambda [params...] what to do...))
+        (element.one "focus" (lambda [contents] (element.set contents)))
 
     One observable can have many listeners for the same or different events. Use 'trigger' to wake an observable.
 
@@ -174,18 +174,18 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
     3. No way of knowing if event was processed as expected.
   ###
 
-  (ref   loaded (net.script "ext/riot.js" (==> (return window.riot))))
+  (ref   loaded (net.script "ext/riot.js" (lambda [] (return window.riot))))
   (catch loaded [] (export {build}))
   (when  loaded [] (using [compilers]
     (stateful.morph! riot.parsers.js)
     (riot.parsers.js.update! {lispz:
-      ([source]==>
+      (lambda [source]
         (ref js (compilers.lispz.compile "riot-tags" source))
         (return (compilers.to-string js))
       )
     })
     (ref riot-elements (slice (document.getElementsByClassName "riot")))
-    (ref load-all (promise.all (riot-elements.map ([element]==>
+    (ref load-all (promise.all (riot-elements.map (lambda [element]
       (ref name (element.tagName.toLowerCase))
       (return (load name (element.getAttribute "uri")))
     ))))

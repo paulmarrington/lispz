@@ -24,15 +24,15 @@
     (ref tag (stateful.morph! this))
     (tag.update! {menu: "CodeMirror-menu"})
     (tag.update! {heading: "Edit"})
-    (tag.on "mount" (=> (using  [firebase codemirror firepad message dict]
+    (tag.on "mount" (lambda [] (using  [firebase codemirror firepad message dict]
       (ref filename-key (+ "codemirror/" opts.name "/filename"))
       (ref cm (codemirror.open tag._id tag.tags.panel.wrapper))
       (tag.update! {pad: (stateful {
-        setText:  ([contents]==> (cm.setValue contents))
-        on-ready: ([act]==> (act))
+        setText:  (lambda [contents] (cm.setValue contents))
+        on-ready: (lambda [act] (act))
       })})
 
-      (ref open ([packet]==>
+      (ref open (lambda [packet]
         (codemirror.set-mode cm packet.key)
         (tag.update! {heading: (last (packet.key.split "/"))})
         (localStorage.setItem filename-key packet.key)
@@ -46,7 +46,7 @@
           (tag.update! {pad: (stateful.morph (Firepad.fromCodeMirror db cm
             {richTextShortcuts: false richTextToolbar: false}
           ))})
-          (tag.pad.update! {on-ready: ([act]==> (tag.pad.on "ready" act))})
+          (tag.pad.update! {on-ready: (lambda [act] (tag.pad.on "ready" act))})
         ) (else) (do ## without firebase we need to persist locally
           (ref contents-key (+ "codemirror/" opts.name "/contents"))
           (ref filename (localStorage.getItem filename-key))
@@ -54,13 +54,13 @@
             (open {key:      filename
                    contents: (localStorage.getItem contents-key)})
           ))
-          (cm.on "change" (=>
+          (cm.on "change" (lambda []
             (localStorage.setItem contents-key (cm.getValue))
           ))
         )
       )
 
-      (tag.pad.on-ready (=>
+      (tag.pad.on-ready (lambda []
         (message.dispatch (+ "firepad/" opts.name) { open })
       ))
     )))

@@ -12,14 +12,14 @@
         (li.join ", ")                                                  ## "1, 2, 3"
         (li.lastIndexOf 2 from)                                         ## 1  ## from default to last element
         
-        (l1.every ([item idx lst]==> (return (< idx 2))))           ## [[1 2]]  ## index, lst are optional
-        (l1.filter ([item idx lst]==> (return (% idx 2))))          ## [[1 3]]
-        (l1.forEach ([item idx lst]==> (console.log item)))         ## 1\n2\n3
-        (l1.map ([item idx lst]==> (return (* item 2))))            ## [[2 4 6]]
-        (l1.reduce ([prev item idx lst]==> (return (+ prev item))) seed)      ## 6 ## seed optional
-        (l1.reduceRight ([prev item idx lst]==> (return (+ prev item))) seed) ## 6 ## seed optional
+        (l1.every (lambda [item idx lst] (return (< idx 2))))           ## [[1 2]]  ## index, lst are optional
+        (l1.filter (lambda [item idx lst] (return (% idx 2))))          ## [[1 3]]
+        (l1.forEach (lambda [item idx lst] (console.log item)))         ## 1\n2\n3
+        (l1.map (lambda [item idx lst] (return (* item 2))))            ## [[2 4 6]]
+        (l1.reduce (lambda [prev item idx lst] (return (+ prev item))) seed)      ## 6 ## seed optional
+        (l1.reduceRight (lambda [prev item idx lst] (return (+ prev item))) seed) ## 6 ## seed optional
         (l1.slice 1 2)                                                  ## [[2]] ## -ve from end
-        (l1.some ([item idx lst]==> (is item 4)))                   ## false  ## true if (is item 2)
+        (l1.some (lambda [item idx lst] (is item 4)))                   ## false  ## true if (is item 2)
         
     The following are not referentially transparent
     
@@ -27,7 +27,7 @@
         (l1.push 88)                                                    ## [[1 2 3 88]]
         (l1.reverse)                                                    ## (is l1 [[3 2 1]])
         (l1.shift))                                                     ## 1  ## (is l1 [[2 3]])
-        (l1.sort ([a b]==> (- b a)))                                ## [[3 2 1]]  ## function optional
+        (l1.sort (lambda [a b] (- b a)))                                ## [[3 2 1]]  ## function optional
         (l1.splice 1 1 32 33)                                           ## [[1 32 33 3]]  ## idx delcnt adds
         (l1.unshift 99)                                                 ## [[99 1 2 3]]
     
@@ -53,8 +53,8 @@
     
         (using [list]
         
-          (ref for-each=> ([item next=>]==> ... (next=>)))
-          (ref on-completion (==> (console.log "All Done")))
+          (ref for-each=> (lambda [item next=>] ... (next=>)))
+          (ref on-completion (lambda [] (console.log "All Done")))
           
           (list.sequential l1 for-each=> on-completion=>)
         )
@@ -69,9 +69,9 @@ In Lispz the braces are reserved for function-like calls - being traditional fun
 
 The first 'atom' can also be an anonymous function.
 
-    (([]==> (console.log "Hello world")))
+    ((lambda [] (console.log "Hello world")))
     ## is the same as
-    (ref hw ([]==> (console.log "Hello world")))
+    (ref hw (lambda [] (console.log "Hello world")))
     (hw)
 
 Internally functional lists are either expanded into more lispz statements by a macro or are converted to a Javascript function. The list becomes the function arguments.
@@ -86,7 +86,7 @@ Macros are amazing things. Addition does not expand to a function but to in-line
 
 At the risk of repeating myself (and at the risk of repeating myself), Lispz is a lightweight compiler to JavaScript. A raw list is an sequence of atoms. When compiled to Javascript the sequence will be comma separated. It is most commonly used for parameters in a function definition:
 
-    (ref expect ([address listener=>]==>
+    (ref expect (lambda [address listener=>]
       (add address {once: true listener=>})
     ))
 
@@ -111,8 +111,8 @@ To see if an array contains an element, use 'in':
 ###
 ### spec: lists >> flatten - Flattening Lists of Lists
 ###
-(ref flatten ([list]==>
-  (return (list.reduce ([a b]==>
+(ref flatten (lambda [list]
+  (return (list.reduce (lambda [a b]
     (ref bflat b)
     (cond (instance-of Array b) (ref bflat (flatten b)))
     (return (a.concat bflat))
@@ -123,9 +123,9 @@ To see if an array contains an element, use 'in':
   it behaves correctly if the item is not an array by running once for the entry
   if it is not a falsy.
 ###
-(ref for-each ([list action]==>
+(ref for-each (lambda [list action]
   (cond (not list)               (return null)
-        (instance-of list Array) (list.forEach action)
+        (instance-of Array list) (list.forEach action)
         (else)                   (action list)
   )
 ))

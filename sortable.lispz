@@ -4,29 +4,29 @@
   (ref sortable-defaults {
     dataIdAttr: name
     store: {
-      get: ([sortable]==>
+      get: (lambda [sortable]
         (ref items (localStorage.getItem sortable.options.group))
         (return ((or items "").split "|"))
       )
-      set: ([sortable]==>
+      set: (lambda [sortable]
         (localStorage.setItem sortable.options.group ((sortable.toArray).join "|"))
       )
     }
   })
   ### spec: DOM >> Sortable Components
   ###
-  (ref create ([container name options]==>
+  (ref create (lambda [container name options]
     (return (Sortable.create container
       (dict.merge  sortable-defaults {group: (or name (Math.random))} options)
     ))
   ))
 
-  (ref build ([target-repo]==>
+  (ref build (lambda [target-repo]
     (return (cdnjs.build target-repo "sortable" [[
       {repo: "sortable" files: [[{include '/Sortable.js/'}]]}
     ]]))
   ))
-  (ref loaded (net.script "ext/sortable.js" (==> (return window.Sortable))))
+  (ref loaded (net.script "ext/sortable.js" (lambda [] (return window.Sortable))))
   (when  loaded [] (export {build create}))
   (catch loaded [] (export {build}))
 )

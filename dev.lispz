@@ -1,17 +1,17 @@
 (using [github riot list]
-  (ref manifest (==>
+  (ref manifest (lambda []
     (ref text [["CACHE MANIFEST"]])
-    (lispz.manifest.forEach ([uri]==> (text.push uri)))
+    (lispz.manifest.forEach (lambda [uri] (text.push uri)))
     (text.push "NETWORK:" "*")
     (return (text.join "\n"))
   ))
   ### Package Lispz for distribution ###
-  (ref package ([lispz-repo]==>
+  (ref package (lambda [lispz-repo]
     (ref read-file (github.read.bind null lispz-repo))
 
-    (ref group ([files]==>
+    (ref group (lambda [files]
       (ref modules [[]] riots [[]])
-      (files.forEach ([entry]==>
+      (files.forEach (lambda [entry]
         (return? (not (is "file" entry.type)))
         (ref parts (entry.name.split "."))
         (cond
@@ -22,7 +22,7 @@
       (return (promise.resolved {modules riots}))
     ))
     (ref build-modules (promise [names]
-      (ref load-module ([name]==>
+      (ref load-module (lambda [name]
         (ref uri (+ name ".lispz"))
         (return (when (read-file uri) [text]
           (ref contents (text.replace '/[\\"]/g' "\\$&"))
@@ -34,7 +34,7 @@
     ))
     (ref build-riots (promise [names]
       (ref source [[]])
-      (ref load-riot ([name]==>
+      (ref load-riot (lambda [name]
         (return (when (read-file (+ name ".riot.html")) [text]
           (ref usings ('/<!--\s*using\s*.*?\s*-->/'.exec text))
           (cond usings (ref usings ((first usings).replace "'" "")))
@@ -63,7 +63,7 @@
   ))
 
   ### Distribution ###
-  (ref distribute ([target-repo]==>
+  (ref distribute (lambda [target-repo]
     ## @TODO
   ))
 

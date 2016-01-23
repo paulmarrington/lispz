@@ -11,8 +11,8 @@
         )
   ###
   (export {
-    to-string: ([js]==> (return (js.join "\n")))
-    run:       ([js]==> (return (js.map  eval)))
+    to-string: (lambda [js] (return (js.join "\n")))
+    run:       (lambda [js] (return (js.map  eval)))
     
     lispz: { compile: lispz.compile }
   })
