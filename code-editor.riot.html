@@ -28,10 +28,10 @@
         (codemirror.set-mode cm packet.key)
         (cond (isnt (get packet.key 0) ".") (do
           (tag.update! {heading: (last (packet.key.split "/"))})
-          (localStorage.setItem filename-key packet.key)
-          (cond packet.contents (cm.setValue packet.contents))
           (tag.update)
         ))
+        (localStorage.setItem filename-key packet.key)
+        (cond packet.contents (cm.setValue packet.contents))
       ))
 
       (ref contents-key (+ "code-editor/" opts.name "/contents"))
