@@ -31,7 +31,7 @@
           (tag.update)
         ))
         (localStorage.setItem filename-key packet.key)
-        (cond packet.contents (cm.setValue packet.contents))
+        (cm.setValue packet.contents)
       ))
 
       (ref contents-key (+ "code-editor/" opts.name "/contents"))

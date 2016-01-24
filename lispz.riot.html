@@ -21,6 +21,9 @@
       )
       
       (message.listen "code-editor-run/js" (lambda [compiled]
+        (message.send  "code-editor/output" {
+          action: "open"  key: ".txt"  contents: ""
+        })
         (message.send "code-editor/compiled" {
           action: "open"  key: ".js"  contents: compiled.js
         })
