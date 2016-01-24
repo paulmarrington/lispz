@@ -285,7 +285,7 @@
       ((chain parse-titles sort-titles merge-titles) sections)
 ###
 ### spec: chain
-  (describe "chain: run each function with the results from the one before" (lambda []
+  (describe "chain: run each function with the results from the one before" (llbda []
     (it "(chain f1 f2 ...)" (lambda []
       (ref f1 (lambda [a] (return 2)))
       (ref f2 (lambda [a] (return (+ a 3))))

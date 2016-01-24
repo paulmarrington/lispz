@@ -190,20 +190,19 @@ var lispz = function() {
       module = {name:name, line:0}
       var js = parse_to_ast(source).map(ast_to_js)
       module = last_module
-      return js
+      return window.js_beautify ? js.map(js_beautify) : js
     } catch (err) {
       console.log(err)
       return compile_error(err.message || err, "for "+module.name+":"+module.line)
     }
   },
-  run = function(name, source) { return compile(name, source).map(eval) },
-  debug = function(debugging) { lispz.debugging = debugging }
+  run = function(name, source) { return compile(name, source).map(eval) }
   //######################### Script Loader ####################################//
   cache = {}, manifest = [], pending_module = {},
   http_request = function(uri, type, callback) {
     var req = new XMLHttpRequest()
     req.open(type, uri, true)
-    if (lispz.debugging && uri.indexOf(":") == -1)
+    if (lispz.debug_mode && uri.indexOf(":") == -1)
       req.setRequestHeader("Cache-Control", "no-cache")
     req.onerror = function(err) {
       callback(err)
@@ -259,6 +258,10 @@ var lispz = function() {
       else if (on_all_ready) on_all_ready()
     }
     next_uri()
+  },
+  set_debug_mode = function(debugging) {
+    lispz.debug_mode = debugging
+    load_one("js-beautify", function(){})
   },
   //##################    where to get scripts    #############################//
   lispz_url = document.querySelector('script[src*="lispz.js"]').getAttribute('src'),
@@ -328,5 +331,5 @@ var lispz = function() {
            macros: macros, cache: cache, http_request: http_request,
            clone: clone, manifest: manifest, script: script, css: css,
            synonyms: synonyms, globals: globals, tags: {}, slice,
-           path_base: lispz_base_path }
+           path_base: lispz_base_path, set_debug_mode: set_debug_mode}
 }()

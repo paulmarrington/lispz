@@ -1,0 +1,13 @@
+(using [net github]
+  (ref build (lambda [target-repo built=>]
+    (return (github.build target-repo "js-beautify" [[
+      {repo: "beautify-web/js-beautify" files: [[
+        {base: "js/lib" include: '/^beautify.js$/'}
+      ]]}
+    ]]))
+  ))
+  (ref loaded (net.script "ext/js-beautify.js" (lambda []
+    (return window.js_beautify))
+  ))
+  (when loaded [] (export {build}))
+)

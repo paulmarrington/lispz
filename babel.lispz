@@ -1,0 +1,12 @@
+(using [net cdnjs]
+  (ref build (lambda [target-repo]
+    (return (cdnjs.build target-repo "babel" [[
+      {repo: "babel-standalone" files: [[
+        {include: '/\.min.js$/'}
+      ]]}
+    ]]))
+  ))
+  (ref loaded (net.script "ext/jquery.js" (lambda [] (return window.Babel))))
+  (when  loaded [] (export {build}))
+  (catch loaded [] (export {build}))
+)

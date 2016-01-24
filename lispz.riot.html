@@ -13,13 +13,11 @@
 
   <script type="text/lispz">
     (riot-tag [message riot dict]
-      (stateful.morph! lispz)
-      (lispz.update! {debug: true})
+      (lispz.set-debug-mode true)
       (when (message.ready "code-editor/code") []
         (message.send "code-editor/code"
-          {action: "open" key: ".lispz" contents: null})
+          {action: "open" key: ".lispz" contents: ""})
       )
-      
       (message.listen "code-editor-run/js" (lambda [compiled]
         (message.send  "code-editor/output" {
           action: "open"  key: ".txt"  contents: ""
