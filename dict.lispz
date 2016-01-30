@@ -77,4 +77,8 @@ There is often need to merge multiple dictionaries together to create a new comb
   (return ((Object.keys dict).map (lambda [k] (return (action=> k (get dict k))))))
 ))
 
-(export {merge from-list insert! for-each map})
+### spec: lists >> dict >> Check a Dictionary for an Entry
+###
+(macro contains [test against] (#join '' '(' test ' in ' against ')'))
+
+(export {merge from-list insert! for-each map contains})

@@ -50,6 +50,9 @@
   ))
 ###
 (macro debug [*msg] (console.trace (#join ',' *msg)))
+### spec: basic >> meaningless fill-words
+###
+(macro , '') (macro in '') (macro of '')
 ### spec: basic >> do
 ###
 (macro do [*body] *body)
@@ -301,10 +304,7 @@
 
 ### spec: basics >> Operators ###
 (macro not [value] (#join '' '!(' value ')'))
-(macro in [test against] (#join '' '(' test ' in ' against ')'))
 (macro instance-of [type obj] (#join '' '(' obj ' instanceof ' type ')'))
-
-(macro contains [str substr] (isnt -1 (str .indexOf substr)))
 
 ### spec: basics >> Iteration
 
