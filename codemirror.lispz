@@ -434,29 +434,29 @@
     (cond (cm.somethingSelected) (ref source (cm.doc.getSelection))
           (else)                 (ref source (cm.doc.getValue))
     )
-    (ref js (compiler.compile name source))
-    (message.send "code-editor-run/js" {
+    (ref js (compiler.compile source name))
+    (message.send "code-editor/run/js" {
       name source js: (compilers.to-string js)
     })
-    (message.send "code-editor-run/output" {
+    (message.send "code-editor/run/output" {
       name source output: (compilers.run js)
     })
   ))
   ### spec: codemirror >> Compiling Code
     To send the compiler output to anywhere but the console, use a copy of the
     following code.
-      (message.listen "code-editor-compile/js" (lambda [compiled]
+      (message.listen "code-editor/compile/js" (lambda [compiled]
         ## compiled: {name source js}
       ))
   ###
-  (message.listen "code-editor-compile/js" (lambda [compiled]))
+  (message.listen "code-editor/compile/js" (lambda [compiled]))
   ### spec:
     To process the console output from running compiled code:
-      (message.listen "code-editor-run/output" (lambda [run]
+      (message.listen "code-editor/run/output" (lambda [run]
         ## run: {name source output}
       ))
   ###
-  (message.listen "code-editor-run/output" (lambda [run]
+  (message.listen "code-editor/run/output" (lambda [run]
     ## (console.log run.output)
   ))
 
@@ -464,7 +464,7 @@
 
   (ref subpart (lambda [cmd opt]
     (return (lambda [cm]
-(return CodeMirror.Pass) ## make a configuration option
+      (return CodeMirror.Pass) ## make a configuration option
       (ref mode (cm.getModeAt (cm.getCursor)))
       (cond (get lisp-modes mode.name)  ((get subpar.core cmd) cm opt)
             (else)                      (return CodeMirror.Pass)

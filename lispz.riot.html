@@ -23,7 +23,7 @@
         (message.send "code-editor/code"
           {action: "open" key: ".lispz" contents: ""})
       )
-      (message.listen "code-editor-run/js" (lambda [compiled]
+      (message.listen "code-editor/run/js" (lambda [compiled]
         (message.send  "code-editor/output" {
           action: "open"  key: ".txt"  contents: ""
         })
@@ -40,7 +40,7 @@
           contents: (+ ((*arguments 0).join " ") "\n")
         })
       )})
-      (message.listen "code-editor-run/output" (lambda [run]))
+      (message.listen "code-editor/run/output" (lambda [run]))
     )
   </script>
 </lispz>

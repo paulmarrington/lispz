@@ -4,9 +4,7 @@
 
         (using [compilers]
           (ref js (compilers.lispz.compile "(console.log \"Hi\")" "name"))
-          (console.log (compilers.to-string
-            to-string:
-            g js))
+          (console.log (compilers.to-string js))
           (console.log (compilers.run js))
         )
   ###
