@@ -7,11 +7,11 @@ supplied without a following colon then it is placed into the dictionary with a 
     (ref exported-method-1 (lambda [] ...))
     (ref key "whatever I want"}
     (export {exported-method-1 key error: false date: (new Date))
-    
+
 will create a JavaScript dictionary of the form
 
     (ref exporting {exported_method_1: exported_method_1, key: key, error: false, date: (new Date)})
-    
+
 access with a key is identical to arrays except that it is a key rather than an index.
 If the key is known, using dot syntax is clearer
 
@@ -71,7 +71,7 @@ There is often need to merge multiple dictionaries together to create a new comb
   (Object.keys dict)(.forEach (lambda [k] (action=> k (get dict k))))
 ))
 
-### spec: lists >> dict >> Morphing One Dictionary into Another
+### spec: lists >> dict >> Morphing dictionary into an Array
 ###
 (ref map (lambda [dict action=>]
   (return ((Object.keys dict).map (lambda [k] (return (action=> k (get dict k))))))

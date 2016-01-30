@@ -1,4 +1,4 @@
-(using [list dom]
+(using [list dom regex]
   (ref script (promise.callback [uri check max-ms] (lispz.script uri (lambda []
     (cond (not check) (return (callback)))
     (ref initialised (wait-for check max-ms))
@@ -25,7 +25,19 @@
   ###
   (ref external? (lambda [url] (return (contains url "://"))))
 
+  ### spec: Network >> Retrieve the last element in a URL path
+  ###
+  (ref url-path (lambda [href]
+    (return (regex.substring href '/(.*\/)[^\/]*$/'))
+  ))
+
+    ### spec: Network >> Retrieve the last element in a URL path
+    ###
+    (ref url-actor (lambda [href]
+      (return (regex.substring href '/.*\/([^\/]*)(?:\?.*)?$/'))
+    ))
+
   (export {
-    script css http-get json-request external?
+    script css http-get json-request external? url-actor url-path
   })
 )

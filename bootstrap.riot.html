@@ -235,7 +235,7 @@
       ))
       (tag.update! {goto: (lambda [ev]
         (cond ev.item.topic (message.send
-          (+ opts.owner "-" ev.item.topic)
+          (+ opts.owner "/" ev.item.topic)
           {item: ev.item owner: opts.owner action: "select"}))
         (cond ev.item.children (do
           (tag.update! {items: ev.item.children})

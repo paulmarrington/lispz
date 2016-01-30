@@ -92,7 +92,7 @@
     (localStorage.setItem "CodeMirror-options" (JSON.stringify options))
   ))
   ## Context menu for code editor
-  (ref topic "CodeMirror-command")
+  (ref topic "codemirror/command")
   (ref menu [[
     ### {title: "File" children: [[
       {topic meta: "save" title: "Save"}
@@ -259,7 +259,7 @@
     (ref cm (stateful.morph! (CodeMirror wrapper options)))
     (cm.update! {listener: (lambda [data] (listener cm data))})
     (message.send "CodeMirror-menu" menu)
-    (message.listen (+ owner "-" "CodeMirror-command") cm.listener)
+    (message.listen (+ owner "/" topic) cm.listener)
     (return cm)
   ))
   (ref close (lambda [cm]

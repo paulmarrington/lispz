@@ -6,9 +6,17 @@
   </style>
   <script type=text/lispz>
     (ref tag (stateful.morph! this))
-    (tag.update! {menu: opts.menu heading: opts.heading})
-    (tag.on "mount" (lambda [] (using [markdown dom net regex message]
+    (ref markdown-menu (+ "panel/markdown/" opts.name "/menu"))
+    (ref markdown-menu-action (+ markdown-menu "/action"))
+    (tag.update! {menu: markdown-menu heading: opts.heading})
+    (tag.on "mount" (lambda [] (using [markdown dom net message dict]
       (ref contents-area tag.tags.panel.body)
+
+      ## hamburget menu lists a history of pages followed
+      (ref history (stateful))
+      (message.listen (+ tag._id "/" markdown-menu-action) (lambda [packet]
+        (load packet.item.href) ## load an item selected from the hamburger
+      ))
       (ref open (lambda [md from]
         (ref from (or from ""))
         (dom.inner-html! contents-area (markdown.compile md))
@@ -23,9 +31,16 @@
         ))
       ))
       (ref load (lambda [href]
+        ## Update the hamburger with the latest history update
+        (history.update! href true)
+        (ref menu (dict.map history (lambda [href]
+          (ref title (first ((net.url-actor href).split ".")))
+          (return {topic: markdown-menu-action href title})
+        )))
+        (message.send markdown-menu (menu.reverse))
+        ## then continue loading and displaying
         (ref loaded (net.http-get href))
-        (ref base (regex.substring href '/(.*\/)[^\/]*$/'))
-        (when loaded [md] (open md base))
+        (when loaded [md] (open md (net.url-path href)))
         (catch loaded [err] (debug err))
       ))
       (cond opts.href (load opts.href))
