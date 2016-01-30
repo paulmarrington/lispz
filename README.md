@@ -1,6 +1,7 @@
 # lispz
 
-[Documentation](doc/index.md)
+[QuickStart](index.html) - Edit, run and read doco online
+[Documentation](doc/index.md) - Read more, learn more
 
 **Executive Summary**: Lispz supports functional programming for developing single-page-applications for the browser. It does this with modules, RIOT components, Bootstrap visuals, message passing and numerous other features to make SPA development easier.
 

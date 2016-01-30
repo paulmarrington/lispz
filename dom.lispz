@@ -3,6 +3,19 @@
     (document.querySelector parent) (.appendChild element)
   ))
 
+  ### spec: DOM >> Replace inner html
+  Given an element, replace the contents with the html provided as a string.
+  ###
+ (ref inner-html! (lambda [el html] (#set! el.innerHTML html)))
+
+  ### spec: DOM >> Select Elements
+  This is a shortcut for element.querySelectorAll. It copies the
+  results into an Array of elements for further processing.
+  ###
+  (ref select (lambda [el selector]
+    (return (slice (el.querySelectorAll selector)))
+  ))
+
   (ref style! (lambda [el styles]
     (dict.for-each styles(lambda [name value]
       (#set! (get el.style name) value))
@@ -25,5 +38,5 @@
     (ref add (lambda [] (element.addEventListener event listener)))
   ))
 
-  (export {append! element event-throttle style!})
+  (export {append! element event-throttle style! inner-html! select})
 )

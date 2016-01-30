@@ -47,7 +47,7 @@ Styles are global (unlike *true* web components). This is easily overcome using 
 Scripting can be any language of choice that runs on the browser. JavaScript, Lispz, Es6 (with babel) and CoffeeScript are available out-of-the-box. For the latter two you will need to load the compiler by *(using babel coffeescript)* in the startup code. Other languages can be added as long as they compile code on the browser.
 
     (set! riot.parsers.js.lispz
-      (lambda [source] (return ((lispz.compile "riot-tags" source).join "\n")))
+      (lambda [source] (return ((lispz.compile source "riot-tags").join "\n")))
     )
 ###
 (using  [jquery net github dict]
@@ -127,15 +127,15 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
   ### spec: riot >> Tag support
     Riot uses _this_ as context for codes within a tag. Also, when errors are
     found it throws excepts that are difficult to track. Lispz provides help
-    with a riot-tag macro which invokes _using_,  provides a _context_ reference
+    with a riot-tag macro which invokes _using_,  provides a _tag_ reference
     and wraps the code in a _try/catch_ to provide improved error reporting.
 
       @TODO example
   ###
   (macro riot-tag [modules *body]
-    'var context=this;'
+    'var tag=this;'
     (using modules
-      (#join '' 'try {' *body '}catch(err){console.log(err,context)}')
+      (#join '' 'try {' *body '}catch(err){console.error(err,tag)}')
     )
   )
 
@@ -180,7 +180,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
     (stateful.morph! riot.parsers.js)
     (riot.parsers.js.update! {lispz:
       (lambda [source]
-        (ref js (compilers.lispz.compile "riot-tags" source))
+        (ref js (compilers.lispz.compile source "riot-tags"))
         (return (compilers.to-string js))
       )
     })

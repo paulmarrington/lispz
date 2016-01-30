@@ -51,7 +51,7 @@
   ## preprocess a file to generate css or js dependent on extension
   (ref preprocessors {
     lispz: (lambda [name code]
-      (return {path ext: "js" code: (window.lispz.compile name code)})
+      (return {path ext: "js" code: (window.lispz.compile code name)})
     )
   })
   (ref preprocess (lambda [path code]

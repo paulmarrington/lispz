@@ -184,10 +184,10 @@ var lispz = function() {
         macros[ast[0]].apply(this, ast.slice(1)) : list_to_js(ast) : jsify(ast)
     } catch (err) { console.log(ast); throw err; }
   },
-  compile = function(name, source) {
+  compile = function(source, name) {
     try {
       var last_module = module
-      module = {name:name, line:0}
+      module = {name:name || "", line:0}
       var js = parse_to_ast(source).map(ast_to_js)
       module = last_module
       return window.js_beautify ? js.map(js_beautify) : js
@@ -196,7 +196,7 @@ var lispz = function() {
       return compile_error(err.message || err, "for "+module.name+":"+module.line)
     }
   },
-  run = function(name, source) { return compile(name, source).map(eval) }
+  run = function(name, source) { return compile(source, name).map(eval) }
   //######################### Script Loader ####################################//
   cache = {}, manifest = [], pending_module = {},
   http_request = function(uri, type, callback) {
@@ -215,7 +215,7 @@ var lispz = function() {
     req.send()
   },
   module_init = function(uri) {
-    var js = compile(uri, lispz_modules[uri]).join('\n') +
+    var js = compile(lispz_modules[uri], uri).join('\n') +
       "//# sourceURL=" + uri + ".lispz\n"
     init_func = new Function('__module_ready__', js)
     init_func(function(exports) {
@@ -238,8 +238,8 @@ var lispz = function() {
         module_init(uri)
       } catch (e) {
         delete pending_module[uri]
-        console.log(e)
-        throw uri+": "+e
+        console.error(uri, e)
+        //throw uri+": "+e
       }
     })
   },

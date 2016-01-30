@@ -21,7 +21,11 @@
     (when (http-get uri) [response] (resolve-promise (JSON.parse response)))
   ))
 
+  ### spec: Network >> Is URL external
+  ###
+  (ref external? (lambda [url] (return (contains url "://"))))
+
   (export {
-    script css http-get json-request
+    script css http-get json-request external?
   })
 )

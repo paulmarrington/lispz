@@ -1,0 +1,13 @@
+
+### spec: regex >> Extracting a substring
+A common problem is finding part of a string given a pattern.
+
+    (regex.substring href '/(.*)\/[^\/]*$/') ## retrieve base part of url
+###
+(ref substring (lambda [str re]
+  (ref match (str.match re))
+  (cond match (return (get match 1)))
+  (return " ")
+))
+
+(export {substring})

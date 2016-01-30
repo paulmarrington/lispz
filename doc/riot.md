@@ -35,7 +35,7 @@ For riot component files that rely on other files for sub-components, Start the 
       <style>code-editor .wrapper {...}</style>
       <script type=text/lispz>(var tag this) ...</script>
     </code-editor>
-    
+
 Riot uses plain JavaScript inside {} as a templating solution. The *opts* dictionary matches the attributes when the custom tag is referenced. Any inner tag with a *name* or *id* attribute can be referenced by the same name. Each component has a unique *_id*.
 
 Styles are global (unlike *true* web components). This is easily overcome using explicit name-spacing as above.
@@ -45,5 +45,5 @@ Styles are global (unlike *true* web components). This is easily overcome using 
 Scripting can be any language of choice that runs on the browser. JavaScript, Lispz, Es6 (with babel) and CoffeeScript are available out-of-the-box. For the latter two you will need to load the compiler by *(using babel coffeescript)* in the startup code. Other languages can be added as long as they compile code on the browser.
 
     (set! riot.parsers.js.lispz
-      (lambda [source] (return ((lispz.compile "riot-tags" source).join "\n")))
+      (lambda [source] (return ((lispz.compile source "riot-tags").join "\n")))
     )

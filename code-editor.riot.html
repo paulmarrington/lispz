@@ -1,15 +1,8 @@
 <code-editor>
   <panel height={ opts.height } heading={ heading }
       menu={ menu } owner={ _id }>
-    <div name=wrapper class=wrapper></div>
   </panel>
   <style>
-    code-editor .wrapper {
-      position: absolute;
-      top: 0; bottom: 0;
-      left: 0; right: 0;
-      height: initial;
-    }
     code-editor .CodeMirror {
       position: absolute;
       top: 0; bottom: 0;
@@ -22,7 +15,7 @@
     (tag.update! {menu: "CodeMirror-menu" heading: (or opts.heading "Edit")})
     (tag.on "mount" (lambda [] (using  [codemirror message dict]
       (ref filename-key (+ "code-editor/" opts.name "/filename"))
-      (ref cm (codemirror.open tag._id tag.tags.panel.wrapper))
+      (ref cm (codemirror.open tag._id tag.tags.panel.body))
 
       (ref open (lambda [packet]
         (codemirror.set-mode cm packet.key)
@@ -46,7 +39,7 @@
       (ref append (lambda [packet]
         (cm.replaceRange packet.contents (CodeMirror.Pos (cm.lastLine)))
       ))
-      
+
       (message.dispatch (+ "code-editor/" opts.name) { open append })
     )))
   </script>
