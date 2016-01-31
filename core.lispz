@@ -243,6 +243,10 @@
         ))))
       ))
     )}
+
+    delete!: {value: (lambda [to-delete]
+      (delete (get this to-delete))
+    )}
   })
   (return obj)
 ))
