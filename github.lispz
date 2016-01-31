@@ -1,28 +1,27 @@
-(using  [net dict]
-  (var version null)
-  (var cdn-uri (lambda [project version filepath]
+(using  [net dict list]
+  (ref version null)
+  (ref cdn-uri (lambda [project version filepath]
     (return (+ "https://cdn.rawgit.com/" project "/" version "/" filepath))
   ))
-  (var repo (lambda [username password project]
-    (var github (new Github {username password auth: "basic"}))
-    (var repo (github.getRepo.apply null (project.split "/")))
-    (set! repo.lispz {github username password project branch: "master"})
-    (return repo)
+  (ref repo (lambda [username password project]
+    (ref auth (new Github {username password auth: "basic"}))
+    (ref github (auth.getRepo.apply null (project.split "/")))
+    (return (stateful {github auth username password project branch: "master"}))
   ))
   ## Set the branch to use for repo - defaults to master
-  (var branch (promise [repo branch-name]
-    (set! repo.lispz.branch branch-name)
-    (repo.branch branch-name (lambda [err result] (resolve-promise)))
+  (ref branch (promise [repo branch-name]
+    (repo.update! {branch: branch-name})
+    (repo.github.branch branch-name (lambda [err result] (resolve-promise)))
   ))
   ## list files in a specific path on the repo
-  (var list-dir (promise.callback [repo path]
-    (repo.contents repo.lispz.branch path callback)
+  (ref list-dir (promise.callback [repo path]
+    (repo.github.contents repo.branch path callback)
   ))
-  (var list-all (promise [repo path single-level]
-    (var result [[]])
-    (var list-path (lambda [path]
+  (ref list-all (promise [repo path single-level]
+    (ref result [[]])
+    (ref list-path (lambda [path]
       (return (when (list-dir repo path) [paths]
-        (var children [[]])
+        (ref children [[]])
         (paths.forEach (lambda [entry]
           (cond
             (is "dir"  entry.type)
@@ -36,158 +35,164 @@
     ))
     (when (list-path path) [] (resolve-promise result))
   ))
-  (var read (promise.callback [repo path]
-    (repo.read repo.lispz.branch path callback)
+  (ref read (promise.callback [repo path]
+    (repo.github.read repo.branch path callback)
   ))
-  (var update (lambda [repo]
-    (return-if (is repo.lispz.branch repo.lispz.username) (promise.resolved))
-    (var branch-name (default? repo.lispz.username "master"))
+  (ref update (lambda [repo]
+    (return-if (is repo.branch repo.username) (promise.resolved))
+    (ref branch-name (or repo.username "master"))
     (return (branch repo branch-name))
   ))
-  (var write (promise.callback [repo path contents comment]
+  (ref write (promise.callback [repo path contents comment]
     (return-if (not contents.length) (promise.resolved))
-    (var encoded (unescape (encodeURIComponent contents)))
-    (repo.write repo.lispz.branch path encoded comment callback)
+    (ref encoded (unescape (encodeURIComponent contents)))
+    (repo.github.write repo.branch path encoded comment callback)
   ))
   ## preprocess a file to generate css or js dependent on extension
-  (var preprocessors {
+  (ref preprocessors {
     lispz: (lambda [name code]
-      (return {ext: "js" code: (window.lispz.compile name code)})
+      (return {path ext: "js" code: (window.lispz.compile code name)})
     )
   })
-  (var preprocess (lambda [path code]
-    (var ext (last (path.split ".")))
-    (var preprocessor (get preprocessors ext))
-    (return-if (not preprocessor) {ext code})
+  (ref preprocess (lambda [path code]
+    (ref ext (last (path.split ".")))
+    (ref preprocessor (get preprocessors ext))
+    (return-if (not preprocessor) {path ext code})
     (return (preprocessor path code))
   ))
   ## Build and save a dependency list
   ## We will need to filter the dependencies
-  (var filter (lambda [before include exclude]
-    (var after before)
-    (cond include (var after
+  (ref filter (lambda [before include exclude]
+    (ref after before)
+    (cond include (ref after
       (after.filter (lambda [file] (return (include.test file))))
     ))
-    (cond exclude (var after
+    (cond exclude (ref after
       (after.filter (lambda [file] (return (not (exclude.test file)))))
     ))
     (return after)
   ))
   ## and see which to save and which to copy
-  (var process-file (lambda [store path code]
-    (var entry (preprocess path code))
-    (var saver (get store entry.ext))
-    (cond saver (do
-      (saver.push (+ "\n\n/*" path "*/\n\n"))
-      (saver.push entry.code)
-    ) meta.copy-to (do
-      ## not working yet for binary files
-      (var filename (last (path.split "/")))
-      (set! (get store.copies (+ meta.copy-to "/" filename)) code)
-    ))
+  (ref copy (lambda [copy-to path code]
+    ## not working yet for binary files
+    (ref filename (last (path.split "/")))
+    (return {path code copy: (+ copy-to "/" filename)})
   ))
   ## Load the contents of the files we need from a single repo
-  (var process-repo (lambda [source-repo files]
+  (ref process-repo (lambda [source-repo files actors]
     (return (promise.all (files.map (promise [meta]
-      (var base (default? meta.base ""))
+      (ref base (or meta.base ""))
       (when (actors.list-all source-repo base meta.single-level) [file-list]
-        (var files (filter file-list meta.include meta.exclude))
-        (promise.all (files.map (promise [path]
+        (ref files (filter file-list meta.include meta.exclude))
+        (resolve-promise (promise.all (files.map (promise [path]
           (when (actors.read source-repo path) [code]
-            (when (process-file path code) [] (resolve-promise))
+            (cond
+              meta.copy-to (resolve-promise (copy meta.copy-to path code))
+              (else)       (resolve-promise (preprocess path code))
+            )
           )
-        )))
-        (resolve-promise)
+        ))))
       )
     ))))
   ))
   ## Given a list of repos, go through them all for files in need
-  (var process-repos (lambda [target-repo sources]
-    (return (promise.all (sources.map (promise [source]
-      (var source-repo (actors.repo target-repo source.repo))
-      (store.from.push source.repo)
-      (when (process-repo source-repo source.files) [] (resolve-promise))
+  (ref process-repos (lambda [target-repo sources actors]
+    (return (promise.all (sources.map (lambda [source]
+      (ref source-repo (actors.repo target-repo source.repo))
+      (return (process-repo source-repo source.files actors))
     ))))
   ))
   ## Retrieve file contents based of filtering meta-data
-  (var retriever (promise [target-repo sources actors]
-    (var store {js: [[]] css: [[]]  copies: {} from: [["Gathered from: "]]})
-    (when (process-repos target-repo sources) [] (resolve-promise))
+  (ref retriever (promise [target-repo sources actors]
+    (when (process-repos target-repo sources actors) [entry-tree]
+      (ref store {js: [[]] css: [[]]  copies: [[]] from:
+        (sources.map (lambda [source] (return source.repo)))})
+      (store.from.unshift "Gathered from: ")
+      ((list.flatten entry-tree).forEach (lambda [entry]
+        (cond
+          (get store entry.ext)
+            ((get store entry.ext).push "\n\n/* " entry.path " */\n" entry.code)
+          store.copy
+            (store.copies.push entry)
+        )
+      ))
+      (resolve-promise store)
+    )
   ))
   ## Given a file type, save the concatenated source contents
-  (var save (promise [target-repo store name ext comment]
-    (var contents ((get store ext).join ""))
+  (ref save-store (promise [target-repo store name ext comment]
+    (ref contents ((get store ext).join ""))
     (return (write target-repo (+ "ext/" name "." ext) contents comment))
   ))
   ## copy files identified as needed as-is
-  (var copy (lambda [target-repo store comment]
-    (return (dict.map store.copies (lambda [path contents]
-      (return (write target-repo path contents comment))
-    )))
+  (ref copy-store (lambda [target-repo store comment]
+    (return (promise.all (store.copies.map (lambda [entry]
+      (return (write target-repo entry.path entry.code comment))
+    ))))
   ))
   ## Now we have gathered needed resources, build and save the output file
-  (var builder (promise [actors target-repo name sources]
+  (ref builder (promise [actors target-repo name sources]
     (when (retriever target-repo sources actors) [store]
-      (var comment (store.from.join " "))
-      (var saved (when (update target-repo) []
+      (ref comment (store.from.join " "))
+      (ref saved (when (update target-repo) []
         (return (promise.all
-          (save target-repo store name "js" comment)
-          (save target-repo store name "js" comment)
-          (copy target-repo store           comment)
+          (save-store target-repo store name "js"  comment)
+          (save-store target-repo store name "css" comment)
+          (copy-store target-repo store            comment)
         ))
       ))
       (when saved [] (resolve-promise))
     )
   ))
-  (var github-actors {
+  (ref github-actors {
     list-all read
     repo: (lambda [target-repo name]
-      (return (repo target-repo.lispz.username
-        target-repo.lispz.password name
+      (return (repo target-repo.username
+        target-repo.password name
       ))
     )
   })
-  (var build (builder.bind null github-actors))
+  (ref build (builder.bind null github-actors))
   ## Use gruntfile to decide which files to include and it what order
-  (var grunt-build (promise [meta]
-    (var js [[(default? meta.pre "")]])
-    (var read-all (promise.all (meta.files.map (promise []
+  (ref grunt-build (promise [meta]
+    (ref js [[(or meta.pre "")]])
+    (ref read-all (promise.all (meta.files.map (promise []
       (when (github-actors.read source-repo path) [data]
         (js.push data) (resolve-promise)
       )
     ))))
     (when read-all []
-      (js.push (default? meta.post ""))
-      (var contents (js.join "\n"))
+      (js.push (or meta.post ""))
+      (ref contents (js.join "\n"))
       (when (write target-repo (+ "ext/" meta.target) contents comment) []
         (resolve-promise)
       )
     )
   ))
-  (var grunt-copy (promise [files]
-    (var copy-all (promise.all (files.map (promise [item]
-      (var path (default? item.src item))
+  (ref grunt-copy (promise [files]
+    (ref copy-all (promise.all (files.map (promise [item]
+      (ref path (or item.src item))
       (when (github-actors.read source-repo path) [contents]
-        (var path (+ "ext/" (last (path.split "/"))))
+        (ref path (+ "ext/" (last (path.split "/"))))
         (when (write target-repo path contents comment) [] (resolve-promise))
       )
     ))))
   ))
-  (var grunt (promise [target-repo source-project]
-    (var source-repo (github-actors.repo target-repo source-project))
-    (var comment (+ "from " source-project))
-    (var sources [[
+  (ref grunt (promise [target-repo source-project]
+    (ref source-repo (github-actors.repo target-repo source-project))
+    (ref comment (+ "from " source-project))
+    (ref sources [[
       {repo: source-project files: [[
         {include: '/^Gruntfile.js$/' single-level: true}
       ]]}
     ]])
     (when (retriever target-repo sources actors) [store]
-      (var grunt-config ((Function
+      (ref grunt-config ((Function
         (+ "var module={};" (last store.js) "return module.exports"))))
       (grunt-config {
-        loadNpmTasks: (=>) registerTask: (=>)
+        loadNpmTasks: (lambda []) registerTask: (lambda [])
         initConfig: (lambda [config-data]
-          (var grunt-processor {
+          (ref grunt-processor {
             build: grunt-build
             copy:  grunt-copy
           })
@@ -198,23 +203,25 @@
       })
     )
   ))
-  (var build-github (lambda [target-repo]
-    (var sources [[
+  (ref build-github (lambda [target-repo]
+    (ref sources [[
       {repo: "michael/github" files: [[
         {include: '/github.js$/'}
       ]]}
     ]])
     (return (build target-repo "github" sources))
   ))
-  (when (net.script "ext/github.js") []
+  (ref loaded (net.script "ext/github.js" (lambda [] (return window.Github))))
+  ## (catch loaded (export {build}))
+  (when loaded []
     (export {
       branch list-all list-dir cdn-uri build builder repo read write update
       build-github retriever grunt preprocessors
       move: (promise.callback [repo from to]
-        (repo.move repo.lispz.branch from to callback)
+        (repo.github.move repo.branch from to callback)
       )
       delete: (promise.callback [repo path]
-        (repo.remove repo.lispz.branch path script callback)
+        (repo.github.remove repo.branch path script callback)
       )
     })
   )

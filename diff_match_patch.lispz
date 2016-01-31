@@ -1,10 +1,10 @@
 (using [net github]
-  (var build (lambda [target-repo built=>]
+  (ref build (lambda [target-repo built=>]
     (return (github.build target-repo "diff_match_patch" [[
       {repo: "tanaka-de-silva/google-diff-match-patch-js" files: [[
         {base: "" include: '/^diff_match_patch_uncompressed.js$/'}
       ]]}
     ]]))
   ))
-  (lispz.script "ext/diff_match_patch.js" (=> (export { build })))
+  (lispz.script "ext/diff_match_patch.js" (lambda [] (export { build })))
 )

@@ -1,0 +1,16 @@
+  ### spec: Compilers
+    The compiler entry for each language is a function that is called with the
+    name of the source code followed by the source itself.
+
+        (using [compilers]
+          (ref js (compilers.lispz.compile "(console.log \"Hi\")" "name"))
+          (console.log (compilers.to-string js))
+          (console.log (compilers.run js))
+        )
+  ###
+  (export {
+    to-string: (lambda [js] (return (js.join "\n")))
+    run:       (lambda [js] (return (js.map  eval)))
+
+    lispz: { compile: lispz.compile }
+  })

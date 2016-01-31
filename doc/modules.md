@@ -1,6 +1,6 @@
 # Module Structure
 
-All Lispz source files are modules. They are loaded on first request by client code. Subsequent requests returns a cached reference to the exports.
+All Lispz source files are modules. They are loaded on first request by client code. Subsequent requests returns a cached reference to the exports. In a release they are encapslated into the project file.
 
 # Module Usage
 
@@ -19,5 +19,5 @@ To access external modules, wrap your code in 'using'. Data and functions export
     (using [dict net list]
       (var combined (dict.merge d1 d2 d3))
     )
-    
+
 ...and that is all there is to it.

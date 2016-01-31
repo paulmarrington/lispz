@@ -1,22 +1,43 @@
-(using [list dom]
-  (var script (promise.callback [uri] (lispz.script uri callback)))
+(using [list dom regex]
+  (ref script (promise.callback [uri check max-ms] (lispz.script uri (lambda []
+    (cond (not check) (return (callback)))
+    (ref initialised (wait-for check max-ms))
+    (when  initialised [] (callback))
+    (catch initialised [] (debug (+ uri "didn't load")))
+  ))))
 
-  (var css (lambda [uri]
-    (var el (dom.element "link" {
+  (ref css (lambda [uri]
+    (ref el (dom.element "link" {
       type: "text/css" rel: "stylesheet" href: uri
     }))
     (dom.append! "head" el)
   ))
 
-  (var http-get (promise.callback [uri]
+  (ref http-get (promise.callback [uri]
     (lispz.http_request uri "GET" callback)
   ))
 
-  (var json-request (promise [uri]
+  (ref json-request (promise [uri]
     (when (http-get uri) [response] (resolve-promise (JSON.parse response)))
   ))
 
+  ### spec: Network >> Is URL external
+  ###
+  (ref external? (lambda [url] (return (list.contains "://" url))))
+
+  ### spec: Network >> Retrieve the last element in a URL path
+  ###
+  (ref url-path (lambda [href]
+    (return (regex.substring href '/(.*\/)[^\/]*$/'))
+  ))
+
+    ### spec: Network >> Retrieve the last element in a URL path
+    ###
+    (ref url-actor (lambda [href]
+      (return (regex.substring href '/.*\/([^\/]*)(?:\?.*)?$/'))
+    ))
+
   (export {
-    script css http-get json-request
+    script css http-get json-request external? url-actor url-path
   })
 )

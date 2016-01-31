@@ -1,0 +1,49 @@
+(using [net cdnjs dict]
+  (ref build (lambda [target-repo]
+    (return (cdnjs.build target-repo "showdown" [[
+      {repo: "showdown" files: [[
+        {include: '/showdown.js$/'}
+      ]]}
+    ]]))
+  ))
+  (ref default-options {
+    ## (boolean) Omit the trailing newline in a code block.
+    omitExtraWLInCodeBlocks: false
+    ## (boolean) Disable the automatic generation of header ids.
+    noHeaderId: false
+    ## (string/boolean) Add a prefix to the generated header ids.
+    prefixHeaderId: false
+    ## (boolean) Enable support for setting image dimensions.
+    parseImgDimensions: false ## ![foo](foo.jpg =100x80) -- *, px, %, em
+    ## (integer) Set the header starting level.
+    headerLevelStart: 2
+    ## (boolean) Enable GFM autolink style.
+    simplifiedAutoLink: true
+    ## (boolean) Stop interpreting underscores in the middle of words
+    literalMidWordUnderscores: false
+    ## (boolean) Enable support for strikethrough syntax (~~strike~~)
+    strikethrough: true
+    ## (boolean) Enable support for tables syntax.
+    tables: true
+    ## (boolean) Adds an id property to table headers tags.
+    tablesHeaderId: true
+    ## (boolean) Enable support for GFM code block style.
+    ghCodeBlocks: true
+    ## (boolean) Enable support for GFM takslists.
+    tasklists: true
+    ## (boolean) Prevents weird effects in live previews due to incomplete input
+    smoothLivePreview: false
+  })
+
+  (ref compile (lambda [markdown options]
+    (ref options (dict.merge (or options {}) default-options))
+    (ref converter (new showdown.Converter options))
+    (ref html (converter.makeHtml markdown))
+    (return html)
+  ))
+
+  (ref loaded (net.script "ext/showdown.js" (lambda [] (return window.showdown))))
+
+  (when  loaded [] (export {build compile}))
+  (catch loaded [] (export {build}))
+)

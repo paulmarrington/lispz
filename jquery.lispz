@@ -1,10 +1,12 @@
 (using [net cdnjs]
-  (var build (lambda [target-repo]
+  (ref build (lambda [target-repo]
     (return (cdnjs.build target-repo "jquery" [[
       {repo: "jquery" files: [[
         {exclude: '/\.map$|\.min.js$/'}
       ]]}
     ]]))
   ))
-  (when (net.script "ext/jquery.js") [] (export {build}))
+  (ref loaded (net.script "ext/jquery.js" (lambda [] (return window.jQuery))))
+  (when  loaded [] (export {build}))
+  (catch loaded [] (export {build}))
 )

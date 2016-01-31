@@ -1,66 +1,140 @@
-(var store {}  expecting {})
+### spec: async >> Messaging
+  Lispz includes a complete decoupled communications solution based on messaging.
+  The base version is in-browser, but the API is designed to work across systems
+  with RESTful or WebSockets. The UI components use messaging to communicate
+  between components that are not linked, so cannot make more direct connections.
 
-(var exchange (lambda [address]
-  (var envelope (get store address))
-  (return? envelope)
-  (return (dict.update! store address [[]]))
-))
+  Here a code editor will wait on messages to open a new 'file'. The message
+  includes a name unique to each code editor. The dictionary at the end can
+  include any number of named requests. Each associated function takes a packet
+  whose content format is known by clients and services.
 
-(var add (lambda [address envelope]
-  (var envelopes (exchange address))
-  (envelopes.push envelope)
-  (cond (and (is envelopes.length 1) (get expecting address))
-        (do ((get expecting address)) (delete (get expecting address))))
-))
+      (using [message]
+        (ref open (lambda [packet] ...)
+        (message.dispatch (+ "code-editor/" opts.name) { open })
 
-## remove a recipient from all attached addresses
-(var remove (lambda [recipient]
-  (dict.update! exchange address
-    ((exchange address).filter (lambda [possibility]
-      (return (isnt recipient possibility))
+  The client will send a command to open a new file for display. If the editor
+  is called 'scratch':
+
+      (message.send "code-editor/scratch"
+        {action: "open" key: "scratchpad.lispz" contents: null}
+      )
+
+  If it is possible that a client will send an important request before the
+  service has had the opportunity to initialise, wrap 'send' in 'wait-for':
+
+      (message.wait-for "code-editor/scratch" (lambda []
+        (message.send "code-editor/scratch"
+          {action: "open" key: "scratchpad.lispz" contents: null}
+        )
+
+  'dispatch' uses an entry called 'action' to decide on which function to call.
+  For raw processing, use 'listen' instead. The following example changes the
+  left padding on a DOM element if asked.
+
+      (message.listen "page-content-wrapper-padding" (lambda [px]
+        (set! tag.page-content-wrapper.style.paddingLeft (+ px "px"))
+
+  For a one-off message, use 'expect' rather than 'listen':
+
+      (message.expect "editor-loaded" (lambda [] ...)
+
+  Lispz uses exchanges defined as part of the address. Plain string addresses as
+  used so far will use a local in-browser exchange. The address can include
+  details that will define different exchanges (when implemented).
+
+  It is possible to remove listeners if you have access to the callback used to
+  create the listener
+
+      (message.remove "my-message" my-message-listener=>)
+
+  Messages also includes a common log processor. The following two calls behave
+  in an identical manner.
+
+      (message.log "message: message-text")
+      (message.send "logging" {level: "message"  text: "message-text"})
+
+  The default processor sends them to the browser console. Add additional
+  listeners for modal dialogs, error messages, etc.
+###
+(using [list]
+  (ref store (stateful)  expecting (stateful)  links (stateful))
+  
+  (ref exchange (lambda [address]
+    (ref envelopes (get store address))
+    (return? envelopes)
+    (ref envelopes (stateful.morph! []))
+    (store.update! address envelopes)
+    (return envelopes)
+  ))
+  
+  (ref add (lambda [address envelope]
+    (ref envelopes (exchange address))
+    (envelopes.push envelope)
+    (cond (and (is envelopes.length 1)  (get expecting address))
+          (do ((get expecting address)) (delete (get expecting address))))
+  ))
+  
+  (ref ready (promise [address]
+    (return-if (length (exchange address)) (promise.resolved))
+    (expecting.update! address resolve-promise)
+  ))
+  
+  ## remove a recipient from all attached addresses
+  (ref remove (lambda [address recipient]
+    (ref envelopes (exchange address))
+    (store.update! address
+      (envelopes.filter (lambda [possibility]
+        (return (isnt recipient possibility))
+      ))
+    )
+  ))
+  
+  ## clear all listeners for an address
+  (ref clear (lambda [address] (store.update! address null)))
+  
+  (ref link (lambda [primary secondary]
+    (cond (not (get links primary)) (links.update! primary [[]]))
+    ((get links primary).push secondary)
+  ))
+
+  (ref send (lambda [address packet]
+    ## take a copy so that it does not change during processing
+    (ref result null)
+    (ref sender (lambda [recipient]
+      (ref result (recipient.listener=> packet))
+      (cond recipient.once (remove recipient))
     ))
-  )
-))
-
-(var send (lambda [address packet reply=>]
-  (var reply (default? reply=> (=>)))
-  ## take a copy so that it does not change during processing
-  (((exchange address).slice).forEach (lambda [recipient]
-    (yield (reply (recipient.listener=> packet)))
-    (cond recipient.once (remove recipient))
+    (((exchange address).slice).forEach sender)
+    (list.for-each (get links address) (lambda [link] (send link packet)))
+    (return (promise? result))
   ))
-))
-
-(var expect (lambda [address listener=>]
-  (add address {once: true listener=>})
-))
-
-## Only add expect if no other listeners - otherwise respond immediately
-(var wait-for (lambda [address listener=>]
-  (return-if (length (exchange address)) (listener=>))
-  (dict.update! expecting address listener=>)
-))
-
-(var listen (lambda [address listener=>]
-  (add address {listener=>})
-))
-
-(var dispatch (lambda [address actions]
-  (listen address (lambda [packet]
-    (var action (get actions packet.action))
-    (return-if (not action) false)
-    (action packet)
+  
+  (ref expect (lambda [address listener=>]
+    (add address {once: true listener=>})
   ))
-))
-
-(var log (lambda [text]
-  (var parts (text.split '/\s*:\s*/'))
-  (cond (is 1 parts.length) (parts.unshift "message"))
-  (send "logging" {level: (get parts 0) text: (get parts 1)})
-))
-
-(listen "logging" (lambda [packet]
-  (console.log packet.level "-" packet.text)
-))
-
-(export {exchange send expect listen dispatch wait-for})
+  
+  (ref listen (lambda [address listener=>]
+    (add address {listener=>})
+  ))
+  
+  (ref dispatch (lambda [address actions]
+    (listen address (lambda [packet]
+      (ref action (get actions packet.action))
+      (return-if (not action) (promise.resolved false))
+      (return (action packet))
+    ))
+  ))
+  
+  (ref log (lambda [text]
+    (ref parts (text.split '/\s*:\s*/'))
+    (cond (is 1 parts.length) (parts.unshift "message"))
+    (send "logging" {level: (get parts 0) text: (get parts 1)})
+  ))
+  
+  (listen "logging" (lambda [packet]
+    (console.log packet.level "-" packet.text)
+  ))
+  
+  (export {exchange send expect listen dispatch ready clear link})
+)

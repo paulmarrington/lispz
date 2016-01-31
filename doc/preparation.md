@@ -1,7 +1,21 @@
 # Installation
 
-This is the shortest section in the book. If you have an Internet connection, then no installation is required. Just point your browser to https://cdn.rawgit.com/paulmarrington/lispz/master/index.html.
+This is the shortest section in the book. If you have an Internet connection, then no installation is required. Just point your browser to http://lispz.marrington.net. This points to the latest released version of the Lispz repl. The html is just over a dozen lines.
 
-# The REPL
+    <!DOCTYPE html>
+    <html manifest=index.cache-manifest>
+      <head>
+        <meta charset="utf-8">
+        <title></title>
+      </head>
+      <body>
+        <lispz class=riot></lispz>
+        <script
+        src=https://cdn.rawgit.com/master/lispz/v0.0.01/ext/lispz.js#riot>
+        </script>
+      </body>
+    </html>
 
-While in development mode, a lispz repl is available in the browser by typing Ctrl-Alt-L. Two entry fields will appear at the bottom of the screen, one for required packages and one for a lispz command. Output will be available on the JavaScript console.
+All of the core Lispz functionality is loaded with a single call to a CDN. If the manifest is used, the load will only happen once per browser until the version changes.
+
+When you use Empiric to create your single-page applications, it will generate all the needed support files including the manifest. The _index.html_ will have two source loads - one for your system and one for Lispz.

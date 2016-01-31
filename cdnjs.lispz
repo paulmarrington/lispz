@@ -1,29 +1,30 @@
 ### Load packages from CDN and other web sources - listing them when possible ###
-(using [net github]
-  (var cdnjs-actors {
+(using [net github list]
+  (ref cdnjs-actors {
     list-all: (promise [repo path]
-      (var base "http://api.cdnjs.com/libraries?fields=assets&search=")
+      (ref base "http://api.cdnjs.com/libraries?fields=assets&search=")
       (when (net.json-request (+ base repo.name)) [json]
         ## select the correct repo for the name
-        (var filtered (json.results.filter (lambda [it]
+        (ref filtered (json.results.filter (lambda [it]
           (return (=== it.name repo.name))
         )))
+        (return-if (not filtered.length) false)
         ((get filtered 0).assets.some (lambda [it]
-          (return-if (contains it.version "alpha") false)
-          (set! repo.base (+
+          (return-if (list.contains "alpha" it.version) false)
+          (repo.update! {base: (+
             "https://cdnjs.cloudflare.com/ajax/libs/"
             repo.name "/" it.version "/"
-          ))
+          )})
           (resolve-promise it.files)
           (return true) ## found the one we want
         ))
       )
     )
     read: (promise [repo path]
-      (var uri (+ repo.base path))
-      (when (net.http-get uri [response] (resolve-promise response)))
+      (ref uri (+ repo.base path))
+      (when (net.http-get uri) [response] (resolve-promise response))
     )
-    repo: (lambda [target-repo name] (return {name lispz: {}}))
+    repo: (lambda [target-repo name] (return (stateful {})))
   })
 
   (export {

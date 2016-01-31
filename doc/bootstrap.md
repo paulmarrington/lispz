@@ -1,6 +1,6 @@
-# Bootstrap/RIOT/Lispz Combo
+# [Bootstrap](http://getbootstrap.com/)/RIOT/Lispz Combo
 
-There is a difference of scope between bootstrap and riot. Bootstrap is designed to be used page-widw. Riot is a web component system where each component should be as independent as possible.
+There is a difference of scope between bootstrap and riot. Bootstrap is designed to be used page-wide. Riot is a web component system where each component should be as independent as possible.
 
 ## Page Level Bootstrap
 
@@ -14,22 +14,21 @@ Any single page application that is going to use bootstrap to simplify the UI wr
         </page-content>
       </bootstrap>
     </body>
-    
+
 ### Bootstrap Themes
 
 Bootstrap sites do not have to look alike. [Bootswatch](https://bootswatch.com/) provides 16+ free themes, including ones that fit in with Metro, Polymer and Ubuntu:
 
 > Default, Cerulean, Cosmo, Cyborg, Darkly, Flatly, Journal, Lumen, Paper, Readable, Sandstone, Simplex, Slate, Spacelab, Superhero, United, Yeti
 
-To select a theme, send a message to _change-bootstrap-theme_ with the name of the theme to change to. If you don't provide
-a theme name, a random one is chosen.
+To select a theme, send a message to _bootstrap/change-theme_ with the name of the theme to change to. If you don't provide a theme name, a random one is chosen.
 
 ## Component Specific Bootstrap
 
-Riot components can include a _script_ section. If you preface all entries with the name of the component then you have effectively name-spaced your css.
+Riot components can include a _style_ section. If you preface all entries with the name of the component then you have effectively name-spaced your css.
 
     <code-editor>
-      <panel height={ opts.height } heading={ heading } menu={ menu } owner={ _id }>
+      <panel height={ opts.height } heading={ heading } menu={ menu } owner={ \_id }>
         <div name=wrapper class=wrapper></div>
       </panel>
       <style>
@@ -54,7 +53,7 @@ The context defines the colours use for the decoration. The _menu-id_ is used to
 
 Modals pop up and deny access to the rest of the page until they are dismissed.
 
-    <modal name=n [title=heading-text] [buttons=a,*b] [context=default|primary|success|info|warning|danger]>
+    <modal name=n [title=heading-text] [buttons=a,\*b] [context=default|primary|success|info|warning|danger]>
       modal-body-content-html
     </modal>
 
@@ -70,14 +69,14 @@ A menu is a multi-level option selection. Both menu contents and results selecte
 
 Menu contents loading can be driven by the menu component or an external provider. For the former, the menu component sends out a message when a user asks to open the menu. It is up to a listener to provide the data requested. Use this if the menu contents change between uses.
 
-      (message.listen "specifications-menu-open" (=>
+      (message.listen "specifications-menu-open" (lambda
         (var menu (dict.map lispz_modules (lambda [title source]
           (return {topic: "specifications" title source})
         )))
         (message.send "specifications-menu" (menu.sort))
       ))
-      
-This example has a flat single-level list. All menus send a message when displayed with the name of the menu concatenated to _.open_. They also listen on the menu name as an address, so you can pass the resulting menu back.
+
+This example has a flat single-level list. All menus send a message when displayed with the name of the menu concatenated to _/open_. They also listen on the menu name as an address, so you can pass the resulting menu back.
 
 If an external controller knows when the menu changes, or if the menu is static, then send the contents to a named message address so that the specified menu can be reloaded. If this happens before the menu is displayed the menu will not be loaded. To fix this, wait for the menu to be ready.
 
@@ -96,19 +95,19 @@ The menu itself is a dictionary with the format:
         ]]
       )
     (message.send "test-menu" test-menu)
-    
+
 where _header_ and _divider_ are list separates that cannot be selected. For the rest, _title_ is the text displayed, _topic_ is part of the the address for the message sent, _children_ defines sub-menus and _disabled_ is for items that cannot be selected.
 
-If a menu item has a topic entry, a message will be sent to that an address made up of the component owner, dash, topic.
+If a menu item has a topic entry, a message will be sent to that an address made up of the component owner/topic.
 
-    (message.listen "Test Panel 2 - Test menu item 1" (lambda [data] (debug data)))
+    (message.listen "Test Panel 2/Test menu item 1" (lambda [data] (debug data)))
 
 ## bars-menu
 
 This menu type displays three horizontal bars - sometime call a _hamburger_. Click it opens up a drop-down menu.
 
     <bars-menu align=left|center|right name=name owner=owning-component />
-    
+
 The owner is prepended to the response to a menu selection so that the correct component can respond.
 
 # Trees

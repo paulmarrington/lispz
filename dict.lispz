@@ -1,36 +1,86 @@
-(var insert (lambda [target dictionaries]
+### spec: lists >> dict -- The Associative Array List (Dictionary)
+
+Are also called dictionaries or hashmaps. Because lispz is a functional language it is not
+uncommon for functions to return a dictionary of values. To make them clearer, if a key is
+supplied without a following colon then it is placed into the dictionary with a value of the same name.
+
+    (ref exported-method-1 (lambda [] ...))
+    (ref key "whatever I want"}
+    (export {exported-method-1 key error: false date: (new Date))
+
+will create a JavaScript dictionary of the form
+
+    (ref exporting {exported_method_1: exported_method_1, key: key, error: false, date: (new Date)})
+
+access with a key is identical to arrays except that it is a key rather than an index.
+If the key is known, using dot syntax is clearer
+
+    exporting.error
+    (get exporting key)
+###
+
+### spec: lists >> dict >> Internals >> Insert
+Dictionary merges and inserts take a list of dictionaries in order to push to the target.
+This means that when they have common keys, the last dictionary that has the key takes
+precedence.
+
+    ## command-line options overwrite config options of the same name. If neither is
+    ## found, the default option is used.
+    (dict.merge default-options config-file-options cl-options)
+###
+(ref insert (lambda [target dictionaries]
+  (ref target (stateful target))
   (dictionaries.forEach (lambda [dictionary]
-    ((Object.keys dictionary).forEach (lambda [key]
-      (dict.update! target key (get dictionary key))
-    ))
+    (target.update! dictionary)
   ))
   (return target)
 ))
+
+### spec: lists >> dict >> Merging Dictionaries
+There is often need to merge multiple dictionaries together to create a new combined one.
+
+    (ref big-dict (dict.merge dict-1 dict-2 dict-3))
 ###
-# There is often need to merge multiple dictionaries together to create a new
-# combined one.
-###
-(var merge (lambda [dictionaries]
+(ref merge (lambda [dictionaries]
   (return (insert {} (*arguments 0)))
 ))
-(var insert! (lambda [target dictionaries]
+
+### spec: lists >> dict >> Inserting One Dictionary in Another
+**Warning** This is not referentially transparent
+
+    (dict.insert! dict-1 dict-2 dict-3)      ## changes dict-1
+###
+(ref insert! (lambda [target dictionaries]
   (return (insert target (*arguments 0)))
 ))
 
-(var from-list (lambda [list key]
-  (var dictionary {})
-  (cond list
-    (list.forEach (lambda [item] (dict.update! dictionary (get item key) item)))
-  )
+### spec: lists >> dict >> Create a Dictionary from a List
+    (ref list [[{key: 1 value: 2} {key: 3 value: 4}]]
+    (dict.from-list list "key")    # {1: {key: 1 value: 2} 3: {key: 3 value: 4})
+###
+(ref from-list (lambda [list key]
+  (ref dictionary (stateful))
+  (cond list (list.forEach (lambda [item] (dictionary.update! item))))
   (return dictionary)
 ))
 
-(var for-each (lambda [dict action=>]
+### spec: lists >> dict >> For Each Entry...
+    (dict.for-each dict-1 (lambda [key value] ...))
+###
+(ref for-each (lambda [dict action=>]
   (Object.keys dict)(.forEach (lambda [k] (action=> k (get dict k))))
 ))
 
-(var map (lambda [dict action=>]
-  (Object.keys dict)(.map (lambda [k] (return (action=> k (get dict k)))))
+### spec: lists >> dict >> Morphing dictionary into an Array
+###
+(ref map (lambda [dict action=>]
+  (return ((Object.keys dict).map (lambda [k] (return (action=> k (get dict k))))))
 ))
 
-(export {merge from-list insert! for-each map})
+### spec: lists >> dict >> Check a Dictionary for an Entry
+###
+(ref contains (lambda [test against]
+  (return (#join '' '(' test ' in ' against ')'))
+))
+
+(export {merge from-list insert! for-each map contains})

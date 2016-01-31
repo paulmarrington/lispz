@@ -1,0 +1,46 @@
+<!-- using bootstrap code-editor markdown -->
+<lispz>
+  <bootstrap class=riot>
+    <page-content fluid=true>
+      <panels name=editor-panels>
+        <code-editor  class="riot col-sm-6 draggable" name=code
+          height=48% heading=Lispz  />
+        <code-editor  class="riot col-sm-6 draggable" name=compiled
+          height=48% heading="Generated Javascript" />
+        <code-editor  class="riot col-sm-6 draggable" name=output
+          height=48% heading="Console" />
+        <markdown class="riot col-sm-6 draggable" name=manual
+          href="https://cdn.rawgit.com/paulmarrington/lispz/master/README.md"
+          height=48% heading="Manual" />
+      </panels>
+    </page-content>
+  </bootstrap>
+
+  <script type="text/lispz">
+    (riot-tag [message riot dict]
+      (lispz.set-debug-mode true)
+      (when (message.ready "code-editor/code") []
+        (message.send "code-editor/code"
+          {action: "open" key: ".lispz" contents: ""})
+      )
+      (message.listen "code-editor/run/js" (lambda [compiled]
+        (message.send  "code-editor/output" {
+          action: "open"  key: ".txt"  contents: ""
+        })
+        (message.send "code-editor/compiled" {
+          action: "open"  key: ".js"  contents: compiled.js
+        })
+      ))
+
+      (stateful.morph! console)
+      (console.update! {log: (lambda []
+        (message.send "code-editor/output" {
+          action:   "append"
+          key:      ".text"
+          contents: (+ ((*arguments 0).join " ") "\n")
+        })
+      )})
+      (message.listen "code-editor/run/output" (lambda [run]))
+    )
+  </script>
+</lispz>

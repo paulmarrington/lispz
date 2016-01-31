@@ -1,14 +1,29 @@
 <panel>
-  <!-- <panel [context=default|primary|success|info|warning|danger]
-              [heading=heading-text] [footer=footer-text]
-              [menu=menu-id] height=[nn%,nn]>
-       panel-body-content-html
-       </panel>
-    -->
+  <!-- ### spec: bootstrap >> Panels
+
+    A panel is a UI component that provides decorations around your content.
+    The header includes a title and a menu button.
+    An optional footer can include more text.
+
+        <panel [context=default|primary|success|info|warning|danger]
+                  [heading=heading-text] [footer=footer-text]
+                  [menu=menu-id] height=[nn%,nn]>
+          panel-body-content-html
+        </panel>
+
+    The context defines the colours use for the decoration.
+    The _menu-id_ is used to listen on a messaging channel that
+    can publish menu contents.
+
+        <panel [context=default|primary|success|info|warning|danger]
+                [heading=heading-text] [footer=footer-text]
+                [menu=menu-id] height=[nn%,nn]>
+         panel-body-content-html
+         </panel>
+    ### -->
   <div class="panel { context }" name=outer>
     <div class=panel-heading if={ opts.heading } name=heading
-         ><bars-menu align=right name={ opts.menu }
-           owner={ opts.owner }/>
+         ><bars-menu align=right name={ opts.menu } owner={ opts.owner }/>
          <h3 class=panel-title>{ opts.heading }</h3></div>
     <div class="panel-body" name=body><yield/></div>
     <div class=panel-footer if={ opts.footer } name=footer
@@ -25,28 +40,172 @@
     panel .panel-body {
       position: absolute;
       top: 40px;
-      bottom: 10px;
+      bottom: 2px;
       left: 0;
-      right: 0;
+      right: 2px;
+      overflow: auto;
+    }
+    panel > .panel {
+      margin-top: 10px;
+      margin-bottom: 10px;
     }
   </style>
 
   <script type=text/lispz>
-    (var tag this)
-    (set! tag.context (+ "panel-" (or opts.context "default")))
-    (tag.on "mount" (=>
+    (ref tag (stateful.morph! this))
+    (tag.update! {context: (+ "panel-" (or opts.context "default"))})
+    (tag.on "mount" (lambda [] (using [dom]
       (cond opts.height (do
-        (var px opts.height)
+        (ref px opts.height)
         (cond (is "%" (opts.height.slice -1))
-          (var px (/ (* window.innerHeight (opts.height.slice 0 -1)) 100))
+          (ref px (/ (* window.innerHeight (opts.height.slice 0 -1)) 100))
         )
-        (set! tag.outer.style.height (+ px "px"))
+        (dom.style! tag.outer {height: (+ px "px")})
       ))
-    ))
+    )))
   </script>
 </panel>
 
+<panels>
+  <yield/>
+  <style>
+    /* show the move cursor as the user moves the mouse over the panel header.*/
+    panels .panel-title { cursor: move; }
+  </style>
+  <script type=text/lispz>
+    (ref tag (stateful.morph! this))
+    (tag.on "mount" (lambda [] (using [sortable]
+      (sortable.create tag.root (or opts.name "sortable") {
+        draggable:  ".draggable"
+        handle:     ".panel-title"
+        dataIdAttr: "name"
+      })
+    )))
+  </script>
+</panels>
+
+<modal>
+  <!-- ### spec: bootstrap >> Modals
+
+  Modals pop up and deny access to the rest of the page until they are dismissed.
+
+      <modal name=n [title=heading-text] [buttons=a,*b]
+        [context=default|primary|success|info|warning|danger]>
+          modal-body-content-html
+      </modal>
+
+  Buttons are added to a footer, with the one starting with a star being the default.
+  When a modal button is pressed it will send a message with a topic of
+  _modal-name/button-name/button_.
+
+      <modal name=login-dialog title="..." buttons="Log in,Cancel">...</modal>
+      ....
+      (message.listen "login-dialog/Log in/button" (lambda [] ...)
+
+        <modal name=n [title=heading-text] [buttons=a,*b]>
+          modal-body-content-html
+        </modal>
+  ### -->
+  <div class="modal fade" role="dialog" aria-labelledby={ opts.name }>
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header" if={ opts.title }>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+          <h4 class="modal-title" id={ opts.name }>{ opts.title }</h4>
+        </div>
+        <div class="modal-body"><yield/></div>
+        <div class="modal-footer">
+          <button each={ buttons } class="btn btn-{ type }" name={ name }>
+            { title }
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <style>
+  </style>
+  <script type=text/lispz>
+    (ref tag (stateful.morph! this))
+    (cond opts.buttons (do
+      (tag.update! {buttons: [[]]})
+      ((opts.buttons.split ",").forEach (lambda [title]
+        (ref primary (is "*" (first title))  type "default")
+        (cond primary (do (ref type "primary") (title.shift)))
+        (ref name title)
+        (tag.buttons.push { title type name })
+      ))
+    ))
+  </script>
+</modal>
+
 <bars-menu>
+  <!-- ### spec: bootstrap >> Menus
+
+  A menu is a multi-level option selection.
+  Both menu contents and results selected communicate by messages.
+
+  Menu contents loading can be driven by the menu component or an external provider.
+  For the former, the menu component sends out a message when a user asks to open the menu.
+  It is up to a listener to provide the data requested.
+  Use this if the menu contents change between uses.
+
+        (message.listen "specifications-menu-open" (lambda []
+          (ref menu (dict.map lispz_modules (lambda [title source]
+            (return {topic: "specifications" title source})
+          )))
+          (message.send "specifications-menu" (menu.sort))
+        ))
+
+  This example has a flat single-level list. All menus send a message when
+  displayed with the name of the menu concatenated to _.open_.
+  They also listen on the menu name as an address,
+  so you can pass the resulting menu back.
+
+  If an external controller knows when the menu changes,
+  or if the menu is static, then send the contents to a named message address
+  so that the specified menu can be reloaded. If this happens before the menu
+  is displayed the menu will not be loaded.
+  To fix this, wait for the menu to be ready.
+
+        (when (message.ready "specifications-menu") []
+          (message.send "specifications-menu" nenu)
+        )
+  The menu itself is a dictionary with the format:
+
+       (ref test-menu
+          [[
+            { header: true title: "Heading 1" }
+            { title: "Item 1" topic: "Test menu item 1" }
+            { title: "Item 2" children: [[{ title: "Item 2a" }]] }
+            { divider: true }
+            { title: "item 2" disabled: true }
+          ]]
+        )
+      (message.send "test-menu" test-menu)
+
+  where _header_ and _divider_ are list separates that cannot be selected.
+  For the rest, _title_ is the text displayed, _topic_ is part of the the address
+  for the message sent, _children_ defines sub-menus and _disabled_ is for items
+  that cannot be selected.
+
+  If a menu item has a topic entry, a message will be sent to that an address
+  made up of the component owner, dash, topic.
+
+      (message.listen "Test Panel 2 - Test menu item 1" (lambda [data] (debug data)))
+
+  ###
+  ### spec: bootstrap >> Menus >> bars-menu
+
+  This menu type displays three horizontal bars - sometime call a _hamburger_.
+  Click it opens up a drop-down menu.
+
+      <bars-menu align=left|center|right name=name owner=owning-component />
+
+  The owner is prepended to the response to a menu selection so that the correct
+  component can respond.
+  ### -->
   <div name=dropdown class="dropdown { right: opts.align === 'right' }">
     <a style="text-decoration: none" data-toggle="dropdown" name=bars
     class="glyphicon glyphicon-menu-hamburger dropdown-toggle" aria-hidden="true"
@@ -55,7 +214,7 @@
       <li each={ items } class={ dropdown-header: header && title,
           divider: divider, disabled: disabled }><a onclick={ goto } href="#">
           <span class="pointer right float-right" if={ children }></span>
-          { title }
+          { title }&nbsp;&nbsp;&nbsp;
       </a></li>
     </ul>
   </div>
@@ -65,43 +224,43 @@
     bars-menu a.dropdown-toggle { cursor: pointer }
   </style>
   <script type=text/lispz>
-    (var tag this root null)
-    (using [message]
+    (ref tag (stateful.morph! this))
+    (tag.on "mount" (lambda [] (using [message riot]
       (message.listen opts.name (lambda [items]
-        (set! root (or items [[]]))
-        (set! tag.items items)
-        (tag.update)
+        (riot.update! tag {items root: (or items [[]])})
       ))
-
-      (tag.on "mount" (=>
-        (($ tag.dropdown).on "show.bs.dropdown" (=>
-          (set! tag.items root)
-          (tag.update)
-        ))
+      (($ tag.dropdown).on "show.bs.dropdown" (lambda []
+        (message.send (+ opts.name "/open"))
+        (riot.update! tag {items: tag.root})
       ))
-
-      (set! tag.goto (lambda [ev]
+      (tag.update! {goto: (lambda [ev]
         (cond ev.item.topic (message.send
-          (+ opts.owner "-" ev.item.topic)
+          (+ opts.owner "/" ev.item.topic)
           {item: ev.item owner: opts.owner action: "select"}))
         (cond ev.item.children (do
-          (set! tag.items ev.item.children)
+          (tag.update! {items: ev.item.children})
           (ev.currentTarget.blur)
           (ev.stopPropagation)
         ))
-      ))
-    )
+      )})
+    )))
   </script>
 </bars-menu>
 
 <tree>
+  <!-- ### spec: bootstrap >> Trees
+    A tree provides an identical interface to a menu.
+    Visually all levels to the current selection remain displayed.
+    Selecting a branch will toggle it opened or closed.
+    Selecting a leaf will send a message to the owning component.
+  ### -->
   <tree-component name=base/>
   <script type=text/lispz>
-    (var tag this)
-    (using [message]
+    (ref tag (stateful.morph! this))
+    (using [message riot]
       (message.listen opts.name (lambda [items]
-        (set! tag.children {base: {children: items}})
-        (tag.update) (tag.update)
+        (riot.update! tag {children: {base: {children: items}}})
+        (tag.update) ## once more for luck
       ))
     )
   </script>
@@ -137,34 +296,39 @@
     }
   </style>
   <script type=text/lispz>
-    (var tag this)
+    (ref tag (stateful.morph! this))
     (using [message dict]
       (tag.on "update" (lambda [data]
         (cond (and opts.name tag.parent.children) (do
-          (set! tag.items (get tag.parent.children opts.name "children"))
+          (tag.update! {items: (get tag.parent.children opts.name "children")})
           (cond (and tag.items tag.items.length)
-                (set! tag.children (dict.from-list tag.items "title"))
+                (tag.update! {children: (dict.from-list tag.items "title")})
           )
         ))
       ))
 
-      (set! tag.goto (lambda [ev]
-        (var item ev.item.item)
-        (var topic (or item.topic item.title ))
+      (tag.update! {goto: (lambda [ev]
+        (ref item ev.item.item)
+        (ref topic (or item.topic item.title ))
         (cond topic (message.send topic
           {item action: "select"}))
         (cond item.children (do
-          (var tree ev.currentTarget.nextElementSibling)
+          (ref tree ev.currentTarget.nextElementSibling)
           (tree.classList.toggle "open")
           (tree.parentElement.classList.toggle "bg-info")
         ))
         (ev.stopPropagation)
-      ))
+      )})
     )
   </script>
 </tree-component>
 
 <sidebar>
+  <!-- ### spec: bootstrap >> Side-bars
+    A side-bar is a slide-in draw. When hidden it displays a string
+    down the left side of the screen. Clicking on the 3-bars icon at
+    the top will slide the panel in and out.
+  ### -->
   <a aria-hidden="true" name=hamburger
     class="glyphicon glyphicon-menu-hamburger"></a>
   <div id=sidebar class="container bg-primary"><yield/></div>
@@ -190,14 +354,14 @@
     #sidebar.toggled { width: auto; padding-right: 15px; }
   </style>
   <script type=text/lispz>
-    (var tag this)
+    (ref tag (stateful.morph! this)  hamburger (stateful.morph! tag.hamburger))
     (using [message dom]
-      (set! tag.hamburger.onclick (=>
+      (hamburger.update: {onclick: (lambda []
         (tag.sidebar.classList.toggle "toggled")
         (delay 300 ## must be after slide action
           (message.send "page-content-wrapper-padding" tag.sidebar.offsetWidth)
         )
-      ))
+      )})
       (tag.on "mount" (delay 300
         (message.send "page-content-wrapper-padding" tag.sidebar.offsetWidth)
       ))
@@ -218,10 +382,10 @@
     }
   </style>
   <script type=text/lispz>
-    (var tag this)
-    (using [message]
+    (ref tag this)
+    (using [message dom]
       (message.listen "page-content-wrapper-padding" (lambda [px]
-        (set! tag.page-content-wrapper.style.paddingLeft (+ px "px"))
+        (dom.style! tag.page-content-wrapper {paddingLeft: (+ px "px")})
       ))
     )
   </script>
@@ -255,22 +419,8 @@
     }
   </style>
   <script type=text/lispz>
-    (var tag this)
+    (ref tag (stateful.morph! this))
     (using  [dom net jquery riot message bootstrap]
-      (var bootswatch-themes [[ "cerulean" "cosmo" "cyborg" "darkly" "flatly"
-        "journal" "lumen" "paper" "readable" "sandstone" "simplex" "slate"
-        "spacelab" "superhero" "united" "yeti" ]])
-      ###
-      # https://bootswatch.com
-      # Loads a bootswatch theme to make the page look different.
-      # If no theme is provided, a random one is selected.
-      ###
-      (message.listen "change-bootstrap-theme" (lambda [theme]
-        (cond (not (defined? theme))
-          (var theme (get bootswatch-themes (random bootswatch-themes.length)))
-        )
-        (net.css (+ "https://bootswatch.com/" theme "/bootstrap.css"))
-      ))
       (dom.append! "head" (dom.element "meta"
         {name: "viewport" content: "width=device-width, initial-scale=1"}
       ))
