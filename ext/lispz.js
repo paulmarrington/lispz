@@ -882,29 +882,20 @@ return ''}
 
 /*github*/
 
-lispz.tags['github']=function(){<!-- using bootstrap -->
-<github-login>
- <modal name=github-login title="GitHub Login" buttons="*Sign In">
-   <img src=GitHub-Mark-64px.png />
-   <form class=form-horizontal>
-     <input type=text class=form-control name=username placeholder="User Name">
-     <br>
-     <input type=password class=form-control name=password placeholder=Password>
-     <br>
-     <input type=checkbox name=remember-me data-toggle=tooltip
-       title="Only use on a secure, private account"> Remember me
-   </form>
- </modal>
- <style>
- </style>
- <script type=text/lispz>
-   (ref tag this)
-   (tag.on "mount" (lambda [] (using  [github message]
-   )))
- </script>
-</code-editor>
+lispz.tags['github']=function(){riot.tag('github-login', '<modal name=github-login title="GitHub Login" buttons="*Sign In"> <img src=GitHub-Mark-64px.png> <form class=form-horizontal> <input type=text class=form-control name=username placeholder="User Name"> <br> <input type=password class=form-control name=password placeholder=Password> <br> <input type=checkbox name=remember-me data-toggle=tooltip title="Only use on a secure, private account"> Remember me </form> </modal>', function(opts) {var tag = this; //#riot-tags:2
+tag.on("mount", function() {
+       lispz.load("github,message" //#core:355
+           ,
+           function() {
+               var github = lispz.cache["github"],
+                   message = lispz.cache["message"];
+           }
+           //#core:356
+       )
+   }) //#riot-tags:4
+});
 
-return '<!-- using bootstrap -->'}
+return ''}
 
 
 /*iframe-panel*/
