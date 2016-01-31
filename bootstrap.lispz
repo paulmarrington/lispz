@@ -41,7 +41,7 @@
 
   (ref loaded (net.script "ext/bootstrap.js" (lambda [] (return (($).modal)))))
   (when  loaded [] (export {build themes}))
-  (catch loaded [] (export {build}))
+  (catch-failure loaded [] (export {build}))
 )
 
 ### spec: Bootstrap >> Bootstrap/RIOT/Lispz Combo

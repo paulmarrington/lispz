@@ -8,5 +8,5 @@
   ))
   (ref loaded (net.script "ext/jquery.js" (lambda [] (return window.Babel))))
   (when  loaded [] (export {build}))
-  (catch loaded [] (export {build}))
+  (catch-failure loaded [] (export {build}))
 )

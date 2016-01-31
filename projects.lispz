@@ -42,7 +42,7 @@
       (return (db.projects.put data))
     ))
     (when  project [data] (update! data))
-    (catch project [err] (update! {name}))
+    (catch-failure project [err] (update! {name}))
   ))
 
   ### spec: Projects >> List Known Projects

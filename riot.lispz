@@ -175,7 +175,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
   ###
 
   (ref   loaded (net.script "ext/riot.js" (lambda [] (return window.riot))))
-  (catch loaded [] (export {build}))
+  (catch-failure loaded [] (export {build}))
   (when  loaded [] (using [compilers]
     (stateful.morph! riot.parsers.js)
     (riot.parsers.js.update! {lispz:

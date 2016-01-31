@@ -212,7 +212,7 @@
     (return (build target-repo "github" sources))
   ))
   (ref loaded (net.script "ext/github.js" (lambda [] (return window.Github))))
-  ## (catch loaded (export {build}))
+  ## (catch-failure loaded (export {build}))
   (when loaded []
     (export {
       branch list-all list-dir cdn-uri build builder repo read write update
