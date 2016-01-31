@@ -18,7 +18,6 @@
     A pure lisp system does not have any operators. Everything is a function or a macro.
     Because Lispz compiles to JavaScript, all unary and many binary operators are exposed.
 
-        (delete dict.key)  ## JS==> delete dict.key
         debugger           ## JS==> debugger
         (+ 2 3 4)          ## JS==> (2 + 3 + 4)
 
@@ -50,9 +49,7 @@
   ))
 ###
 (macro debug [*msg] (console.trace (#join ',' *msg)))
-### spec: basic >> meaningless fill-words
-###
-(macro , '') (macro in '') (macro of '')
+
 ### spec: basic >> do
 ###
 (macro do [*body] *body)
@@ -322,7 +319,7 @@ In the functional world it is filled by ... you guessed it ... functions.
 For arrays, JavaScript provides an excellent set documented in [List Processing](list-processing.md).
 ###
 ## Javascript does not (yet) have tail recursion - it is scheduled for 2016
-(macro while [test body] (#join '' 'while(' test '){' body '}'))
+(macro while [test *body] (#join '' 'while(' test '){' *body '}'))
 
 ### spec: List and dictionary manipulation ###
 (macro length [list] (#join '' list '.length'))

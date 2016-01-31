@@ -10,7 +10,7 @@
         )))
         (return-if (not filtered.length) false)
         ((get filtered 0).assets.some (lambda [it]
-          (return-if (list.contains "alpha" in it.version) false)
+          (return-if (list.contains "alpha" it.version) false)
           (repo.update! {base: (+
             "https://cdnjs.cloudflare.com/ajax/libs/"
             repo.name "/" it.version "/"

@@ -23,7 +23,7 @@
 
   ### spec: Network >> Is URL external
   ###
-  (ref external? (lambda [url] (return (list.contains "://" in url))))
+  (ref external? (lambda [url] (return (list.contains "://" url))))
 
   ### spec: Network >> Retrieve the last element in a URL path
   ###

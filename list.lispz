@@ -48,18 +48,6 @@
         (in l2 2)                                                       ## true
         (empty? l1)                                                     ## false
         (slice 1 2)                                                     ## [[2]]  ## works with *arguments
-
-    To process a list with an asynchronous method sequentially
-
-        (using [list]
-
-          (ref for-each=> (lambda [item next=>] ... (next=>)))
-          (ref on-completion (lambda [] (console.log "All Done")))
-
-          (list.sequential l1 for-each=> on-completion=>)
-        )
-
-    There is a matching sequential operation for dictionaries.
 ###
 ### spec: lists >> The Functional List
 In Lispz the braces are reserved for function-like calls - being traditional functions and lisp macros. The atom immediately after the open brace is the name of the function or macro.
@@ -132,6 +120,6 @@ To see if an array contains an element, use 'in':
 
 ### spec: lists >> contains
 ###
-(macro contains [substr str] (isnt -1 (str .indexOf substr)))
+(ref contains (lambda [substr str] (return (isnt -1 (str .indexOf substr)))))
 
 (export {flatten for-each contains})

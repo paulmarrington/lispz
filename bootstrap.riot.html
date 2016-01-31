@@ -230,7 +230,7 @@
         (riot.update! tag {items root: (or items [[]])})
       ))
       (($ tag.dropdown).on "show.bs.dropdown" (lambda []
-        (message.send (+ opts.name "-open"))
+        (message.send (+ opts.name "/open"))
         (riot.update! tag {items: tag.root})
       ))
       (tag.update! {goto: (lambda [ev]

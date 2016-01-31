@@ -59,7 +59,7 @@ There is often need to merge multiple dictionaries together to create a new comb
     (dict.from-list list "key")    # {1: {key: 1 value: 2} 3: {key: 3 value: 4})
 ###
 (ref from-list (lambda [list key]
-  (ref dictionary (state))
+  (ref dictionary (stateful))
   (cond list (list.forEach (lambda [item] (dictionary.update! item))))
   (return dictionary)
 ))
@@ -79,6 +79,8 @@ There is often need to merge multiple dictionaries together to create a new comb
 
 ### spec: lists >> dict >> Check a Dictionary for an Entry
 ###
-(macro contains [test against] (#join '' '(' test ' in ' against ')'))
+(ref contains (lambda [test against]
+  (return (#join '' '(' test ' in ' against ')'))
+))
 
 (export {merge from-list insert! for-each map contains})
