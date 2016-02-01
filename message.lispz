@@ -59,43 +59,45 @@
 ###
 (using [list]
   (ref store (stateful)  expecting (stateful)  links (stateful))
-  
+
   (ref exchange (lambda [address]
     (ref envelopes (get store address))
-    (return? envelopes)
-    (ref envelopes (stateful.morph! []))
+    (cond envelopes (return envelopes))
+    (ref envelopes (stateful.array!))
     (store.update! address envelopes)
     (return envelopes)
   ))
-  
+
   (ref add (lambda [address envelope]
     (ref envelopes (exchange address))
-    (envelopes.push envelope)
-    (cond (and (is envelopes.length 1)  (get expecting address))
+    (envelopes.push! envelope)
+    (cond (and (is envelopes.array!.length 1)  (get expecting address))
           (do ((get expecting address)) (delete (get expecting address))))
   ))
-  
+
   (ref ready (promise [address]
-    (return-if (length (exchange address)) (promise.resolved))
+    (ref envelopes (exchange address))
+    (return-if (length envelopes.array!) (promise.resolved))
     (expecting.update! address resolve-promise)
   ))
-  
+
   ## remove a recipient from all attached addresses
   (ref remove (lambda [address recipient]
     (ref envelopes (exchange address))
     (store.update! address
-      (envelopes.filter (lambda [possibility]
-        (return (isnt recipient possibility))
+      (stateful.array! (envelopes.array!.filter (lambda [possibility]
+        (return (isnt recipient possibility)))
       ))
     )
   ))
-  
+
   ## clear all listeners for an address
-  (ref clear (lambda [address] (store.update! address null)))
-  
+  (ref clear (lambda [address] (store.update! address (stateful.array!))))
+
   (ref link (lambda [primary secondary]
-    (cond (not (get links primary)) (links.update! primary [[]]))
-    ((get links primary).push secondary)
+    (cond (not (get links primary)) (links.update! primary (stateful.array!)))
+    (ref primary-links (get links primary))
+    (primary-links.push! secondary)
   ))
 
   (ref send (lambda [address packet]
@@ -105,19 +107,21 @@
       (ref result (recipient.listener=> packet))
       (cond recipient.once (remove recipient))
     ))
-    (((exchange address).slice).forEach sender)
-    (list.for-each (get links address) (lambda [link] (send link packet)))
+    (ref envelopes (exchange address))
+    (envelopes.array!.forEach sender)
+    (ref secondaries (or (get links address) [[]]))
+    (list.for-each secondaries.array! (lambda [link] (send link packet)))
     (return (promise? result))
   ))
-  
+
   (ref expect (lambda [address listener=>]
     (add address {once: true listener=>})
   ))
-  
+
   (ref listen (lambda [address listener=>]
     (add address {listener=>})
   ))
-  
+
   (ref dispatch (lambda [address actions]
     (listen address (lambda [packet]
       (ref action (get actions packet.action))
@@ -125,16 +129,16 @@
       (return (action packet))
     ))
   ))
-  
+
   (ref log (lambda [text]
     (ref parts (text.split '/\s*:\s*/'))
     (cond (is 1 parts.length) (parts.unshift "message"))
     (send "logging" {level: (get parts 0) text: (get parts 1)})
   ))
-  
+
   (listen "logging" (lambda [packet]
     (console.log packet.level "-" packet.text)
   ))
-  
+
   (export {exchange send expect listen dispatch ready clear link})
 )

@@ -268,7 +268,7 @@
   (ref spaces "                ")
   (ref extra-commands {
     view_keyboard_shortcuts: (lambda [cm]
-      (ref keys [[]])
+      (ref keys (stateful.array!))
       (ref one-map (lambda [map]
         ((Object.keys map).forEach (lambda [key]
           (cond
@@ -278,7 +278,7 @@
                 (more.forEach (lambda [map]
                   (one-map (get CodeMirror.keyMap map))))
               )
-            (else) (keys.push (+ key ": " (get map key)))
+            (else) (keys.push! (+ key ": " (get map key)))
           )
         ))
       ))
@@ -288,7 +288,7 @@
         (core.update! {fallthrough: CodeMirror.keyMap.default.fallthrough}))
       (one-map core)
       (window.open
-        (+ "data:text/html," (encodeURIComponent (keys.join "<br>")))
+        (+ "data:text/html," (encodeURIComponent (keys.array!.join "<br>")))
         "Keys" "width=300,height=600")
     )
     fold_at_cursor: (lambda [cm]
@@ -422,8 +422,9 @@
   (cond (is (typeof (get mimeModes "text/html")) "string")
         (mimeModes.update! "text/html" {name: "htmlmixed"}))
   (ref mode (stateful.morph! (get mimeModes "text/html")))
+  (ref scriptTypes (stateful.array! mode.scriptTypes))
   (cond (not mode.scriptTypes) (mode.update! {scriptTypes: [[]]}))
-  (mode.scriptTypes.push {matches: '/^text\/lispz$/' mode: "lispz"})
+  (scriptTypes.push! {matches: '/^text\/lispz$/' mode: "lispz"})
   (mimeModes.update! {htmlmixed: mode})
 
   (ref run_selection (lambda [cm]

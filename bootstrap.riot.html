@@ -129,12 +129,13 @@
   <script type=text/lispz>
     (ref tag (stateful.morph! this))
     (cond opts.buttons (do
-      (tag.update! {buttons: [[]]})
+      (ref buttons (stateful.array!))
+      (tag.update! {buttons: buttons.array!})
       ((opts.buttons.split ",").forEach (lambda [title]
         (ref primary (is "*" (first title))  type "default")
         (cond primary (do (ref type "primary") (title.shift)))
         (ref name title)
-        (tag.buttons.push { title type name })
+        (buttons.push! { title type name })
       ))
     ))
   </script>

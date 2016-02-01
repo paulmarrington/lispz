@@ -247,12 +247,26 @@
     delete!: {value: (lambda [to-delete]
       (delete (get this to-delete))
     )}
+
+    push!: {value: (lambda [entry]
+      (Array.prototype.push.apply this.array! (*arguments 0))
+    )}
+
+    pop!: {value: (lambda [entry]
+      (return (this.array!.pop entry))
+    )}
   })
   (return obj)
 ))
 (global stateful (lambda [seed]
   (ref obj (#morph! (new Object)))
   (cond seed (obj.update! seed))
+  (return obj)
+))
+(global stateful.array! (lambda [seed]
+  (ref obj (#morph! (new Object)))
+  (ref seeder (or seed [[]]))
+  (obj.update! {array!: (seeder.slice)})
   (return obj)
 ))
 (global stateful.morph! #morph!)
@@ -488,12 +502,12 @@ So far this adds very little at the cost of a relatively large supporting librar
     (ref riots       (when groups [files] (return (build-riots files.riots))))
 
     # Now to pull it all together into a single file
-    (ref  source     [["window.lispz_modules={}"]])
+    (ref  source     (stateful.array [["window.lispz_modules={}"]]))
     # promise.sequence forces the order.
     (ref all-loaded  (promise.sequence
       (when modules  [sources] (source.concat sources) (return (promise.resolved))
       # lisp.js is added after modules and lisp-js are resolved
-      (when lispz-js [code]    (source.push code) (return (promise.resolved))
+      (when lispz-js [code]    (source.push! code) (return (promise.resolved))
       # riot tags are added after lisp.js and lisp-js is added and riots promise is resolved
       (when riots    [sources] (source.concat sources) (return (promise.resolved))
     ))

@@ -1,25 +1,25 @@
 (using [github riot list]
   (ref manifest (lambda []
-    (ref text [["CACHE MANIFEST"]])
-    (lispz.manifest.forEach (lambda [uri] (text.push uri)))
-    (text.push "NETWORK:" "*")
-    (return (text.join "\n"))
+    (ref text (statefularray![["CACHE MANIFEST"]]))
+    (lispz.manifest.forEach (lambda [uri] (text.push! uri)))
+    (text.push! "NETWORK:" "*")
+    (return (text.array!.join "\n"))
   ))
   ### Package Lispz for distribution ###
   (ref package (lambda [lispz-repo]
     (ref read-file (github.read.bind null lispz-repo))
 
     (ref group (lambda [files]
-      (ref modules [[]] riots [[]])
+      (ref modules (stateful.array!) riots (stateful.array!))
       (files.forEach (lambda [entry]
         (return? (not (is "file" entry.type)))
         (ref parts (entry.name.split "."))
         (cond
-          (is (last parts) "lispz")                  (modules.push (first parts))
-          (is ((slice parts -2).join ".") "riot.html") (riots.push (first parts))
+          (is (last parts) "lispz")                  (modules.push! (first parts))
+          (is ((slice parts -2).join ".") "riot.html") (riots.push! (first parts))
         )
       ))
-      (return (promise.resolved {modules riots}))
+      (return (promise.resolved {modules.array! riots.array!}))
     ))
     (ref build-modules (promise [names]
       (ref load-module (lambda [name]

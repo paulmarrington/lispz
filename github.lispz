@@ -18,22 +18,22 @@
     (repo.github.contents repo.branch path callback)
   ))
   (ref list-all (promise [repo path single-level]
-    (ref result [[]])
+    (ref result (stateful.array!))
     (ref list-path (lambda [path]
       (return (when (list-dir repo path) [paths]
-        (ref children [[]])
+        (ref children (stateful.array!))
         (paths.forEach (lambda [entry]
           (cond
             (is "dir"  entry.type)
-              (cond (not single-level) (children.push (list-path entry.path)))
+              (cond (not single-level) (children.push! (list-path entry.path)))
             (is "file" entry.type)
-              (result.push entry.path)
+              (result.push! entry.path)
           )
         ))
-        (return (promise.all children))
+        (return (promise.all children.array!))
       ))
     ))
-    (when (list-path path) [] (resolve-promise result))
+    (when (list-path path) [] (resolve-promise result.array!))
   ))
   (ref read (promise.callback [repo path]
     (repo.github.read repo.branch path callback)
@@ -105,15 +105,23 @@
   ## Retrieve file contents based of filtering meta-data
   (ref retriever (promise [target-repo sources actors]
     (when (process-repos target-repo sources actors) [entry-tree]
-      (ref store {js: [[]] css: [[]]  copies: [[]] from:
-        (sources.map (lambda [source] (return source.repo)))})
-      (store.from.unshift "Gathered from: ")
+      (ref first-from [["Gathered from: "]])
+      (ref rest-from (sources.map (lambda [source] (return source.repo))))
+      (ref store {
+        js:     (stateful.array!)
+        css:    (stateful.array!)
+        copies: (stateful.array!)
+        from:   (first-from.concat rest-from)
+      })
       ((list.flatten entry-tree).forEach (lambda [entry]
         (cond
           (get store entry.ext)
-            ((get store entry.ext).push "\n\n/* " entry.path " */\n" entry.code)
+            (do
+              (ref ext-list get store entry.ext)
+              (ext-list.push! "\n\n/* " entry.path " */\n" entry.code)
+            )
           store.copy
-            (store.copies.push entry)
+            (store.copies.push! entry)
         )
       ))
       (resolve-promise store)
@@ -155,15 +163,15 @@
   (ref build (builder.bind null github-actors))
   ## Use gruntfile to decide which files to include and it what order
   (ref grunt-build (promise [meta]
-    (ref js [[(or meta.pre "")]])
+    (ref js (stateful.array! [[(or meta.pre "")]]))
     (ref read-all (promise.all (meta.files.map (promise []
       (when (github-actors.read source-repo path) [data]
-        (js.push data) (resolve-promise)
+        (js.push! data) (resolve-promise)
       )
     ))))
     (when read-all []
-      (js.push (or meta.post ""))
-      (ref contents (js.join "\n"))
+      (js.push! (or meta.post ""))
+      (ref contents (js.array!.join "\n"))
       (when (write target-repo (+ "ext/" meta.target) contents comment) []
         (resolve-promise)
       )

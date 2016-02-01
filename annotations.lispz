@@ -35,13 +35,13 @@
 ###
   (ref retrieve (lambda [type source]
     (ref re (new RegExp (+ "###\\s*" type ":\\s*(.*)\\n((?:.|\\n)*?)###") "g"))
-    (ref annotations [[]])
+    (ref annotations (stateful.array!))
     (ref scan (lambda []
       (ref res (re.exec source))
       (return? (not res))
-      (annotations.push {title: (get res 1)  body: (get res 2)})
+      (annotations.push! {title: (get res 1)  body: (get res 2)})
       (scan)
     ))(scan)
-    (return annotations)
+    (return annotations.array!)
   ))
   (export {retrieve})
