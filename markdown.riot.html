@@ -41,7 +41,7 @@
         ## then continue loading and displaying
         (ref loaded (net.http-get href))
         (when loaded [md] (open md (net.url-path href)))
-        (catch-failure loaded [err] (debug err))
+        (promise.failed loaded [err] (debug err))
       ))
       (cond opts.href (load opts.href))
 

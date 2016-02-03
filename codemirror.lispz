@@ -564,7 +564,7 @@
       (init-lispz-mode)
       (export {options open close set-mode build})
     )
-    (catch-failure loaded [] (export {build}))
+    (promise.failed loaded [] (export {build}))
   )
   (delay 100 (lispz.css "ext/codemirror-themes.css"))
 )

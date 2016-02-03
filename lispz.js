@@ -1,6 +1,17 @@
 var lispz = function() {
   if (!window.lispz_modules) window.lispz_modules = {}
-  var delims = "(){}[]n".split(''), // characters that are not space separated atoms
+  var default_error_context =  function() {
+    console.debug(arguments)
+  },
+  error_contexts = {
+    compile: default_error_context,
+    load:    default_error_context,
+    module:  default_error_context,
+    run:     default_error_context,
+    script:  default_error_context
+  },
+  error_context = ["compile", {}],
+  delims = "(){}[]n".split(''), // characters that are not space separated atoms
   not_delims = delims.join("\\"), delims = delims.join('|\\'),
   stringRE =
     "''|'[\\s\\S]*?[^\\\\]':?|" +
@@ -8,22 +19,17 @@ var lispz = function() {
     '###+(?:.|\\r*\\n)*?###+|' + '##\\s+.*?\\r*\\n|',
   tkre = new RegExp('(' + stringRE + '\\' + delims + "|[^\\s" + not_delims + "]+)", 'g'),
   opens = new Set("({["), closes = new Set(")}]"), ast_to_js, slice = [].slice, contexts = [],
-  module = {line:0, name:"boot"}, globals = {}, load_index = 0,
+  location = {line:0, name:"boot"}, globals = {}, load_index = 0,
   synonyms = {and:'&&',or:'||',is:'===',isnt:'!=='},
   jsify = function(atom) {
-    try {
-      if (/^'\/(?:.|\n)*'$/.test(atom)) return atom.slice(1, -1).replace(/\n/g, '\\n')
-      if (/^'.*'$/.test(atom)) return atom.slice(1, -1).replace(/\\n/g, '\n')
-      if (/^"(?:.|\r*\n)*"$/.test(atom)) return atom.replace(/\r*\n/g, '\\n')
-      switch (atom[0]) {
-        case '-': return atom // unary minus or negative number
-        default:  return atom.replace(/\W/g, function(c) {
-          var t = "$hpalcewqgutkri"["!#%&+:;<=>?@\\^~".indexOf(c)];
-          return t ? ("_"+t+"_") : (c === "-") ? "_" : c })
-      }
-    } catch (err) {
-      console.log(err)
-      compile_error("Expecting an atom, found", atom)
+    if (/^'\/(?:.|\n)*'$/.test(atom)) return atom.slice(1, -1).replace(/\n/g, '\\n')
+    if (/^'.*'$/.test(atom)) return atom.slice(1, -1).replace(/\\n/g, '\n')
+    if (/^"(?:.|\r*\n)*"$/.test(atom)) return atom.replace(/\r*\n/g, '\\n')
+    switch (atom[0]) {
+      case '-': return atom // unary minus or negative number
+      default:  return atom.replace(/\W/g, function(c) {
+        var t = "$hpalcewqgutkri"["!#%&+:;<=>?@\\^~".indexOf(c)];
+        return t ? ("_"+t+"_") : (c === "-") ? "_" : c })
     }
   },
   call_to_js = function(func, params) {
@@ -100,8 +106,15 @@ var lispz = function() {
     parts = slice.call((arguments.length > 2) ? arguments : parts, 1)
     return parts.map(ast_to_js).join(ast_to_js(sep))
   },
+  run_ast = function(ast) {
+    error_context = ["run", {location: location }]
+    return ast.map(function(code) {
+      error_context[1].code = code
+      eval(code)
+    })
+  },
   immediate_to_js = function() {
-    return slice.call(arguments).map(ast_to_js).map(eval)
+    return run_ast(slice.call(arguments))
   },
   // processing pairs of list elements
   pairs_to_js = function(pairs, tween, sep) {
@@ -121,7 +134,7 @@ var lispz = function() {
    * because comments can't have their own atom or they will screw up argument lists.
    */
   eol_to_js = function(name, number) {
-    module = {name:name, line:number}
+    location = {name:name, line:number}
     var ast = slice.call(arguments, 2)
     var line = ast_to_js(ast)
     if (ast[0] !== "[" && (ast[0] !== "\n" || ast[3] !== "[")) {
@@ -136,8 +149,7 @@ var lispz = function() {
     }],
     [/^(\)|\}|\])$/, function(env) {
       var f = env.node;
-      try { (env.node = env.stack.pop()).push(f) }
-      catch(e) { compile_error("Unmatched closing bracket") }
+      (env.node = env.stack.pop()).push(f)
     }],
     /*
      * Record line number for JS comment. Can't add a new element,
@@ -147,56 +159,41 @@ var lispz = function() {
       if (!env.node.length) return
       var atom = env.node[env.node.length - 1]
       if (!(atom instanceof Array)) return
-      atom.unshift('\n', module.name, module.line)
+      atom.unshift('\n', location.name, location.line)
     }]
   ],
   comment = function(atom) {
     return atom[0] === "#" && atom[1] === "#" && (atom[2] === '#' || atom[2] == ' ')
   },
-  compile_error = function(msg, data) {
-    var errloc = module.name+".lispz:"+module.line
-    console.log(errloc, msg, data || "")
-    return ['throw "compile error for ' + errloc.replace(/["\n]/g," ") +
-            " -- " + msg.replace(/"/g,"'") + '"\n']
-  },
   parse_to_ast = function(source) {
     var env = { ast: [], stack: [] }
-    try {
-      env.node = env.ast
-      tkre.lastIndex = 0
-      while ((env.atom = tkre.exec(source.toString())) && (env.atom = env.atom[1])) {
-        module.line += (env.atom.match(/\n/g) || []).length
-        if (!comment(env.atom) && !parsers.some(function(parser) {
-            if (!parser[0].test(env.atom)) return false
-            parser[1](env)
-            return true
-          })) { env.node.push(env.atom); } }
-      if (env.stack.length != 0) {
-        console.log(env);
-        throw "missing close brace"
-      }
-      return env.ast
-    } catch (err) { console.log(env); throw err; }
+    env.node = env.ast
+    tkre.lastIndex = 0
+    while ((env.atom = tkre.exec(source.toString())) && (env.atom = env.atom[1])) {
+      location.line += (env.atom.match(/\n/g) || []).length
+      if (!comment(env.atom) && !parsers.some(function(parser) {
+          if (!parser[0].test(env.atom)) return false
+          parser[1](env)
+          return true
+        })) { env.node.push(env.atom); } }
+    if (env.stack.length != 0) {
+      throw "missing close brace"
+    }
+    return env.ast
   },
   ast_to_js = function(ast) {
-    try {
-      return (ast instanceof Array) ? macros[ast[0]] ?
-        macros[ast[0]].apply(this, ast.slice(1)) : list_to_js(ast) : jsify(ast)
-    } catch (err) { console.log(ast); throw err; }
+    return (ast instanceof Array) ? macros[ast[0]] ?
+      macros[ast[0]].apply(this, ast.slice(1)) : list_to_js(ast) : jsify(ast)
   },
   compile = function(source, name) {
-    try {
-      var last_module = module
-      module = {name:name || "", line:0}
-      var js = parse_to_ast(source).map(ast_to_js)
-      module = last_module
-      return window.js_beautify ? js.map(js_beautify) : js
-    } catch (err) {
-      console.log(err)
-      return compile_error(err.message || err, "for "+module.name+":"+module.line)
-    }
+    var last_module = location
+    location = { name:name || "", line:0 }
+    error_context = ["compile", { location: location, previous: last_module }]
+    var js = parse_to_ast(source).map(ast_to_js)
+    location = last_module
+    return window.js_beautify ? js.map(js_beautify) : js
   },
-  run = function(name, source) { return compile(source, name).map(eval) }
+  run = function(name, source) { return run_ast(compile(source, name)) }
   //######################### Script Loader ####################################//
   cache = {}, manifest = [], pending_module = {},
   http_request = function(uri, type, callback) {
@@ -215,6 +212,7 @@ var lispz = function() {
     req.send()
   },
   module_init = function(uri) {
+    error_context = ["module", uri]
     var js = compile(lispz_modules[uri], uri).join('\n') +
       "//# sourceURL=" + uri + ".lispz\n"
     init_func = new Function('__module_ready__', js)
@@ -230,17 +228,12 @@ var lispz = function() {
     if (pending_module[uri]) return pending_module[uri].push(on_ready)
     pending_module[uri] = [on_ready]; var js = ""
     if (lispz_modules[uri]) return module_init(uri)
+    error_context = ["load", uri]
     http_request(uri + ".lispz", 'GET', function(err, response_text) {
-      try {
-        if (err) throw err
-        var name = uri.split('/').pop()
-        lispz_modules[uri] = response_text
-        module_init(uri)
-      } catch (e) {
-        delete pending_module[uri]
-        console.error(uri, e)
-        //throw uri+": "+e
-      }
+      if (err) throw err
+      var name = uri.split('/').pop()
+      lispz_modules[uri] = response_text
+      module_init(uri)
     })
   },
   // Special to set variables loaded with requires
@@ -282,6 +275,9 @@ var lispz = function() {
     el.addEventListener("error", function(evt) { console.log(evt); when_loaded(evt) })
     el.setAttribute("src", lispz_base_path+uri)
   }
+  window.onerror = function() {
+    return error_contexts[error_context[0]].call(lispz, error_context, arguments)
+  }
   other_window_onload = window.onload
   window.onload = function() {
     window.onload = null
@@ -298,12 +294,15 @@ var lispz = function() {
               if (parts.pop() == "lispz") src = parts.join(".")
               to_load.push(src)
             } else {
-              to_run.push(script.textContent)
+              to_run.push(script)
             }
           })
         var end_run = function() {
           if (to_run.length) {
-            to_run.forEach(function(code) { run("script", code) })
+            to_run.forEach(function(script) {
+              error_context = ["script", script]
+              run("script", script.textContent)
+            })
           }
           if (window.onload) window.onload() // someome else set it
         }
@@ -330,6 +329,7 @@ var lispz = function() {
   return { compile: compile, run: run, parsers: parsers, load: load,
            macros: macros, cache: cache, http_request: http_request,
            clone: clone, manifest: manifest, script: script, css: css,
-           synonyms: synonyms, globals: globals, tags: {}, slice,
-           path_base: lispz_base_path, set_debug_mode: set_debug_mode}
+           synonyms: synonyms, globals: globals, tags: {}, slice, location,
+           path_base: lispz_base_path, set_debug_mode: set_debug_mode,
+           error_contexts }
 }()

@@ -45,5 +45,5 @@
   (ref loaded (net.script "ext/showdown.js" (lambda [] (return window.showdown))))
 
   (when  loaded [] (export {build compile}))
-  (catch-failure loaded [] (export {build}))
+  (promise.failed loaded [] (export {build}))
 )

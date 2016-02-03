@@ -72,9 +72,13 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
         (else) (resolve-promise)
       )
     ))
+    (stateful.morph! lispz)
     (ref retrieve-and-compile (lambda []
       (ref url (or uri (+ (name.toLowerCase) ".riot.html")))
-      (when (net.http-get url) [tag] (usings (compile tag)))
+      (when (net.http-get url) [tag]
+        (lispz.update! "error_context" {tag url})
+        (usings (compile tag))
+      )
     ))
 
     (cond
@@ -135,7 +139,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
   (macro riot-tag [modules *body]
     'var tag=this;'
     (using modules
-      (#join '' 'try {' *body '}catch(err){console.error(err,tag)}')
+      (#join '' 'try {' *body '}catch(err){console.error(tag,err)}')
     )
   )
 
@@ -175,7 +179,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
   ###
 
   (ref   loaded (net.script "ext/riot.js" (lambda [] (return window.riot))))
-  (catch-failure loaded [] (export {build}))
+  (promise.failed loaded [] (export {build}))
   (when  loaded [] (using [compilers]
     (stateful.morph! riot.parsers.js)
     (riot.parsers.js.update! {lispz:
