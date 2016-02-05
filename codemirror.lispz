@@ -435,8 +435,9 @@
     (cond (cm.somethingSelected) (ref source (cm.doc.getSelection))
           (else)                 (ref source (cm.doc.getValue))
     )
+    (message.send "code-editor/run/prepare" { name source })
     (ref js (compiler.compile source name))
-    (message.send "code-editor/run/js" {
+    (message.send "code-editor/run/compiled" {
       name source js: (compilers.to-string js)
     })
     (message.send "code-editor/run/output" {
