@@ -122,4 +122,10 @@ To see if an array contains an element, use 'in':
 ###
 (ref contains (lambda [substr str] (return (isnt -1 (str .indexOf substr)))))
 
-(export {flatten for-each contains})
+### spec: lists >> sort
+###
+(ref reverse (lambda [list]
+  (return ((slice list).reverse))
+))
+
+(export {flatten for-each contains reverse})

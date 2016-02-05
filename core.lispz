@@ -50,6 +50,18 @@
 ###
 (macro debug [*msg] (console.trace (#join ',' *msg)))
 
+### spec: basic >> lambda
+###
+(macro => [*body] (lambda [@] *body))
+
+### spec: basic >> Execution Context
+###
+(macro execution-context [context *body]
+  (lispz.execution-context.push context)
+  *body
+  (lispz.execution-context.pop)
+)
+
 ### spec: basic >> do
 ###
 (macro do [*body] *body)
@@ -609,7 +621,13 @@ In summary we have
   ))
   (return chain-link null (*arguments 0))
 ))
+### We sometimes need to change Lispz functionality ###
+(stateful.morph! lispz)
+### Update log-execution-context to be more helpful ###
+(using [log_execution_context] (lispz.update! { log_execution_context }) )
 
+### spec: Basic >> Keeping Count
+###
 (global countdown (lambda [from by]
   (ref from (stateful from))
   (return (lambda []

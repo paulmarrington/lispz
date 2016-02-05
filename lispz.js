@@ -1,16 +1,9 @@
 var lispz = function() {
   if (!window.lispz_modules) window.lispz_modules = {}
-  var default_error_context =  function() {
-    console.debug(arguments)
-  },
-  error_contexts = {
-    compile: default_error_context,
-    load:    default_error_context,
-    module:  default_error_context,
-    run:     default_error_context,
-    script:  default_error_context
-  },
-  error_context = ["compile", {}],
+  var logger = window.console.log,
+  log = function() { logger.apply(console, arguments) },
+  log_execution_context = function() { lispz.log(arguments) },
+  execution_contexts = {}, execution_context = [],
   delims = "(){}[]n".split(''), // characters that are not space separated atoms
   not_delims = delims.join("\\"), delims = delims.join('|\\'),
   stringRE =
@@ -107,11 +100,10 @@ var lispz = function() {
     return parts.map(ast_to_js).join(ast_to_js(sep))
   },
   run_ast = function(ast) {
-    error_context = ["run", {location: location }]
-    return ast.map(function(code) {
-      error_context[1].code = code
-      eval(code)
-    })
+    var context = { name:"run", location: location }
+    execution_context.push(context)
+    return ast.map(function(code) { eval(context.code = code) })
+    execution_context.pop()
   },
   immediate_to_js = function() {
     return run_ast(slice.call(arguments))
@@ -188,10 +180,18 @@ var lispz = function() {
   compile = function(source, name) {
     var last_module = location
     location = { name:name || "", line:0 }
-    error_context = ["compile", { location: location, previous: last_module }]
+    var context = {
+      name: "compile",
+      location: location,
+      previous: last_module,
+      source:   source
+    }
+    execution_context.push(context)
     var js = parse_to_ast(source).map(ast_to_js)
     location = last_module
-    return window.js_beautify ? js.map(js_beautify) : js
+    if (window.js_beautify) { js = js.map(js_beautify) }
+    execution_context.pop()
+    return js
   },
   run = function(name, source) { return run_ast(compile(source, name)) }
   //######################### Script Loader ####################################//
@@ -212,15 +212,19 @@ var lispz = function() {
     req.send()
   },
   module_init = function(uri) {
-    error_context = ["module", uri]
+    var state = { name: "module", uri: uri, state: "compiling Lispz" }
+    execution_context.push(state)
     var js = compile(lispz_modules[uri], uri).join('\n') +
       "//# sourceURL=" + uri + ".lispz\n"
+    state.state = "compiling JavaScript"
     init_func = new Function('__module_ready__', js)
+    state.state = "initialising"
     init_func(function(exports) {
       cache[uri.split('/').pop()] = cache[uri] = exports
       var on_readies = pending_module[uri]
       delete pending_module[uri]
       on_readies.forEach(function(call_module) {call_module(exports)})
+      execution_context.pop()
     })
   },
   load_one = function(uri, on_ready) {
@@ -228,11 +232,12 @@ var lispz = function() {
     if (pending_module[uri]) return pending_module[uri].push(on_ready)
     pending_module[uri] = [on_ready]; var js = ""
     if (lispz_modules[uri]) return module_init(uri)
-    error_context = ["load", uri]
+    execution_context.push({ name: "load", uri: uri })
     http_request(uri + ".lispz", 'GET', function(err, response_text) {
       if (err) throw err
       var name = uri.split('/').pop()
       lispz_modules[uri] = response_text
+      execution_context.pop()
       module_init(uri)
     })
   },
@@ -276,7 +281,15 @@ var lispz = function() {
     el.setAttribute("src", lispz_base_path+uri)
   }
   window.onerror = function() {
-    return error_contexts[error_context[0]].call(lispz, error_context, arguments)
+    if (!execution_context.length) return false;
+    var context = execution_context
+    execution_context = []
+    var name = context[0].name
+    if (contexts[name]) {
+      return contexts[name].call(lispz, context, arguments)
+    } else {
+      lispz.log_execution_context(context)
+    }
   }
   other_window_onload = window.onload
   window.onload = function() {
@@ -300,7 +313,7 @@ var lispz = function() {
         var end_run = function() {
           if (to_run.length) {
             to_run.forEach(function(script) {
-              error_context = ["script", script]
+              execution_context = ["script", script]
               run("script", script.textContent)
             })
           }
@@ -330,6 +343,6 @@ var lispz = function() {
            macros: macros, cache: cache, http_request: http_request,
            clone: clone, manifest: manifest, script: script, css: css,
            synonyms: synonyms, globals: globals, tags: {}, slice, location,
-           path_base: lispz_base_path, set_debug_mode: set_debug_mode,
-           error_contexts }
+           path_base: lispz_base_path, set_debug_mode: set_debug_mode, log,
+           execution_contexts, execution_context, log_execution_context }
 }()

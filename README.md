@@ -1,6 +1,7 @@
 # Lispz
 
 [QuickStart](https://cdn.rawgit.com/paulmarrington/lispz/master/index.html) - Edit, run and read the documentation on-line
+
 [Documentation](doc/index.md) - Read more, learn more
 
 > You can read all of this on GitHub - or you can select the quick-start link above and read while playing with live code and results. Type Lispz in the scratch-pad and press <Alt><Enter> to execute it. You will be able to view the JavaScript created and any output from (console.log). For a quick quick-start, open the [examples](doc/examples.md) page and copy and paste them into the scratch-pad to run and discover.

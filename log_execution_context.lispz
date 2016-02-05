@@ -1,0 +1,21 @@
+(using [list]
+  (ref loc  (=> (return (+ @.name ":" @.line))))
+  (ref loc2 (=> (return (+ (loc @.location) " from " (loc @.previous)))))
+  (ref src  (=> (return (+ "\n\t>>> " ((@.split "\n").join "\n\t>>> ")))))
+
+  (ref loggers {
+    load:    (=> (console.log (+ "load:     " @.uri)))
+    module:  (=> (console.log (+ "module:   " @.uri " - " @.state)))
+    compile: (=> (console.log (+ "compile:  " (loc2 @) (src @.source))))
+    other:   (=> (console.log (+ @.name ": " (JSON.stringify @))))
+  })
+  (ref logger (lambda [execution-context]
+    (ref context (list.reverse execution-context))
+    (lispz.log "Context:" context) ## to JavaScript console just in case...
+    (context.forEach (lambda [item]
+      (ref logger (or (get loggers item.name) loggers.other))
+      (logger item)
+    ))
+  ))
+  (export logger)
+)

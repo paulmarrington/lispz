@@ -72,12 +72,12 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
         (else) (resolve-promise)
       )
     ))
-    (stateful.morph! lispz)
     (ref retrieve-and-compile (lambda []
       (ref url (or uri (+ (name.toLowerCase) ".riot.html")))
       (when (net.http-get url) [tag]
-        (lispz.update! "error_context" {tag url})
-        (usings (compile tag))
+        (execution-context {name: "riot" url tag}
+          (usings (compile tag))
+        )
       )
     ))
 
