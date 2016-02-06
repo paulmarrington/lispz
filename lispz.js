@@ -30,8 +30,9 @@ var lispz = function() {
     if (synonyms[func]) func = synonyms[func]
     if (macros[func]) return macros[func].apply(lispz, params)
     func = ast_to_js(func)
-    if (params[0] && params[0][0] === '.') func += params.shift()
-    return func + '(' + params.map(ast_to_js).join(',') + ')'
+    if (params[0] && params[0][0] === '.') func += ast_to_js(params.shift())
+    params = params.map(ast_to_js).join(',').replace(/,\s*\./, ".")
+    return func + '(' + params + ')'
   },
   drop_line_number = function(ast) {
     return (ast instanceof Array && ast[0] === "\n") ? ast.slice(3) : ast
