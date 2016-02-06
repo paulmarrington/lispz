@@ -9,7 +9,7 @@
     (ref markdown-menu (+ "panel/markdown/" opts.name "/menu"))
     (ref markdown-menu-action (+ markdown-menu "/action"))
     (tag.update! {menu: markdown-menu heading: opts.heading})
-    (tag.on "mount" (lambda [] (using [markdown dom net message dict]
+    (tag.on "mount" (lambda (using [markdown dom net message dict]
       (ref contents-area tag.tags.panel.body)
 
       ## hamburget menu lists a history of pages followed

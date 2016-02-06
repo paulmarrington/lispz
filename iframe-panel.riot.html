@@ -19,10 +19,10 @@
   <script type=text/lispz>
     (ref tag (stateful.morph! this))
     (tag.update! {menu: opts.menu heading: opts.heading})
-    (tag.on "mount" (lambda [] (using [message]
+    (tag.on "mount" (lambda (using [message]
       (ref iframe tag.tags.panel.iframe)
       (ref iframe-doc (or iframe.contentDocument iframe.contentWindow.document))
-      
+
       (cond opts.src (iframe.setAttribute "src" opts.src))
 
       (tag.update! {

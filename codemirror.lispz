@@ -88,7 +88,7 @@
   }))
   (ref options (stateful.morph! options))
   ## write changed options back to persistent storage
-  (ref update-options (lambda []
+  (ref update-options (lambda
     (localStorage.setItem "CodeMirror-options" (JSON.stringify options))
   ))
   ## Context menu for code editor
@@ -306,7 +306,7 @@
       (CodeMirror.commands.set_option cm "keyMap" mode)
     )
     auto_complete: (lambda [cm]
-      (ref not-only (lambda []
+      (ref not-only (lambda
         (ref result (CodeMirror.hint.anyword.apply null arguments))
         (return-if (isnt result.list.length 1) result)
         (ref size (- result.to.ch result.from.ch))
@@ -375,7 +375,7 @@
       (return-if (get CodeMirror.modes ext) ext)
       (return false)
     ))
-    (ref mode ((lambda []
+    (ref mode ((lambda
       (ref parts (name.split "."))
       (cond (> parts.length 2) (return? (try-mode (parts.slice -2))))
       (return? (try-mode (parts.slice -1)))
@@ -386,7 +386,7 @@
   ))
 
   ## CodeMirror lispz mode
-  (ref init-lispz-mode (lambda []
+  (ref init-lispz-mode (lambda
   (CodeMirror.defineSimpleMode "lispz" {
     start: [[
       {regex: '/""/'                                 token: "string"}
@@ -556,16 +556,16 @@
   ))
 
   (lispz.css "ext/codemirror.css")
-  (ref loaded (net.script "ext/codemirror.js"(lambda [] (return window.CodeMirror))))
-  (when loaded []
-    (ref modes-loaded (net.script "ext/codemirror-modes.js" (lambda [] (return CodeMirror.modes.z80))))
-    (when modes-loaded []
+  (ref loaded (net.script "ext/codemirror.js"(lambda (return window.CodeMirror))))
+  (when loaded
+    (ref modes-loaded (net.script "ext/codemirror-modes.js" (lambda (return CodeMirror.modes.z80))))
+    (when modes-loaded
       (stateful.morph! CodeMirror.commands)
       (CodeMirror.commands.update! extra-commands)
       (init-lispz-mode)
       (export {options open close set-mode build})
     )
-    (promise.failed loaded [] (export {build}))
+    (promise.failed loaded (export {build}))
   )
   (delay 100 (lispz.css "ext/codemirror-themes.css"))
 )

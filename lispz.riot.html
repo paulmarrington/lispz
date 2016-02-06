@@ -19,7 +19,7 @@
   <script type="text/lispz">
     (riot-tag [message riot dict]
       (lispz.set-debug-mode true)
-      (when (message.ready "code-editor/code") []
+      (when (message.ready "code-editor/code")
         (message.send "code-editor/code"
           {action: "open" key: ".lispz" contents: ""})
       )

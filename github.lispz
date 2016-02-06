@@ -33,7 +33,7 @@
         (return (promise.all children.array!))
       ))
     ))
-    (when (list-path path) [] (resolve-promise result.array!))
+    (when (list-path path) (resolve-promise result.array!))
   ))
   (ref read (promise.callback [repo path]
     (repo.github.read repo.branch path callback)
@@ -142,14 +142,14 @@
   (ref builder (promise [actors target-repo name sources]
     (when (retriever target-repo sources actors) [store]
       (ref comment (store.from.join " "))
-      (ref saved (when (update target-repo) []
+      (ref saved (when (update target-repo)
         (return (promise.all
           (save-store target-repo store name "js"  comment)
           (save-store target-repo store name "css" comment)
           (copy-store target-repo store            comment)
         ))
       ))
-      (when saved [] (resolve-promise))
+      (when saved (resolve-promise))
     )
   ))
   (ref github-actors {
@@ -164,15 +164,15 @@
   ## Use gruntfile to decide which files to include and it what order
   (ref grunt-build (promise [meta]
     (ref js (stateful.array! [[(or meta.pre "")]]))
-    (ref read-all (promise.all (meta.files.map (promise []
+    (ref read-all (promise.all (meta.files.map (promise
       (when (github-actors.read source-repo path) [data]
         (js.push! data) (resolve-promise)
       )
     ))))
-    (when read-all []
+    (when read-all
       (js.push! (or meta.post ""))
       (ref contents (js.array!.join "\n"))
-      (when (write target-repo (+ "ext/" meta.target) contents comment) []
+      (when (write target-repo (+ "ext/" meta.target) contents comment)
         (resolve-promise)
       )
     )
@@ -182,7 +182,7 @@
       (ref path (or item.src item))
       (when (github-actors.read source-repo path) [contents]
         (ref path (+ "ext/" (last (path.split "/"))))
-        (when (write target-repo path contents comment) [] (resolve-promise))
+        (when (write target-repo path contents comment)  (resolve-promise))
       )
     ))))
   ))
@@ -198,13 +198,13 @@
       (ref grunt-config ((Function
         (+ "var module={};" (last store.js) "return module.exports"))))
       (grunt-config {
-        loadNpmTasks: (lambda []) registerTask: (lambda [])
+        loadNpmTasks: (lambda) registerTask: (lambda)
         initConfig: (lambda [config-data]
           (ref grunt-processor {
             build: grunt-build
             copy:  grunt-copy
           })
-          (when (update target-repo) []
+          (when (update target-repo)
             (resolve-promise grunt-processor config-data)
           )
         )
@@ -219,9 +219,9 @@
     ]])
     (return (build target-repo "github" sources))
   ))
-  (ref loaded (net.script "ext/github.js" (lambda [] (return window.Github))))
+  (ref loaded (net.script "ext/github.js" (lambda (return window.Github))))
   ## (promise.failed loaded (export {build}))
-  (when loaded []
+  (when loaded
     (export {
       branch list-all list-dir cdn-uri build builder repo read write update
       build-github retriever grunt preprocessors

@@ -14,5 +14,5 @@
 
   (lispz.css "ext/firepad.css")
   (ref loaded (net.script "ext/firepad.js" (lambda [] (return window.FirePad))))
-  (when loaded [] (export {build}))
+  (when loaded (export {build}))
 )

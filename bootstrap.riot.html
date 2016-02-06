@@ -54,7 +54,7 @@
   <script type=text/lispz>
     (ref tag (stateful.morph! this))
     (tag.update! {context: (+ "panel-" (or opts.context "default"))})
-    (tag.on "mount" (lambda [] (using [dom]
+    (tag.on "mount" (lambda (using [dom]
       (cond opts.height (do
         (ref px opts.height)
         (cond (is "%" (opts.height.slice -1))
@@ -74,7 +74,7 @@
   </style>
   <script type=text/lispz>
     (ref tag (stateful.morph! this))
-    (tag.on "mount" (lambda [] (using [sortable]
+    (tag.on "mount" (lambda (using [sortable]
       (sortable.create tag.root (or opts.name "sortable") {
         draggable:  ".draggable"
         handle:     ".panel-title"
@@ -100,7 +100,7 @@
 
       <modal name=login-dialog title="..." buttons="Log in,Cancel">...</modal>
       ....
-      (message.listen "login-dialog/Log in/button" (lambda [] ...)
+      (message.listen "login-dialog/Log in/button" (lambda ...)
 
         <modal name=n [title=heading-text] [buttons=a,*b]>
           modal-body-content-html
@@ -152,7 +152,7 @@
   It is up to a listener to provide the data requested.
   Use this if the menu contents change between uses.
 
-        (message.listen "specifications-menu-open" (lambda []
+        (message.listen "specifications-menu-open" (lambda
           (ref menu (dict.map lispz_modules (lambda [title source]
             (return {topic: "specifications" title source})
           )))
@@ -170,7 +170,7 @@
   is displayed the menu will not be loaded.
   To fix this, wait for the menu to be ready.
 
-        (when (message.ready "specifications-menu") []
+        (when (message.ready "specifications-menu")
           (message.send "specifications-menu" nenu)
         )
   The menu itself is a dictionary with the format:
@@ -226,11 +226,11 @@
   </style>
   <script type=text/lispz>
     (ref tag (stateful.morph! this))
-    (tag.on "mount" (lambda [] (using [message riot]
+    (tag.on "mount" (lambda (using [message riot]
       (message.listen opts.name (lambda [items]
         (riot.update! tag {items root: (or items [[]])})
       ))
-      (($ tag.dropdown).on "show.bs.dropdown" (lambda []
+      (($ tag.dropdown).on "show.bs.dropdown" (lambda
         (message.send (+ opts.name "/open"))
         (riot.update! tag {items: tag.root})
       ))
@@ -357,7 +357,7 @@
   <script type=text/lispz>
     (ref tag (stateful.morph! this)  hamburger (stateful.morph! tag.hamburger))
     (using [message dom]
-      (hamburger.update: {onclick: (lambda []
+      (hamburger.update: {onclick: (lambda
         (tag.sidebar.classList.toggle "toggled")
         (delay 300 ## must be after slide action
           (message.send "page-content-wrapper-padding" tag.sidebar.offsetWidth)

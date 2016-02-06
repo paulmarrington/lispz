@@ -6,7 +6,7 @@
       ]]}
     ]]))
   ))
-  (ref loaded (net.script "ext/jquery.js" (lambda [] (return window.jQuery))))
-  (when  loaded [] (export {build}))
-  (promise.failed loaded [] (export {build}))
+  (ref loaded (net.script "ext/jquery.js" (lambda (return window.jQuery))))
+  (when  loaded (export {build}))
+  (promise.failed loaded (export {build}))
 )

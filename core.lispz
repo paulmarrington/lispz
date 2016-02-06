@@ -530,7 +530,7 @@ So far this adds very little at the cost of a relatively large supporting librar
       (when riots    [sources] (source.concat sources) (return (promise.resolved))
     ))
     # Only write the result when the sequence above is complete
-    (return (when all-loaded [] (write-lispz)))
+    (return (when all-loaded (write-lispz)))
     # returns a promise that is complete once the results are written
 
 In summary we have

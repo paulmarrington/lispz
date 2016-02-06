@@ -24,7 +24,7 @@
     (ref tag (stateful.morph! this))
     (tag.update! {menu: "CodeMirror-menu"})
     (tag.update! {heading: "Edit"})
-    (tag.on "mount" (lambda [] (using  [firebase codemirror firepad message dict]
+    (tag.on "mount" (lambda (using  [firebase codemirror firepad message dict]
       (ref filename-key (+ "codemirror/" opts.name "/filename"))
       (ref cm (codemirror.open tag._id tag.tags.panel.wrapper))
       (tag.update! {pad: (stateful {
@@ -54,13 +54,13 @@
             (open {key:      filename
                    contents: (localStorage.getItem contents-key)})
           ))
-          (cm.on "change" (lambda []
+          (cm.on "change" (lambda
             (localStorage.setItem contents-key (cm.getValue))
           ))
         )
       )
 
-      (tag.pad.on-ready (lambda []
+      (tag.pad.on-ready (lambda
         (message.dispatch (+ "firepad/" opts.name) { open })
       ))
     )))

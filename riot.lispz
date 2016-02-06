@@ -63,7 +63,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
         (return true)
       )))
       (ref loaded (promise.all (new-tags.map (lambda [tag] (return (load tag))))))
-      (when loaded [] (resolve-promise))
+      (when loaded (resolve-promise))
     ))
     (ref usings (lambda [source]
       (ref tags ('/<!--\s*using\s*(.*?)\s*-->/'.exec source))
@@ -72,7 +72,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
         (else) (resolve-promise)
       )
     ))
-    (ref retrieve-and-compile (lambda []
+    (ref retrieve-and-compile (lambda
       (ref url (or uri (+ (name.toLowerCase) ".riot.html")))
       (when (net.http-get url) [tag]
         (execution-context {name: "riot" url tag}
@@ -178,9 +178,9 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
     3. No way of knowing if event was processed as expected.
   ###
 
-  (ref   loaded (net.script "ext/riot.js" (lambda [] (return window.riot))))
-  (promise.failed loaded [] (export {build}))
-  (when  loaded [] (using [compilers]
+  (ref   loaded (net.script "ext/riot.js" (lambda (return window.riot))))
+  (promise.failed loaded (export {build}))
+  (when  loaded (using [compilers]
     (stateful.morph! riot.parsers.js)
     (riot.parsers.js.update! {lispz:
       (lambda [source]
@@ -193,7 +193,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
       (ref name (element.tagName.toLowerCase))
       (return (load name (element.getAttribute "uri")))
     ))))
-    (when load-all []
+    (when load-all
       (riot.mount "*")
       (export {build compile load mount update!})
     )

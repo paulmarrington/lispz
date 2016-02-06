@@ -23,7 +23,7 @@
   If it is possible that a client will send an important request before the
   service has had the opportunity to initialise, wrap 'send' in 'wait-for':
 
-      (message.wait-for "code-editor/scratch" (lambda []
+      (message.wait-for "code-editor/scratch" (lambda
         (message.send "code-editor/scratch"
           {action: "open" key: "scratchpad.lispz" contents: null}
         )
@@ -37,7 +37,7 @@
 
   For a one-off message, use 'expect' rather than 'listen':
 
-      (message.expect "editor-loaded" (lambda [] ...)
+      (message.expect "editor-loaded" (lambda ...)
 
   Lispz uses exchanges defined as part of the address. Plain string addresses as
   used so far will use a local in-browser exchange. The address can include

@@ -8,5 +8,5 @@
     ]]))
   ))
 
-  (lispz.script "ext/dexie.js" (lambda [] (export { build })))
+  (lispz.script "ext/dexie.js" (lambda (export { build })))
 )
