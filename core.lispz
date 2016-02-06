@@ -590,7 +590,8 @@ In summary we have
   *body
 ))
 (global promise.resolved (promise [pact] (resolve-promise pact)))
-(global promisify (lambda [pledge]
+
+(global promised (lambda [pledge]
   (return-if (and pledge pledge.then) pledge)
   (return (promise.resolved pledge))
 ))
@@ -604,16 +605,11 @@ In summary we have
   (return pledge)
 ))
 
-(macro when  [pledge params *body]
+(macro when [pledge params *body]
   ((#resolve-deferred pledge).then (lambda params *body))
 )
 (macro promise.failed [pledge errors *body]
   ((#resolve-deferred pledge).catch (lambda errors *body))
-)
-
-(macro promise.resolved [pledge *body]
-  (when pledge [] *body)
-  (promise.failed pledge [] *body)
 )
 
 (using [list]
@@ -621,8 +617,8 @@ In summary we have
 )
 (global promise.chain (lambda []
   (ref chain-link (lambda [input functions]
-    (return-if (not functions.length) (promisify input))
-    (ref pledge (promisify ((first functions) input)))
+    (return-if (not functions.length) (promised input))
+    (ref pledge (promised ((first functions) input)))
     (when pledge [output] (chain-link output (rest functions)))
   ))
   (return chain-link null (*arguments 0))

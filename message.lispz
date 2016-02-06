@@ -112,7 +112,7 @@
       (envelopes.array!.forEach sender)
       (ref secondaries (or (get links address) [[]]))
       (list.for-each secondaries.array! (lambda [link] (send link packet)))
-    ) (return (promisify result))
+    ) (return (promised result))
   ))
 
   (ref expect (lambda [address listener=>]
