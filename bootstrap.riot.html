@@ -152,7 +152,7 @@
   It is up to a listener to provide the data requested.
   Use this if the menu contents change between uses.
 
-        (message.listen "specifications-menu-open" (lambda
+        (message.listen "specifications-menu/open" (lambda
           (ref menu (dict.map lispz_modules (lambda [title source]
             (return {topic: "specifications" title source})
           )))
@@ -360,11 +360,11 @@
       (hamburger.update: {onclick: (lambda
         (tag.sidebar.classList.toggle "toggled")
         (delay 300 ## must be after slide action
-          (message.send "page-content-wrapper-padding" tag.sidebar.offsetWidth)
+          (message.send "dom/page-content-wrapper-padding" tag.sidebar.offsetWidth)
         )
       )})
       (tag.on "mount" (delay 300
-        (message.send "page-content-wrapper-padding" tag.sidebar.offsetWidth)
+        (message.send "dom/page-content-wrapper-padding" tag.sidebar.offsetWidth)
       ))
     )
   </script>
@@ -385,7 +385,7 @@
   <script type=text/lispz>
     (ref tag this)
     (using [message dom]
-      (message.listen "page-content-wrapper-padding" (lambda [px]
+      (message.listen "dom/page-content-wrapper-padding" (lambda [px]
         (dom.style! tag.page-content-wrapper {paddingLeft: (+ px "px")})
       ))
     )

@@ -12,7 +12,7 @@
   </style>
   <script type=text/lispz>
     (ref tag (stateful.morph! this))
-    (tag.update! {menu: "CodeMirror-menu" heading: (or opts.heading "Edit")})
+    (tag.update! {menu: "codemirror/menu" heading: (or opts.heading "Edit")})
     (tag.on "mount" (lambda (using  [codemirror message dict]
       (ref filename-key (+ "code-editor/" opts.name "/filename"))
       (ref cm (codemirror.open tag._id tag.tags.panel.body))

@@ -22,7 +22,7 @@
   </style>
   <script type=text/lispz>
     (ref tag (stateful.morph! this))
-    (tag.update! {menu: "CodeMirror-menu"})
+    (tag.update! {menu: "codemirror/menu"})
     (tag.update! {heading: "Edit"})
     (tag.on "mount" (lambda (using  [firebase codemirror firepad message dict]
       (ref filename-key (+ "codemirror/" opts.name "/filename"))

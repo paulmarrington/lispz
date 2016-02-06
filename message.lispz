@@ -32,7 +32,7 @@
   For raw processing, use 'listen' instead. The following example changes the
   left padding on a DOM element if asked.
 
-      (message.listen "page-content-wrapper-padding" (lambda [px]
+      (message.listen "dom/page-content-wrapper-padding" (lambda [px]
         (set! tag.page-content-wrapper.style.paddingLeft (+ px "px"))
 
   For a one-off message, use 'expect' rather than 'listen':

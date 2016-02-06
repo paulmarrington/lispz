@@ -258,7 +258,7 @@
   (ref open (lambda [owner wrapper]
     (ref cm (stateful.morph! (CodeMirror wrapper options)))
     (cm.update! {listener: (lambda [data] (listener cm data))})
-    (message.send "CodeMirror-menu" menu)
+    (message.send "codemirror/menu" menu)
     (message.listen (+ owner "/" topic) cm.listener)
     (return cm)
   ))
