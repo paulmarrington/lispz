@@ -283,6 +283,9 @@
 ))
 (global stateful.morph! #morph!)
 
+### We sometimes need to change Lispz functionality ###
+(stateful.morph! lispz)
+
 (macro closure [params *body] (#join '' '(lambda(' params '){' *body '})(' params ')'))
 (macro return  [value] (#join '' 'return ' value '\n'))
 
@@ -403,6 +406,9 @@ To access external modules, wrap your code in 'using'. Data and functions export
 # Return a random integer between 0 and the range given
 ###
 (global random (lambda [range] (return (Math.floor (* (Math.random) range)))))
+
+### Update log-execution-context to be more helpful ###
+(using [log_execution_context] (lispz.update! { log_execution_context }) )
 
 ### spec: async -- Asynchronous Support
 There are three kinds of people in the world - those that can count and those who can't. And there are two ways to treat asynchronous events at the language/platform level. Either stop the process while waiting for something...
@@ -584,7 +590,7 @@ In summary we have
   *body
 ))
 (global promise.resolved (promise [pact] (resolve-promise pact)))
-(global promise? (lambda [pledge]
+(global promisify (lambda [pledge]
   (return-if (and pledge pledge.then) pledge)
   (return (promise.resolved pledge))
 ))
@@ -615,16 +621,12 @@ In summary we have
 )
 (global promise.chain (lambda []
   (ref chain-link (lambda [input functions]
-    (return-if (not functions.length) (promise? input))
-    (ref pledge (promise? ((first functions) input)))
+    (return-if (not functions.length) (promisify input))
+    (ref pledge (promisify ((first functions) input)))
     (when pledge [output] (chain-link output (rest functions)))
   ))
   (return chain-link null (*arguments 0))
 ))
-### We sometimes need to change Lispz functionality ###
-(stateful.morph! lispz)
-### Update log-execution-context to be more helpful ###
-(using [log_execution_context] (lispz.update! { log_execution_context }) )
 
 ### spec: Basic >> Keeping Count
 ###
