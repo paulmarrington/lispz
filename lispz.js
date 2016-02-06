@@ -4,16 +4,16 @@ var lispz = function() {
   log = function() { logger.apply(console, arguments) },
   log_execution_context = function() { lispz.log(arguments) },
   execution_contexts = {}, execution_context = [],
-  delims = "(){}[]n".split(''), // characters that are not space separated atoms
+  delims = "(){}[],n".split(''), // characters that are not space separated atoms
   not_delims = delims.join("\\"), delims = delims.join('|\\'),
   stringRE =
     "''|'[\\s\\S]*?[^\\\\]':?|" +
     '""|"(?:.|\\r*\\n)*?[^\\\\]"|' +
     '###+(?:.|\\r*\\n)*?###+|' + '##\\s+.*?\\r*\\n|',
   tkre = new RegExp('(' + stringRE + '\\' + delims + "|[^\\s" + not_delims + "]+)", 'g'),
-  opens = new Set("({["), closes = new Set(")}]"), ast_to_js, slice = [].slice, contexts = [],
-  location = {line:0, name:"boot"}, globals = {}, load_index = 0,
-  synonyms = {and:'&&',or:'||',is:'===',isnt:'!=='},
+  opens = new Set("({["), closes = new Set(")}]"), ast_to_js, slice = [].slice,
+  contexts = [], location = {line:0, name:"boot"}, globals = {}, load_index = 0,
+  synonyms = {and:'&&', or:'||', is:'===', isnt:'!=='},
   jsify = function(atom) {
     if (/^'\/(?:.|\n)*'$/.test(atom)) return atom.slice(1, -1).replace(/\n/g, '\\n')
     if (/^'.*'$/.test(atom)) return atom.slice(1, -1).replace(/\\n/g, '\n')
@@ -154,6 +154,7 @@ var lispz = function() {
       atom.unshift('\n', location.name, location.line)
     }]
   ],
+  empty_words = { "of": true, "on": true, ",": true, "to": true, "in": true },
   comment = function(atom) {
     return atom[0] === "#" && atom[1] === "#" && (atom[2] === '#' || atom[2] == ' ')
   },
@@ -163,11 +164,15 @@ var lispz = function() {
     tkre.lastIndex = 0
     while ((env.atom = tkre.exec(source.toString())) && (env.atom = env.atom[1])) {
       location.line += (env.atom.match(/\n/g) || []).length
-      if (!comment(env.atom) && !parsers.some(function(parser) {
-          if (!parser[0].test(env.atom)) return false
-          parser[1](env)
-          return true
-        })) { env.node.push(env.atom); } }
+      var is_parser = function(parser) {
+        if (!parser[0].test(env.atom)) return false
+        parser[1](env)
+        return true
+      }
+      if (!comment(env.atom) && !parsers.some(is_parser) && !empty_words[env.atom]) {
+        env.node.push(env.atom);
+      }
+    }
     if (env.stack.length != 0) {
       throw "missing close brace"
     }
@@ -344,5 +349,6 @@ var lispz = function() {
            clone: clone, manifest: manifest, script: script, css: css,
            synonyms: synonyms, globals: globals, tags: {}, slice, location,
            path_base: lispz_base_path, set_debug_mode: set_debug_mode, log,
-           execution_contexts, execution_context, log_execution_context }
+           execution_contexts, execution_context, log_execution_context,
+           empty_words }
 }()
