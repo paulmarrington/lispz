@@ -101,7 +101,7 @@ var lispz = function() {
     return parts.map(ast_to_js).join(ast_to_js(sep))
   },
   run_ast = function(ast) {
-    var context = { name:"run", location: location }
+    var context = { context:"run", location: location }
     execution_context.push(context)
     return ast.map(function(code) { eval(context.code = code) })
     execution_context.pop()
@@ -187,7 +187,7 @@ var lispz = function() {
     var last_module = location
     location = { name:name || "", line:0 }
     var context = {
-      name: "compile",
+      context: "compile",
       location: location,
       previous: last_module,
       source:   source
@@ -218,7 +218,7 @@ var lispz = function() {
     req.send()
   },
   module_init = function(uri) {
-    var state = { name: "module", uri: uri, state: "compiling Lispz" }
+    var state = { context: "module", uri: uri, state: "compiling Lispz" }
     execution_context.push(state)
     var js = compile(lispz_modules[uri], uri).join('\n') +
       "//# sourceURL=" + uri + ".lispz\n"
@@ -238,7 +238,7 @@ var lispz = function() {
     if (pending_module[uri]) return pending_module[uri].push(on_ready)
     pending_module[uri] = [on_ready]; var js = ""
     if (lispz_modules[uri]) return module_init(uri)
-    execution_context.push({ name: "load", uri: uri })
+    execution_context.push({ context: "load", uri: uri })
     http_request(uri + ".lispz", 'GET', function(err, response_text) {
       if (err) throw err
       var name = uri.split('/').pop()
@@ -319,7 +319,7 @@ var lispz = function() {
         var end_run = function() {
           if (to_run.length) {
             to_run.forEach(function(script) {
-              execution_context = ["script", script]
+              execution_context = [{ context: "script", script: script}]
               run("script", script.textContent)
             })
           }

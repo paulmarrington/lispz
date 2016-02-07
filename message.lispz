@@ -101,7 +101,7 @@
   ))
 
   (ref send (lambda [address packet]
-    (execution-context {name: "message" action: "send" address}
+    (execution-context {context: "message" action: "send" address}
       ## take a copy so that it does not change during processing
       (ref result null)
       (ref sender (lambda [recipient]
@@ -125,7 +125,7 @@
 
   (ref dispatch (lambda [address actions]
     (listen address (lambda [packet]
-      (execution-context {name: "message" action: "send" address}
+      (execution-context {context: "message" action: "send" address}
         (ref action (get actions packet.action))
         (return-if (not action) (promise.resolved false))
       ) (return (action packet))
