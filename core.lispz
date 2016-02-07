@@ -58,8 +58,8 @@
 ###
 (macro execution-context [context *body]
   (lispz.execution-context.push context)
-  *body
-  (lispz.execution-context.pop)
+  'try{' *body '}'
+  'finally {' (lispz.execution-context.pop) '}'
 )
 
 ### spec: basic >> do
