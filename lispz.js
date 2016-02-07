@@ -195,7 +195,6 @@ var lispz = function() {
     execution_context.push(context)
     var js = parse_to_ast(source).map(ast_to_js)
     location = last_module
-    if (window.js_beautify) { js = js.map(js_beautify) }
     execution_context.pop()
     return js
   },
@@ -265,7 +264,6 @@ var lispz = function() {
   },
   set_debug_mode = function(debugging) {
     lispz.debug_mode = debugging
-    load_one("js-beautify", function(){})
   },
   //##################    where to get scripts    #############################//
   lispz_url = document.querySelector('script[src*="lispz.js"]').getAttribute('src'),

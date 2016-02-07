@@ -31,11 +31,13 @@
           action: "open"  key: ".js"  contents: ""
         })
       ))
-      (message.listen "code-editor/run/compiled" (lambda [compiled]
-        (message.send "code-editor/compiled" {
-          action: "open"  key: ".js"  contents: compiled.js
-        })
-      ))
+      (using [js-beautify]
+        (message.listen "code-editor/run/compiled" (lambda [compiled]
+          (message.send "code-editor/compiled" {
+            action: "open"  key: ".js"  contents: (window.js_beautify compiled.js)
+          })
+        ))
+      )
 
       (stateful.morph! console)
       (console.update! {log: (lambda
