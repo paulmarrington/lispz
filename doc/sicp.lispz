@@ -1,0 +1,62 @@
+(define "Building Abstractions with Procedures" =>
+  (define "1.1  The Elements of Programming" =>
+    (it "1.1.1  Expressions" =>
+      ((expect 486).toBe 486)
+      ((expect (+ 137 349)).toBe 486)
+      ((expect (- 1000 334)).toBe 666)
+      ((expect (* 5 99)).toBe 495)
+      ((expect (+ 2.7 10).toBe 12.7))
+
+      ((expect (+ 21 35 12 7)).toBe 75)
+      ((expect (* 25 4 12).toBe 1200)
+
+      ((expect (+ (* 3 5) (- 10 6))).toBe 19)
+      ((expect (+ (* 3 (+ (* 2 4) (+ 3 5))) (+ (- 10 7) 6))).toBe 57)
+      ((expect
+        (+ (* 3
+            (+ (* 2 4)
+               (+ 3 5)))
+         (+ (- 10 7)
+            6))
+      ).toBe 57)
+    )
+    (it "1.1.2  Naming and the Environment" =>
+      (ref size 2) ## scheme uses define instead of ref
+      ((expect size).toBe 2)
+
+      (ref pi 3.14159  radius 10) ## lispz allows more than one
+      ((expect (* pi (* radius radius))).toBe 314.159)
+      (ref circumference (* 2 pi radius))
+      ((expect circumference).toBe 62.8318)
+    )
+    (it "1.1.4  Compound Procedures" =>
+      ## In Scheme it is (define (square x) (* x x))
+      (ref square (lambda [x] (return (* x x))))
+
+      ((expect (square 21)).toBe 441)
+      ((expect (square (+ 2 5))).toBe 49)
+      ((expect (square (square 3))).toBe 81)
+
+      ## return values are not implicit in Lispz
+      (ref sum-of-squares (lambda [x y]
+        (return (+ (square x) (square y)))
+      ))
+      ((expect (sum-of-squares 3 4)).toBe 25)
+
+      ## Note the short-form (=> @) === (lambda [@] @)
+      (ref f (=> (return (sum-of-squares (+ @ 1) (* @ 2)))))
+      ((expect (f 5)).toBe 136)
+    )
+    (it "1.1.6  Conditional Expressions and Predicates" =>
+      (ref abs (lambda [x]
+        (cond ((> x 0) (return x))
+              ((= x 0) (return 0))
+              ((< x 0) (return (- x)))
+        )
+      ))
+
+        ((expect (abs(-33))).toBe 33)
+        ((expect (abs(22))).toBe 22)
+        ((expect (abs(0))).toBe 0)
+    )
+)
