@@ -284,8 +284,9 @@ var lispz = function() {
     el.addEventListener("error", function(evt) { console.log(evt); when_loaded(evt) })
     el.setAttribute("src", lispz_base_path+uri)
   }
-  window.onerror = function() {
-    if (!execution_context.length) return false;
+  window.onerror = function(msg, url, line, column, error) {
+    console.trace(arguments)
+    if (!execution_context.length) return true;
     var context = execution_context
     execution_context = []
     var name = context[0].name
@@ -294,7 +295,9 @@ var lispz = function() {
     } else {
       lispz.log_execution_context(context)
     }
+    return true
   }
+  window.addEventListener("error", window.onerror)
   other_window_onload = window.onload
   window.onload = function() {
     window.onload = null

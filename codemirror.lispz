@@ -427,6 +427,16 @@
   (scriptTypes.push! {matches: '/^text\/lispz$/' mode: "lispz"})
   (mimeModes.update! {htmlmixed: mode})
 
+  (ref compile (lambda [cm name]
+    (ref mode     (cm.getModeAt (cm.getCursor)))
+    (ref compiler (get compilers mode.name))
+    (cond (not compiler) (return false))
+    (cond (cm.somethingSelected) (ref source (cm.doc.getSelection))
+          (else)                 (ref source (cm.doc.getValue))
+    )
+    (return (compiler.compile source name))
+  ))
+
   (ref run_selection (lambda [cm]
     (ref mode     (cm.getModeAt (cm.getCursor)))
     (ref compiler (get compilers mode.name))
@@ -435,13 +445,13 @@
     (cond (cm.somethingSelected) (ref source (cm.doc.getSelection))
           (else)                 (ref source (cm.doc.getValue))
     )
-    (message.send "code-editor/run/prepare" { name source })
-    (ref js (compiler.compile source name))
+    (message.send "code-editor/run/prepare" { source })
+    (ref js (compiler.compile source ))
     (message.send "code-editor/run/compiled" {
-      name source js: (compilers.to-string js)
+      source js: (compilers.to-string js)
     })
     (message.send "code-editor/run/output" {
-      name source output: (compilers.run js)
+      source output: (compilers.run js)
     })
   ))
   ### spec: codemirror >> Compiling Code

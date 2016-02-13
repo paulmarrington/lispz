@@ -13,7 +13,7 @@
   <script type=text/lispz>
     (ref tag (stateful.morph! this))
     (tag.update! {menu: "codemirror/menu" heading: (or opts.heading "Edit")})
-    (tag.on "mount" (lambda (using  [codemirror message dict]
+    (tag.on "mount" (lambda (using  [codemirror message dict events]
       (ref filename-key (+ "code-editor/" opts.name "/filename"))
       (ref cm (codemirror.open tag._id tag.tags.panel.body))
 
@@ -32,9 +32,11 @@
       (cond filename (delay 100
         (open {key: filename contents: (localStorage.getItem contents-key)})
       ))
-      (cm.on "change" (lambda
-        (localStorage.setItem contents-key (cm.getValue))
-      ))
+      (cm.on "change" (events.delay 1000 (lambda
+        (ref contents (cm.getValue) name opts.name)
+        (localStorage.setItem contents-key contents)
+        (message.send (+ "code-editor/change/" name) { contents name })
+      )))
 
       (ref append (lambda [packet]
         (cm.replaceRange packet.contents (CodeMirror.Pos (cm.lastLine)))

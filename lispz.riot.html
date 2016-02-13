@@ -23,7 +23,7 @@
         (message.send "code-editor/code"
           {action: "open" key: ".lispz" contents: ""})
       )
-      (message.listen "code-editor/run/prepare" (lambda [compiled]
+      (ref clear_result_panels (=>
         (message.send  "code-editor/output" {
           action: "open"  key: ".txt"  contents: ""
         })
@@ -31,10 +31,20 @@
           action: "open"  key: ".js"  contents: ""
         })
       ))
-      (using [js-beautify]
+      (message.listen "code-editor/run/prepare" clear_result_panels)
+      (using [js-beautify compilers]
+        (ref compiler (get compilers "lispz"))
         (message.listen "code-editor/run/compiled" (lambda [compiled]
           (message.send "code-editor/compiled" {
             action: "open"  key: ".js"  contents: (window.js_beautify compiled.js)
+          })
+        ))
+        (message.listen "code-editor/change/code" (lambda [source]
+          (clear_result_panels)
+          (ref compiled (compiler.compile source.contents "Scratchpad"))
+          (ref js (window.js_beautify (compiled.join "")))
+          (message.send "code-editor/compiled" {
+            action: "open"  key: ".js"  contents: js
           })
         ))
       )
