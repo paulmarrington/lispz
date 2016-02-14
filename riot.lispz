@@ -26,17 +26,6 @@ Riot components have the extension *.riot.html*. They are loaded from the HTML f
       </page-content>
     </bootstrap>
 
-For riot component files that rely on other files for sub-components, Start the file with a comment, the word *using* and a space separated list of component paths. In the example below, *panel* is a tag defined in the bootstrap component file.
-
-    <!-- using bootstrap -->
-    <code-editor>
-      <panel height={ opts.height } heading={ heading } menu={ menu } owner={ _id }>
-        <div name=wrapper class=wrapper></div>
-      </panel>
-      <style>code-editor .wrapper {...}</style>
-      <script type=text/lispz>(ref tag this) ...</script>
-    </code-editor>
-
 Riot uses plain JavaScript inside {} as a templating solution. The *opts* dictionary matches the attributes when the custom tag is referenced. Any inner tag with a *name* or *id* attribute can be referenced by the same name. Each component has a unique *_id*.
 
 Styles are global (unlike *true* web components). This is easily overcome using explicit name-spacing as above.
@@ -59,27 +48,21 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
     (return (+ "tag" context.name " from " context.uri))
   ))
   (ref load (promise [name uri] (execution-context {context: "riot.load" name uri}
-    (ref load-tags-used (lambda [tags]
-      (ref new-tags (tags.filter (lambda [tag]
-        (return-if (get processed-tags tag) false)
-        (processed-tags.update! tag true)
-        (return true)
+    (ref usings (lambda [source]
+      (ref raw-tags (source.match '/<[^>\s]+[^>]*?class=[\'\"]riot[\s\'\"]/g'))
+      (ref tags ((or raw-tags [[]]).map (=> (return (last ('/^<(\S*)/'.exec @))))))
+      (ref new-tags (tags.filter (=>
+        (ref processed (get processed-tags @))
+        (processed-tags.update! @ true)
+        (return (not processed))
       )))
       (ref loaded (promise.all (new-tags.map (lambda [tag] (return (load tag))))))
       (when loaded (resolve-promise))
     ))
-    (ref usings (lambda [source]
-      (ref tags ('/<!--\s*using\s*(.*?)\s*-->/'.exec source))
-      (cond
-        tags   (load-tags-used ((last tags).split '/\s+/'))
-        (else) (resolve-promise)
-      )
-    ))
+
     (ref retrieve-and-compile (lambda
       (ref url (or uri (+ (name.toLowerCase) ".riot.html")))
-      (when (net.http-get url) [tag]
-        (usings (compile tag))
-      )
+      (when (net.http-get url) [tag] (usings (compile tag)))
     )))
 
     (cond
@@ -96,6 +79,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
     ]]))
   ))
 
+  (ref mount (lambda [tags] (riot.mount.apply riot arguments)))
 
   ### spec: riot >> Trigger Display Changes
     Given a component context called *tag*, it is possible to change context
@@ -183,8 +167,15 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
   (when  loaded (using [compilers]
     (stateful.morph! riot.parsers.js)
     (add-execution-context-logger "riot.compile" (lambda [context error-args]
+      (return (+ context.url " -- source: " context.source))
     ))
     (riot.parsers.js.update! {lispz:
+      (lambda [source options url]
+        (execution-context { context: "riot.compile" url options source }
+          (ref js (compilers.lispz.compile source "riot-tags"))
+          (return (compilers.to-string js))
+        )
+      )
     })
     (ref riot-elements (slice (document.getElementsByClassName "riot")))
     (ref load-all (promise.all (riot-elements.map (lambda [element]
