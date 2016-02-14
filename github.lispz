@@ -117,7 +117,7 @@
         (cond
           (get store entry.ext)
             (do
-              (ref ext-list get store entry.ext)
+              (ref ext-list (get store entry.ext))
               (ext-list.push! "\n\n/* " entry.path " */\n" entry.code)
             )
           store.copy
@@ -129,12 +129,12 @@
   ))
   ## Given a file type, save the concatenated source contents
   (ref save-store (promise [target-repo store name ext comment]
-    (ref contents ((get store ext).join ""))
+    (ref contents ((get store ext).array!.join ""))
     (return (write target-repo (+ "ext/" name "." ext) contents comment))
   ))
   ## copy files identified as needed as-is
   (ref copy-store (lambda [target-repo store comment]
-    (return (promise.all (store.copies.map (lambda [entry]
+    (return (promise.all (store.copies.array!.map (lambda [entry]
       (return (write target-repo entry.path entry.code comment))
     ))))
   ))
