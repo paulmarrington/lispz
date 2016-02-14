@@ -12,7 +12,7 @@ var lispz = function() {
     '###+(?:.|\\r*\\n)*?###+|' + '##\\s+.*?\\r*\\n|',
   tkre = new RegExp('(' + stringRE + '\\' + delims + "|[^\\s" + not_delims + "]+)", 'g'),
   opens = new Set("({["), closes = new Set(")}]"), ast_to_js, slice = [].slice,
-  contexts = [], location = {line:0, name:"boot"}, globals = {}, load_index = 0,
+  location = {line:0, name:"boot"}, globals = {}, load_index = 0,
   synonyms = {and:'&&', or:'||', is:'===', isnt:'!=='},
   jsify = function(atom) {
     if (/^'\/(?:.|\n)*'$/.test(atom)) return atom.slice(1, -1).replace(/\n/g, '\\n')
@@ -67,9 +67,7 @@ var lispz = function() {
       var expand = function(ast) {
         return (ast instanceof Array) ? ast.map(expand) : args[ast] || ast
       }
-      contexts.unshift(name)
       var js = ast_to_js(expand((body.length > 1) ? ["list"].concat(body) : body[0]))
-      contexts.shift()
       return js
     }
     return "/*macro "+name+"*/"
@@ -285,16 +283,12 @@ var lispz = function() {
     el.setAttribute("src", lispz_base_path+uri)
   }
   window.onerror = function(msg, url, line, column, error) {
-    console.trace(arguments)
+    console.debug(arguments)
     if (!execution_context.length) return true;
     var context = execution_context
     execution_context = []
     var name = context[0].name
-    if (contexts[name]) {
-      return contexts[name].call(lispz, context, arguments)
-    } else {
-      lispz.log_execution_context(context)
-    }
+    lispz.log_execution_context(context, arguments)
     return true
   }
   window.addEventListener("error", window.onerror)

@@ -55,7 +55,10 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
 
   (ref processed-tags (stateful {}))
 
-  (ref load (promise [name uri] (execution-context {context: "riot" name uri}
+  (add-execution-context-logger "riot.load" (lambda [context error-args]
+    (return (+ "tag" context.name " from " context.uri))
+  ))
+  (ref load (promise [name uri] (execution-context {context: "riot.load" name uri}
     (ref load-tags-used (lambda [tags]
       (ref new-tags (tags.filter (lambda [tag]
         (return-if (get processed-tags tag) false)
@@ -180,8 +183,11 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
   (promise.failed loaded (export {build}))
   (when  loaded (using [compilers]
     (stateful.morph! riot.parsers.js)
+    (add-execution-context-logger "riot.compile" (lambda [context error-args]
+      (return (+ "source: " context.source))
+    ))
     (riot.parsers.js.update! {lispz:
-      (lambda [source] (execution-context {context: "riot-c" source}
+      (lambda [source] (execution-context {context: "riot.compile" source}
         (ref js (compilers.lispz.compile source "riot-tags"))
         (return (compilers.to-string js))
       ))

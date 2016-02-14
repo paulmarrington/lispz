@@ -39,7 +39,7 @@
             action: "open"  key: ".js"  contents: (window.js_beautify compiled.js)
           })
         ))
-        (message.listen "code-editor/change/code" (lambda [source]
+        (message.listen "code-editor/code/change" (lambda [source]
           (clear_result_panels)
           (ref compiled (compiler.compile source.contents "Scratchpad"))
           (ref js (window.js_beautify (compiled.join "")))

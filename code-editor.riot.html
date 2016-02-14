@@ -35,7 +35,7 @@
       (cm.on "change" (events.delay 1000 (lambda
         (ref contents (cm.getValue) name opts.name)
         (localStorage.setItem contents-key contents)
-        (message.send (+ "code-editor/change/" name) { contents name })
+        (message.send (+ "code-editor/" name "/change") { contents name })
       )))
 
       (ref append (lambda [packet]

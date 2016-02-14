@@ -54,17 +54,13 @@
 ###
 (macro => [*body] (lambda [@] *body))
 
-### spec: basic >> Execution Context
-###
-(macro execution-context [context *body]
-  (lispz.execution-context.push context)
-  'try{' *body '}'
-  'finally {' (lispz.execution-context.pop) '}'
-)
+### spec: basic >> functions >> Variable Parameter Lists
+    Like JavaScript, lispz function definitions specify a fixed number of arguments.
+    To gain access to the full list of arguments, use *arguments, with a starting index.
 
-### spec: basic >> do
+        (lambda [type rest] (console.log type "=" (*arguments 1)))
 ###
-(macro do [*body] *body)
+(macro *arguments [from] (lispz.slice.call arguments from))
 
 ### spec: basic >> References
   @TODO
@@ -77,6 +73,54 @@
 (macro global [name value]
   (#join '' 'lispz.globals.' name '=' value)
   (macro name [&params] (#join '' 'lispz.globals.' name '(' &params ')')))
+
+### spec: basics -- Conditionals
+    Lispz boasts only one traditional conditional operator plus a number of
+    macros for conditional assignment and function return. The operator,
+    cond takes pairs of lists where the first is the condition and the
+    second the action. Evaluation stops after the first true condition.
+    There is an else macro that evaluates to true to catch situations not
+    covered specifically. The default? function takes a value and returns
+    it if it exists and is not empty, otherwise it returns the default value.
+
+        (cond (is v "One")  (return 1)
+              (not v)       (return 0)
+              (else)        (return -1)
+        )
+
+    Because conditionals work with list pairs, it is necessary to wrap the actions
+    if there are more than one. Lispz provides 'do' for that.
+
+        (cond ok? (do (finish-up) (return true)))
+
+    The standard conditional tests (< > <= >=, etc) are augmented by aliases (is isnt not).
+###
+(macro cond [*list]
+  (#join '' 'switch(false){case !' (#pairs *list  ':' ';break;case !') '}')
+)
+(macro else [] 'true')
+
+### spec: basics >> Operators ###
+(macro not [value] (#join '' '!(' value ')'))
+(macro instance-of [type obj] (#join '' '(' obj ' instanceof ' type ')'))
+
+### spec: basic >> Execution Context
+###
+(macro execution-context [context *body]
+  (lispz.execution-context.push context)
+  'try{' *body '}'
+  'finally {' (lispz.execution-context.pop) '}'
+)
+### spec: basic >> Execution Context >> Adding Loggers
+###
+(global add-execution-context-logger (lambda [name logger]
+  (cond (not lispz.execution-context.loggers) return)
+  (lispz.execution-context.loggers.update! name logger)
+))
+
+### spec: basic >> do
+###
+(macro do [*body] *body)
 
 ### spec: basic >> Functions
 
@@ -135,40 +179,6 @@
 ### spec: conditional processing ###
 (macro empty? [list] (not list.length))
 (macro defined? [field] (!== (typeof field) "undefined"))
-
-### spec: basics -- Conditionals
-    Lispz boasts only one traditional conditional operator plus a number of
-    macros for conditional assignment and function return. The operator,
-    cond takes pairs of lists where the first is the condition and the
-    second the action. Evaluation stops after the first true condition.
-    There is an else macro that evaluates to true to catch situations not
-    covered specifically. The default? function takes a value and returns
-    it if it exists and is not empty, otherwise it returns the default value.
-
-        (cond (is v "One")  (return 1)
-              (not v)       (return 0)
-              (else)        (return -1)
-        )
-
-    Because conditionals work with list pairs, it is necessary to wrap the actions
-    if there are more than one. Lispz provides 'do' for that.
-
-        (cond ok? (do (finish-up) (return true)))
-
-    The standard conditional tests (< > <= >=, etc) are augmented by aliases (is isnt not).
-###
-(macro cond [*list]
-  (#join '' 'switch(false){case !' (#pairs *list  ':' ';break;case !') '}')
-)
-(macro else [] 'true')
-
-### spec: basic >> functions >> Variable Parameter Lists
-    Like JavaScript, lispz function definitions specify a fixed number of arguments.
-    To gain access to the full list of arguments, use *arguments, with a starting index.
-
-        (lambda [type rest] (console.log type "=" (*arguments 1)))
-###
-(macro *arguments [from] (lispz.slice.call arguments from))
 
 ### spec: basics >> functions >> Return if ...
     While return-if has aconditional pair. If the first is true the second is returned.
@@ -331,10 +341,6 @@
   (ref link (lambda [arg func] (return (func arg))))
   (return (lambdas.reduce link null))
 ))
-
-### spec: basics >> Operators ###
-(macro not [value] (#join '' '!(' value ')'))
-(macro instance-of [type obj] (#join '' '(' obj ' instanceof ' type ')'))
 
 ### spec: basics >> Iteration
 
