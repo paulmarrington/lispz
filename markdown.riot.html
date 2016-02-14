@@ -1,5 +1,5 @@
 <markdown>
-  <panel height={ opts.height } heading={ heading } menu={ menu } owner={ _id }>
+  <panel height={ opts.height } heading={ heading } menu={ menu } owner={ _riot_id }>
     <div name=wrapper class=wrapper></div>
   </panel>
   <style>
@@ -14,7 +14,7 @@
 
       ## hamburget menu lists a history of pages followed
       (ref history (stateful))
-      (message.listen (+ tag._id "/" markdown-menu-action) (lambda [packet]
+      (message.listen (+ tag._riot_id "/" markdown-menu-action) (lambda [packet]
         (load packet.item.href) ## load an item selected from the hamburger
       ))
       (ref open (lambda [md from]

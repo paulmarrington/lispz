@@ -96,7 +96,6 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
     ]]))
   ))
 
-  (ref mount (lambda [tags] (riot.mount.apply riot argument)))
 
   ### spec: riot >> Trigger Display Changes
     Given a component context called *tag*, it is possible to change context
@@ -184,13 +183,8 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
   (when  loaded (using [compilers]
     (stateful.morph! riot.parsers.js)
     (add-execution-context-logger "riot.compile" (lambda [context error-args]
-      (return (+ "source: " context.source))
     ))
     (riot.parsers.js.update! {lispz:
-      (lambda [source] (execution-context {context: "riot.compile" source}
-        (ref js (compilers.lispz.compile source "riot-tags"))
-        (return (compilers.to-string js))
-      ))
     })
     (ref riot-elements (slice (document.getElementsByClassName "riot")))
     (ref load-all (promise.all (riot-elements.map (lambda [element]

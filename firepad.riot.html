@@ -1,7 +1,7 @@
 <firepad>
   <!-- <firepad name=pad-name [db=default]> -->
   <panel height={ opts.height } heading={ heading }
-      menu={ menu } owner={ _id }>
+      menu={ menu } owner={ _riot_id }>
     <div name=wrapper class=wrapper></div>
   </panel>
   <style>
@@ -26,7 +26,7 @@
     (tag.update! {heading: "Edit"})
     (tag.on "mount" (lambda (using  [firebase codemirror firepad message dict]
       (ref filename-key (+ "codemirror/" opts.name "/filename"))
-      (ref cm (codemirror.open tag._id tag.tags.panel.wrapper))
+      (ref cm (codemirror.open tag._riot_id tag.tags.panel.wrapper))
       (tag.update! {pad: (stateful {
         setText:  (lambda [contents] (cm.setValue contents))
         on-ready: (lambda [act] (act))

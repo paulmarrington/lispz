@@ -44,7 +44,7 @@ A sample using riot with bootstrap:
           { title: "Item 1" topic:     "Test menu item 1" }
           { title: "Item 2" children:  [[{ title: "Item 2a" }]] }
         ]] (=>))
-        (message.listen (+ tag.\_id "Test menu item 1") (lambda [data]
+        (message.listen (+ tag.\_riot_id "Test menu item 1") (lambda [data]
           (console.log data)
         ))
       )

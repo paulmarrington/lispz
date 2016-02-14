@@ -1,6 +1,6 @@
 <code-editor>
   <panel height={ opts.height } heading={ heading }
-      menu={ menu } owner={ _id }>
+      menu={ menu } owner={ _riot_id }>
   </panel>
   <style>
     code-editor .CodeMirror {
@@ -15,7 +15,7 @@
     (tag.update! {menu: "codemirror/menu" heading: (or opts.heading "Edit")})
     (tag.on "mount" (lambda (using  [codemirror message dict events]
       (ref filename-key (+ "code-editor/" opts.name "/filename"))
-      (ref cm (codemirror.open tag._id tag.tags.panel.body))
+      (ref cm (codemirror.open tag._riot_id tag.tags.panel.body))
 
       (ref open (lambda [packet]
         (codemirror.set-mode cm packet.key)
