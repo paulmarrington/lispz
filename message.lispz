@@ -106,16 +106,16 @@
   (ref send (lambda [address packet]
     (execution-context {context: "message.send" address packet}
       ## take a copy so that it does not change during processing
-      (ref result null)
+      (ref result (stateful))
       (ref sender (lambda [recipient]
-        (ref result (recipient.listener=> packet))
+        (result.update! "contents" (recipient.listener=> packet))
         (cond recipient.once (remove recipient))
       ))
       (ref envelopes (exchange address))
       (envelopes.array!.forEach sender)
       (ref secondaries (or (get links address) [[]]))
       (list.for-each secondaries.array! (lambda [link] (send link packet)))
-    ) (return (promised result))
+    ) (return (promised result.contents))
   ))
 
   (ref expect (lambda [address listener=>]

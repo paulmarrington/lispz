@@ -55,8 +55,8 @@
         )
       ))
 
-        ((expect (abs(-33))).toBe 33)
-        ((expect (abs(22))).toBe 22)
-        ((expect (abs(0))).toBe 0)
+      ((expect (abs(-33))).toBe 33)
+      ((expect (abs(22))).toBe 22)
+      ((expect (abs(0))).toBe 0)
     )
 )

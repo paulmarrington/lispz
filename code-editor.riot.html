@@ -1,6 +1,7 @@
 <code-editor>
   <panel height={ opts.height } heading={ heading }
       menu={ menu } owner={ _riot_id }>
+      <yield to=buttons><yield></yield>
   </panel>
   <style>
     code-editor .CodeMirror {
@@ -42,7 +43,9 @@
         (cm.replaceRange packet.contents (CodeMirror.Pos (cm.lastLine)))
       ))
 
-      (message.dispatch (+ "code-editor/" opts.name) { open append })
+      (ref contents (=> (return (cm.getValue))))
+
+      (message.dispatch (+ "code-editor/" opts.name) { open append contents })
     )))
   </script>
 </code-editor>

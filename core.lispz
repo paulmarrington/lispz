@@ -564,30 +564,38 @@ In summary we have
 4. Developer view needs to change from sequential perspective
 5. Being selective about errors and exceptions is painful. Once a promise is resolved it cannot change. Any promises that rely on a rejected promise will themselves be rejected causing a cascade of failures. To be selective you need to wrap a promise catch in an outer promise and resolve the outer one if the error itself can be resolved. Don't forget to resolve the outer promise with the data from the inner one when there are no errors.
 ###
-(global promise {})
-(macro promise [params *body] (lambda params
-  (ref #callbacks (stateful {ok: (lambda []) fail: (lambda [])}))
-  (ref #pledge (new Promise (lambda [ok fail] (#callbacks.update! {ok fail}))))
-  (ref resolve-promise (lambda [] (#callbacks.ok.apply null (*arguments 0))))
-  (ref reject-promise (lambda [err] (#callbacks.fail err)))
-  ## (#join '' 'try{' *body '}catch(err){' (reject-promise err) '}')
-  *body
-  (return #pledge)
-))
-(macro promise.deferred [params *body] (lambda []
-  (ref args (*arguments 0))
-  (ref #callbacks (stateful {ok: (lambda []) fail: (lambda [])}))
-  (ref #pledge (stateful.morph!
-    (new Promise (lambda [ok fail] (#callbacks.update! {ok fail})))
+(global #prepare-promise (lambda
+  (ref callbacks (stateful {ok: (lambda []) fail: (lambda [])}))
+  (ref pledge (stateful.morph!
+    (new Promise (lambda [ok fail] (callbacks.update! {ok fail})))
   ))
-  (#pledge.update! {deferred: (lambda []
-    (ref resolve-promise (lambda [] (#callbacks.ok.apply null args)))
-    (ref reject-promise (lambda [err] (#callbacks.fail err)))
-    ## (#join '' 'try{' *body '}catch(err){' (reject-promise err) '}')
-    *body
-  )})
-  (return #pledge)
+  (ref resolve (lambda [] (callbacks.ok.apply null (*arguments 0))))
+  (ref reject (lambda [err] (callbacks.fail err)))
+  (return { pledge resolve reject })
 ))
+(global #action-promise (lambda [context promise-body]
+  (#join '' 'try{' (promise-body context.resolve context.reject) '}catch(err){'
+    (lispz.log-execution-context) ';' (reject-promise err) '}'
+  )
+  (return context.pledge)
+))
+(global #deferred-promise (lambda [promise-body]
+  (ref context (#prepare-promise))
+  (context.pledge.update! {deferred: (lambda
+    (return (#action-promise context promise-body))
+  )})
+  (return context.pledge)
+))
+(global promise {})
+
+(macro promise [params *body] (lambda params
+  (return (#action-promise (#prepare-promise)
+    (lambda [resolve-promise reject-promise] *body)
+  ))
+))
+(macro promise.deferred [params *body]
+  (return #deferred-promise (lambda [resolve-promise reject-promise] *body))
+)
 (macro promise.callback [params *body] (promise params
   (ref callback (lambda [err result]
     (return-if err (reject-promise err))
@@ -604,9 +612,7 @@ In summary we have
 
 (global #resolve-deferred (lambda [pledge]
   (cond pledge.deferred (do
-    (ref deferred pledge.deferred)
-    (delete pledge.deferred)
-    (deferred)
+    (ref deferred pledge.deferred) (delete pledge.deferred) (deferred)
   ))
   (return pledge)
 ))
