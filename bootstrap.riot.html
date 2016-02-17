@@ -24,6 +24,7 @@
   <div class="panel { context }" name=outer>
     <div class=panel-heading if={ opts.heading } name=heading
          ><bars-menu align=right name={ opts.menu } owner={ opts.owner }/>
+         <yield from=buttons/>
          <h3 class=panel-title>{ opts.heading }</h3></div>
     <div class="panel-body" name=body><yield/></div>
     <div class=panel-footer if={ opts.footer } name=footer
@@ -140,6 +141,56 @@
     ))
   </script>
 </modal>
+
+<buttons>
+  <!-- ### spec: bootstrap >> Buttons >> Button Bar
+  A simplistic component to group buttons into a tool-bar.
+  ### -->
+  <div class="btn-toolbar { right: opts.align === 'right' }" role="toolbar">
+    <yield/>
+  </div>
+  <style>
+    buttons > div.right { float: right; margin-right: 1em }
+  </style>
+  <script type=text/lispz> </script>
+</buttons>
+
+<button-group>
+  <!-- ### spec: bootstrap >> Buttons >> Button Groups
+  Buttons in a group are pushed together without separating space.
+  It is a good visual effect for radio buttons.
+  ### -->
+  <div class="btn-group" role="group"> <yield/> </div>
+  <style> </style>
+  <script type=text/lispz> </script>
+</button-group>
+
+<push-button>
+  <!-- ### spec: bootstrap >> Buttons >> Push Button
+  Standard button representation - a button you push to take an action.
+
+  When a button is pressed it will send a message with a topic of
+  _button-name/on_ and _button-name/off_.
+
+  Attributes are
+
+  * **name**: Name of button - used to send the push messages
+  * **type**: [*default|primary|success|info|warning|danger]
+  * **size**: [*default|lg|sm|xs]
+  ### -->
+  <button class=
+    "btn btn-{ opts.type || 'default' } btn-{ opts.size || 'default' }"
+    name=button>
+    <yield/>
+  </button>
+  <style></style>
+  <script type=text/lispz>
+    (ref tag (stateful.morph! this))
+    (tag.on "mount" (=> (using [message]
+      (tag.button.addEventListener "click" (=> (message.send opts.name {})))
+    )))
+  </script>
+</push-button>
 
 <bars-menu>
   <!-- ### spec: bootstrap >> Menus
