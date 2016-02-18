@@ -101,8 +101,9 @@ var lispz = function() {
   run_ast = function(ast) {
     var context = { context:"run", location: location }
     execution_context.push(context)
-    return ast.map(function(code) { eval(context.code = code) })
+    var results = ast.map(function(code) { eval(context.code = code) })
     execution_context.pop()
+    return results
   },
   immediate_to_js = function() {
     return run_ast(slice.call(arguments))

@@ -638,16 +638,23 @@ In summary we have
 
 ### spec: Basic >> Keeping Count
 ###
-(global countdown (lambda [from by]
-  (ref from (stateful from))
+(global counter! (lambda
+  (ref count (stateful {to: 0}))
+  (return (lambda
+    (count.update! "to" (+ count.to 1))
+    (return count.to)
+  ))
+))
+(global countdown! (lambda [from by]
+  (ref count (stateful {from}))
   (return (lambda []
-    (from.update! (- from by))
-    (return (<= from 0))
+    (from.update! "from" (- count.from by))
+    (return (<= count.from 0))
   ))
 ))
 
 (global wait-for (promise [test max-ms]
-  (ref timed-out (countdown (or max-ms 5000) 10))
+  (ref timed-out (countdown! (or max-ms 5000) 10))
   (ref waiter (lambda []
     (cond
       (test)      (return (resolve-promise))

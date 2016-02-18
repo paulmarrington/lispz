@@ -34,6 +34,14 @@
       ))
       (message.listen "code-editor/run/prepare" clear_result_panels)
 
+      (ref log (lambda [output]
+        (message.send "code-editor/output" {
+          action:   "append"
+          key:      ".text"
+          contents: (+ output "\n")
+        })
+      ))
+
       (using [js-beautify compilers]
         (ref compiler (get compilers "lispz"))
         (message.listen "code-editor/run/compiled" (lambda [compiled]
@@ -52,19 +60,13 @@
         (message.listen "code/run" (=>
           (when (message.send "code-editor/code" {action: "contents"}) [source]
             (ref compiled (compile-and-show source))
-            (compilers.run compiled)
+            (((compilers.run compiled).filter (=> (return @))).forEach (=> (log @)))
           )
         ))
       )
 
       (stateful.morph! console)
-      (console.update! {log: (lambda
-        (message.send "code-editor/output" {
-          action:   "append"
-          key:      ".text"
-          contents: (+ ((*arguments 0).join " ") "\n")
-        })
-      )})
+      (console.update! {log: (=> (log (+ ((*arguments 0).join " "))))})
       (message.listen "code-editor/run/output" (lambda [run]))
     )
   </script>
