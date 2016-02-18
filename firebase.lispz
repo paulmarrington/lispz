@@ -15,7 +15,7 @@
 
   (ref attach (lambda [collection db]
     (ref uri (get databases (or db "default")))
-    (return-if (not uri) null)
+    (cond (not uri) (return null))
     (return (new Firebase (+ uri "/" (encode collection))))
   ))
 

@@ -72,7 +72,8 @@
 ###
 (macro global [name value]
   (#join '' 'lispz.globals.' name '=' value)
-  (macro name [&params] (#join '' 'lispz.globals.' name '(' &params ')')))
+  (macro name [&params] (#join '' 'lispz.globals.' name '(' &params ')'))
+)
 
 ### spec: basics -- Conditionals
     Lispz boasts only one traditional conditional operator plus a number of
@@ -180,13 +181,6 @@
 (macro empty? [list] (not list.length))
 (macro defined? [field] (!== (typeof field) "undefined"))
 
-### spec: basics >> functions >> Return if ...
-    While return-if has aconditional pair. If the first is true the second is returned.
-
-        (return-if (not calculated-value) default-value)
-###
-(macro return-if [test value] (cond test (return value)))
-
 ### spec: basic >> state -- Stateful Containers
   State is the elephant in the room - particularly in the functional programming paradigm.
   When you have state that can be changed from outside, then any function that reads from it
@@ -249,7 +243,7 @@
 
 (macro #set! [to-change! value] (#join '' to-change! '=' value ';'))
 (ref #morph! (lambda [obj]
-  (return-if obj.update! obj) ## in case we have done it before
+  (cond obj.update! (return obj)) ## in case we have done it before
   (Object.defineProperties obj {
     update!: {value: (lambda [update]
       (ref context this)
@@ -470,7 +464,7 @@ it calls (reject-promise err).
 
     (ref read (promise [addr param1 param2]
       (http-get (+ addr "?&" param1 "&" param2) (lambda [err response]
-        (return-if err (reject-promise err))
+        (cond err (return (reject-promise err)))
         (resolve-promise response)
       ))
     ))
@@ -482,7 +476,7 @@ create a file object that may or may not ever ask a server for the contents.
     (ref file {
       read: (promise.deferred [addr param1 param2]
         (http-get (+ addr "?&" param1 "&" param2) (lambda [err response]
-          (return-if err (reject-promise err))
+          (cond err (return (reject-promise err)))
           (resolve-promise response)
         ))
       )
@@ -575,7 +569,8 @@ In summary we have
 ))
 (global #action-promise (lambda [context promise-body]
   (#join '' 'try{' (promise-body context.resolve context.reject) '}catch(err){'
-    (lispz.log-execution-context) ';' (reject-promise err) '}'
+    (lispz.log-execution-context lispz.execution-context [[]])
+    (context.reject err) '}'
   )
   (return context.pledge)
 ))
@@ -598,7 +593,7 @@ In summary we have
 )
 (macro promise.callback [params *body] (promise params
   (ref callback (lambda [err result]
-    (return-if err (reject-promise err))
+    (cond err (return (reject-promise err)))
     (resolve-promise result)
   ))
   *body
@@ -606,7 +601,7 @@ In summary we have
 (global promise.resolved (promise [pact] (resolve-promise pact)))
 
 (global promised (lambda [pledge]
-  (return-if (and pledge pledge.then) pledge)
+  (cond (and pledge pledge.then) (return pledge))
   (return (promise.resolved pledge))
 ))
 
@@ -629,7 +624,7 @@ In summary we have
 )
 (global promise.chain (lambda []
   (ref chain-link (lambda [input functions]
-    (return-if (not functions.length) (promised input))
+    (cond (not functions.length) (return (promised input)))
     (ref pledge (promised ((first functions) input)))
     (when pledge [output] (chain-link output (rest functions)))
   ))

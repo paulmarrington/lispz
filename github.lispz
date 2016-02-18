@@ -39,12 +39,12 @@
     (repo.github.read repo.branch path callback)
   ))
   (ref update (lambda [repo]
-    (return-if (is repo.branch repo.username) (promise.resolved))
+    (cond (is repo.branch repo.username) (return (promise.resolved)))
     (ref branch-name (or repo.username "master"))
     (return (branch repo branch-name))
   ))
   (ref write (promise.callback [repo path contents comment]
-    (return-if (not contents.length) (promise.resolved))
+    (cond (not contents.length) (return promise.resolved))
     (ref encoded (unescape (encodeURIComponent contents)))
     (repo.github.write repo.branch path encoded comment callback)
   ))
@@ -57,7 +57,7 @@
   (ref preprocess (lambda [path code]
     (ref ext (last (path.split ".")))
     (ref preprocessor (get preprocessors ext))
-    (return-if (not preprocessor) {path ext code})
+    (cond (not preprocessor) (return {path ext code}))
     (return (preprocessor path code))
   ))
   ## Build and save a dependency list

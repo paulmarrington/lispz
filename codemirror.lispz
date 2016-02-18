@@ -308,9 +308,9 @@
     auto_complete: (lambda [cm]
       (ref not-only (lambda
         (ref result (CodeMirror.hint.anyword.apply null arguments))
-        (return-if (isnt result.list.length 1) result)
+        (cond (isnt result.list.length 1) (return result))
         (ref size (- result.to.ch result.from.ch))
-        (return-if (isnt (do (get list 0).length) size) result)
+        (cond (isnt (do (get list 0).length) size) (return result))
         (return ((stateful.morph! result) {list: [[]]}))
       ))
     )
@@ -372,7 +372,7 @@
     (ref try-mode (lambda [exts]
       (ref ext (exts.join "."))
       (return? (get mode-extensions ext))
-      (return-if (get CodeMirror.modes ext) ext)
+      (cond (get CodeMirror.modes ext) (return ext))
       (return false)
     ))
     (ref mode ((lambda

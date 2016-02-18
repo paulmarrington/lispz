@@ -123,7 +123,8 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
   (macro riot-tag [modules *body]
     'var tag=this;'
     (using modules
-      (#join '' 'try {' *body '}catch(err){console.error(tag,err)}')
+      ## (#join '' 'try {' *body '}catch(err){console.error(tag,err)}')
+      *body
     )
   )
 

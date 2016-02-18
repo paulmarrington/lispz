@@ -77,7 +77,7 @@
 
   (ref ready (promise [address]
     (ref envelopes (exchange address))
-    (return-if (length envelopes.array!) (promise.resolved))
+    (cond (length envelopes.array!) (return (promise.resolved)))
     (expecting.update! address resolve-promise)
   ))
 
@@ -133,7 +133,7 @@
     (listen address (lambda [packet]
       (execution-context {context: "dispatch" address packet}
         (ref action (get actions packet.action))
-        (return-if (not action) (promise.resolved false))
+        (cond (not action) (return (promise.resolved false)))
       ) (return (action packet))
     ))
   ))
