@@ -1,7 +1,7 @@
 <firepad>
   <!-- <firepad name=pad-name [db=default]> -->
   <panel height={ opts.height } heading={ heading }
-      menu={ menu } owner={ _id }>
+      menu={ menu } owner={ _riot_id }>
     <div name=wrapper class=wrapper></div>
   </panel>
   <style>
@@ -21,48 +21,49 @@
     div.firepad-toolbar { margin-top: -25px; }
   </style>
   <script type=text/lispz>
-    (ref tag (stateful.morph! this))
-    (tag.update! {menu: "CodeMirror-menu"})
-    (tag.update! {heading: "Edit"})
-    (tag.on "mount" (lambda [] (using  [firebase codemirror firepad message dict]
-      (ref filename-key (+ "codemirror/" opts.name "/filename"))
-      (ref cm (codemirror.open tag._id tag.tags.panel.wrapper))
-      (tag.update! {pad: (stateful {
-        setText:  (lambda [contents] (cm.setValue contents))
-        on-ready: (lambda [act] (act))
-      })})
+    (riot-tag
+      (tag.update! {menu: "codemirror/menu"})
+      (tag.update! {heading: "Edit"})
+      (mount-tag-using [firebase codemirror firepad message dict]
+        (ref filename-key (+ "codemirror/" opts.name "/filename"))
+        (ref cm (codemirror.open tag._riot_id tag.tags.panel.wrapper))
+        (tag.update! {pad: (stateful {
+          setText:  (lambda [contents] (cm.setValue contents))
+          on-ready: (lambda [act] (act))
+        })})
 
-      (ref open (lambda [packet]
-        (codemirror.set-mode cm packet.key)
-        (tag.update! {heading: (last (packet.key.split "/"))})
-        (localStorage.setItem filename-key packet.key)
-        (cond packet.contents (tag.pad.setText packet.contents))
-        (tag.update)
-      ))
+        (ref open (lambda [packet]
+          (codemirror.set-mode cm packet.key)
+          (tag.update! {heading: (last (packet.key.split "/"))})
+          (localStorage.setItem filename-key packet.key)
+          (cond packet.contents (tag.pad.setText packet.contents))
+          (tag.update)
+        ))
 
-      (cond
-        opts.db (do
-          (ref db (firebase.attach (+ "firepads/" opts.name) opts.db))
-          (tag.update! {pad: (stateful.morph (Firepad.fromCodeMirror db cm
-            {richTextShortcuts: false richTextToolbar: false}
-          ))})
-          (tag.pad.update! {on-ready: (lambda [act] (tag.pad.on "ready" act))})
-        ) (else) (do ## without firebase we need to persist locally
-          (ref contents-key (+ "codemirror/" opts.name "/contents"))
-          (ref filename (localStorage.getItem filename-key))
-          (cond filename (delay 100
-            (open {key:      filename
-                   contents: (localStorage.getItem contents-key)})
-          ))
-          (cm.on "change" (lambda []
-            (localStorage.setItem contents-key (cm.getValue))
-          ))
+        (cond
+          opts.db (do
+            (ref db (firebase.attach (+ "firepads/" opts.name) opts.db))
+            (tag.update! {pad: (stateful.morph (Firepad.fromCodeMirror db cm
+              {richTextShortcuts: false richTextToolbar: false}
+            ))})
+            (tag.pad.update! {on-ready: (lambda [act] (tag.pad.on "ready" act))})
+          ) (else) (do ## without firebase we need to persist locally
+            (ref contents-key (+ "codemirror/" opts.name "/contents"))
+            (ref filename (localStorage.getItem filename-key))
+            (cond filename (delay 100
+              (open {key:      filename
+                     contents: (localStorage.getItem contents-key)})
+            ))
+            (cm.on "change" (lambda
+              (localStorage.setItem contents-key (cm.getValue))
+            ))
+          )
         )
-      )
 
-      (tag.pad.on-ready (lambda []
-        (message.dispatch (+ "firepad/" opts.name) { open })
-      ))
-    )))
+        (tag.pad.on-ready (lambda
+          (message.dispatch (+ "firepad/" opts.name) { open })
+        ))
+      )
+    )
   </script>
 </firepad>

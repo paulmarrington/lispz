@@ -15,13 +15,13 @@
 
   (ref attach (lambda [collection db]
     (ref uri (get databases (or db "default")))
-    (return-if (not uri) null)
+    (cond (not uri) (return null))
     (return (new Firebase (+ uri "/" (encode collection))))
   ))
 
   (ref loaded (net.script "https://cdn.firebase.com/js/client/2.2.9/firebase.js"
-    (lambda [] (return window.Firebase))
+    (lambda (return window.Firebase))
   ))
   (when  loaded (export {register attach databases}))
-  ## (catch loaded (export {}))
+  ## (promise.failed loaded (export {}))
 )

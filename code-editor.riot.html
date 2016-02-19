@@ -1,6 +1,7 @@
 <code-editor>
   <panel height={ opts.height } heading={ heading }
-      menu={ menu } owner={ _id }>
+      menu={ menu } owner={ _riot_id }>
+      <yield to=buttons><yield></yield>
   </panel>
   <style>
     code-editor .CodeMirror {
@@ -11,36 +12,41 @@
     }
   </style>
   <script type=text/lispz>
-    (ref tag (stateful.morph! this))
-    (tag.update! {menu: "CodeMirror-menu" heading: (or opts.heading "Edit")})
-    (tag.on "mount" (lambda [] (using  [codemirror message dict]
-      (ref filename-key (+ "code-editor/" opts.name "/filename"))
-      (ref cm (codemirror.open tag._id tag.tags.panel.body))
+    (riot-tag
+      (tag.update! {menu: "codemirror/menu" heading: (or opts.heading "Edit")})
+      (mount-tag-using [codemirror message dict events]
+        (ref filename-key (+ "code-editor/" opts.name "/filename"))
+        (ref cm (codemirror.open tag._riot_id tag.tags.panel.body))
 
-      (ref open (lambda [packet]
-        (codemirror.set-mode cm packet.key)
-        (cond (isnt (get packet.key 0) ".") (do
-          (tag.update! {heading: (last (packet.key.split "/"))})
-          (tag.update)
+        (ref open (lambda [packet]
+          (codemirror.set-mode cm packet.key)
+          (cond (isnt (get packet.key 0) ".") (do
+            (tag.update! {heading: (last (packet.key.split "/"))})
+            (tag.update)
+          ))
+          (localStorage.setItem filename-key packet.key)
+          (cm.setValue packet.contents)
         ))
-        (localStorage.setItem filename-key packet.key)
-        (cm.setValue packet.contents)
-      ))
 
-      (ref contents-key (+ "code-editor/" opts.name "/contents"))
-      (ref filename (localStorage.getItem filename-key))
-      (cond filename (delay 100
-        (open {key: filename contents: (localStorage.getItem contents-key)})
-      ))
-      (cm.on "change" (lambda []
-        (localStorage.setItem contents-key (cm.getValue))
-      ))
+        (ref contents-key (+ "code-editor/" opts.name "/contents"))
+        (ref filename (localStorage.getItem filename-key))
+        (cond filename (delay 100
+          (open {key: filename contents: (localStorage.getItem contents-key)})
+        ))
+        (cm.on "change" (events.delay 1000 (lambda
+          (ref contents (cm.getValue) name opts.name)
+          (localStorage.setItem contents-key contents)
+          (message.send (+ "code-editor/" name "/change") { contents name })
+        )))
 
-      (ref append (lambda [packet]
-        (cm.replaceRange packet.contents (CodeMirror.Pos (cm.lastLine)))
-      ))
+        (ref append (lambda [packet]
+          (cm.replaceRange packet.contents (CodeMirror.Pos (cm.lastLine)))
+        ))
 
-      (message.dispatch (+ "code-editor/" opts.name) { open append })
-    )))
+        (ref contents (=> (return (cm.getValue))))
+
+        (message.dispatch (+ "code-editor/" opts.name) { open append contents })
+      )
+    )
   </script>
 </code-editor>

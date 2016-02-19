@@ -1,25 +1,25 @@
 (using [github riot list]
-  (ref manifest (lambda []
-    (ref text [["CACHE MANIFEST"]])
-    (lispz.manifest.forEach (lambda [uri] (text.push uri)))
-    (text.push "NETWORK:" "*")
-    (return (text.join "\n"))
+  (ref manifest (lambda
+    (ref text (statefularray![["CACHE MANIFEST"]]))
+    (lispz.manifest.forEach (lambda [uri] (text.push! uri)))
+    (text.push! "NETWORK:" "*")
+    (return (text.array!.join "\n"))
   ))
   ### Package Lispz for distribution ###
   (ref package (lambda [lispz-repo]
     (ref read-file (github.read.bind null lispz-repo))
 
     (ref group (lambda [files]
-      (ref modules [[]] riots [[]])
+      (ref modules (stateful.array!) riots (stateful.array!))
       (files.forEach (lambda [entry]
         (return? (not (is "file" entry.type)))
         (ref parts (entry.name.split "."))
         (cond
-          (is (last parts) "lispz")                  (modules.push (first parts))
-          (is ((slice parts -2).join ".") "riot.html") (riots.push (first parts))
+          (is (last parts) "lispz")                  (modules.push! (first parts))
+          (is ((slice parts -2).join ".") "riot.html") (riots.push! (first parts))
         )
       ))
-      (return (promise.resolved {modules riots}))
+      (return (promise.resolved {modules.array! riots.array!}))
     ))
     (ref build-modules (promise [names]
       (ref load-module (lambda [name]
@@ -46,8 +46,8 @@
     ))
 
     (ref update-mode (github.update lispz-repo))
-    (ref lispz-js    (when update-mode [] (return (read-file "lispz.js"))))
-    (ref listing     (when update-mode []  (return (github.list-dir lispz-repo ""))))
+    (ref lispz-js    (when update-mode (return (read-file "lispz.js"))))
+    (ref listing     (when update-mode (return (github.list-dir lispz-repo ""))))
     (ref groups      (when listing [files] (return (group files))))
     (ref modules     (when groups [files]  (return  (build-modules files.modules))))
     (ref riots       (when groups [files]  (return  (build-riots files.riots))))

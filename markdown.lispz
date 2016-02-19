@@ -42,8 +42,8 @@
     (return html)
   ))
 
-  (ref loaded (net.script "ext/showdown.js" (lambda [] (return window.showdown))))
+  (ref loaded (net.script "ext/showdown.js" (lambda (return window.showdown))))
 
-  (when  loaded [] (export {build compile}))
-  (catch loaded [] (export {build}))
+  (when  loaded (export {build compile}))
+  (promise.failed loaded (export {build}))
 )

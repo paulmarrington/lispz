@@ -12,6 +12,13 @@ Named references are created using 'ref'. The reference exists only inside the m
 
 A named reference can include almost any character with the exception of brackets and quotes (and three hashes together :).
 
+## Nothing but Fillers
+A comma creates an atom. Atoms in _lispz.empty_words_ are ignored. This means that you can put commas in the code for visual separation and they won't effect the compile. By default, _to_, _on_, _in_ and _of_ are also empty words.
+
+    (list.contains 12 in my-list)
+
+If you want to use empty words or add new ones, update _lispz.empty_words_.
+
 ## Functional List
 In Lispz the round brackets are reserved for function-like calls - being traditional functions and lisp macros. The atom immediately after the open brace is the name of the function or macro.
 

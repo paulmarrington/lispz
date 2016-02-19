@@ -27,16 +27,15 @@ Riot components have the extension *.riot.html*. They are loaded from the HTML f
 
 For riot component files that rely on other files for sub-components, Start the file with a comment, the word *using* and a space separated list of component paths. In the example below, *panel* is a tag defined in the bootstrap component file.
 
-    <!-- using bootstrap -->
     <code-editor>
-      <panel height={ opts.height } heading={ heading } menu={ menu } owner={ \_id }>
+      <panel height={ opts.height } heading={ heading } menu={ menu } owner={ \_riot_id }>
         <div name=wrapper class=wrapper></div>
       </panel>
       <style>code-editor .wrapper {...}</style>
       <script type=text/lispz>(var tag this) ...</script>
     </code-editor>
 
-Riot uses plain JavaScript inside {} as a templating solution. The *opts* dictionary matches the attributes when the custom tag is referenced. Any inner tag with a *name* or *id* attribute can be referenced by the same name. Each component has a unique *_id*.
+Riot uses plain JavaScript inside {} as a templating solution. The *opts* dictionary matches the attributes when the custom tag is referenced. Any inner tag with a *name* or *id* attribute can be referenced by the same name. Each component has a unique *_riot_id*.
 
 Styles are global (unlike *true* web components). This is easily overcome using explicit name-spacing as above.
 

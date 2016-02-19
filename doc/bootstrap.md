@@ -6,7 +6,6 @@ There is a difference of scope between bootstrap and riot. Bootstrap is designed
 
 Any single page application that is going to use bootstrap to simplify the UI wraps the contents inside the body with a bootstrap tag. Use an inner page-content tag to allow for fluid layouts - those that change as the window changes size.
 
-    <!-- using bootstrap code-editor -->
     <body>
       <bootstrap class=riot>
         <page-content fluid=true>
@@ -28,7 +27,7 @@ To select a theme, send a message to _bootstrap/change-theme_ with the name of t
 Riot components can include a _style_ section. If you preface all entries with the name of the component then you have effectively name-spaced your css.
 
     <code-editor>
-      <panel height={ opts.height } heading={ heading } menu={ menu } owner={ \_id }>
+      <panel height={ opts.height } heading={ heading } menu={ menu } owner={ \_riot_id }>
         <div name=wrapper class=wrapper></div>
       </panel>
       <style>

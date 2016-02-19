@@ -39,9 +39,9 @@
     (net.css (+ "ext/bootstrap-" theme ".css"))
   ))
 
-  (ref loaded (net.script "ext/bootstrap.js" (lambda [] (return (($).modal)))))
-  (when  loaded [] (export {build themes}))
-  (catch loaded [] (export {build}))
+  (ref loaded (net.script "ext/bootstrap.js" (lambda (return (($).modal)))))
+  (when  loaded (export {build themes}))
+  (promise.failed loaded (export {build}))
 )
 
 ### spec: Bootstrap >> Bootstrap/RIOT/Lispz Combo
@@ -54,7 +54,6 @@
 
   Any single page application that is going to use bootstrap to simplify the UI wraps the contents inside the body with a bootstrap tag. Use an inner page-content tag to allow for fluid layouts - those that change as the window changes size.
 
-      <!-- using bootstrap code-editor --&gt;
       <body>
         <bootstrap class=riot>
           <page-content fluid=true>
@@ -83,7 +82,7 @@
   name-spaced your css.
 
       <code-editor>
-        <panel height={ opts.height } heading={ heading } menu={ menu } owner={ _id }>
+        <panel height={ opts.height } heading={ heading } menu={ menu } owner={ _riot_id }>
           <div name=wrapper class=wrapper></div>
         </panel>
         <style>

@@ -6,5 +6,5 @@
       ]]}
     ]]))
   ))
-  (lispz.script "ext/diff_match_patch.js" (lambda [] (export { build })))
+  (lispz.script "ext/diff_match_patch.js" (lambda (export { build })))
 )

@@ -3,7 +3,7 @@
     (cond (not check) (return (callback)))
     (ref initialised (wait-for check max-ms))
     (when  initialised [] (callback))
-    (catch initialised [] (debug (+ uri "didn't load")))
+    (promise.failed initialised [] (debug (+ uri "didn't load")))
   ))))
 
   (ref css (lambda [uri]

@@ -1,6 +1,6 @@
 (using [net github]
   (ref build (lambda [target-repo built=>]
-    (return (github.build target-repo "js-beautify" [[
+    (return (github.build target-repo "js_beautify" [[
       {repo: "beautify-web/js-beautify" files: [[
         {base: "js/lib" include: '/^beautify.js$/'}
       ]]}

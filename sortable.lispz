@@ -28,5 +28,5 @@
   ))
   (ref loaded (net.script "ext/sortable.js" (lambda [] (return window.Sortable))))
   (when  loaded [] (export {build create}))
-  (catch loaded [] (export {build}))
+  (promise.failed loaded [] (export {build}))
 )

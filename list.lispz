@@ -95,7 +95,7 @@ All the JavaScript list processing functions (every, filter, forEach, ...) are a
 
 To see if an array contains an element, use 'in':
 
-    (return-if (12 in list) "has dozen")
+    (cond (12 in list) (return "has dozen"))
 ###
 ### spec: lists >> flatten - Flattening Lists of Lists
 ###
@@ -122,4 +122,10 @@ To see if an array contains an element, use 'in':
 ###
 (ref contains (lambda [substr str] (return (isnt -1 (str .indexOf substr)))))
 
-(export {flatten for-each contains})
+### spec: lists >> sort
+###
+(ref reverse (lambda [list]
+  (return ((slice list).reverse))
+))
+
+(export {flatten for-each contains reverse})

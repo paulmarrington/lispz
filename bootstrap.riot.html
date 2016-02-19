@@ -24,6 +24,7 @@
   <div class="panel { context }" name=outer>
     <div class=panel-heading if={ opts.heading } name=heading
          ><bars-menu align=right name={ opts.menu } owner={ opts.owner }/>
+         <yield from=buttons/>
          <h3 class=panel-title>{ opts.heading }</h3></div>
     <div class="panel-body" name=body><yield/></div>
     <div class=panel-footer if={ opts.footer } name=footer
@@ -52,17 +53,18 @@
   </style>
 
   <script type=text/lispz>
-    (ref tag (stateful.morph! this))
-    (tag.update! {context: (+ "panel-" (or opts.context "default"))})
-    (tag.on "mount" (lambda [] (using [dom]
-      (cond opts.height (do
-        (ref px opts.height)
-        (cond (is "%" (opts.height.slice -1))
-          (ref px (/ (* window.innerHeight (opts.height.slice 0 -1)) 100))
-        )
-        (dom.style! tag.outer {height: (+ px "px")})
-      ))
-    )))
+    (riot-tag
+      (tag.update! {context: (+ "panel-" (or opts.context "default"))})
+      (mount-tag-using [dom]
+        (cond opts.height (do
+          (ref px opts.height)
+          (cond (is "%" (opts.height.slice -1))
+            (ref px (/ (* window.innerHeight (opts.height.slice 0 -1)) 100))
+          )
+          (dom.style! tag.outer {height: (+ px "px")})
+        ))
+      )
+    )
   </script>
 </panel>
 
@@ -73,14 +75,13 @@
     panels .panel-title { cursor: move; }
   </style>
   <script type=text/lispz>
-    (ref tag (stateful.morph! this))
-    (tag.on "mount" (lambda [] (using [sortable]
+    (riot-tag (mount-tag-using [sortable]
       (sortable.create tag.root (or opts.name "sortable") {
         draggable:  ".draggable"
         handle:     ".panel-title"
         dataIdAttr: "name"
       })
-    )))
+    ))
   </script>
 </panels>
 
@@ -100,7 +101,7 @@
 
       <modal name=login-dialog title="..." buttons="Log in,Cancel">...</modal>
       ....
-      (message.listen "login-dialog/Log in/button" (lambda [] ...)
+      (message.listen "login-dialog/Log in/button" (lambda ...)
 
         <modal name=n [title=heading-text] [buttons=a,*b]>
           modal-body-content-html
@@ -127,18 +128,69 @@
   <style>
   </style>
   <script type=text/lispz>
-    (ref tag (stateful.morph! this))
-    (cond opts.buttons (do
-      (tag.update! {buttons: [[]]})
-      ((opts.buttons.split ",").forEach (lambda [title]
-        (ref primary (is "*" (first title))  type "default")
-        (cond primary (do (ref type "primary") (title.shift)))
-        (ref name title)
-        (tag.buttons.push { title type name })
+    (riot-tag (using [dom]
+      (cond opts.buttons (do
+        (ref buttons (stateful.array!))
+        (tag.update! {buttons: buttons.array!})
+        ((opts.buttons.split ",").forEach (lambda [title]
+          (ref primary (is "*" (first title))  type "default")
+          (cond primary (do (ref type "primary") (title.shift)))
+          (ref name title)
+          (buttons.push! { title type name })
+        ))
       ))
     ))
   </script>
 </modal>
+
+<buttons>
+  <!-- ### spec: bootstrap >> Buttons >> Button Bar
+  A simplistic component to group buttons into a tool-bar.
+  ### -->
+  <div class="btn-toolbar { right: opts.align === 'right' }" role="toolbar">
+    <yield/>
+  </div>
+  <style>
+    buttons > div.right { float: right; margin-right: 1em }
+  </style>
+  <script type=text/lispz> </script>
+</buttons>
+
+<button-group>
+  <!-- ### spec: bootstrap >> Buttons >> Button Groups
+  Buttons in a group are pushed together without separating space.
+  It is a good visual effect for radio buttons.
+  ### -->
+  <div class="btn-group" role="group"> <yield/> </div>
+  <style> </style>
+  <script type=text/lispz> </script>
+</button-group>
+
+<push-button>
+  <!-- ### spec: bootstrap >> Buttons >> Push Button
+  Standard button representation - a button you push to take an action.
+
+  When a button is pressed it will send a message with a topic of
+  _button-name/on_ and _button-name/off_.
+
+  Attributes are
+
+  * **name**: Name of button - used to send the push messages
+  * **type**: [*default|primary|success|info|warning|danger]
+  * **size**: [*default|lg|sm|xs]
+  ### -->
+  <button class=
+    "btn btn-{ opts.type || 'default' } btn-{ opts.size || 'default' }"
+    name=button>
+    <yield/>
+  </button>
+  <style></style>
+  <script type=text/lispz>
+    (riot-tag (mount-tag-using [message]
+      (tag.button.addEventListener "click" (=> (message.send opts.name {})))
+    ))
+  </script>
+</push-button>
 
 <bars-menu>
   <!-- ### spec: bootstrap >> Menus
@@ -151,7 +203,7 @@
   It is up to a listener to provide the data requested.
   Use this if the menu contents change between uses.
 
-        (message.listen "specifications-menu-open" (lambda []
+        (message.listen "specifications-menu/open" (lambda
           (ref menu (dict.map lispz_modules (lambda [title source]
             (return {topic: "specifications" title source})
           )))
@@ -169,7 +221,7 @@
   is displayed the menu will not be loaded.
   To fix this, wait for the menu to be ready.
 
-        (when (message.ready "specifications-menu") []
+        (when (message.ready "specifications-menu")
           (message.send "specifications-menu" nenu)
         )
   The menu itself is a dictionary with the format:
@@ -224,12 +276,11 @@
     bars-menu a.dropdown-toggle { cursor: pointer }
   </style>
   <script type=text/lispz>
-    (ref tag (stateful.morph! this))
-    (tag.on "mount" (lambda [] (using [message riot]
+    (riot-tag (mount-tag-using [message riot]
       (message.listen opts.name (lambda [items]
         (riot.update! tag {items root: (or items [[]])})
       ))
-      (($ tag.dropdown).on "show.bs.dropdown" (lambda []
+      (($ tag.dropdown).on "show.bs.dropdown" (lambda
         (message.send (+ opts.name "/open"))
         (riot.update! tag {items: tag.root})
       ))
@@ -243,7 +294,7 @@
           (ev.stopPropagation)
         ))
       )})
-    )))
+    ))
   </script>
 </bars-menu>
 
@@ -256,13 +307,12 @@
   ### -->
   <tree-component name=base/>
   <script type=text/lispz>
-    (ref tag (stateful.morph! this))
-    (using [message riot]
+    (riot-tag (using [message riot]
       (message.listen opts.name (lambda [items]
         (riot.update! tag {children: {base: {children: items}}})
         (tag.update) ## once more for luck
       ))
-    )
+    ))
   </script>
 </tree>
 
@@ -296,8 +346,7 @@
     }
   </style>
   <script type=text/lispz>
-    (ref tag (stateful.morph! this))
-    (using [message dict]
+    (riot-tag (using [message dict]
       (tag.on "update" (lambda [data]
         (cond (and opts.name tag.parent.children) (do
           (tag.update! {items: (get tag.parent.children opts.name "children")})
@@ -319,7 +368,7 @@
         ))
         (ev.stopPropagation)
       )})
-    )
+    ))
   </script>
 </tree-component>
 
@@ -354,18 +403,18 @@
     #sidebar.toggled { width: auto; padding-right: 15px; }
   </style>
   <script type=text/lispz>
-    (ref tag (stateful.morph! this)  hamburger (stateful.morph! tag.hamburger))
-    (using [message dom]
-      (hamburger.update: {onclick: (lambda []
+    (riot-tag (using [message dom]
+      (ref hamburger (stateful.morph! tag.hamburger))
+      (hamburger.update! {onclick: (lambda
         (tag.sidebar.classList.toggle "toggled")
         (delay 300 ## must be after slide action
-          (message.send "page-content-wrapper-padding" tag.sidebar.offsetWidth)
+          (message.send "dom/page-content-wrapper-padding" tag.sidebar.offsetWidth)
         )
       )})
-      (tag.on "mount" (delay 300
-        (message.send "page-content-wrapper-padding" tag.sidebar.offsetWidth)
+      (mount-tag-using [riot] (delay 300
+        (message.send "dom/page-content-wrapper-padding" tag.sidebar.offsetWidth)
       ))
-    )
+    ))
   </script>
 </sidebar>
 
@@ -382,12 +431,11 @@
     }
   </style>
   <script type=text/lispz>
-    (ref tag this)
-    (using [message dom]
-      (message.listen "page-content-wrapper-padding" (lambda [px]
+    (riot-tag (using [message dom]
+      (message.listen "dom/page-content-wrapper-padding" (lambda [px]
         (dom.style! tag.page-content-wrapper {paddingLeft: (+ px "px")})
       ))
-    )
+    ))
   </script>
 </page-content>
 
@@ -419,11 +467,10 @@
     }
   </style>
   <script type=text/lispz>
-    (ref tag (stateful.morph! this))
-    (using  [dom net jquery riot message bootstrap]
+    (riot-tag (using [dom net jquery riot message bootstrap]
       (dom.append! "head" (dom.element "meta"
         {name: "viewport" content: "width=device-width, initial-scale=1"}
       ))
-    )
+    ))
   </script>
 </bootstrap>
