@@ -5,73 +5,75 @@
   <style>
   </style>
   <script type=text/lispz>
-    (ref tag (stateful.morph! this))
-    (ref markdown-menu (+ "panel/markdown/" opts.name "/menu"))
-    (ref markdown-menu-action (+ markdown-menu "/action"))
-    (tag.update! {menu: markdown-menu heading: opts.heading})
-    (tag.on "mount" (lambda (using [markdown dom net message dict]
-      (ref contents-area tag.tags.panel.body)
+    (riot-tag
+      (ref tag (stateful.morph! this))
+      (ref markdown-menu (+ "panel/markdown/" opts.name "/menu"))
+      (ref markdown-menu-action (+ markdown-menu "/action"))
+      (tag.update! {menu: markdown-menu heading: opts.heading})
+      (mount-tag-using [markdown dom net message dict]
+        (ref contents-area tag.tags.panel.body)
 
-      ## hamburget menu lists a history of pages followed
-      (ref history (stateful))
-      (message.listen (+ tag._riot_id "/" markdown-menu-action) (lambda [packet]
-        (load packet.item.href) ## load an item selected from the hamburger
-      ))
-      (ref open (lambda [md from]
-        (ref from (or from ""))
-        (dom.inner-html! contents-area (markdown.compile md))
-        ((dom.select contents-area "a").forEach (lambda [link]
-          (ref href (link.getAttribute "href"))
-          (cond (not (net.external? href)) (do
-            (link.addEventListener "click" (lambda [evt]
-              (load (+ from href))
-              (evt.preventDefault)
+        ## hamburget menu lists a history of pages followed
+        (ref history (stateful))
+        (message.listen (+ tag._riot_id "/" markdown-menu-action) (lambda [packet]
+          (load packet.item.href) ## load an item selected from the hamburger
+        ))
+        (ref open (lambda [md from]
+          (ref from (or from ""))
+          (dom.inner-html! contents-area (markdown.compile md))
+          ((dom.select contents-area "a").forEach (lambda [link]
+            (ref href (link.getAttribute "href"))
+            (cond (not (net.external? href)) (do
+              (link.addEventListener "click" (lambda [evt]
+                (load (+ from href))
+                (evt.preventDefault)
+              ))
             ))
           ))
         ))
-      ))
-      (ref load (lambda [href]
-        ## Update the hamburger with the latest history update
-        (history.update! href true)
-        (ref menu (dict.map history (lambda [href]
-          (ref title (first ((net.url-actor href).split ".")))
-          (return {topic: markdown-menu-action href title})
-        )))
-        (message.send markdown-menu (menu.reverse))
-        ## then continue loading and displaying
-        (ref loaded (net.http-get href))
-        (when loaded [md] (open md (net.url-path href)))
-        (promise.failed loaded [err] (debug err))
-      ))
-      (cond opts.href (load opts.href))
+        (ref load (lambda [href]
+          ## Update the hamburger with the latest history update
+          (history.update! href true)
+          (ref menu (dict.map history (lambda [href]
+            (ref title (first ((net.url-actor href).split ".")))
+            (return {topic: markdown-menu-action href title})
+          )))
+          (message.send markdown-menu (menu.reverse))
+          ## then continue loading and displaying
+          (ref loaded (net.http-get href))
+          (when loaded [md] (open md (net.url-path href)))
+          (promise.failed loaded [err] (debug err))
+        ))
+        (cond opts.href (load opts.href))
 
-      ### spec: Markdown >> Panel
-        Showdown can take markdown text or url and display the
-        HTML created - including most Github extensions.
+        ### spec: Markdown >> Panel
+          Showdown can take markdown text or url and display the
+          HTML created - including most Github extensions.
 
-        In the component HTML section, define a showdown panel as follows.
-        The href is optional, and the panel will start empty without it.
+          In the component HTML section, define a showdown panel as follows.
+          The href is optional, and the panel will start empty without it.
 
-            &lt;showdown name=manual heading="Manual"
-              href="https://cdn.rawgit.com/paulmarrington/lispz/master/README.md"
-            /&gt;
+              &lt;showdown name=manual heading="Manual"
+                href="https://cdn.rawgit.com/paulmarrington/lispz/master/README.md"
+              /&gt;
 
-        To load a different markdown document from a server, send a message.
-        The final part of the address is the name attribute to the showdown
-        element above.
+          To load a different markdown document from a server, send a message.
+          The final part of the address is the name attribute to the showdown
+          element above.
 
-            (message.send "showdown/manual" {
-              action: "open"  href: "another-url"
-            })
+              (message.send "showdown/manual" {
+                action: "open"  href: "another-url"
+              })
 
-        Alternatively, pass the markdown directly in a string with the load
-        message.
+          Alternatively, pass the markdown directly in a string with the load
+          message.
 
-            (message.send "showdown/manual" {
-              action: "load"  markdown: "# Heading\n*This is markdown*"
-            })
-      ###
-      (message.dispatch (+ "showdown/" opts.name) { open load })
-    )))
+              (message.send "showdown/manual" {
+                action: "load"  markdown: "# Heading\n*This is markdown*"
+              })
+        ###
+        (message.dispatch (+ "showdown/" opts.name) { open load })
+      )
+    )
   </script>
 </markdown>

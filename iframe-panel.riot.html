@@ -17,27 +17,28 @@
     }
   </style>
   <script type=text/lispz>
-    (ref tag (stateful.morph! this))
-    (tag.update! {menu: opts.menu heading: opts.heading})
-    (tag.on "mount" (lambda (using [message]
-      (ref iframe tag.tags.panel.iframe)
-      (ref iframe-doc (or iframe.contentDocument iframe.contentWindow.document))
+    (riot-tag
+      (tag.update! {menu: opts.menu heading: opts.heading})
+      (mount-tag-using [message]
+        (ref iframe tag.tags.panel.iframe)
+        (ref iframe-doc (or iframe.contentDocument iframe.contentWindow.document))
 
-      (cond opts.src (iframe.setAttribute "src" opts.src))
+        (cond opts.src (iframe.setAttribute "src" opts.src))
 
-      (tag.update! {
-        open: (lambda [packet]
-          (tag.update! {heading: (or packet.heading tag.heading)})
-          (cond packet.menu (tag.update! {menu: packet.menu}))
-          (iframe-doc.open)
-          (iframe-doc.write (+
-            "<!DOCTYPE html><html><head><meta charset='utf-8'>"
-            (or packet.head "")"</head><body>" (or packet.body "") "</body></html>"
-          ))
-          (iframe-doc.close)
-          (tag.update)
-        )
-      })
-    )))
+        (tag.update! {
+          open: (lambda [packet]
+            (tag.update! {heading: (or packet.heading tag.heading)})
+            (cond packet.menu (tag.update! {menu: packet.menu}))
+            (iframe-doc.open)
+            (iframe-doc.write (+
+              "<!DOCTYPE html><html><head><meta charset='utf-8'>"
+              (or packet.head "")"</head><body>" (or packet.body "") "</body></html>"
+            ))
+            (iframe-doc.close)
+            (tag.update)
+          )
+        })
+      )
+    )
   </script>
 </iframe-panel>

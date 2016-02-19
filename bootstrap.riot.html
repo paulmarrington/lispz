@@ -53,17 +53,18 @@
   </style>
 
   <script type=text/lispz>
-    (ref tag (stateful.morph! this))
-    (tag.update! {context: (+ "panel-" (or opts.context "default"))})
-    (tag.on "mount" (lambda (using [dom]
-      (cond opts.height (do
-        (ref px opts.height)
-        (cond (is "%" (opts.height.slice -1))
-          (ref px (/ (* window.innerHeight (opts.height.slice 0 -1)) 100))
-        )
-        (dom.style! tag.outer {height: (+ px "px")})
-      ))
-    )))
+    (riot-tag
+      (tag.update! {context: (+ "panel-" (or opts.context "default"))})
+      (mount-tag-using [dom]
+        (cond opts.height (do
+          (ref px opts.height)
+          (cond (is "%" (opts.height.slice -1))
+            (ref px (/ (* window.innerHeight (opts.height.slice 0 -1)) 100))
+          )
+          (dom.style! tag.outer {height: (+ px "px")})
+        ))
+      )
+    )
   </script>
 </panel>
 
@@ -74,14 +75,13 @@
     panels .panel-title { cursor: move; }
   </style>
   <script type=text/lispz>
-    (ref tag (stateful.morph! this))
-    (tag.on "mount" (lambda (using [sortable]
+    (riot-tag (mount-tag-using [sortable]
       (sortable.create tag.root (or opts.name "sortable") {
         draggable:  ".draggable"
         handle:     ".panel-title"
         dataIdAttr: "name"
       })
-    )))
+    ))
   </script>
 </panels>
 
@@ -128,15 +128,16 @@
   <style>
   </style>
   <script type=text/lispz>
-    (ref tag (stateful.morph! this))
-    (cond opts.buttons (do
-      (ref buttons (stateful.array!))
-      (tag.update! {buttons: buttons.array!})
-      ((opts.buttons.split ",").forEach (lambda [title]
-        (ref primary (is "*" (first title))  type "default")
-        (cond primary (do (ref type "primary") (title.shift)))
-        (ref name title)
-        (buttons.push! { title type name })
+    (riot-tag (using [dom]
+      (cond opts.buttons (do
+        (ref buttons (stateful.array!))
+        (tag.update! {buttons: buttons.array!})
+        ((opts.buttons.split ",").forEach (lambda [title]
+          (ref primary (is "*" (first title))  type "default")
+          (cond primary (do (ref type "primary") (title.shift)))
+          (ref name title)
+          (buttons.push! { title type name })
+        ))
       ))
     ))
   </script>
@@ -185,10 +186,9 @@
   </button>
   <style></style>
   <script type=text/lispz>
-    (ref tag (stateful.morph! this))
-    (tag.on "mount" (=> (using [message]
+    (riot-tag (mount-tag-using [message]
       (tag.button.addEventListener "click" (=> (message.send opts.name {})))
-    )))
+    ))
   </script>
 </push-button>
 
@@ -276,8 +276,7 @@
     bars-menu a.dropdown-toggle { cursor: pointer }
   </style>
   <script type=text/lispz>
-    (ref tag (stateful.morph! this))
-    (tag.on "mount" (lambda (using [message riot]
+    (riot-tag (mount-tag-using [message riot]
       (message.listen opts.name (lambda [items]
         (riot.update! tag {items root: (or items [[]])})
       ))
@@ -295,7 +294,7 @@
           (ev.stopPropagation)
         ))
       )})
-    )))
+    ))
   </script>
 </bars-menu>
 
@@ -308,13 +307,12 @@
   ### -->
   <tree-component name=base/>
   <script type=text/lispz>
-    (ref tag (stateful.morph! this))
-    (using [message riot]
+    (riot-tag (using [message riot]
       (message.listen opts.name (lambda [items]
         (riot.update! tag {children: {base: {children: items}}})
         (tag.update) ## once more for luck
       ))
-    )
+    ))
   </script>
 </tree>
 
@@ -348,8 +346,7 @@
     }
   </style>
   <script type=text/lispz>
-    (ref tag (stateful.morph! this))
-    (using [message dict]
+    (riot-tag (using [message dict]
       (tag.on "update" (lambda [data]
         (cond (and opts.name tag.parent.children) (do
           (tag.update! {items: (get tag.parent.children opts.name "children")})
@@ -371,7 +368,7 @@
         ))
         (ev.stopPropagation)
       )})
-    )
+    ))
   </script>
 </tree-component>
 
@@ -406,18 +403,18 @@
     #sidebar.toggled { width: auto; padding-right: 15px; }
   </style>
   <script type=text/lispz>
-    (ref tag (stateful.morph! this)  hamburger (stateful.morph! tag.hamburger))
-    (using [message dom]
-      (hamburger.update: {onclick: (lambda
+    (riot-tag (using [message dom]
+      (ref hamburger (stateful.morph! tag.hamburger))
+      (hamburger.update! {onclick: (lambda
         (tag.sidebar.classList.toggle "toggled")
         (delay 300 ## must be after slide action
           (message.send "dom/page-content-wrapper-padding" tag.sidebar.offsetWidth)
         )
       )})
-      (tag.on "mount" (delay 300
+      (mount-tag-using [riot] (delay 300
         (message.send "dom/page-content-wrapper-padding" tag.sidebar.offsetWidth)
       ))
-    )
+    ))
   </script>
 </sidebar>
 
@@ -434,12 +431,11 @@
     }
   </style>
   <script type=text/lispz>
-    (ref tag this)
-    (using [message dom]
+    (riot-tag (using [message dom]
       (message.listen "dom/page-content-wrapper-padding" (lambda [px]
         (dom.style! tag.page-content-wrapper {paddingLeft: (+ px "px")})
       ))
-    )
+    ))
   </script>
 </page-content>
 
@@ -471,11 +467,10 @@
     }
   </style>
   <script type=text/lispz>
-    (ref tag (stateful.morph! this))
-    (using  [dom net jquery riot message bootstrap]
+    (riot-tag (using [dom net jquery riot message bootstrap]
       (dom.append! "head" (dom.element "meta"
         {name: "viewport" content: "width=device-width, initial-scale=1"}
       ))
-    )
+    ))
   </script>
 </bootstrap>

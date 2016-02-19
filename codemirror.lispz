@@ -450,9 +450,8 @@
     (message.send "code-editor/run/compiled" {
       source js: (compilers.to-string js)
     })
-    (message.send "code-editor/run/output" {
-      source output: (compilers.run js)
-    })
+    (ref output (((compilers.run js).filter (=> (return @))).join "\n"))
+    (message.send "code-editor/run/output" { source output })
   ))
   ### spec: codemirror >> Compiling Code
     To send the compiler output to anywhere but the console, use a copy of the

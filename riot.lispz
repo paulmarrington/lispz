@@ -120,13 +120,21 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
 
       @TODO example
   ###
-  (macro riot-tag [modules *body]
-    'var tag=this;'
-    (using modules
-      ## (#join '' 'try {' *body '}catch(err){console.error(tag,err)}')
+  (add-execution-context-logger "riot" (lambda [context error-args]
+    (return (+ "for <" context.node "/>"))
+  ))
+  (macro riot-tag [*body]
+    (ref tag (stateful.morph! this))
+    (execution-context {context: "riot" node: tag.root.nodeName tag}
       *body
     )
   )
+  ## modules must be on mount or mounting will happen before trigger is set
+  (macro mount-tag-using [modules *body] (tag.on "mount" (=> (using modules
+    (execution-context {context: "riot" node: tag.root.nodeName tag}
+      *body
+    )
+  ))))
 
   ### spec: async >> Events
     Events follow [the observer pattern](https://en.wikipedia.org/wiki/Observer_pattern). Lispz provides access to the light-weight version in Riot. If you use Riot for UI components, the custom tags are always observers. You don't need to use riot to make use of events. You can either create an observable or make any object in the system observable.
