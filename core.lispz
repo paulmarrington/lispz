@@ -568,8 +568,10 @@ In summary we have
   (return { pledge resolve reject })
 ))
 (global #action-promise (lambda [context promise-body]
+  (context.pledge.update! "execution-context" lispz.execution-context)
   (#join '' 'try{' (promise-body context.resolve context.reject) '}catch(err){'
-    (lispz.log-execution-context lispz.execution-context [[]])
+    (lispz.log-execution-context context.pledge.execution-context [["own-promise"]])
+    (lispz.log-execution-context lispz.execution-context [["in-promise"]])
     (context.reject err) '}'
   )
   (return context.pledge)
