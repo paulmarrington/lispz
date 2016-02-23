@@ -1,0 +1,11 @@
+  (ref build (lambda [target-repo]
+    (using [net github]
+      (return (github.build target-repo "axios" [[
+        {repo: "axios/axios" files: [[
+          {base: "dist" include: '/axios.js$/'}
+        ]]}
+      ]]))
+    )
+  ))
+
+  (lispz.script "ext/axios.js" (=> (export { build })))
