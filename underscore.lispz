@@ -1,0 +1,9 @@
+(using [net github]
+  (ref build (lambda [target-repo]
+    (ref sources [[{repo: "jashkenas/underscore" files:
+      [[{include: '/underscore.js$/'}]]}]])
+    (return (build target-repo "underscore" sources))
+  ))
+  (ref loaded (net.script "ext/underscore.js" (lambda (return window._))))
+  (when loaded (export { build }))
+)

@@ -47,11 +47,13 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
   (add-execution-context-logger "riot.load" (lambda [context error-args]
     (return (+ "tag" context.name " from " context.uri))
   ))
+  (ref child-tags (lambda [html]
+    (ref raw-tags (html.match '/<[^>\s]+[^>]*?class=[\'\"]riot[\s\'\"]/g'))
+    (return ((or raw-tags [[]]).map (=> (return (last ('/^<(\S*)/'.exec @))))))
+  ))
   (ref load (promise [name uri] (execution-context {context: "riot.load" name uri}
     (ref usings (lambda [source]
-      (ref raw-tags (source.match '/<[^>\s]+[^>]*?class=[\'\"]riot[\s\'\"]/g'))
-      (ref tags ((or raw-tags [[]]).map (=> (return (last ('/^<(\S*)/'.exec @))))))
-      (ref new-tags (tags.filter (=>
+      (ref new-tags ((child-tags source).filter (=>
         (ref processed (get processed-tags @))
         (processed-tags.update! @ true)
         (return (not processed))
@@ -193,7 +195,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
     ))))
     (when load-all
       (riot.mount "*")
-      (export {build compile load mount update!})
+      (export {build compile load mount update! child-tags})
     )
   ))
 )

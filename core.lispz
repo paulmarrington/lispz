@@ -559,16 +559,16 @@ In summary we have
 5. Being selective about errors and exceptions is painful. Once a promise is resolved it cannot change. Any promises that rely on a rejected promise will themselves be rejected causing a cascade of failures. To be selective you need to wrap a promise catch in an outer promise and resolve the outer one if the error itself can be resolved. Don't forget to resolve the outer promise with the data from the inner one when there are no errors.
 ###
 (global #prepare-promise (lambda
-  (ref callbacks (stateful {ok: (lambda []) fail: (lambda [])}))
+  (ref callbacks (stateful {ok: (lambda) fail: (lambda)}))
   (ref pledge (stateful.morph!
     (new Promise (lambda [ok fail] (callbacks.update! {ok fail})))
   ))
-  (ref resolve (lambda [] (callbacks.ok.apply null (*arguments 0))))
+  (ref resolve (lambda (callbacks.ok.apply null (*arguments 0))))
   (ref reject (lambda [err] (callbacks.fail err)))
   (return { pledge resolve reject })
 ))
 (global #action-promise (lambda [context promise-body]
-  (context.pledge.update! "execution-context" lispz.execution-context)
+  (context.pledge.update! "execution_context" lispz.execution-context)
   (#join '' 'try{' (promise-body context.resolve context.reject) '}catch(err){'
     (lispz.log-execution-context context.pledge.execution-context [["own-promise"]])
     (lispz.log-execution-context lispz.execution-context [["in-promise"]])
@@ -622,7 +622,9 @@ In summary we have
 )
 
 (using [list]
-  (global promise.all (lambda [] (return (Promise.all (list.flatten (*arguments 0))))))
+  (global promise.all (=>
+    (return (Promise.all (list.flatten (*arguments 0))))
+  ))
 )
 (global promise.chain (lambda []
   (ref chain-link (lambda [input functions]

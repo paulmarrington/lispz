@@ -19,29 +19,28 @@
           (is ((slice parts -2).join ".") "riot.html") (riots.push! (first parts))
         )
       ))
-      (return (promise.resolved {modules.array! riots.array!}))
+      (return (promise.resolved {modules: modules.array! riots: riots.array!}))
     ))
-    (ref build-modules (promise [names]
-      (ref load-module (lambda [name]
-        (ref uri (+ name ".lispz"))
-        (return (when (read-file uri) [text]
-          (ref contents (text.replace '/[\\"]/g' "\\$&"))
-          (ref contents (contents.replace '/\n/g' "\\n"))
-          (return [["\nlispz_modules['" name "']=\"" contents "\"\n"]])
-        ))
+    (ref load-module (lambda [name]
+      (ref uri (+ name ".lispz"))
+      (return (when (read-file uri) [text]
+        (ref contents (text.replace '/[\\"]/g' "\\$&"))
+        (ref contents (contents.replace '/\n/g' "\\n"))
+        (return [["\nlispz_modules['" name "']=\"" contents "\"\n"]])
       ))
+    ))
+    (ref build-modules (lambda [names]
       (return (promise.all (names.map load-module)))
     ))
-    (ref build-riots (promise [names]
-      (ref source [[]])
-      (ref load-riot (lambda [name]
-        (return (when (read-file (+ name ".riot.html")) [text]
-          (ref usings ('/<!--\s*using\s*.*?\s*-->/'.exec text))
-          (cond usings (ref usings ((first usings).replace "'" "")))
-          (return [["\n\n/*" name "*/\n\nlispz.tags['" name "']=function(){"
-            (riot.compile text true) "\nreturn '" usings  "'}\n"]])
-        ))
+
+    (ref load-riot (lambda [name]
+      (return (when (read-file (+ name ".riot.html")) [text]
+        (ref usings ((riot.child-tags text).join ","))
+        (return [["\n\n/*" name "*/\n\nlispz.tags['" name "']=function(){"
+          (riot.compile text true) "\nreturn '" usings  "'}\n"]])
       ))
+    ))
+    (ref build-riots (lambda [names]
       (return (promise.all (names.map load-riot)))
     ))
 
@@ -49,8 +48,8 @@
     (ref lispz-js    (when update-mode (return (read-file "lispz.js"))))
     (ref listing     (when update-mode (return (github.list-dir lispz-repo ""))))
     (ref groups      (when listing [files] (return (group files))))
-    (ref modules     (when groups [files]  (return  (build-modules files.modules))))
-    (ref riots       (when groups [files]  (return  (build-riots files.riots))))
+    (ref modules     (when groups  [files] (return (build-modules files.modules))))
+    (ref riots       (when groups  [files] (return (build-riots files.riots))))
 
     (ref all-loaded  (promise.all modules lispz-js riots))
 

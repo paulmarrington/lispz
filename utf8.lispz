@@ -1,0 +1,11 @@
+  (ref build (lambda [target-repo]
+    (using  [net github]
+      (return (github.build target-repo "utf8" [[
+        {repo: "utf8/utf8" files: [[
+          {base: "" include: '/utf8.js$/'}
+        ]]}
+      ]]))
+    )
+  ))
+
+  (lispz.script "ext/utf8.js" (lambda (export { build })))

@@ -1,0 +1,12 @@
+
+  (ref build (lambda [target-repo]
+    (using  [net github]
+      (return (github.build target-repo "base64" [[
+        {repo: "mathiasbynens/base64" files: [[
+          {base: "" include: '/base64.js$/'}
+        ]]}
+      ]]))
+    )
+  ))
+
+  (lispz.script "ext/base64.js" (lambda (export { build })))

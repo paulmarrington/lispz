@@ -1,4 +1,4 @@
-(using  [net dict list]
+(using  [net dict list axios base64 utf8]
   (ref version null)
   (ref cdn-uri (lambda [project version filepath]
     (return (+ "https://cdn.rawgit.com/" project "/" version "/" filepath))
@@ -214,7 +214,7 @@
   (ref build-github (lambda [target-repo]
     (ref sources [[
       {repo: "michael/github" files: [[
-        {include: '/github.js$/'}
+        {include: "/src/github.js$/"}
       ]]}
     ]])
     (return (build target-repo "github" sources))
