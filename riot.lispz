@@ -40,6 +40,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
     )
 ###
 (using  [jquery net github dict]
+  ## has side-effects as riot caches compile results
   (ref compile (lambda [html to-js] (return (riot.compile html to-js))))
 
   (ref processed-tags (stateful {}))
@@ -52,8 +53,8 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
     (return ((or raw-tags [[]]).map (=> (return (last ('/^<(\S*)/'.exec @))))))
   ))
   (ref load (promise [name uri] (execution-context {context: "riot.load" name uri}
-    (ref usings (lambda [source]
-      (ref new-tags ((child-tags source).filter (=>
+    (ref usings (lambda [tags]
+      (ref new-tags (tags.filter (=>
         (ref processed (get processed-tags @))
         (processed-tags.update! @ true)
         (return (not processed))
@@ -64,12 +65,13 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
 
     (ref retrieve-and-compile (lambda
       (ref url (or uri (+ (name.toLowerCase) ".riot.html")))
-      (when (net.http-get url) [tag] (usings (compile tag)))
+      (when (net.http-get url) [tag-html] (usings (child-tags (compile tag-html))))
     )))
 
+    (ref tag-def (get lispz.tags name))
     (cond
-      (get lispz.tags name) (usings ((get lispz.tags name)))
-      (else)                (retrieve-and-compile)
+      tag-def   (usings (tag-def)) ## tag-def returns inner tag list
+      (else)    (retrieve-and-compile)
     )
   ))
 
