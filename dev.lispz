@@ -35,9 +35,9 @@
 
     (ref load-riot (lambda [name]
       (return (when (read-file (+ name ".riot.html")) [text]
-        (ref usings ((riot.child-tags text).join ","))
+        (ref usings ((riot.child-tags text).join "','"))
         (return [["\n\n/*" name "*/\n\nlispz.tags['" name "']=function(){"
-          (riot.compile text true) "\nreturn '" usings  "'}\n"]])
+          (riot.compile text true) "\nreturn ['" usings "']}\n"]])
       ))
     ))
     (ref build-riots (lambda [names]
