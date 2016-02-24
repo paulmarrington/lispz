@@ -424,9 +424,9 @@ var lispz = function() {
 /*bootstrap*/
 
 lispz.tags['bootstrap']=function(){riot.tag2('panel', '<div class="panel {context}" name="outer"> <div class="panel-heading" if="{opts.heading}" name="heading"><bars-menu align="right" name="{opts.menu}" owner="{opts.owner}"></bars-menu> <yield from="buttons"></yield> <h3 class="panel-title">{opts.heading}</h3></div> <div class="panel-body" name="body"><yield></yield></div> <div class="panel-footer" if="{opts.footer}" name="footer">{opts.footer}</div> </div>', 'panel .panel { position: relative; } panel .panel-title { cursor: default; } panel .panel-body { position: absolute; top: 40px; bottom: 2px; left: 0; right: 2px; overflow: auto; } panel > .panel { margin-top: 10px; margin-bottom: 10px; }', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:132
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:133
 )//#core:111
 
 try{
@@ -434,7 +434,7 @@ tag.update_$_({'context':("panel-"+(opts.context||"default"))})//#riot-tags:2
 
 tag.on("mount",function(_t_){lispz.load("dom"//#core:388
 ,function(){var dom=lispz.cache["dom"];
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:138
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:139
 )//#core:111
 
 try{
@@ -452,7 +452,7 @@ dom.style_$_(tag.outer,{'height':(px+"px")})//#riot-tags:9
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:140
+}//#riot:141
 }
 //#core:389
 )}
@@ -461,21 +461,21 @@ lispz.execution_context.pop()
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:134
+}//#riot:135
 //#riot-tags:12
 //#riot-tags:13
 }, '{ }');
 
 riot.tag2('panels', '<yield></yield>', 'panels .panel-title { cursor: move; }', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:132
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:133
 )//#core:111
 
 try{
 tag.on("mount",function(_t_){lispz.load("sortable"//#core:388
 ,function(){var sortable=lispz.cache["sortable"];
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:138
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:139
 )//#core:111
 
 try{
@@ -484,7 +484,7 @@ sortable.create(tag.root,(opts.name||"sortable"),{'draggable':".draggable",'hand
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:140
+}//#riot:141
 }
 //#core:389
 )}
@@ -492,15 +492,15 @@ lispz.execution_context.pop()
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:134
+}//#riot:135
 //#riot-tags:7
 //#riot-tags:8
 });
 
 riot.tag2('modal', '<div class="modal fade" role="dialog" aria-labelledby="{opts.name}"> <div class="modal-dialog" role="document"> <div class="modal-content"> <div class="modal-header" if="{opts.title}"> <button type="button" class="close" data-dismiss="modal" aria-label="Close"> <span aria-hidden="true">&times;</span> </button> <h4 class="modal-title" id="{opts.name}">{opts.title}</h4> </div> <div class="modal-body"><yield></yield></div> <div class="modal-footer"> <button each="{buttons}" class="btn btn-{type}" name="{name}"> {title} </button> </div> </div> </div> </div>', '', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:132
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:133
 )//#core:111
 
 try{
@@ -529,7 +529,7 @@ buttons.push_$_({'title':title,'type':type,'name':name})//#riot-tags:9
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:134
+}//#riot:135
 //#riot-tags:12
 //#riot-tags:13
 }, '{ }');
@@ -541,15 +541,15 @@ riot.tag2('button-group', '<div class="btn-group" role="group"> <yield></yield> 
 });
 
 riot.tag2('push-button', '<button class="btn btn-{opts.type || \'default\'} btn-{opts.size || \'default\'}" name="button"> <yield></yield> </button>', '', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:132
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:133
 )//#core:111
 
 try{
 tag.on("mount",function(_t_){lispz.load("message"//#core:388
 ,function(){var message=lispz.cache["message"];
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:138
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:139
 )//#core:111
 
 try{
@@ -559,7 +559,7 @@ tag.button.addEventListener("click",function(_t_){message.send(opts.name,{})}
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:140
+}//#riot:141
 }
 //#core:389
 )}
@@ -567,21 +567,21 @@ lispz.execution_context.pop()
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:134
+}//#riot:135
 //#riot-tags:3
 //#riot-tags:4
 }, '{ }');
 
 riot.tag2('bars-menu', '<div name="dropdown" class="dropdown {right: opts.align === \'right\'}"> <a style="text-decoration: none" data-toggle="dropdown" name="bars" class="glyphicon glyphicon-menu-hamburger dropdown-toggle" aria-hidden="true"></a> <ul class="dropdown-menu {dropdown-menu-right: opts.align === \'right\'}"> <li each="{items}" class="{dropdown-header: header && title,           divider: divider, disabled: disabled}"><a onclick="{goto}" href="#"> <span class="pointer right float-right" if="{children}"></span> {title}&nbsp;&nbsp;&nbsp; </a></li> </ul> </div>', 'bars-menu > div.right { float: right } bars-menu span.caret { margin-left: -11px } bars-menu a.dropdown-toggle { cursor: pointer }', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:132
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:133
 )//#core:111
 
 try{
 tag.on("mount",function(_t_){lispz.load("message,riot"//#core:388
 ,function(){var message=lispz.cache["message"],riot=lispz.cache["riot"];
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:138
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:139
 )//#core:111
 
 try{
@@ -611,7 +611,7 @@ ev.stopPropagation()//#riot-tags:16
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:140
+}//#riot:141
 }
 //#core:389
 )}
@@ -619,15 +619,15 @@ lispz.execution_context.pop()
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:134
+}//#riot:135
 //#riot-tags:19
 //#riot-tags:20
 }, '{ }');
 
 riot.tag2('tree', '<tree-component name="base"></tree-component>', '', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:132
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:133
 )//#core:111
 
 try{
@@ -643,15 +643,15 @@ tag.update()}
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:134
+}//#riot:135
 //#riot-tags:6
 //#riot-tags:7
 });
 
 riot.tag2('tree-component', '<ul class="dropdown-menu"> <li each="{item, i in items}" class="{dropdown-header: item.header && item.title,         divider: item.divider, disabled: item.disabled}"><a onclick="{parent.goto}" href="#"> <span if="{item.children}" class="glyphicon glyphicon-triangle-right" aria-hidden="true"></span>{item.title}</a> <tree-component if="{item.children}" name="{item.title}"> </li> </ul>', 'tree-component ul { display: inherit !important; position: inherit !important; } tree-component:not([name=base]) > ul { display: none !important; } tree-component:not([name=base]).open > ul { margin-left: 9px; margin-right: 9px; display: inherit !important; } tree-component span.glyphicon { margin-left: -18px; }', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:132
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:133
 )//#core:111
 
 try{
@@ -693,15 +693,15 @@ ev.stopPropagation()//#riot-tags:21
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:134
+}//#riot:135
 //#riot-tags:23
 //#riot-tags:24
 }, '{ }');
 
 riot.tag2('sidebar', '<a aria-hidden="true" name="hamburger" class="glyphicon glyphicon-menu-hamburger"></a> <div id="sidebar" class="container bg-primary"><yield></yield></div>', 'sidebar > a { text-decoration: none !important; position: absolute !important; z-index: 2000; } #sidebar { z-index: 1000; position: fixed; width: 0; height: 100%; overflow-y: auto; -webkit-transition: all 0.5s ease; -moz-transition: all 0.5s ease; -o-transition: all 0.5s ease; transition: all 0.5s ease; padding-right: 0; overflow: hidden; } #sidebar.toggled { width: auto; padding-right: 15px; }', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:132
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:133
 )//#core:111
 
 try{
@@ -718,7 +718,7 @@ setTimeout(function(){message.send("dom/page-content-wrapper-padding",tag.sideba
 
 tag.on("mount",function(_t_){lispz.load("riot"//#core:388
 ,function(){var riot=lispz.cache["riot"];
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:138
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:139
 )//#core:111
 
 try{
@@ -728,7 +728,7 @@ setTimeout(function(){message.send("dom/page-content-wrapper-padding",tag.sideba
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:140
+}//#riot:141
 }
 //#core:389
 )}
@@ -739,15 +739,15 @@ lispz.execution_context.pop()
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:134
+}//#riot:135
 //#riot-tags:12
 //#riot-tags:13
 });
 
 riot.tag2('page-content', '<div id="page_content_wrapper"> <div class="{container-fluid: opts.fluid, container: !opts.fluid}"> <yield></yield> </div> </div>', '#page_content_wrapper { width: 100%; position: absolute; }', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:132
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:133
 )//#core:111
 
 try{
@@ -762,15 +762,15 @@ message.listen("dom/page-content-wrapper-padding",function(px){dom.style_$_(tag.
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:134
+}//#riot:135
 //#riot-tags:5
 //#riot-tags:6
 }, '{ }');
 
 riot.tag2('bootstrap', '<div id="page-wrapper"><yield></yield></div>', '.pointer { border: 5px solid transparent; display: inline-block; width: 0; height: 0; vertical-align: middle; } .pointer.float-right { float: right; margin-top: 5px; } .pointer.up { border-bottom: 5px solid; } .pointer.right { border-left: 5px solid; } .pointer.down { border-top: 5px solid; } .pointer.left { border-right: 5px solid; }', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:132
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:133
 )//#core:111
 
 try{
@@ -784,7 +784,7 @@ dom.append_$_("head",dom.element("meta",{'name':"viewport",'content':"width=devi
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:134
+}//#riot:135
 //#riot-tags:5
 //#riot-tags:6
 });
@@ -795,9 +795,9 @@ return ['']}
 /*code-editor*/
 
 lispz.tags['code-editor']=function(){riot.tag2('code-editor', '<panel height="{opts.height}" heading="{heading}" menu="{menu}" owner="{_riot_id}"> <yield to="buttons"><yield></yield> </panel>', 'code-editor .CodeMirror { position: absolute; top: 0; bottom: 0; left: 5px; right: 0; height: initial; }', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:132
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:133
 )//#core:111
 
 try{
@@ -805,7 +805,7 @@ tag.update_$_({'menu':"codemirror/menu",'heading':(opts.heading||"Edit")})//#rio
 
 tag.on("mount",function(_t_){lispz.load("codemirror,message,dict,events"//#core:388
 ,function(){var codemirror=lispz.cache["codemirror"],message=lispz.cache["message"],dict=lispz.cache["dict"],events=lispz.cache["events"];
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:138
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:139
 )//#core:111
 
 try{
@@ -861,7 +861,7 @@ message.dispatch(("code-editor/"+opts.name),{'open':open,'append':append,'conten
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:140
+}//#riot:141
 }
 //#core:389
 )}
@@ -870,7 +870,7 @@ lispz.execution_context.pop()
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:134
+}//#riot:135
 //#riot-tags:36
 //#riot-tags:37
 }, '{ }');
@@ -881,15 +881,15 @@ return ['']}
 /*codemirror*/
 
 lispz.tags['codemirror']=function(){riot.tag2('codemirror', '<div name="wrapper"> </div>', '', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:132
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:133
 )//#core:111
 
 try{
 tag.on("mount",function(_t_){lispz.load("codemirror"//#core:388
 ,function(){var codemirror=lispz.cache["codemirror"];
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:138
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:139
 )//#core:111
 
 try{
@@ -898,7 +898,7 @@ tag.update_$_({'cm':CodeMirror(tag.wrapper,opts)})//#riot-tags:2
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:140
+}//#riot:141
 }
 //#core:389
 )}
@@ -906,7 +906,7 @@ lispz.execution_context.pop()
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:134
+}//#riot:135
 //#riot-tags:3
 //#riot-tags:4
 });
@@ -917,9 +917,9 @@ return ['']}
 /*firepad*/
 
 lispz.tags['firepad']=function(){riot.tag2('firepad', '<panel height="{opts.height}" heading="{heading}" menu="{menu}" owner="{_riot_id}"> <div name="wrapper" class="wrapper"></div> </panel>', 'firepad .wrapper { position: absolute; top: 0; bottom: 0; left: 0; right: 0; height: initial; } firepad .CodeMirror { position: absolute; top: 0; bottom: 0; left: 5px; right: 0; height: initial; } a.powered-by-firepad { display: none; } div.firepad-toolbar { margin-top: -25px; }', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:132
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:133
 )//#core:111
 
 try{
@@ -929,7 +929,7 @@ tag.update_$_({'heading':"Edit"})//#riot-tags:3
 
 tag.on("mount",function(_t_){lispz.load("firebase,codemirror,firepad,message,dict"//#core:388
 ,function(){var firebase=lispz.cache["firebase"],codemirror=lispz.cache["codemirror"],firepad=lispz.cache["firepad"],message=lispz.cache["message"],dict=lispz.cache["dict"];
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:138
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:139
 )//#core:111
 
 try{
@@ -987,7 +987,7 @@ tag.pad.on_ready(function(){message.dispatch(("firepad/"+opts.name),{'open':open
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:140
+}//#riot:141
 }
 //#core:389
 )}
@@ -996,7 +996,7 @@ lispz.execution_context.pop()
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:134
+}//#riot:135
 //#riot-tags:44
 //#riot-tags:45
 }, '{ }');
@@ -1007,15 +1007,15 @@ return ['']}
 /*github*/
 
 lispz.tags['github']=function(){riot.tag2('github-login', '<modal name="github-login" title="GitHub Login" buttons="*Sign In"> <img src="GitHub-Mark-64px.png"> <form class="form-horizontal"> <input type="text" class="form-control" name="username" placeholder="User Name"> <br> <input type="password" class="form-control" name="password" placeholder="Password"> <br> <input type="checkbox" name="remember-me" data-toggle="tooltip" title="Only use on a secure, private account"> Remember me </form> </modal>', '', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:132
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:133
 )//#core:111
 
 try{
 tag.on("mount",function(_t_){lispz.load("github,message"//#core:388
 ,function(){var github=lispz.cache["github"],message=lispz.cache["message"];
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:138
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:139
 )//#core:111
 
 try{
@@ -1023,7 +1023,7 @@ try{
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:140
+}//#riot:141
 }
 //#core:389
 )}
@@ -1031,7 +1031,7 @@ lispz.execution_context.pop()
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:134
+}//#riot:135
 //#riot-tags:2
 //#riot-tags:3
 });
@@ -1042,9 +1042,9 @@ return ['']}
 /*iframe-panel*/
 
 lispz.tags['iframe-panel']=function(){riot.tag2('iframe-panel', '<panel height="{opts.height}" heading="{heading}" menu="{menu}" owner="{_riot_id}"> <iframe name="iframe" class="iframe"></iframe> </panel>', 'iframe-panel .panel-body { bottom: 0; left: 1px; right: 1px; padding: 0; padding-bottom: 1px; } iframe-panel .iframe { position: absolute; height: 100%; width: 100%; }', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:132
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:133
 )//#core:111
 
 try{
@@ -1052,7 +1052,7 @@ tag.update_$_({'menu':opts.menu,'heading':opts.heading})//#riot-tags:2
 
 tag.on("mount",function(_t_){lispz.load("message"//#core:388
 ,function(){var message=lispz.cache["message"];
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:138
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:139
 )//#core:111
 
 try{
@@ -1084,7 +1084,7 @@ tag.update()//#riot-tags:19
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:140
+}//#riot:141
 }
 //#core:389
 )}
@@ -1093,7 +1093,7 @@ lispz.execution_context.pop()
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:134
+}//#riot:135
 //#riot-tags:23
 //#riot-tags:24
 }, '{ }');
@@ -1104,9 +1104,9 @@ return ['']}
 /*lispz*/
 
 lispz.tags['lispz']=function(){riot.tag2('lispz', '<bootstrap class="riot"> <page-content fluid="true"> <panels name="editor-panels"> <code-editor class="riot col-sm-6 draggable" name="code" height="48%" heading="Lispz"> <buttons name="code/buttons" align="right"> <push-button name="code/run" type="info" size="xs" title="<alt><enter>">Run</push-button> </buttons> </code-editor> <code-editor class="riot col-sm-6 draggable" name="compiled" height="48%" heading="Generated Javascript"></code-editor> <code-editor class="riot col-sm-6 draggable" name="output" height="48%" heading="Console"></code-editor> <markdown class="riot col-sm-6 draggable" name="manual" href="https://cdn.rawgit.com/paulmarrington/lispz/master/README.md" height="48%" heading="Manual"></markdown> </panels> </page-content> </bootstrap>', '', 'using="bootstrap code-editor markdown"', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:132
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:133
 )//#core:111
 
 try{
@@ -1194,7 +1194,7 @@ message.listen("code-editor/run/output",function(_t_){log(_t_.output)}
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:134
+}//#riot:135
 //#riot-tags:49
 //#riot-tags:50
 });
@@ -1205,97 +1205,95 @@ return ['code-editor','code-editor','code-editor','markdown']}
 /*markdown*/
 
 lispz.tags['markdown']=function(){riot.tag2('markdown', '<panel height="{opts.height}" heading="{heading}" menu="{menu}" owner="{_riot_id}"> <div name="wrapper" class="wrapper"></div> </panel>', '', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:132
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:133
 )//#core:111
 
 try{
-var tag=lispz.globals.stateful.morph_$_(this);//#riot-tags:2
+var markdown_menu=("panel/markdown/"+opts.name+"/menu");//#riot-tags:2
 
-var markdown_menu=("panel/markdown/"+opts.name+"/menu");//#riot-tags:3
+var markdown_menu_action=(markdown_menu+"/action");//#riot-tags:3
 
-var markdown_menu_action=(markdown_menu+"/action");//#riot-tags:4
-
-tag.update_$_({'menu':markdown_menu,'heading':opts.heading})//#riot-tags:5
+tag.update_$_({'menu':markdown_menu,'heading':opts.heading})//#riot-tags:4
 
 tag.on("mount",function(_t_){lispz.load("markdown,dom,net,message,dict"//#core:388
 ,function(){var markdown=lispz.cache["markdown"],dom=lispz.cache["dom"],net=lispz.cache["net"],message=lispz.cache["message"],dict=lispz.cache["dict"];
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:138
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:139
 )//#core:111
 
 try{
-var contents_area=tag.tags.panel.body;//#riot-tags:7
-//#riot-tags:8
+var contents_area=tag.tags.panel.body;//#riot-tags:6
+//#riot-tags:7
 
-var history=lispz.globals.stateful();//#riot-tags:10
+var history=lispz.globals.stateful();//#riot-tags:9
 
 message.listen((tag._riot_id+"/"+markdown_menu_action),function(packet){load(packet.item.href)}
-)//#riot-tags:13
+)//#riot-tags:12
 
-var open=function(md,from){var from=(from||"");//#riot-tags:15
+var open=function(md,from){var from=(from||"");//#riot-tags:14
 
-dom.inner_html_$_(contents_area,markdown.compile(md))//#riot-tags:16
+dom.inner_html_$_(contents_area,markdown.compile(md))//#riot-tags:15
 
-dom.select(contents_area,"a").forEach(function(link){var href=link.getAttribute("href");//#riot-tags:18
+dom.select(contents_area,"a").forEach(function(link){var href=link.getAttribute("href");//#riot-tags:17
 
-switch(false){case !!(net.external_u_(href)):link.addEventListener("click",function(evt){load((from+href))//#riot-tags:21
+switch(false){case !!(net.external_u_(href)):link.addEventListener("click",function(evt){load((from+href))//#riot-tags:20
 
-evt.preventDefault()//#riot-tags:22
+evt.preventDefault()//#riot-tags:21
 }
-)//#riot-tags:23
+)//#riot-tags:22
 }//#core:100
-//#riot-tags:24
+//#riot-tags:23
 }
-)//#riot-tags:25
+)//#riot-tags:24
 }
-;//#riot-tags:26
+;//#riot-tags:25
 
-var load=function(href){history.update_$_(href,true)//#riot-tags:29
+var load=function(href){history.update_$_(href,true)//#riot-tags:28
 
-var menu=dict.map(history,function(href){var title=net.url_actor(href).split(".")[0];//#riot-tags:31
+var menu=dict.map(history,function(href){var title=net.url_actor(href).split(".")[0];//#riot-tags:30
 
 return {'topic':markdown_menu_action,'href':href,'title':title}
-//#riot-tags:32
+//#riot-tags:31
 }
-);//#riot-tags:33
+);//#riot-tags:32
 
-message.send(markdown_menu,menu.reverse())//#riot-tags:34
+message.send(markdown_menu,menu.reverse())//#riot-tags:33
 
-var loaded=net.http_get(href);//#riot-tags:36
+var loaded=net.http_get(href);//#riot-tags:35
 
 lispz.globals._h_resolve_deferred(loaded).then(function(md){open(md,net.url_path(href))}
 )//#core:618
-//#riot-tags:37
+//#riot-tags:36
 
 lispz.globals._h_resolve_deferred(loaded).catch(function(err){console.trace(err)}
 )//#core:621
-//#riot-tags:38
+//#riot-tags:37
 }
-;//#riot-tags:39
+;//#riot-tags:38
 
 switch(false){case !opts.href:load(opts.href)}//#core:100
+//#riot-tags:39
 //#riot-tags:40
-//#riot-tags:41
-//#riot-tags:67
+//#riot-tags:66
 
-message.dispatch(("showdown/"+opts.name),{'open':open,'load':load})//#riot-tags:68
+message.dispatch(("showdown/"+opts.name),{'open':open,'load':load})//#riot-tags:67
 
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:140
+}//#riot:141
 }
 //#core:389
 )}
-)//#riot-tags:69
+)//#riot-tags:68
 
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:134
+}//#riot:135
+//#riot-tags:69
 //#riot-tags:70
-//#riot-tags:71
 }, '{ }');
 
 return ['']}
