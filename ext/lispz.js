@@ -18,7 +18,7 @@ lispz_modules['compilers']="  ### spec: Compilers\n    The compiler entry for ea
 
 lispz_modules['core']="### spec: basics >> Syntax\n    One of the really cool things about a lisp language is that there is very little syntax.\n    On the flip-side one of the disadantages of minimal syntax is the need for work-arounds -\n    and by definition a work-around is syntax. The core for lispz is 4 sorts of lists\n\n        (action a b c ...) ## functional list\n        [a b c]            ## raw list (typically parameters for a function definition)\n        [[a b c]]          ## an array list\n        {a: 1 b c}         ## an associative array or dictionary\n\n    Named references are created using 'var'. They exist only inside the module or function\n    in which they are first defined. This includes inner functions, but if the inner function\n    defines a 'var' of the same name it will be distinct and hide the outer reference.\n\n        (ref ref 23)\n###\n### spec: basics >> Operators\n    A pure lisp system does not have any operators. Everything is a function or a macro.\n    Because Lispz compiles to JavaScript, all unary and many binary operators are exposed.\n\n        debugger           ## JS==> debugger\n        (+ 2 3 4)          ## JS==> (2 + 3 + 4)\n\n    While unary operators are transparent to Lispz and convert directly, binary operators\n    are expanced with macros. Some operators have convenience names.\n\n        (and a b c)        ## JS==> a && b && c\n        (or a b c)         ## JS==> a || b || c\n        (is a 12)          ## JS==> a === 12\n        (isnt a 12)        ## JS==> a !== 12\n\n    Thanks to JavaScript 'and' and 'or' short-circuit - meaning that they will stop when\n    they find truth for and or false for or.\n\n        (return (or value \"default value string\"))\n###\n### spec: developer >> debug\n  `(debug)` is a development helper macro. It will print a stack trace\n  and the contents of any parameters on the console. If you left-align it\n  then it will be easy to find later to delete.\n###\n### spec: debug\n  (describe \"(debug [p1, p2, ...]) ## macro to display stack and messages\" (lambda []\n    (it \"displays a stack trace and the parameters provided\" (lambda []\n      (spy-method console trace)\n      (debug \"multiple\" \"parameters\")\n      ((expect console.trace).toHaveBeenCalled)\n    ))\n  ))\n###\n(macro debug [*msg] (console.trace (#join ',' *msg)))\n\n### spec: basic >> lambda\n###\n(macro => [*body] (lambda [@] *body))\n\n### spec: basic >> functions >> Variable Parameter Lists\n    Like JavaScript, lispz function definitions specify a fixed number of arguments.\n    To gain access to the full list of arguments, use *arguments, with a starting index.\n\n        (lambda [type rest] (console.log type \"=\" (*arguments 1)))\n###\n(macro *arguments [from] (lispz.slice.call arguments from))\n\n### spec: basic >> References\n  @TODO\n###\n(macro ref [*list] (#join '' 'var ' (#pairs *list '=' ',') ';'))\n\n### spec: basic >> References >> Global References\n  @TODO\n###\n(macro global [name value]\n  (#join '' 'lispz.globals.' name '=' value)\n  (macro name [&params] (#join '' 'lispz.globals.' name '(' &params ')'))\n)\n\n### spec: basics -- Conditionals\n    Lispz boasts only one traditional conditional operator plus a number of\n    macros for conditional assignment and function return. The operator,\n    cond takes pairs of lists where the first is the condition and the\n    second the action. Evaluation stops after the first true condition.\n    There is an else macro that evaluates to true to catch situations not\n    covered specifically. The default? function takes a value and returns\n    it if it exists and is not empty, otherwise it returns the default value.\n\n        (cond (is v \"One\")  (return 1)\n              (not v)       (return 0)\n              (else)        (return -1)\n        )\n\n    Because conditionals work with list pairs, it is necessary to wrap the actions\n    if there are more than one. Lispz provides 'do' for that.\n\n        (cond ok? (do (finish-up) (return true)))\n\n    The standard conditional tests (< > <= >=, etc) are augmented by aliases (is isnt not).\n###\n(macro cond [*list]\n  (#join '' 'switch(false){case !' (#pairs *list  ':' ';break;case !') '}')\n)\n(macro else [] 'true')\n\n### spec: basics >> Operators ###\n(macro not [value] (#join '' '!(' value ')'))\n(macro instance-of [type obj] (#join '' '(' obj ' instanceof ' type ')'))\n\n### spec: basic >> Execution Context\n###\n(macro execution-context [context *body]\n  (lispz.execution-context.push context)\n  'try{' *body '}'\n  'finally {' (lispz.execution-context.pop) '}'\n)\n### spec: basic >> Execution Context >> Adding Loggers\n###\n(global add-execution-context-logger (lambda [name logger]\n  (cond (not lispz.execution-context.loggers) return)\n  (lispz.execution-context.loggers.update! name logger)\n))\n\n### spec: basic >> do\n###\n(macro do [*body] *body)\n\n### spec: basic >> Functions\n\n    As I am sure I mentioned before the default lisp/lispz element is the list surrounded by brackets.\n    In most cases in lisp and all cases in list the first element of the list is a reference to a function.\n    In JavaScript perspective this makes a lispz list a JavaScript function where the first element\n    is the reference and the rest a list of parameters.\n\n    This allows us to call JavaScript functions at any time we can get to them.\n\n        (console.log \"This is the\" count \"log message\")\n\n    Anonymous functions are created with the function key-word\n    (which is actually a macro - confused yet?). The parameters are referenced\n    in another list form - that between square brackets. For later use, assign\n    it to or in a variable. A function will return undefined\n    unless a specific return statement is used.\n\n        (ref +1 (lambda [number] (return (+ number 1))))\n        ...\n        a = 12\n        (console.log a (+1 a))  ## 12 13\n###\n### spec: function\n  (describe \"(lambda [p1 p2 ...] ...) ## function definition\" (lambda []\n    (it \"defines an anonymous function that can be called\" (lambda []\n      (ref f1 (lambda [a b] (return (* a b))))\n      (ref result (f1 2 3))\n      ((expect result).toBe 6)\n    ))\n    (it \"has optional parameters\" (lambda []\n      (ref f2 (lambda (return 333)))\n      (ref result (f2))\n      ((expect result).toBe 333)\n    ))\n  ))\n  (describe \"(lambda [p1 p2 ...] ...) ## alternate function definition\" (lambda []\n    (it \"defines an anonymous function that can be called\" (lambda []\n      (ref f1 (lambda [a b] (return (* a b))))\n      (ref result (f1 2 3))\n      ((expect result).toBe 6)\n    ))\n    (it \"has optional parameters\" (lambda []\n      (ref f2 (lambda [] (return 222)))\n      (ref result (f2))\n      ((expect result).toBe 222)\n    ))\n  ))\n###\n\n### spec: basic >> Retrieval - can be used for objects and arrays\n  @TODO\n###\n(macro get [dict *key] (#join '' dict '[' (#join '][' *key) ']'))\n\n### spec: conditional processing ###\n(macro empty? [list] (not list.length))\n(macro defined? [field] (!== (typeof field) \"undefined\"))\n\n### spec: basic >> state -- Stateful Containers\n  State is the elephant in the room - particularly in the functional programming paradigm.\n  When you have state that can be changed from outside, then any function that reads from it\n  no longer has referential integrity. This means that identical calls may not return identical\n  results.\n\n  But we need state. Without it the system is fully enclosed without input or output.\n  A referentially integrous :) function can be replaced by it's return value,\n  so why ever run it?\n\n  The aim is to be like any machine with the internals always working the same.\n  Think of a clock. The input is someone setting the time.\n  After that the external gearing, etc is meant to work consistently so that the\n  time advances at the correct pace. The current time is state. You can build and\n  test the entire device without the state. It is on the very outside. Once the\n  mechanism is working as expected, add a clock face and hands. Changing the hands\n  is input and displaying the time output. The latter can be considered a\n  side-effect.\n\n  The state container for lispz relies on polite access, not enforced rules. By custom an\n  function that changes ends in an exclamation mark. Use this to highlight review.\n  The default builder return an empty JavaScript dictionary.\n\n      (describe \"Create a new stateful object -- (ref context (stateful seed))\" (lambda []\n        (ref options (stateful {name: \"undefined\" address: \"nowhere\"}))\n        (it \"is able to read members directly -- context.member\" (lambda []\n          ((expect options.name).toBeEqual \"undefined\")\n        ))\n        (it \"is able to read members by key -- context[key]\" (lambda []\n          ((expect options[\"name\"]).toBeEqual \"undefined\")\n        ))\n        (it (+ \"is able to update a dictionary with changes -- \"\n          \"(context.update! {a: dictionary})\") (lambda []\n            (options.update! {name: \"Barney Rubble\" address: \"Next Door\"})\n            ((expect options.name).toBeEqual \"Barney Rubble\")\n            ((expect options.address).toBeEqual \"Next Door\")\n        )\n          )\n      ))\n\n  Javascript lives in the world of objects as well as functions. Sometimes to work in this world\n  objects need to be labelled as stateful. Use this approach as sparingly as possible. Always\n  consider other alternatives first.\n\n      (describe \"Creating a stateful reference -- (ref context (stateful.morph! this))\" (lambda []\n        (ref that {a: 1 b: 2})\n        (ref context (stateful.morph! that))\n        (it \"looks the same as the original object\" (lambda []\n          ((expect context.a).toBeEqual that.a)\n        ))\n        (it \"reflects changes to the original object\" (lambda []\n          (context.update! {a: 99})\n          ((expect that.a).toBeEqual 99)\n        ))\n      ))\n\n  Be polite and use this container responsibly. Adding protection adds overhead.\n  If you want to cheat, then on your head be it.\n###\n\n(macro #set! [to-change! value] (#join '' to-change! '=' value ';'))\n(ref #morph! (lambda [obj]\n  (cond obj.update! (return obj)) ## in case we have done it before\n  (Object.defineProperties obj {\n    update!: {value: (lambda [update]\n      (ref context this)\n      (cond (is arguments.length 1)\n        ((Object.keys update).forEach (lambda [key]\n          (#set! (get context key) (get update key))\n        ))\n      (else) (do\n        (ref list (*arguments 0))\n        (list.forEach (lambda [value idx] (cond (% idx 2) (do\n          (ref key (get list (- idx 1)))\n          (#set! (get context key) value)\n        ))))\n      ))\n    )}\n\n    delete!: {value: (lambda [to-delete]\n      (delete (get this to-delete))\n    )}\n\n    push!: {value: (lambda [entry]\n      (Array.prototype.push.apply this.array! (*arguments 0))\n    )}\n\n    pop!: {value: (lambda [entry]\n      (return (this.array!.pop entry))\n    )}\n  })\n  (return obj)\n))\n(global stateful (lambda [seed]\n  (ref obj (#morph! (new Object)))\n  (cond seed (obj.update! seed))\n  (return obj)\n))\n(global stateful.array! (lambda [seed]\n  (ref obj (#morph! (new Object)))\n  (ref seeder (or seed [[]]))\n  (obj.update! {array!: (seeder.slice)})\n  (return obj)\n))\n(global stateful.morph! #morph!)\n\n### We sometimes need to change Lispz functionality ###\n(stateful.morph! lispz)\n\n(macro closure [params *body] (#join '' '(lambda(' params '){' *body '})(' params ')'))\n(macro return  [value] (#join '' 'return ' value '\\n'))\n\n### spec: basics >> functions >> Return if not false\n    As a functional language, most decisions are made by small single-focus functions.\n    As such, conditional returns are a useful shortcut. To this end, return? returns\n    a value if it not false, null or an empty container.\n\n        (return? calculated-value)\n\n    > The return? macro assigns the supplied value to a temporary reference\n    > before using the reference. This stops the value from being evaluated\n    > twice if it is not a simple reference.\n###\n(macro return? [value] (do (ref v value) (cond v (return v))))\n\n(macro new [cls *params] (#join '' '(new ' cls '(' (#join ',' *params) '))'))\n\n### spec: functions >> chaining -- Chaining functions\n  In a functional style we often call multiple functions to incrementally move\n  from problem to solution. Each step takes the results from the step before and\n  transforms it. It is allways a good idea to have short functions that do one\n  thing - for testing, maintenance and readability. Speaking of readability,\n  chain makes the sequence of events clear.\n\n      (parse-titles (lambda [sections] (return (sections.map ...)))\n      (sort-titles  (lambda [sections] (return (sections.map ...)))\n      (merge-titles (lambda [sections] (return (sections.map ...)))\n\n      ((chain parse-titles sort-titles merge-titles) sections)\n###\n### spec: chain\n  (describe \"chain: run each function with the results from the one before\" (llbda []\n    (it \"(chain f1 f2 ...)\" (lambda []\n      (ref f1 (lambda [a] (return 2)))\n      (ref f2 (lambda [a] (return (+ a 3))))\n      (ref f3 (lambda [a] (return (* a 10))))\n      ((expect (chain f1 f2 f3)).toBe 50)\n    ))\n  ))\n###\n(global chain (lambda [] (ref functions (*arguments 0))\n  (ref link (lambda [arg func] (return (func arg))))\n  (return (lambdas.reduce link null))\n))\n\n### spec: basics >> Iteration\n\nIn the functional way of programming, loop style iteration is (almost) never needed.\nBecause of the 'almost' and to provide for those week on functional will,\nlispz provides one loop operator. It takes a test and a body.\n\n    (while (not (result)) (look-again))\n\nIn this case both are functions. Lispz furthers the functional cause by making\nassignment difficult and ugly.\n\nOf course the need for iteration remains no matter what programming discipline you follow.\nIn the functional world it is filled by ... you guessed it ... functions.\nFor arrays, JavaScript provides an excellent set documented in [List Processing](list-processing.md).\n###\n## Javascript does not (yet) have tail recursion - it is scheduled for 2016\n(macro while [test *body] (#join '' 'while(' test '){' *body '}'))\n\n### spec: List and dictionary manipulation ###\n(macro length [list] (#join '' list '.length'))\n(macro first [list] (get list 0))\n(macro rest [list] (list .slice 1))\n(macro last [list] (get (list .slice -1) 0))\n(global slice (lambda [list from to]  (return (lispz.slice.call list from to))))\n\n### spec: Modules >> Module Structure\n\nAll Lispz source files are modules. They are loaded on first request by client code. Subsequent requests returns a cached reference to the exports.\n###\n### spec: Modules >> Module Usage\n\nEvery module must include an export statement including a dictionary of symbols to be exported\n\n    (ref one (lambda [] ...)\n    (ref two 22)\n    (export {one two})\n\nIf a module requires other asynchronous operations it can defer the export statement until they are ready.\n\n    (lispz.script \"ext/jquery.js\" (lambda [] (export { ... })))\n\nTo access external modules, wrap your code in 'using'. Data and functions exported from a module are linked to the import name.\n\n    (using [dict net list]\n      (ref combined (dict.merge d1 d2 d3))\n    )\n\n...and that is all there is to it.\n###\n(macro using [modules *on_ready] (lispz.load (#join '' '\"' modules '\"')\n  (lambda [] (#requires modules) *on_ready)\n))\n### Modules must export to continue processing ###\n(macro export [exports] (#join '' '__module_ready__(' exports ')'))\n\n(macro delay [ms *body] (setTimeout (lambda [] *body) ms))\n(macro yield [*body] (delay 0 *body))\n###\n# Use contain to contain state changes. Any var inside a contain can be changed\n# no matter how many times the contain is called concurrently. It is also allows\n# the passing in of variables that are effectively copied and cannot be changed\n# from outside.\n###\n(macro contain [contain#args *contain#body]\n  ((lambda contain#args *contain#body) contain#args)\n)\n###\n# Return a random integer between 0 and the range given\n###\n(global random (lambda [range] (return (Math.floor (* (Math.random) range)))))\n\n### Update log-execution-context to be more helpful ###\n(using [log_execution_context] (lispz.update! { log_execution_context }) )\n\n### spec: async -- Asynchronous Support\nThere are three kinds of people in the world - those that can count and those who can't. And there are two ways to treat asynchronous events at the language/platform level. Either stop the process while waiting for something...\n\n    (while (read) (print)) ## this won't work in a JavaScript engine\n\n...or provide actions to do when an event happens...\n\n    (read (lambda [] (print))) ## Call an anonymous function when event fires.\n\nFor some reason the first approach is called synchronous. In practice it means you can't do anything until the event you are waiting for occurs. Systems that work this way compensate by making it easy to create multiple threads - allowing code to appear to work in parallel. The developer does not have much control on when the processor switches from one thread to another. This means that data can appear to change like magic between two instructions on one thread because another thread has been active. Not only does this make referential integrity impossible, but it makes for the need for locks and semaphores and other mind-bending and program-slowing mechanisms.\n\nBy contrast the second approach is called asynchronous. It takes the mind-bending from an apparently optional later process and makes it important from the start. This is because we humans have been trained to think in a synchronous manner when solving problems or writing programs.\n\nOne more tale before getting back to lispz. Microsoft Windows prior to '95 used what they called \"cooperative multi-processing\". This meant that the operating system never took the CPU away from a program without the program first giving permission. Hmmm, very similar to a JavaScript machine based on asynchronous methods, isn't it. The complaint then is that badly behaved applications could freeze the UI by not releasing the CPU often enough. Since JavaScript runs on the UI thread it can also freeze the UI in the same way. A well behaved program, on the other hand, is more efficient and far easier to write.\n###\n### spec: async >> Callbacks\nCallbacks provide the simplest mechanism for asynchronous responses. Any function that want to initiate something that will complete at an undetermined later time can take a reference to a function to call at that time (or thereabouts)\n\n    (delay 2000 (lambda [] (console.log \"delay over\")))\n\nMany callbacks producers follow the node-js approach of providing error and response parameters.\n\n    (read my-url (lambda [err response]\n      (cond err (throw \"read failed\"))\n      (return response.text)\n    )\n\n## Benefits\n1. Very simple with minimal overheads\n2. Can be called many times\n3. Cause and effect are sequential in code\n\n## Disadvantages\n1. Empiric in nature\n2. Highly coupled\n3. Leads to hard-to-read code in more complex event sequences.\n4. Exceptions are lost if not processed within the callback\n5. Actions triggered before the callback is set are lost\n###\n### spec: async >> Promises\nES2015 has introduced native promises into the language. As of November 2015 it\nis available on all mainstream browsers. Even if not, there are shims that work\nin an identical(ish) manner.\n\nFunctions that want to return information in an asynchronous manner return a\npromise object. This object can be passed around and whoever needs the data it\nwill or does contain can ask for it with a callback function.\n\nA function that creates a promise uses the 'promise' keyword instead of 'function'.\nWhen the promise is fulfilled it will call (resolve-promise data). If it fails\nit calls (reject-promise err).\n\n    (ref read (promise [addr param1 param2]\n      (http-get (+ addr \"?&\" param1 \"&\" param2) (lambda [err response]\n        (cond err (return (reject-promise err)))\n        (resolve-promise response)\n      ))\n    ))\n\nIn _promise_ the function is run immediately. In many situations it is nice to\nhave a promise that only runs when it is first needed. You may, for example,\ncreate a file object that may or may not ever ask a server for the contents.\n\n    (ref file {\n      read: (promise.deferred [addr param1 param2]\n        (http-get (+ addr \"?&\" param1 \"&\" param2) (lambda [err response]\n          (cond err (return (reject-promise err)))\n          (resolve-promise response)\n        ))\n      )\n    })\n    ...\n    ## This will trigger a server request...\n    (when file.read (lambda [response] (console.log response)))\n\nBecause it is common to turn a callback into a promise, lispz provides a helper\nmacro. The following provides identical functionality. One of the benefits of a\nlanguage with real macros :)\n\n    (ref read (promise.callback [addr param1 param2]\n      (http-get (+ addr \"?&\" param1 \"&\" param2) callback)\n    ))\n\nNow that we have a promise, we can use it just like a callback if we want:\n\n    (ref reading (read \"http://blat.com/blah\" 1 2))\n    (when reading (lambda [result] (return (process result))))\n    (promise.failed reading (lambda [err] (console.log \"ERROR: \"+err)))\n\nEven without further knowledge, promises clean up errors and exceptions. If you do not catch errors, exceptions thrown in the asynchronous function can be caught in the code containing the promise.\n\nThe power of promises starts to become clearer with the understanding that 'when' can return a promise.\n\n    (ref processed (when reading (lambda [result] (return (process result)))))\n    (when processed (console.log \"All done\"))\n\nSo far this adds very little at the cost of a relatively large supporting library. if we start thinking functionally instead of sequentially, promises provides a way to clarify our code (a little).\n\n    # change branch we will be working with\n    (ref update-mode (github.update lispz-repo))\n    # Once in update mode we can retrieve lispz.js and ask for a list of other file in parallel\n    (ref lispz-js    (when update-mode [] (read-file \"lispz.js\")))\n    (ref listing     (when update-mode [] (github.list-dir lispz-repo \"\")))\n    # We can only sort files once we have a listing from the server\n    (ref groups      (when listing [files] (group files)))\n    # but then we can process the different groups in parallel (retrieving source as needed)\n    (ref modules     (when groups [files] (return (build-modules files.modules))))\n    (ref riots       (when groups [files] (return (build-riots files.riots))))\n\n    # Now to pull it all together into a single file\n    (ref  source     (stateful.array [[\"window.lispz_modules={}\"]]))\n    # promise.sequence forces the order.\n    (ref all-loaded  (promise.sequence\n      (when modules  [sources] (source.concat sources) (return (promise.resolved))\n      # lisp.js is added after modules and lisp-js are resolved\n      (when lispz-js [code]    (source.push! code) (return (promise.resolved))\n      # riot tags are added after lisp.js and lisp-js is added and riots promise is resolved\n      (when riots    [sources] (source.concat sources) (return (promise.resolved))\n    ))\n    # Only write the result when the sequence above is complete\n    (return (when all-loaded (write-lispz)))\n    # returns a promise that is complete once the results are written\n\nIn summary we have\n\n1. **(promise [params...] ...)** is a macro that generates a function that returns a promise\n  1. **(resolve-promise results...)** sets results used in **when [results...] ...** macros\n  2. **(reject-promise err)** sets results used in **(promise.failed [err] ...)** macros\n2. **(promise.callback [params...] ...)** is a macro to creates promises from traditional callbacks\n  1. **callback** is a function reference to use where callbacks would normally be defined\n3. **(promise.resolved results)** Will return a promise that will always provide the results supplied to when. Use it to turn a synchronous function into a promise to use in sequences.\n4. **(when a-promise [results...] ...)** is a macro that works like a function where the function body is executed with the results supplied once (and if) the promise is resolved. If a **when** statement returns a promise it can be used for chaining.\n5. **(promise.failed a-promise [err] ...) is a macro that works like a function where the function body is executed if any of a set of chained promises uses **reject-promise** to indicate an error.\n6. **(promise.all promise-1 promise-2 [[promises]])** will return a promise that is fulfilled when all the promises specified are resolved or rejected. It will flatten arrays of promises.\n7. **(promise.sequence promise-1 promise-2 [[promises]])** will return a promise that is fulfilled when all the promises specified are resolved or rejected. Unlike **all**, each promise is triggered when the preceding promise is resolved.\n\n## Benefits\n1. Separates cause and effect more clearly\n2. Results are available even it the promise is resolved before inspection\n3. You can pass around a promise just like the data it will contain\n4. Handles exceptions in a structured way\n\n## Disadvantages\n2. Still fairly highly coupled\n3. Only allows one action - not for repetitive events\n4. Developer view needs to change from sequential perspective\n5. Being selective about errors and exceptions is painful. Once a promise is resolved it cannot change. Any promises that rely on a rejected promise will themselves be rejected causing a cascade of failures. To be selective you need to wrap a promise catch in an outer promise and resolve the outer one if the error itself can be resolved. Don't forget to resolve the outer promise with the data from the inner one when there are no errors.\n###\n(global #prepare-promise (lambda\n  (ref callbacks (stateful {ok: (lambda) fail: (lambda)}))\n  (ref pledge (stateful.morph!\n    (new Promise (lambda [ok fail] (callbacks.update! {ok fail})))\n  ))\n  (ref resolve (lambda (callbacks.ok.apply null (*arguments 0))))\n  (ref reject (lambda [err] (callbacks.fail err)))\n  (return { pledge resolve reject })\n))\n(global #action-promise (lambda [context promise-body]\n  (context.pledge.update! \"execution_context\" lispz.execution-context)\n  (#join '' 'try{' (promise-body context.resolve context.reject) '}catch(err){'\n    (lispz.log-execution-context context.pledge.execution-context [[\"own-promise\"]])\n    (lispz.log-execution-context lispz.execution-context [[\"in-promise\"]])\n    (context.reject err) '}'\n  )\n  (return context.pledge)\n))\n(global #deferred-promise (lambda [promise-body]\n  (ref context (#prepare-promise))\n  (context.pledge.update! {deferred: (lambda\n    (return (#action-promise context promise-body))\n  )})\n  (return context.pledge)\n))\n(global promise {})\n\n(macro promise [params *body] (lambda params\n  (return (#action-promise (#prepare-promise)\n    (lambda [resolve-promise reject-promise] *body)\n  ))\n))\n(macro promise.deferred [params *body]\n  (return #deferred-promise (lambda [resolve-promise reject-promise] *body))\n)\n(macro promise.callback [params *body] (promise params\n  (ref callback (lambda [err result]\n    (cond err (return (reject-promise err)))\n    (resolve-promise result)\n  ))\n  *body\n))\n(global promise.resolved (promise [pact] (resolve-promise pact)))\n\n(global promised (lambda [pledge]\n  (cond (and pledge pledge.then) (return pledge))\n  (return (promise.resolved pledge))\n))\n\n(global #resolve-deferred (lambda [pledge]\n  (cond pledge.deferred (do\n    (ref deferred pledge.deferred) (delete pledge.deferred) (deferred)\n  ))\n  (return pledge)\n))\n\n(macro when [pledge params *body]\n  ((#resolve-deferred pledge).then (lambda params *body))\n)\n(macro promise.failed [pledge errors *body]\n  ((#resolve-deferred pledge).catch (lambda errors *body))\n)\n\n(using [list]\n  (global promise.all (=>\n    (return (Promise.all (list.flatten (*arguments 0))))\n  ))\n)\n(global promise.chain (lambda []\n  (ref chain-link (lambda [input functions]\n    (cond (not functions.length) (return (promised input)))\n    (ref pledge (promised ((first functions) input)))\n    (when pledge [output] (chain-link output (rest functions)))\n  ))\n  (return chain-link null (*arguments 0))\n))\n\n### spec: Basic >> Keeping Count\n###\n(global counter! (lambda\n  (ref count (stateful {to: 0}))\n  (return (lambda\n    (count.update! \"to\" (+ count.to 1))\n    (return count.to)\n  ))\n))\n(global countdown! (lambda [from by]\n  (ref count (stateful {from}))\n  (return (lambda []\n    (from.update! \"from\" (- count.from by))\n    (return (<= count.from 0))\n  ))\n))\n\n(global wait-for (promise [test max-ms]\n  (ref timed-out (countdown! (or max-ms 5000) 10))\n  (ref waiter (lambda []\n    (cond\n      (test)      (return (resolve-promise))\n      (timed-out) (return (reject-promise))\n      (else)      (delay 10 waiter)\n    )\n  )) (waiter)\n))\n\n(export {})\n"
 
-lispz_modules['dev']="(using [github riot list]\n  (ref manifest (lambda\n    (ref text (statefularray![[\"CACHE MANIFEST\"]]))\n    (lispz.manifest.forEach (lambda [uri] (text.push! uri)))\n    (text.push! \"NETWORK:\" \"*\")\n    (return (text.array!.join \"\\n\"))\n  ))\n  ### Package Lispz for distribution ###\n  (ref package (lambda [lispz-repo]\n    (ref read-file (github.read.bind null lispz-repo))\n\n    (ref group (lambda [files]\n      (ref modules (stateful.array!) riots (stateful.array!))\n      (files.forEach (lambda [entry]\n        (return? (not (is \"file\" entry.type)))\n        (ref parts (entry.name.split \".\"))\n        (cond\n          (is (last parts) \"lispz\")                  (modules.push! (first parts))\n          (is ((slice parts -2).join \".\") \"riot.html\") (riots.push! (first parts))\n        )\n      ))\n      (return (promise.resolved {modules: modules.array! riots: riots.array!}))\n    ))\n    (ref load-module (lambda [name]\n      (ref uri (+ name \".lispz\"))\n      (return (when (read-file uri) [text]\n        (ref contents (text.replace '/[\\\\\"]/g' \"\\\\$&\"))\n        (ref contents (contents.replace '/\\n/g' \"\\\\n\"))\n        (return [[\"\\nlispz_modules['\" name \"']=\\\"\" contents \"\\\"\\n\"]])\n      ))\n    ))\n    (ref build-modules (lambda [names]\n      (return (promise.all (names.map load-module)))\n    ))\n\n    (ref load-riot (lambda [name]\n      (return (when (read-file (+ name \".riot.html\")) [text]\n        (ref usings ((riot.child-tags text).join \",\"))\n        (return [[\"\\n\\n/*\" name \"*/\\n\\nlispz.tags['\" name \"']=function(){\"\n          (riot.compile text true) \"\\nreturn '\" usings  \"'}\\n\"]])\n      ))\n    ))\n    (ref build-riots (lambda [names]\n      (return (promise.all (names.map load-riot)))\n    ))\n\n    (ref update-mode (github.update lispz-repo))\n    (ref lispz-js    (when update-mode (return (read-file \"lispz.js\"))))\n    (ref listing     (when update-mode (return (github.list-dir lispz-repo \"\"))))\n    (ref groups      (when listing [files] (return (group files))))\n    (ref modules     (when groups  [files] (return (build-modules files.modules))))\n    (ref riots       (when groups  [files] (return (build-riots files.riots))))\n\n    (ref all-loaded  (promise.all modules lispz-js riots))\n\n    (return (when all-loaded [sources]\n      (ref  code  (list.flatten [[\"window.lispz_modules={}\\n\" sources]]))\n      (return (github.write lispz-repo \"ext/lispz.js\"\n        (code.join \"\") \"lispz release code\")\n      )\n    ))\n  ))\n\n  ### Distribution ###\n  (ref distribute (lambda [target-repo]\n    ## @TODO\n  ))\n\n  (export {manifest package distribute})\n)\n"
+lispz_modules['dev']="(using [github riot list]\n  (ref manifest (lambda\n    (ref text (statefularray![[\"CACHE MANIFEST\"]]))\n    (lispz.manifest.forEach (lambda [uri] (text.push! uri)))\n    (text.push! \"NETWORK:\" \"*\")\n    (return (text.array!.join \"\\n\"))\n  ))\n  ### Package Lispz for distribution ###\n  (ref package (lambda [lispz-repo]\n    (ref read-file (github.read.bind null lispz-repo))\n\n    (ref group (lambda [files]\n      (ref modules (stateful.array!) riots (stateful.array!))\n      (files.forEach (lambda [entry]\n        (return? (not (is \"file\" entry.type)))\n        (ref parts (entry.name.split \".\"))\n        (cond\n          (is (last parts) \"lispz\")                  (modules.push! (first parts))\n          (is ((slice parts -2).join \".\") \"riot.html\") (riots.push! (first parts))\n        )\n      ))\n      (return (promise.resolved {modules: modules.array! riots: riots.array!}))\n    ))\n    (ref load-module (lambda [name]\n      (ref uri (+ name \".lispz\"))\n      (return (when (read-file uri) [text]\n        (ref contents (text.replace '/[\\\\\"]/g' \"\\\\$&\"))\n        (ref contents (contents.replace '/\\n/g' \"\\\\n\"))\n        (return [[\"\\nlispz_modules['\" name \"']=\\\"\" contents \"\\\"\\n\"]])\n      ))\n    ))\n    (ref build-modules (lambda [names]\n      (return (promise.all (names.map load-module)))\n    ))\n\n    (ref load-riot (lambda [name]\n      (return (when (read-file (+ name \".riot.html\")) [text]\n        (ref usings ((riot.child-tags text).join \"','\"))\n        (return [[\"\\n\\n/*\" name \"*/\\n\\nlispz.tags['\" name \"']=function(){\"\n          (riot.compile text true) \"\\nreturn ['\" usings \"']}\\n\"]])\n      ))\n    ))\n    (ref build-riots (lambda [names]\n      (return (promise.all (names.map load-riot)))\n    ))\n\n    (ref update-mode (github.update lispz-repo))\n    (ref lispz-js    (when update-mode (return (read-file \"lispz.js\"))))\n    (ref listing     (when update-mode (return (github.list-dir lispz-repo \"\"))))\n    (ref groups      (when listing [files] (return (group files))))\n    (ref modules     (when groups  [files] (return (build-modules files.modules))))\n    (ref riots       (when groups  [files] (return (build-riots files.riots))))\n\n    (ref all-loaded  (promise.all modules lispz-js riots))\n\n    (return (when all-loaded [sources]\n      (ref  code  (list.flatten [[\"window.lispz_modules={}\\n\" sources]]))\n      (return (github.write lispz-repo \"ext/lispz.js\"\n        (code.join \"\") \"lispz release code\")\n      )\n    ))\n  ))\n\n  ### Distribution ###\n  (ref distribute (lambda [target-repo]\n    ## @TODO\n  ))\n\n  (export {manifest package distribute})\n)\n"
 
 lispz_modules['dexie']="(using  [net github]\n\n  (ref build (lambda [target-repo]\n    (return (github.build target-repo \"dexie\" [[\n      {repo: \"dfahlander/Dexie.js\" files: [[\n        {base: \"dist/latest\" include: '/Dexie.js$/'}\n      ]]}\n    ]]))\n  ))\n\n  (lispz.script \"ext/dexie.js\" (lambda (export { build })))\n)\n"
 
@@ -60,7 +60,7 @@ lispz_modules['projects']="(using [github dexie]\n  ### spec: Projects\n    Empi
 
 lispz_modules['regex']="\n### spec: regex >> Extracting a substring\nA common problem is finding part of a string given a pattern.\n\n    (regex.substring href '/(.*)\\/[^\\/]*$/') ## retrieve base part of url\n###\n(ref substring (lambda [str re]\n  (ref match (str.match re))\n  (cond match (return (get match 1)))\n  (return \" \")\n))\n\n(export {substring})\n"
 
-lispz_modules['riot']="### spec: Riot\n\n[Riot](http://riotjs.com) is a tiny UI library then provides the best of Web components (polymer) and react in a package 15% of the size.\n\nRiot, like web components, each file (of type .riot.html) is a html fragment that also includes style and script elements. Like web components it is based on creating custom tags. This provides clean and readable HTML. Custom tags makes the HTML more readable.\n\nThe *panel* tags is a Riot wrapper around bootstrap panels.\n\nRiot, like React it works with a virtual DOM and only updates changes to the real DOM. Like React it compiles to JavaScript. It can be supported on older browsers.\n\nSmall tight API that provides all needed web component functionality for reactive views, events and routing.\n###\n\n### spec: Riot >> Structure of a RIOT/Lispz Program\n\nRiot components have the extension *.riot.html*. They are loaded from the HTML file or from another component. In the HTML, give a custom tag the class or *riot* and it will load a component file of the same name - including any other tags in the file. The html below will load *bootstrap.riot.html* and *code-editor.riot.html*, while *page-content* does not need a riot class as it is defined withing *bootstrap*.\n\n    <bootstrap class=riot>\n      <page-content fluid=true>\n        <div class=col-sm-6>\n          <code-editor class=riot name=literate height=48% />\n        </div>\n        <div class=col-sm-6>\n          <code-editor class=riot name=code height=48% />\n        </div>\n      </page-content>\n    </bootstrap>\n\nRiot uses plain JavaScript inside {} as a templating solution. The *opts* dictionary matches the attributes when the custom tag is referenced. Any inner tag with a *name* or *id* attribute can be referenced by the same name. Each component has a unique *_id*.\n\nStyles are global (unlike *true* web components). This is easily overcome using explicit name-spacing as above.\n###\n\n### spec: Riot >> Using other languages\n\nScripting can be any language of choice that runs on the browser. JavaScript, Lispz, Es6 (with babel) and CoffeeScript are available out-of-the-box. For the latter two you will need to load the compiler by *(using babel coffeescript)* in the startup code. Other languages can be added as long as they compile code on the browser.\n\n    (set! riot.parsers.js.lispz\n      (lambda [source] (return ((lispz.compile source \"riot-tags\").join \"\\n\")))\n    )\n###\n(using  [jquery net github dict]\n  (ref compile (lambda [html to-js] (return (riot.compile html to-js))))\n\n  (ref processed-tags (stateful {}))\n\n  (add-execution-context-logger \"riot.load\" (lambda [context error-args]\n    (return (+ \"tag\" context.name \" from \" context.uri))\n  ))\n  (ref child-tags (lambda [html]\n    (ref raw-tags (html.match '/<[^>\\s]+[^>]*?class=[\\'\\\"]riot[\\s\\'\\\"]/g'))\n    (return ((or raw-tags [[]]).map (=> (return (last ('/^<(\\S*)/'.exec @))))))\n  ))\n  (ref load (promise [name uri] (execution-context {context: \"riot.load\" name uri}\n    (ref usings (lambda [source]\n      (ref new-tags ((child-tags source).filter (=>\n        (ref processed (get processed-tags @))\n        (processed-tags.update! @ true)\n        (return (not processed))\n      )))\n      (ref loaded (promise.all (new-tags.map (lambda [tag] (return (load tag))))))\n      (when loaded (resolve-promise))\n    ))\n\n    (ref retrieve-and-compile (lambda\n      (ref url (or uri (+ (name.toLowerCase) \".riot.html\")))\n      (when (net.http-get url) [tag] (usings (compile tag)))\n    )))\n\n    (cond\n      (get lispz.tags name) (usings ((get lispz.tags name)))\n      (else)                (retrieve-and-compile)\n    )\n  ))\n\n  (ref build (lambda [target-repo]\n    (return (github.build target-repo \"riot\" [[\n      {repo: \"riot/riot\" files: [[\n        {include: '/^riot\\+compiler.js$/'}\n      ]]}\n    ]]))\n  ))\n\n  (ref mount (lambda [tags] (riot.mount.apply riot arguments)))\n\n  ### spec: riot >> Trigger Display Changes\n    Given a component context called *tag*, it is possible to change context\n    data using the state component.\n\n      <script type=text/lispz>\n        (ref tag (stateful.morph this))\n        ...\n        (ref async-set-title (lambda [title]\n          (tag.update! {title})\n          (tag.update)\n        )\n      </script>\n\n    For the confused, *update!* changes entries in the stateful context,\n    while *update* is a riot function to update the display for bound\n    data changes. Continue to use this approach where the data has logic\n    around the change, but for the common situation where data is changed\n    at the end of the logic, use *riot.update!*.\n\n      (using [riot]\n        ...\n        (ref async-set-titles (lambda [title footer]\n          (riot.update! tag {title footer})\n        )\n      )\n  ###\n  (ref update! (lambda [tag changes]\n    (tag.update! changes)\n    (tag.update) ## repaint\n  ))\n\n  ### spec: riot >> Tag support\n    Riot uses _this_ as context for codes within a tag. Also, when errors are\n    found it throws excepts that are difficult to track. Lispz provides help\n    with a riot-tag macro which invokes _using_,  provides a _tag_ reference\n    and wraps the code in a _try/catch_ to provide improved error reporting.\n\n      @TODO example\n  ###\n  (add-execution-context-logger \"riot\" (lambda [context error-args]\n    (return (+ \"for <\" context.node \"/>\"))\n  ))\n  (macro riot-tag [*body]\n    (ref tag (stateful.morph! this))\n    (execution-context {context: \"riot\" node: tag.root.nodeName tag}\n      *body\n    )\n  )\n  ## modules must be on mount or mounting will happen before trigger is set\n  (macro mount-tag-using [modules *body] (tag.on \"mount\" (=> (using modules\n    (execution-context {context: \"riot\" node: tag.root.nodeName tag}\n      *body\n    )\n  ))))\n\n  ### spec: async >> Events\n    Events follow [the observer pattern](https://en.wikipedia.org/wiki/Observer_pattern). Lispz provides access to the light-weight version in Riot. If you use Riot for UI components, the custom tags are always observers. You don't need to use riot to make use of events. You can either create an observable or make any object in the system observable.\n\n        (using [riot]\n          (ref observable-1 (riot.observable))\n          (ref element (get-my-element))\n          (riot.observable element)\n        )\n\n    Once that is out of the way, tell the observable what to do if it receives an event either once or every time.\n\n        (observable-1.on \"event-name\" (lambda [params...] what to do...))\n        (element.one \"focus\" (lambda [contents] (element.set contents)))\n\n    One observable can have many listeners for the same or different events. Use 'trigger' to wake an observable.\n\n        (observable-1.trigger \"event-name\" param1 param2)\n\n    Finally there needs to be a way to stop listening.\n\n        (observable-1.off \"event-name\" event-function-reference) ## stops one listener\n        (observable-1.off \"event-name\") ## stops all listeners to an event\n        (observable-1.off \"*\")          ## stops all listeners to all events for observable\n\n    ## Benefits\n    1. Decouples the code to whatever extent is necessary.\n    2. Associates code and data (such as the DOM).\n    3. Allows multiple invocations\n\n    ## Disadvantages\n    1. Too convoluted to use as an easy replacement for callbacks\n    2. One-way communication\n    3. No way of knowing if event was processed as expected.\n  ###\n\n  (ref   loaded (net.script \"ext/riot.js\" (lambda (return window.riot))))\n  (promise.failed loaded (export {build}))\n  (when  loaded (using [compilers]\n    (stateful.morph! riot.parsers.js)\n    (add-execution-context-logger \"riot.compile\" (lambda [context error-args]\n      (return (+ context.url \" -- source: \" context.source))\n    ))\n    (riot.parsers.js.update! {lispz:\n      (lambda [source options url]\n        (execution-context { context: \"riot.compile\" url options source }\n          (ref js (compilers.lispz.compile source \"riot-tags\"))\n          (return (compilers.to-string js))\n        )\n      )\n    })\n    (ref riot-elements (slice (document.getElementsByClassName \"riot\")))\n    (ref load-all (promise.all (riot-elements.map (lambda [element]\n      (ref name (element.tagName.toLowerCase))\n      (return (load name (element.getAttribute \"uri\")))\n    ))))\n    (when load-all\n      (riot.mount \"*\")\n      (export {build compile load mount update! child-tags})\n    )\n  ))\n)\n"
+lispz_modules['riot']="### spec: Riot\n\n[Riot](http://riotjs.com) is a tiny UI library then provides the best of Web components (polymer) and react in a package 15% of the size.\n\nRiot, like web components, each file (of type .riot.html) is a html fragment that also includes style and script elements. Like web components it is based on creating custom tags. This provides clean and readable HTML. Custom tags makes the HTML more readable.\n\nThe *panel* tags is a Riot wrapper around bootstrap panels.\n\nRiot, like React it works with a virtual DOM and only updates changes to the real DOM. Like React it compiles to JavaScript. It can be supported on older browsers.\n\nSmall tight API that provides all needed web component functionality for reactive views, events and routing.\n###\n\n### spec: Riot >> Structure of a RIOT/Lispz Program\n\nRiot components have the extension *.riot.html*. They are loaded from the HTML file or from another component. In the HTML, give a custom tag the class or *riot* and it will load a component file of the same name - including any other tags in the file. The html below will load *bootstrap.riot.html* and *code-editor.riot.html*, while *page-content* does not need a riot class as it is defined withing *bootstrap*.\n\n    <bootstrap class=riot>\n      <page-content fluid=true>\n        <div class=col-sm-6>\n          <code-editor class=riot name=literate height=48% />\n        </div>\n        <div class=col-sm-6>\n          <code-editor class=riot name=code height=48% />\n        </div>\n      </page-content>\n    </bootstrap>\n\nRiot uses plain JavaScript inside {} as a templating solution. The *opts* dictionary matches the attributes when the custom tag is referenced. Any inner tag with a *name* or *id* attribute can be referenced by the same name. Each component has a unique *_id*.\n\nStyles are global (unlike *true* web components). This is easily overcome using explicit name-spacing as above.\n###\n\n### spec: Riot >> Using other languages\n\nScripting can be any language of choice that runs on the browser. JavaScript, Lispz, Es6 (with babel) and CoffeeScript are available out-of-the-box. For the latter two you will need to load the compiler by *(using babel coffeescript)* in the startup code. Other languages can be added as long as they compile code on the browser.\n\n    (set! riot.parsers.js.lispz\n      (lambda [source] (return ((lispz.compile source \"riot-tags\").join \"\\n\")))\n    )\n###\n(using  [jquery net github dict]\n  ## has side-effects as riot caches compile results\n  (ref compile (lambda [html to-js] (return (riot.compile html to-js))))\n\n  (ref processed-tags (stateful {}))\n\n  (add-execution-context-logger \"riot.load\" (lambda [context error-args]\n    (return (+ \"tag\" context.name \" from \" context.uri))\n  ))\n  (ref child-tags (lambda [html]\n    (ref raw-tags (html.match '/<[^>\\s]+[^>]*?class=[\\'\\\"]riot[\\s\\'\\\"]/g'))\n    (return ((or raw-tags [[]]).map (=> (return (last ('/^<(\\S*)/'.exec @))))))\n  ))\n  (ref load (promise [name uri] (execution-context {context: \"riot.load\" name uri}\n    (ref usings (lambda [tags]\n      (ref new-tags (tags.filter (=>\n        (ref processed (get processed-tags @))\n        (processed-tags.update! @ true)\n        (return (not processed))\n      )))\n      (ref loaded (promise.all (new-tags.map (lambda [tag] (return (load tag))))))\n      (when loaded (resolve-promise))\n    ))\n\n    (ref retrieve-and-compile (lambda\n      (ref url (or uri (+ (name.toLowerCase) \".riot.html\")))\n      (when (net.http-get url) [tag-html] (usings (child-tags (compile tag-html))))\n    )))\n\n    (ref tag-def (get lispz.tags name))\n    (cond\n      tag-def   (usings (tag-def)) ## tag-def returns inner tag list\n      (else)    (retrieve-and-compile)\n    )\n  ))\n\n  (ref build (lambda [target-repo]\n    (return (github.build target-repo \"riot\" [[\n      {repo: \"riot/riot\" files: [[\n        {include: '/^riot\\+compiler.js$/'}\n      ]]}\n    ]]))\n  ))\n\n  (ref mount (lambda [tags] (riot.mount.apply riot arguments)))\n\n  ### spec: riot >> Trigger Display Changes\n    Given a component context called *tag*, it is possible to change context\n    data using the state component.\n\n      <script type=text/lispz>\n        (ref tag (stateful.morph this))\n        ...\n        (ref async-set-title (lambda [title]\n          (tag.update! {title})\n          (tag.update)\n        )\n      </script>\n\n    For the confused, *update!* changes entries in the stateful context,\n    while *update* is a riot function to update the display for bound\n    data changes. Continue to use this approach where the data has logic\n    around the change, but for the common situation where data is changed\n    at the end of the logic, use *riot.update!*.\n\n      (using [riot]\n        ...\n        (ref async-set-titles (lambda [title footer]\n          (riot.update! tag {title footer})\n        )\n      )\n  ###\n  (ref update! (lambda [tag changes]\n    (tag.update! changes)\n    (tag.update) ## repaint\n  ))\n\n  ### spec: riot >> Tag support\n    Riot uses _this_ as context for codes within a tag. Also, when errors are\n    found it throws excepts that are difficult to track. Lispz provides help\n    with a riot-tag macro which invokes _using_,  provides a _tag_ reference\n    and wraps the code in a _try/catch_ to provide improved error reporting.\n\n      @TODO example\n  ###\n  (add-execution-context-logger \"riot\" (lambda [context error-args]\n    (return (+ \"for <\" context.node \"/>\"))\n  ))\n  (macro riot-tag [*body]\n    (ref tag (stateful.morph! this))\n    (execution-context {context: \"riot\" node: tag.root.nodeName tag}\n      *body\n    )\n  )\n  ## modules must be on mount or mounting will happen before trigger is set\n  (macro mount-tag-using [modules *body] (tag.on \"mount\" (=> (using modules\n    (execution-context {context: \"riot\" node: tag.root.nodeName tag}\n      *body\n    )\n  ))))\n\n  ### spec: async >> Events\n    Events follow [the observer pattern](https://en.wikipedia.org/wiki/Observer_pattern). Lispz provides access to the light-weight version in Riot. If you use Riot for UI components, the custom tags are always observers. You don't need to use riot to make use of events. You can either create an observable or make any object in the system observable.\n\n        (using [riot]\n          (ref observable-1 (riot.observable))\n          (ref element (get-my-element))\n          (riot.observable element)\n        )\n\n    Once that is out of the way, tell the observable what to do if it receives an event either once or every time.\n\n        (observable-1.on \"event-name\" (lambda [params...] what to do...))\n        (element.one \"focus\" (lambda [contents] (element.set contents)))\n\n    One observable can have many listeners for the same or different events. Use 'trigger' to wake an observable.\n\n        (observable-1.trigger \"event-name\" param1 param2)\n\n    Finally there needs to be a way to stop listening.\n\n        (observable-1.off \"event-name\" event-function-reference) ## stops one listener\n        (observable-1.off \"event-name\") ## stops all listeners to an event\n        (observable-1.off \"*\")          ## stops all listeners to all events for observable\n\n    ## Benefits\n    1. Decouples the code to whatever extent is necessary.\n    2. Associates code and data (such as the DOM).\n    3. Allows multiple invocations\n\n    ## Disadvantages\n    1. Too convoluted to use as an easy replacement for callbacks\n    2. One-way communication\n    3. No way of knowing if event was processed as expected.\n  ###\n\n  (ref   loaded (net.script \"ext/riot.js\" (lambda (return window.riot))))\n  (promise.failed loaded (export {build}))\n  (when  loaded (using [compilers]\n    (stateful.morph! riot.parsers.js)\n    (add-execution-context-logger \"riot.compile\" (lambda [context error-args]\n      (return (+ context.url \" -- source: \" context.source))\n    ))\n    (riot.parsers.js.update! {lispz:\n      (lambda [source options url]\n        (execution-context { context: \"riot.compile\" url options source }\n          (ref js (compilers.lispz.compile source \"riot-tags\"))\n          (return (compilers.to-string js))\n        )\n      )\n    })\n    (ref riot-elements (slice (document.getElementsByClassName \"riot\")))\n    (ref load-all (promise.all (riot-elements.map (lambda [element]\n      (ref name (element.tagName.toLowerCase))\n      (return (load name (element.getAttribute \"uri\")))\n    ))))\n    (when load-all\n      (riot.mount \"*\")\n      (export {build compile load mount update! child-tags})\n    )\n  ))\n)\n"
 
 lispz_modules['sortable']="## https://github.com/RubaXa/Sortable\n(using [net cdnjs dict]\n\n  (ref sortable-defaults {\n    dataIdAttr: name\n    store: {\n      get: (lambda [sortable]\n        (ref items (localStorage.getItem sortable.options.group))\n        (return ((or items \"\").split \"|\"))\n      )\n      set: (lambda [sortable]\n        (localStorage.setItem sortable.options.group ((sortable.toArray).join \"|\"))\n      )\n    }\n  })\n  ### spec: DOM >> Sortable Components\n  ###\n  (ref create (lambda [container name options]\n    (return (Sortable.create container\n      (dict.merge  sortable-defaults {group: (or name (Math.random))} options)\n    ))\n  ))\n\n  (ref build (lambda [target-repo]\n    (return (cdnjs.build target-repo \"sortable\" [[\n      {repo: \"sortable\" files: [[{include '/Sortable.js/'}]]}\n    ]]))\n  ))\n  (ref loaded (net.script \"ext/sortable.js\" (lambda [] (return window.Sortable))))\n  (when  loaded [] (export {build create}))\n  (promise.failed loaded [] (export {build}))\n)\n"
 
@@ -424,9 +424,9 @@ var lispz = function() {
 /*bootstrap*/
 
 lispz.tags['bootstrap']=function(){riot.tag2('panel', '<div class="panel {context}" name="outer"> <div class="panel-heading" if="{opts.heading}" name="heading"><bars-menu align="right" name="{opts.menu}" owner="{opts.owner}"></bars-menu> <yield from="buttons"></yield> <h3 class="panel-title">{opts.heading}</h3></div> <div class="panel-body" name="body"><yield></yield></div> <div class="panel-footer" if="{opts.footer}" name="footer">{opts.footer}</div> </div>', 'panel .panel { position: relative; } panel .panel-title { cursor: default; } panel .panel-body { position: absolute; top: 40px; bottom: 2px; left: 0; right: 2px; overflow: auto; } panel > .panel { margin-top: 10px; margin-bottom: 10px; }', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:129
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:130
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
 )//#core:111
 
 try{
@@ -434,7 +434,7 @@ tag.update_$_({'context':("panel-"+(opts.context||"default"))})//#riot-tags:2
 
 tag.on("mount",function(_t_){lispz.load("dom"//#core:388
 ,function(){var dom=lispz.cache["dom"];
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:136
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:138
 )//#core:111
 
 try{
@@ -452,7 +452,7 @@ dom.style_$_(tag.outer,{'height':(px+"px")})//#riot-tags:9
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:138
+}//#riot:140
 }
 //#core:389
 )}
@@ -461,21 +461,21 @@ lispz.execution_context.pop()
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:132
+}//#riot:134
 //#riot-tags:12
 //#riot-tags:13
 }, '{ }');
 
 riot.tag2('panels', '<yield></yield>', 'panels .panel-title { cursor: move; }', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:129
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:130
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
 )//#core:111
 
 try{
 tag.on("mount",function(_t_){lispz.load("sortable"//#core:388
 ,function(){var sortable=lispz.cache["sortable"];
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:136
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:138
 )//#core:111
 
 try{
@@ -484,7 +484,7 @@ sortable.create(tag.root,(opts.name||"sortable"),{'draggable':".draggable",'hand
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:138
+}//#riot:140
 }
 //#core:389
 )}
@@ -492,15 +492,15 @@ lispz.execution_context.pop()
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:132
+}//#riot:134
 //#riot-tags:7
 //#riot-tags:8
 });
 
 riot.tag2('modal', '<div class="modal fade" role="dialog" aria-labelledby="{opts.name}"> <div class="modal-dialog" role="document"> <div class="modal-content"> <div class="modal-header" if="{opts.title}"> <button type="button" class="close" data-dismiss="modal" aria-label="Close"> <span aria-hidden="true">&times;</span> </button> <h4 class="modal-title" id="{opts.name}">{opts.title}</h4> </div> <div class="modal-body"><yield></yield></div> <div class="modal-footer"> <button each="{buttons}" class="btn btn-{type}" name="{name}"> {title} </button> </div> </div> </div> </div>', '', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:129
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:130
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
 )//#core:111
 
 try{
@@ -529,7 +529,7 @@ buttons.push_$_({'title':title,'type':type,'name':name})//#riot-tags:9
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:132
+}//#riot:134
 //#riot-tags:12
 //#riot-tags:13
 }, '{ }');
@@ -541,15 +541,15 @@ riot.tag2('button-group', '<div class="btn-group" role="group"> <yield></yield> 
 });
 
 riot.tag2('push-button', '<button class="btn btn-{opts.type || \'default\'} btn-{opts.size || \'default\'}" name="button"> <yield></yield> </button>', '', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:129
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:130
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
 )//#core:111
 
 try{
 tag.on("mount",function(_t_){lispz.load("message"//#core:388
 ,function(){var message=lispz.cache["message"];
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:136
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:138
 )//#core:111
 
 try{
@@ -559,7 +559,7 @@ tag.button.addEventListener("click",function(_t_){message.send(opts.name,{})}
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:138
+}//#riot:140
 }
 //#core:389
 )}
@@ -567,21 +567,21 @@ lispz.execution_context.pop()
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:132
+}//#riot:134
 //#riot-tags:3
 //#riot-tags:4
 }, '{ }');
 
 riot.tag2('bars-menu', '<div name="dropdown" class="dropdown {right: opts.align === \'right\'}"> <a style="text-decoration: none" data-toggle="dropdown" name="bars" class="glyphicon glyphicon-menu-hamburger dropdown-toggle" aria-hidden="true"></a> <ul class="dropdown-menu {dropdown-menu-right: opts.align === \'right\'}"> <li each="{items}" class="{dropdown-header: header && title,           divider: divider, disabled: disabled}"><a onclick="{goto}" href="#"> <span class="pointer right float-right" if="{children}"></span> {title}&nbsp;&nbsp;&nbsp; </a></li> </ul> </div>', 'bars-menu > div.right { float: right } bars-menu span.caret { margin-left: -11px } bars-menu a.dropdown-toggle { cursor: pointer }', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:129
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:130
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
 )//#core:111
 
 try{
 tag.on("mount",function(_t_){lispz.load("message,riot"//#core:388
 ,function(){var message=lispz.cache["message"],riot=lispz.cache["riot"];
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:136
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:138
 )//#core:111
 
 try{
@@ -611,7 +611,7 @@ ev.stopPropagation()//#riot-tags:16
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:138
+}//#riot:140
 }
 //#core:389
 )}
@@ -619,15 +619,15 @@ lispz.execution_context.pop()
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:132
+}//#riot:134
 //#riot-tags:19
 //#riot-tags:20
 }, '{ }');
 
 riot.tag2('tree', '<tree-component name="base"></tree-component>', '', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:129
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:130
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
 )//#core:111
 
 try{
@@ -643,15 +643,15 @@ tag.update()}
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:132
+}//#riot:134
 //#riot-tags:6
 //#riot-tags:7
 });
 
 riot.tag2('tree-component', '<ul class="dropdown-menu"> <li each="{item, i in items}" class="{dropdown-header: item.header && item.title,         divider: item.divider, disabled: item.disabled}"><a onclick="{parent.goto}" href="#"> <span if="{item.children}" class="glyphicon glyphicon-triangle-right" aria-hidden="true"></span>{item.title}</a> <tree-component if="{item.children}" name="{item.title}"> </li> </ul>', 'tree-component ul { display: inherit !important; position: inherit !important; } tree-component:not([name=base]) > ul { display: none !important; } tree-component:not([name=base]).open > ul { margin-left: 9px; margin-right: 9px; display: inherit !important; } tree-component span.glyphicon { margin-left: -18px; }', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:129
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:130
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
 )//#core:111
 
 try{
@@ -693,15 +693,15 @@ ev.stopPropagation()//#riot-tags:21
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:132
+}//#riot:134
 //#riot-tags:23
 //#riot-tags:24
 }, '{ }');
 
 riot.tag2('sidebar', '<a aria-hidden="true" name="hamburger" class="glyphicon glyphicon-menu-hamburger"></a> <div id="sidebar" class="container bg-primary"><yield></yield></div>', 'sidebar > a { text-decoration: none !important; position: absolute !important; z-index: 2000; } #sidebar { z-index: 1000; position: fixed; width: 0; height: 100%; overflow-y: auto; -webkit-transition: all 0.5s ease; -moz-transition: all 0.5s ease; -o-transition: all 0.5s ease; transition: all 0.5s ease; padding-right: 0; overflow: hidden; } #sidebar.toggled { width: auto; padding-right: 15px; }', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:129
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:130
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
 )//#core:111
 
 try{
@@ -718,7 +718,7 @@ setTimeout(function(){message.send("dom/page-content-wrapper-padding",tag.sideba
 
 tag.on("mount",function(_t_){lispz.load("riot"//#core:388
 ,function(){var riot=lispz.cache["riot"];
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:136
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:138
 )//#core:111
 
 try{
@@ -728,7 +728,7 @@ setTimeout(function(){message.send("dom/page-content-wrapper-padding",tag.sideba
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:138
+}//#riot:140
 }
 //#core:389
 )}
@@ -739,15 +739,15 @@ lispz.execution_context.pop()
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:132
+}//#riot:134
 //#riot-tags:12
 //#riot-tags:13
 });
 
 riot.tag2('page-content', '<div id="page_content_wrapper"> <div class="{container-fluid: opts.fluid, container: !opts.fluid}"> <yield></yield> </div> </div>', '#page_content_wrapper { width: 100%; position: absolute; }', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:129
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:130
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
 )//#core:111
 
 try{
@@ -762,15 +762,15 @@ message.listen("dom/page-content-wrapper-padding",function(px){dom.style_$_(tag.
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:132
+}//#riot:134
 //#riot-tags:5
 //#riot-tags:6
 }, '{ }');
 
 riot.tag2('bootstrap', '<div id="page-wrapper"><yield></yield></div>', '.pointer { border: 5px solid transparent; display: inline-block; width: 0; height: 0; vertical-align: middle; } .pointer.float-right { float: right; margin-top: 5px; } .pointer.up { border-bottom: 5px solid; } .pointer.right { border-left: 5px solid; } .pointer.down { border-top: 5px solid; } .pointer.left { border-right: 5px solid; }', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:129
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:130
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
 )//#core:111
 
 try{
@@ -784,20 +784,20 @@ dom.append_$_("head",dom.element("meta",{'name':"viewport",'content':"width=devi
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:132
+}//#riot:134
 //#riot-tags:5
 //#riot-tags:6
 });
 
-return ''}
+return ['']}
 
 
 /*code-editor*/
 
 lispz.tags['code-editor']=function(){riot.tag2('code-editor', '<panel height="{opts.height}" heading="{heading}" menu="{menu}" owner="{_riot_id}"> <yield to="buttons"><yield></yield> </panel>', 'code-editor .CodeMirror { position: absolute; top: 0; bottom: 0; left: 5px; right: 0; height: initial; }', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:129
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:130
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
 )//#core:111
 
 try{
@@ -805,7 +805,7 @@ tag.update_$_({'menu':"codemirror/menu",'heading':(opts.heading||"Edit")})//#rio
 
 tag.on("mount",function(_t_){lispz.load("codemirror,message,dict,events"//#core:388
 ,function(){var codemirror=lispz.cache["codemirror"],message=lispz.cache["message"],dict=lispz.cache["dict"],events=lispz.cache["events"];
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:136
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:138
 )//#core:111
 
 try{
@@ -861,7 +861,7 @@ message.dispatch(("code-editor/"+opts.name),{'open':open,'append':append,'conten
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:138
+}//#riot:140
 }
 //#core:389
 )}
@@ -870,26 +870,26 @@ lispz.execution_context.pop()
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:132
+}//#riot:134
 //#riot-tags:36
 //#riot-tags:37
 }, '{ }');
 
-return ''}
+return ['']}
 
 
 /*codemirror*/
 
 lispz.tags['codemirror']=function(){riot.tag2('codemirror', '<div name="wrapper"> </div>', '', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:129
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:130
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
 )//#core:111
 
 try{
 tag.on("mount",function(_t_){lispz.load("codemirror"//#core:388
 ,function(){var codemirror=lispz.cache["codemirror"];
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:136
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:138
 )//#core:111
 
 try{
@@ -898,7 +898,7 @@ tag.update_$_({'cm':CodeMirror(tag.wrapper,opts)})//#riot-tags:2
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:138
+}//#riot:140
 }
 //#core:389
 )}
@@ -906,20 +906,20 @@ lispz.execution_context.pop()
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:132
+}//#riot:134
 //#riot-tags:3
 //#riot-tags:4
 });
 
-return ''}
+return ['']}
 
 
 /*firepad*/
 
 lispz.tags['firepad']=function(){riot.tag2('firepad', '<panel height="{opts.height}" heading="{heading}" menu="{menu}" owner="{_riot_id}"> <div name="wrapper" class="wrapper"></div> </panel>', 'firepad .wrapper { position: absolute; top: 0; bottom: 0; left: 0; right: 0; height: initial; } firepad .CodeMirror { position: absolute; top: 0; bottom: 0; left: 5px; right: 0; height: initial; } a.powered-by-firepad { display: none; } div.firepad-toolbar { margin-top: -25px; }', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:129
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:130
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
 )//#core:111
 
 try{
@@ -929,7 +929,7 @@ tag.update_$_({'heading':"Edit"})//#riot-tags:3
 
 tag.on("mount",function(_t_){lispz.load("firebase,codemirror,firepad,message,dict"//#core:388
 ,function(){var firebase=lispz.cache["firebase"],codemirror=lispz.cache["codemirror"],firepad=lispz.cache["firepad"],message=lispz.cache["message"],dict=lispz.cache["dict"];
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:136
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:138
 )//#core:111
 
 try{
@@ -987,7 +987,7 @@ tag.pad.on_ready(function(){message.dispatch(("firepad/"+opts.name),{'open':open
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:138
+}//#riot:140
 }
 //#core:389
 )}
@@ -996,26 +996,26 @@ lispz.execution_context.pop()
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:132
+}//#riot:134
 //#riot-tags:44
 //#riot-tags:45
 }, '{ }');
 
-return ''}
+return ['']}
 
 
 /*github*/
 
 lispz.tags['github']=function(){riot.tag2('github-login', '<modal name="github-login" title="GitHub Login" buttons="*Sign In"> <img src="GitHub-Mark-64px.png"> <form class="form-horizontal"> <input type="text" class="form-control" name="username" placeholder="User Name"> <br> <input type="password" class="form-control" name="password" placeholder="Password"> <br> <input type="checkbox" name="remember-me" data-toggle="tooltip" title="Only use on a secure, private account"> Remember me </form> </modal>', '', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:129
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:130
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
 )//#core:111
 
 try{
 tag.on("mount",function(_t_){lispz.load("github,message"//#core:388
 ,function(){var github=lispz.cache["github"],message=lispz.cache["message"];
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:136
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:138
 )//#core:111
 
 try{
@@ -1023,7 +1023,7 @@ try{
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:138
+}//#riot:140
 }
 //#core:389
 )}
@@ -1031,20 +1031,20 @@ lispz.execution_context.pop()
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:132
+}//#riot:134
 //#riot-tags:2
 //#riot-tags:3
 });
 
-return ''}
+return ['']}
 
 
 /*iframe-panel*/
 
 lispz.tags['iframe-panel']=function(){riot.tag2('iframe-panel', '<panel height="{opts.height}" heading="{heading}" menu="{menu}" owner="{_riot_id}"> <iframe name="iframe" class="iframe"></iframe> </panel>', 'iframe-panel .panel-body { bottom: 0; left: 1px; right: 1px; padding: 0; padding-bottom: 1px; } iframe-panel .iframe { position: absolute; height: 100%; width: 100%; }', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:129
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:130
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
 )//#core:111
 
 try{
@@ -1052,7 +1052,7 @@ tag.update_$_({'menu':opts.menu,'heading':opts.heading})//#riot-tags:2
 
 tag.on("mount",function(_t_){lispz.load("message"//#core:388
 ,function(){var message=lispz.cache["message"];
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:136
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:138
 )//#core:111
 
 try{
@@ -1084,7 +1084,7 @@ tag.update()//#riot-tags:19
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:138
+}//#riot:140
 }
 //#core:389
 )}
@@ -1093,20 +1093,20 @@ lispz.execution_context.pop()
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:132
+}//#riot:134
 //#riot-tags:23
 //#riot-tags:24
 }, '{ }');
 
-return ''}
+return ['']}
 
 
 /*lispz*/
 
 lispz.tags['lispz']=function(){riot.tag2('lispz', '<bootstrap class="riot"> <page-content fluid="true"> <panels name="editor-panels"> <code-editor class="riot col-sm-6 draggable" name="code" height="48%" heading="Lispz"> <buttons name="code/buttons" align="right"> <push-button name="code/run" type="info" size="xs" title="<alt><enter>">Run</push-button> </buttons> </code-editor> <code-editor class="riot col-sm-6 draggable" name="compiled" height="48%" heading="Generated Javascript"></code-editor> <code-editor class="riot col-sm-6 draggable" name="output" height="48%" heading="Console"></code-editor> <markdown class="riot col-sm-6 draggable" name="manual" href="https://cdn.rawgit.com/paulmarrington/lispz/master/README.md" height="48%" heading="Manual"></markdown> </panels> </page-content> </bootstrap>', '', 'using="bootstrap code-editor markdown"', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:129
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:130
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
 )//#core:111
 
 try{
@@ -1194,20 +1194,20 @@ message.listen("code-editor/run/output",function(_t_){log(_t_.output)}
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:132
+}//#riot:134
 //#riot-tags:49
 //#riot-tags:50
 });
 
-return 'code-editor,code-editor,code-editor,markdown'}
+return ['code-editor','code-editor','code-editor','markdown']}
 
 
 /*markdown*/
 
 lispz.tags['markdown']=function(){riot.tag2('markdown', '<panel height="{opts.height}" heading="{heading}" menu="{menu}" owner="{_riot_id}"> <div name="wrapper" class="wrapper"></div> </panel>', '', '', function(opts) {
-var tag=lispz.globals.stateful.morph_$_(this);//#riot:129
+var tag=lispz.globals.stateful.morph_$_(this);//#riot:131
 
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:130
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:132
 )//#core:111
 
 try{
@@ -1221,7 +1221,7 @@ tag.update_$_({'menu':markdown_menu,'heading':opts.heading})//#riot-tags:5
 
 tag.on("mount",function(_t_){lispz.load("markdown,dom,net,message,dict"//#core:388
 ,function(){var markdown=lispz.cache["markdown"],dom=lispz.cache["dom"],net=lispz.cache["net"],message=lispz.cache["message"],dict=lispz.cache["dict"];
-lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:136
+lispz.execution_context.push({'context':"riot",'node':tag.root.nodeName,'tag':tag}//#riot:138
 )//#core:111
 
 try{
@@ -1284,7 +1284,7 @@ message.dispatch(("showdown/"+opts.name),{'open':open,'load':load})//#riot-tags:
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:138
+}//#riot:140
 }
 //#core:389
 )}
@@ -1293,9 +1293,9 @@ lispz.execution_context.pop()
 }
 finally {
 lispz.execution_context.pop()
-}//#riot:132
+}//#riot:134
 //#riot-tags:70
 //#riot-tags:71
 }, '{ }');
 
-return ''}
+return ['']}
