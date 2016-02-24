@@ -6,7 +6,6 @@
   </style>
   <script type=text/lispz>
     (riot-tag
-      (ref tag (stateful.morph! this))
       (ref markdown-menu (+ "panel/markdown/" opts.name "/menu"))
       (ref markdown-menu-action (+ markdown-menu "/action"))
       (tag.update! {menu: markdown-menu heading: opts.heading})
