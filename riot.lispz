@@ -64,14 +64,16 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
       (when loaded (resolve-promise))
     ))
 
+    (ref compile-and-process (=> (usings (child-tags (compile @)))))
+
     (ref retrieve-and-compile (lambda
       (ref url (or uri (+ (name.toLowerCase) ".riot.html")))
-      (when (net.http-get url) [tag-html] (usings (child-tags (compile tag-html))))
+      (when (net.http-get url) [tag-html] (compile-and-process tag-html))
     )))
 
     (ref tag-def (get lispz.tags name))
     (cond
-      tag-def   (do (compile (get tag-def 0)) (usings (get tag-def 1)))
+      tag-def   (compile-and-process tag-def)
       (else)    (retrieve-and-compile)
     )
   ))
