@@ -71,7 +71,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
 
     (ref tag-def (get lispz.tags name))
     (cond
-      tag-def   (do (compile tag-def.0) (usings tag-def.1))
+      tag-def   (do (compile (get tag-def 0)) (usings (get tag-def 1)))
       (else)    (retrieve-and-compile)
     )
   ))
