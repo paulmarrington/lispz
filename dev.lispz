@@ -21,12 +21,13 @@
       ))
       (return (promise.resolved {modules: modules.array! riots: riots.array!}))
     ))
+    (ref stringify (=>
+      (return ((@.replace '/[\\"]/g' "\\$&").replace '/\n/g' "\\n"))
+    ))
     (ref load-module (lambda [name]
       (ref uri (+ name ".lispz"))
       (return (when (read-file uri) [text]
-        (ref contents (text.replace '/[\\"]/g' "\\$&"))
-        (ref contents (contents.replace '/\n/g' "\\n"))
-        (return [["\nlispz_modules['" name "']=\"" contents "\"\n"]])
+        (return [["\nlispz_modules['" name "']=\"" (stringify text) "\"\n"]])
       ))
     ))
     (ref build-modules (lambda [names]
@@ -36,8 +37,8 @@
     (ref load-riot (lambda [name]
       (return (when (read-file (+ name ".riot.html")) [text]
         (ref usings ((riot.child-tags text).join "','"))
-        (return [["\n\n/*" name "*/\n\nlispz.tags['" name "']=[function(){"
-          (riot.compile text true) "},\n['" usings "']]\n"]])
+        (return [["\n\n/*" name "*/\n\nlispz.tags['" name "']=["
+          (stringify text) ",\n['" usings "']]\n"]])
       ))
     ))
     (ref build-riots (lambda [names]
