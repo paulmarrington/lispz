@@ -58,5 +58,20 @@
       ((expect (abs(-33))).toBe 33)
       ((expect (abs(22))).toBe 22)
       ((expect (abs(0))).toBe 0)
+
+      (ref abs2 (lambda [x]
+        (cond (< x 0) -x
+              (else)   x
+        )
+      ))
+
+      ((expect (abs2(-33))).toBe 33)
+      ((expect (abs2(22))).toBe 22)
+      ((expect (abs2(0))).toBe 0)
+
+      (ref x 7)
+      (expect (and (> x 5) (< x 10)).toBeTruthy)
+      (ref x 111)
+      (expect (and (> x 5) (< x 10)).toBeFalsy)
     )
 )

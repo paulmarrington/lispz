@@ -14,7 +14,7 @@
 
         (ref ref 23)
 ###
-### spec: basics >> Operators
+### spec: basics >> Operator
     A pure lisp system does not have any operators. Everything is a function or a macro.
     Because Lispz compiles to JavaScript, all unary and many binary operators are exposed.
 
