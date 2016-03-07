@@ -391,7 +391,7 @@ To access external modules, wrap your code in 'using'. Data and functions export
 ### Modules must export to continue processing ###
 (macro export [exports] (#join '' '__module_ready__(' exports ')'))
 
-(macro delay [ms *body] (setTimeout (lambda [] *body) ms))
+(macro delay [ms *body] (setTimeout (=> *body) ms))
 (macro yield [*body] (delay 0 *body))
 ###
 # Use contain to contain state changes. Any var inside a contain can be changed
