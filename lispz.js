@@ -46,7 +46,9 @@ var lispz = function() {
       params = ["["]  // empty parameter list for macro
     }
     var header = "function("+params.slice(1).map(jsify).join(",")+")"
-    body = "{"+body.map(ast_to_js).join("\n")+"}\n"
+    body = body.map(ast_to_js)
+console.debug(body.length ? body[body.length - 1] : "???")
+    body = "{"+body.join("\n")+"}\n"
     return header + body
   },
   macro_to_js = function(name, pnames, body) {

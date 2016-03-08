@@ -271,7 +271,7 @@
       (ref keys (stateful.array!))
       (ref one-map (lambda [map]
         ((Object.keys map).forEach (lambda [key]
-          (cond
+          (conds
             (is key "fallthrough") (do
                 (ref more (get map key))
                 (conds (is (typeof more) "string") (ref more [[more]]))

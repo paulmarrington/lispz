@@ -14,7 +14,7 @@
       (files.forEach (lambda [entry]
         (return? (not (is "file" entry.type)))
         (ref parts (entry.name.split "."))
-        (cond
+        (conds
           (is (last parts) "lispz")                  (modules.push! (first parts))
           (is ((slice parts -2).join ".") "riot.html") (riots.push! (first parts))
         )
