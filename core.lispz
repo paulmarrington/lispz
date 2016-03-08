@@ -655,7 +655,7 @@ In summary we have
 (global wait-for (promise [test max-ms]
   (ref timed-out (countdown! (or max-ms 5000) 10))
   (ref waiter (lambda []
-    (cond
+    (conds
       (test)      (return (resolve-promise))
       (timed-out) (return (reject-promise))
       (else)      (delay 10 waiter)

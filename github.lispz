@@ -23,7 +23,7 @@
       (return (when (list-dir repo path) [paths]
         (ref children (stateful.array!))
         (paths.forEach (lambda [entry]
-          (cond
+          (conds
             (is "dir"  entry.type)
               (conds (not single-level) (children.push! (list-path entry.path)))
             (is "file" entry.type)
@@ -86,7 +86,7 @@
         (ref files (filter file-list meta.include meta.exclude))
         (resolve-promise (promise.all (files.map (promise [path]
           (when (actors.read source-repo path) [code]
-            (cond
+            (conds
               meta.copy-to (resolve-promise (copy meta.copy-to path code))
               (else)       (resolve-promise (preprocess path code))
             )
@@ -114,7 +114,7 @@
         from:   (first-from.concat rest-from)
       })
       ((list.flatten entry-tree).forEach (lambda [entry]
-        (cond
+        (conds
           (get store entry.ext)
             (do
               (ref ext-list (get store entry.ext))
