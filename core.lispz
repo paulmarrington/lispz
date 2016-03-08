@@ -84,7 +84,7 @@
     covered specifically. The default? function takes a value and returns
     it if it exists and is not empty, otherwise it returns the default value.
 
-        (cond (is v "One")  (return 1)
+        (conds (is v "One")  (return 1)
               (not v)       (return 0)
               (else)        (return -1)
         )
@@ -92,11 +92,11 @@
     Because conditionals work with list pairs, it is necessary to wrap the actions
     if there are more than one. Lispz provides 'do' for that.
 
-        (cond ok? (do (finish-up) (return true)))
+        (conds ok? (do (finish-up) (return true)))
 
     The standard conditional tests (< > <= >=, etc) are augmented by aliases (is isnt not).
 ###
-(macro cond [*list]
+(macro conds [*list]
   (#join '' 'switch(false){case !' (#pairs *list  ':' ';break;case !') '}')
 )
 (macro else [] 'true')
@@ -115,7 +115,7 @@
 ### spec: basic >> Execution Context >> Adding Loggers
 ###
 (global add-execution-context-logger (lambda [name logger]
-  (cond (not lispz.execution-context.loggers) return)
+  (conds (not lispz.execution-context.loggers) return)
   (lispz.execution-context.loggers.update! name logger)
 ))
 
@@ -243,17 +243,17 @@
 
 (macro #set! [to-change! value] (#join '' to-change! '=' value ';'))
 (ref #morph! (lambda [obj]
-  (cond obj.update! (return obj)) ## in case we have done it before
+  (conds obj.update! (return obj)) ## in case we have done it before
   (Object.defineProperties obj {
     update!: {value: (lambda [update]
       (ref context this)
-      (cond (is arguments.length 1)
+      (conds (is arguments.length 1)
         ((Object.keys update).forEach (lambda [key]
           (#set! (get context key) (get update key))
         ))
       (else) (do
         (ref list (*arguments 0))
-        (list.forEach (lambda [value idx] (cond (% idx 2) (do
+        (list.forEach (lambda [value idx] (conds (% idx 2) (do
           (ref key (get list (- idx 1)))
           (#set! (get context key) value)
         ))))
@@ -276,7 +276,7 @@
 ))
 (global stateful (lambda [seed]
   (ref obj (#morph! (new Object)))
-  (cond seed (obj.update! seed))
+  (conds seed (obj.update! seed))
   (return obj)
 ))
 (global stateful.array! (lambda [seed]
@@ -304,7 +304,7 @@
     > before using the reference. This stops the value from being evaluated
     > twice if it is not a simple reference.
 ###
-(macro return? [value] (do (ref v value) (cond v (return v))))
+(macro return? [value] (do (ref v value) (conds v (return v))))
 
 (macro new [cls *params] (#join '' '(new ' cls '(' (#join ',' *params) '))'))
 
@@ -433,7 +433,7 @@ Callbacks provide the simplest mechanism for asynchronous responses. Any functio
 Many callbacks producers follow the node-js approach of providing error and response parameters.
 
     (read my-url (lambda [err response]
-      (cond err (throw "read failed"))
+      (conds err (throw "read failed"))
       (return response.text)
     )
 
@@ -464,7 +464,7 @@ it calls (reject-promise err).
 
     (ref read (promise [addr param1 param2]
       (http-get (+ addr "?&" param1 "&" param2) (lambda [err response]
-        (cond err (return (reject-promise err)))
+        (conds err (return (reject-promise err)))
         (resolve-promise response)
       ))
     ))
@@ -476,7 +476,7 @@ create a file object that may or may not ever ask a server for the contents.
     (ref file {
       read: (promise.deferred [addr param1 param2]
         (http-get (+ addr "?&" param1 "&" param2) (lambda [err response]
-          (cond err (return (reject-promise err)))
+          (conds err (return (reject-promise err)))
           (resolve-promise response)
         ))
       )
@@ -595,7 +595,7 @@ In summary we have
 )
 (macro promise.callback [params *body] (promise params
   (ref callback (lambda [err result]
-    (cond err (return (reject-promise err)))
+    (conds err (return (reject-promise err)))
     (resolve-promise result)
   ))
   *body
@@ -603,12 +603,12 @@ In summary we have
 (global promise.resolved (promise [pact] (resolve-promise pact)))
 
 (global promised (lambda [pledge]
-  (cond (and pledge pledge.then) (return pledge))
+  (conds (and pledge pledge.then) (return pledge))
   (return (promise.resolved pledge))
 ))
 
 (global #resolve-deferred (lambda [pledge]
-  (cond pledge.deferred (do
+  (conds pledge.deferred (do
     (ref deferred pledge.deferred) (delete pledge.deferred) (deferred)
   ))
   (return pledge)
@@ -628,7 +628,7 @@ In summary we have
 )
 (global promise.chain (lambda []
   (ref chain-link (lambda [input functions]
-    (cond (not functions.length) (return (promised input)))
+    (conds (not functions.length) (return (promised input)))
     (ref pledge (promised ((first functions) input)))
     (when pledge [output] (chain-link output (rest functions)))
   ))

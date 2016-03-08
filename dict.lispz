@@ -60,7 +60,7 @@ There is often need to merge multiple dictionaries together to create a new comb
 ###
 (ref from-list (lambda [list key]
   (ref dictionary (stateful))
-  (cond list (list.forEach (lambda [item] (dictionary.update! item))))
+  (conds list (list.forEach (lambda [item] (dictionary.update! item))))
   (return dictionary)
 ))
 

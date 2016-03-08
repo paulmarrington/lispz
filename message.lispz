@@ -62,7 +62,7 @@
 
   (ref exchange (lambda [address]
     (ref envelopes (get store address))
-    (cond envelopes (return envelopes))
+    (conds envelopes (return envelopes))
     (ref envelopes (stateful.array!))
     (store.update! address envelopes)
     (return envelopes)
@@ -71,13 +71,13 @@
   (ref add (lambda [address envelope]
     (ref envelopes (exchange address))
     (envelopes.push! envelope)
-    (cond (and (is envelopes.array!.length 1)  (get expecting address))
+    (conds (and (is envelopes.array!.length 1)  (get expecting address))
           (do ((get expecting address)) (delete (get expecting address))))
   ))
 
   (ref ready (promise [address]
     (ref envelopes (exchange address))
-    (cond (length envelopes.array!) (return (promise.resolved)))
+    (conds (length envelopes.array!) (return (promise.resolved)))
     (expecting.update! address resolve-promise)
   ))
 
@@ -95,7 +95,7 @@
   (ref clear (lambda [address] (store.update! address (stateful.array!))))
 
   (ref link (lambda [primary secondary]
-    (cond (not (get links primary)) (links.update! primary (stateful.array!)))
+    (conds (not (get links primary)) (links.update! primary (stateful.array!)))
     (ref primary-links (get links primary))
     (primary-links.push! secondary)
   ))
@@ -109,7 +109,7 @@
       (ref result (stateful))
       (ref sender (lambda [recipient]
         (result.update! "contents" (recipient.listener=> packet))
-        (cond recipient.once (remove recipient))
+        (conds recipient.once (remove recipient))
       ))
       (ref envelopes (exchange address))
       (envelopes.array!.forEach sender)
@@ -133,14 +133,14 @@
     (listen address (lambda [packet]
       (execution-context {context: "dispatch" address packet}
         (ref action (get actions packet.action))
-        (cond (not action) (return (promise.resolved false)))
+        (conds (not action) (return (promise.resolved false)))
       ) (return (action packet))
     ))
   ))
 
   (ref log (lambda [text]
     (ref parts (text.split '/\s*:\s*/'))
-    (cond (is 1 parts.length) (parts.unshift "message"))
+    (conds (is 1 parts.length) (parts.unshift "message"))
     (send "logging" {level: (get parts 0) text: (get parts 1)})
   ))
 

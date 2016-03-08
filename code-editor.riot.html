@@ -20,7 +20,7 @@
 
         (ref open (lambda [packet]
           (codemirror.set-mode cm packet.key)
-          (cond (isnt (get packet.key 0) ".") (do
+          (conds (isnt (get packet.key 0) ".") (do
             (tag.update! {heading: (last (packet.key.split "/"))})
             (tag.update)
           ))
@@ -30,7 +30,7 @@
 
         (ref contents-key (+ "code-editor/" opts.name "/contents"))
         (ref filename (localStorage.getItem filename-key))
-        (cond filename (delay 100
+        (conds filename (delay 100
           (open {key: filename contents: (localStorage.getItem contents-key)})
         ))
         (cm.on "change" (events.delay 1000 (lambda

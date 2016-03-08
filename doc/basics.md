@@ -65,7 +65,7 @@ All the JavaScript list processing functions (every, filter, forEach, ...) are a
 
 To see if an array contains an element, use 'contains':
 
-    (cond (list.contains 12 in my-list) (return "has dozen"))
+    (conds (list.contains 12 in my-list) (return "has dozen"))
 
 ## Associative Array List
 
@@ -118,14 +118,14 @@ Thanks to JavaScript 'and' and 'or' short-circuit - meaning that they will stop 
 
 Where possible I am following a policy of simplicity over diversity. To this end, Lispz boasts only one traditional conditional operator. The operator, _cond_ takes pairs of lists where the first is the condition and the second the action. Evaluation stops after the first true condition. There is an else macro that evaluates to true to catch situations not covered specifically.
 
-    (cond (is v "One")  (return 1)
+    (conds (is v "One")  (return 1)
           (not v)       (return 0)
           (else)        (return -1)
     )
 
 Because conditionals work with list pairs, it is necessary to wrap the actions if there are more than one. Lispz provides _do_ for that.
 
-    (cond ok? (do (finish-up) (return true)))
+    (conds ok? (do (finish-up) (return true)))
 
 # Functions
 

@@ -56,9 +56,9 @@
     (riot-tag
       (tag.update! {context: (+ "panel-" (or opts.context "default"))})
       (mount-tag-using [dom]
-        (cond opts.height (do
+        (conds opts.height (do
           (ref px opts.height)
-          (cond (is "%" (opts.height.slice -1))
+          (conds (is "%" (opts.height.slice -1))
             (ref px (/ (* window.innerHeight (opts.height.slice 0 -1)) 100))
           )
           (dom.style! tag.outer {height: (+ px "px")})
@@ -129,12 +129,12 @@
   </style>
   <script type=text/lispz>
     (riot-tag (using [dom]
-      (cond opts.buttons (do
+      (conds opts.buttons (do
         (ref buttons (stateful.array!))
         (tag.update! {buttons: buttons.array!})
         ((opts.buttons.split ",").forEach (lambda [title]
           (ref primary (is "*" (first title))  type "default")
-          (cond primary (do (ref type "primary") (title.shift)))
+          (conds primary (do (ref type "primary") (title.shift)))
           (ref name title)
           (buttons.push! { title type name })
         ))
@@ -285,10 +285,10 @@
         (riot.update! tag {items: tag.root})
       ))
       (tag.update! {goto: (lambda [ev]
-        (cond ev.item.topic (message.send
+        (conds ev.item.topic (message.send
           (+ opts.owner "/" ev.item.topic)
           {item: ev.item owner: opts.owner action: "select"}))
-        (cond ev.item.children (do
+        (conds ev.item.children (do
           (tag.update! {items: ev.item.children})
           (ev.currentTarget.blur)
           (ev.stopPropagation)
@@ -348,9 +348,9 @@
   <script type=text/lispz>
     (riot-tag (using [message dict]
       (tag.on "update" (lambda [data]
-        (cond (and opts.name tag.parent.children) (do
+        (conds (and opts.name tag.parent.children) (do
           (tag.update! {items: (get tag.parent.children opts.name "children")})
-          (cond (and tag.items tag.items.length)
+          (conds (and tag.items tag.items.length)
                 (tag.update! {children: (dict.from-list tag.items "title")})
           )
         ))
@@ -359,9 +359,9 @@
       (tag.update! {goto: (lambda [ev]
         (ref item ev.item.item)
         (ref topic (or item.topic item.title ))
-        (cond topic (message.send topic
+        (conds topic (message.send topic
           {item action: "select"}))
-        (cond item.children (do
+        (conds item.children (do
           (ref tree ev.currentTarget.nextElementSibling)
           (tree.classList.toggle "open")
           (tree.parentElement.classList.toggle "bg-info")

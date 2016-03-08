@@ -25,7 +25,7 @@
         (paths.forEach (lambda [entry]
           (cond
             (is "dir"  entry.type)
-              (cond (not single-level) (children.push! (list-path entry.path)))
+              (conds (not single-level) (children.push! (list-path entry.path)))
             (is "file" entry.type)
               (result.push! entry.path)
           )
@@ -39,12 +39,12 @@
     (repo.github.read repo.branch path callback)
   ))
   (ref update (lambda [repo]
-    (cond (is repo.branch repo.username) (return (promise.resolved)))
+    (conds (is repo.branch repo.username) (return (promise.resolved)))
     (ref branch-name (or repo.username "master"))
     (return (branch repo branch-name))
   ))
   (ref write (promise.callback [repo path contents comment]
-    (cond (not contents.length) (return promise.resolved))
+    (conds (not contents.length) (return promise.resolved))
     (ref encoded (unescape (encodeURIComponent contents)))
     (repo.github.write repo.branch path encoded comment callback)
   ))
@@ -57,17 +57,17 @@
   (ref preprocess (lambda [path code]
     (ref ext (last (path.split ".")))
     (ref preprocessor (get preprocessors ext))
-    (cond (not preprocessor) (return {path ext code}))
+    (conds (not preprocessor) (return {path ext code}))
     (return (preprocessor path code))
   ))
   ## Build and save a dependency list
   ## We will need to filter the dependencies
   (ref filter (lambda [before include exclude]
     (ref after before)
-    (cond include (ref after
+    (conds include (ref after
       (after.filter (lambda [file] (return (include.test file))))
     ))
-    (cond exclude (ref after
+    (conds exclude (ref after
       (after.filter (lambda [file] (return (not (exclude.test file)))))
     ))
     (return after)
