@@ -8,9 +8,9 @@
         (ref filtered (json.results.filter (lambda [it]
           (return (=== it.name repo.name))
         )))
-        (cond (not filtered.length) (return false))
+        (conds (not filtered.length) (return false))
         ((get filtered 0).assets.some (lambda [it]
-          (cond (list.contains "alpha" it.version) (return false))
+          (conds (list.contains "alpha" it.version) (return false))
           (repo.update! {base: (+
             "https://cdnjs.cloudflare.com/ajax/libs/"
             repo.name "/" it.version "/"

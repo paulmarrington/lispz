@@ -33,7 +33,7 @@
   # If no theme is provided, a random one is selected.
   ###
   (message.listen "bootstrap/change-theme" (lambda [theme]
-    (cond (not (defined? theme))
+    (conds (not (defined? theme))
       (ref theme (get bootswatch-themes (random themes.length)))
     )
     (net.css (+ "ext/bootstrap-" theme ".css"))

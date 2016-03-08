@@ -3,7 +3,7 @@
   (ref loc2 (=> (return (+ (loc @.location) " from " (loc @.previous)))))
   (ref src  (lambda [source around]
     (ref lines (source.split "\n")  start 0  end lines.length)
-    (cond around (do
+    (conds around (do
       (ref start (Math.max 0 (- around 3)))
       (ref end (Math.min lines.length (+ around 3)))
     ))
@@ -26,7 +26,7 @@
   (ref format-context (=>
     (ref name (+ @ ": "))
     (ref spaces (- 16 name.length))
-    (cond (< spaces 1) (return name))
+    (conds (< spaces 1) (return name))
     (return (+ "    " name (  "                ".slice 0 spaces)))
   ))
   (ref logger (lambda [execution-context args]

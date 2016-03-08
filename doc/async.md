@@ -21,7 +21,7 @@ Callbacks provide the simplest mechanism for asynchronous responses. Any functio
 Many callbacks producers follow the node-js approach of providing error and response parameters.
 
     (read my-url (lambda [err response]
-      (cond err (throw "read failed"))
+      (conds err (throw "read failed"))
       (return response.text)
     )
 
@@ -46,7 +46,7 @@ A function that creates a promise uses the 'promise' keyword instead of 'lambda'
 
     (ref read (promise [addr param1 param2]
       (http-get (+ addr "?&" param1 "&" param2) (lambda [err response]
-        (cond err (return (reject-promise err)))
+        (conds err (return (reject-promise err)))
         (resolve-promise response)
       ))
     ))

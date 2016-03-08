@@ -36,7 +36,7 @@
           (codemirror.set-mode cm packet.key)
           (tag.update! {heading: (last (packet.key.split "/"))})
           (localStorage.setItem filename-key packet.key)
-          (cond packet.contents (tag.pad.setText packet.contents))
+          (conds packet.contents (tag.pad.setText packet.contents))
           (tag.update)
         ))
 
@@ -50,7 +50,7 @@
           ) (else) (do ## without firebase we need to persist locally
             (ref contents-key (+ "codemirror/" opts.name "/contents"))
             (ref filename (localStorage.getItem filename-key))
-            (cond filename (delay 100
+            (conds filename (delay 100
               (open {key:      filename
                      contents: (localStorage.getItem contents-key)})
             ))

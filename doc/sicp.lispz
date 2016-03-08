@@ -49,7 +49,7 @@
     )
     (it "1.1.6  Conditional Expressions and Predicates" =>
       (ref abs (lambda [x]
-        (cond ((> x 0) (return x))
+        (conds ((> x 0) (return x))
               ((= x 0) (return 0))
               ((< x 0) (return (- x)))
         )
@@ -60,7 +60,7 @@
       ((expect (abs(0))).toBe 0)
 
       (ref abs2 (lambda [x]
-        (cond (< x 0) -x
+        (conds (< x 0) -x
               (else)   x
         )
       ))

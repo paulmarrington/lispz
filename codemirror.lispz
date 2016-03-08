@@ -1,6 +1,6 @@
 (using  [net diff_match_patch message dict github compilers]
   (ref options-string (localStorage.getItem "CodeMirror-options"))
-  (cond options (ref options (JSON.parse options-string))
+  (conds options (ref options (JSON.parse options-string))
         (else)  (ref options {
     lineNumbers:        true
     foldGutter:         true
@@ -274,7 +274,7 @@
           (cond
             (is key "fallthrough") (do
                 (ref more (get map key))
-                (cond (is (typeof more) "string") (ref more [[more]]))
+                (conds (is (typeof more) "string") (ref more [[more]]))
                 (more.forEach (lambda [map]
                   (one-map (get CodeMirror.keyMap map))))
               )
@@ -284,7 +284,7 @@
       ))
       (one-map cm.options.extraKeys)
       (ref core (stateful.morph! (get CodeMirror.keyMap cm.options.keyMap)))
-      (cond (not core.fallthrough)
+      (conds (not core.fallthrough)
         (core.update! {fallthrough: CodeMirror.keyMap.default.fallthrough}))
       (one-map core)
       (window.open
@@ -308,9 +308,9 @@
     auto_complete: (lambda [cm]
       (ref not-only (lambda
         (ref result (CodeMirror.hint.anyword.apply null arguments))
-        (cond (isnt result.list.length 1) (return result))
+        (conds (isnt result.list.length 1) (return result))
         (ref size (- result.to.ch result.from.ch))
-        (cond (isnt (do (get list 0).length) size) (return result))
+        (conds (isnt (do (get list 0).length) size) (return result))
         (return ((stateful.morph! result) {list: [[]]}))
       ))
     )
@@ -364,7 +364,7 @@
     yaml: "yaml" yml: "yaml" z80: "z80" asm: "z80"
   })
   (ref saved-mode-extensions localStorage.CodeMirror-mode-extensions)
-  (cond saved-mode-extensions (ref mode-extensions
+  (conds saved-mode-extensions (ref mode-extensions
     (dict.merge mode-extensions saved-mode-extensions)
   ))
 
@@ -372,12 +372,12 @@
     (ref try-mode (lambda [exts]
       (ref ext (exts.join "."))
       (return? (get mode-extensions ext))
-      (cond (get CodeMirror.modes ext) (return ext))
+      (conds (get CodeMirror.modes ext) (return ext))
       (return false)
     ))
     (ref mode ((lambda
       (ref parts (name.split "."))
-      (cond (> parts.length 2) (return? (try-mode (parts.slice -2))))
+      (conds (> parts.length 2) (return? (try-mode (parts.slice -2))))
       (return? (try-mode (parts.slice -1)))
       (return  "text")
     )))
@@ -419,19 +419,19 @@
   (CodeMirror.defineMIME "text/lispz" "lispz")
   ## Update htmlmixed to understand lispz scripts
   (ref mimeModes (stateful.morph! CodeMirror.mimeModes))
-  (cond (is (typeof (get mimeModes "text/html")) "string")
+  (conds (is (typeof (get mimeModes "text/html")) "string")
         (mimeModes.update! "text/html" {name: "htmlmixed"}))
   (ref mode (stateful.morph! (get mimeModes "text/html")))
   (ref scriptTypes (stateful.array! mode.scriptTypes))
-  (cond (not mode.scriptTypes) (mode.update! {scriptTypes: [[]]}))
+  (conds (not mode.scriptTypes) (mode.update! {scriptTypes: [[]]}))
   (scriptTypes.push! {matches: '/^text\/lispz$/' mode: "lispz"})
   (mimeModes.update! {htmlmixed: mode})
 
   (ref compile (lambda [cm name]
     (ref mode     (cm.getModeAt (cm.getCursor)))
     (ref compiler (get compilers mode.name))
-    (cond (not compiler) (return false))
-    (cond (cm.somethingSelected) (ref source (cm.doc.getSelection))
+    (conds (not compiler) (return false))
+    (conds (cm.somethingSelected) (ref source (cm.doc.getSelection))
           (else)                 (ref source (cm.doc.getValue))
     )
     (return (compiler.compile source name))
@@ -440,9 +440,9 @@
   (ref run_selection (lambda [cm]
     (ref mode     (cm.getModeAt (cm.getCursor)))
     (ref compiler (get compilers mode.name))
-    (cond (not compiler) (return CodeMirror.Pass))
+    (conds (not compiler) (return CodeMirror.Pass))
 
-    (cond (cm.somethingSelected) (ref source (cm.doc.getSelection))
+    (conds (cm.somethingSelected) (ref source (cm.doc.getSelection))
           (else)                 (ref source (cm.doc.getValue))
     )
     (message.send "code-editor/run/prepare" { source })
@@ -477,7 +477,7 @@
     (return (lambda [cm]
       (return CodeMirror.Pass) ## make a configuration option
       (ref mode (cm.getModeAt (cm.getCursor)))
-      (cond (get lisp-modes mode.name)  ((get subpar.core cmd) cm opt)
+      (conds (get lisp-modes mode.name)  ((get subpar.core cmd) cm opt)
             (else)                      (return CodeMirror.Pass)
       )
     ))

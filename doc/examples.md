@@ -16,7 +16,7 @@ This page is best used in conjunction with the [Lispz Scratch-pad](https://cdn.r
     (ref second (get double 1))
     (console.log second "is 4")
     (using [list]
-      (cond (list.contains 12 double) (console.log "double contains 12"))
+      (conds (list.contains 12 double) (console.log "double contains 12"))
     )
 
     ## Dictionary basics
@@ -55,7 +55,7 @@ This page is best used in conjunction with the [Lispz Scratch-pad](https://cdn.r
 
     ## Conditionals
     (ref test (lambda [v]
-      (cond (is v "One")  (return 1)
+      (conds (is v "One")  (return 1)
             (not v)       (return 0)
             (else)        (do (console.log "what?") (return -1))
       )

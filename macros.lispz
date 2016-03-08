@@ -4,7 +4,7 @@ The term "macro" includes text substitution (e.g. ASM and C) and syntactic macro
 
 Perhaps the best road to undertanding is by example.
 
-    (macro return? [value] (cond value (return value)))
+    (macro return? [value] (conds value (return value)))
     
 creates a new language element that only returns if the value is a truthy, as in
 
@@ -23,7 +23,7 @@ ast to JavaScript phase.
 
 A macro is defined by giving it a name, list of parameters and a body. In it's simplest form the parameters are substituted into the body at reference time. It is like a function expanded in-line.
 
-    (macro return-if [test value] (cond test (return value)))
+    (macro return-if [test value] (conds test (return value)))
     
 Immediate actions are required to modify the JavaScript output during the compile stage (ast to JavaScript).
 
@@ -54,7 +54,7 @@ Macros allow you to change lispz by adding new build-in commands. By their natur
 
 or just substitution
 
-    (macro return? [value] (cond value (return value)))
+    (macro return? [value] (conds value (return value)))
     
 Double-check substitution macros. The one above must be a macro, but may could be easily converted into global functions
 

@@ -55,7 +55,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
   (ref load (promise [name uri] (execution-context {context: "riot.load" name uri}
     (ref usings (lambda [tags]
       (ref new-tags (tags.filter (=>
-        (cond (not @.length) (return false))
+        (conds (not @.length) (return false))
         (ref processed (get processed-tags @))
         (processed-tags.update! @ true)
         (return (not processed))

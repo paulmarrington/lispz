@@ -1,7 +1,7 @@
 (ref throttle (lambda [limit callback]
   (ref context (stateful))
   (return (=>
-    (cond (not context.wait)
+    (conds (not context.wait)
       (callback)
       (context.update! {wait: true})
       (delay limit (context.update! {wait: false}))

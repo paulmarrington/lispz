@@ -23,12 +23,12 @@
         (ref iframe tag.tags.panel.iframe)
         (ref iframe-doc (or iframe.contentDocument iframe.contentWindow.document))
 
-        (cond opts.src (iframe.setAttribute "src" opts.src))
+        (conds opts.src (iframe.setAttribute "src" opts.src))
 
         (tag.update! {
           open: (lambda [packet]
             (tag.update! {heading: (or packet.heading tag.heading)})
-            (cond packet.menu (tag.update! {menu: packet.menu}))
+            (conds packet.menu (tag.update! {menu: packet.menu}))
             (iframe-doc.open)
             (iframe-doc.write (+
               "<!DOCTYPE html><html><head><meta charset='utf-8'>"
