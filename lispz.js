@@ -34,32 +34,96 @@ var lispz = function() {
     if (macros[func]) return macros[func].apply(lispz, params)
     func = ast_to_js(func)
     if (params[0] && params[0][0] === '.') func += ast_to_js(params.shift())
-    params = params.map(ast_to_js).join(',').replace(/,\s*\./, ".")
+    params = map_ast_to_js(params, ',').replace(/,\s*\./, ".")
     if (func.startsWith("function(){")) {
+      func = "(" + func + ")"
     }
+    var js = "_res_=" + func +
       ((params === "arguments") ? ".apply(this,arguments)" : ('(' + params + ')'))
+    return "(" + js + ")"
   },
   function_to_js = function(params, body) {
     params = drop_line_number(params)
+    // functions can be created without a parameter list
     if (params instanceof Array && params[0] == "[") {
       body = slice.call(arguments, 1)
     } else {
       body = slice.call(arguments, 0)
       params = ["["]  // empty parameter list for macro
     }
+    function_body_to_js = function() {
+      if (body.length === 0) return ""
+      var full_body = (body.length === 1) ? body[0] : body
+      var end = full_body.length - 1
+      if (!(full_body[end] instanceof Array)  &&  full_body[end][0] != ".") {
+        full_body[end] = ["(","ref","_res_",full_body[end]]
+      }
+      body = map_ast_to_js(body, ";\n") + "\n;return _res_"
+    }
+
     var header = "function("+params.slice(1).map(jsify).join(",")+")"
+    var vars = vars_to_js(function_body_to_js)
+    return header + "{\n"+vars+"\n"+body+"\n}\n"
+  },
+  vars_to_js = function(map_to_js) {
+    var reference = {}
+    references.push(reference)
+    try {
+      map_to_js()
+      var vars = Object.keys(reference)
+      if (!reference._res_) vars.push("_res_")
+      return "var "+vars.join(",")+";"
+    } finally { references.pop() }
+  },
+  add_reference = function(ast) {
+    references[references.length - 1][jsify(ast)] = true
+    return []
+  },
+  add_return = function(ast) {
+    if (!ast.length) return ast
+    var func = (ast[0] !== "\n") ? 0 : 3 // skip line numbering
+    if (ast[func] instanceof Array || ast[func] === "list" || ast[func] === "") {
+      var end = ast.length - 1
+      ast[end] = add_return(ast[end])
+    } else if (ast[func] === "(") {
+      if (ast[func + 1] !== "return") {
+        ast = ["(", "return", ast]
+      }
+    } else if (! (ast instanceof Array)) {
+      ast = ["(", "return", ast]
+    } else {
+      throw "no return set for " + JSON.stringify(ast)
+    }
+    return ast
+  },
+  return_to_js = function() {
+    var js = map_ast_to_js(slice.call(arguments), '\n')
+    if (!js.startsWith("return")) js = ";return " + js
+    return js
   },
   macro_to_js = function(name, pnames, body) {
     pnames = drop_line_number(pnames)
     if (pnames instanceof Array && pnames[0] == "[") {
       body = slice.call(arguments, 2)
+      pnames = pnames.slice(1)
     } else {
       body = slice.call(arguments, 1)
+      pnames = []  // empty parameter list for macro
     }
+    var pnames_set = new Set(pnames)
     macros[name] = function(pvalues) {
       pvalues = drop_line_number(slice.call(arguments))
       var args = {}
+      for (var n = 0, v = 0; n < pnames.length; n++, v++) {
+        var pname = pnames[n]
+        if (pname[0] == '?' && v == pvalues.length - 1) args[pname] = "", v-- // skip ?param
+        else args[pname] =
+          (pname[0] === '*') ? ["list"].concat(pvalues.slice(v)) :
+          (pname[0] === '&') ? ["["].concat(pvalues.slice(v)) : pvalues[v]
+      }
       var expand = function(ast) {
+        return (ast instanceof Array) ? ast.map(expand) : args[ast] ||
+          (pnames_set.has(ast) ? "" : ast)
       }
       var js = ast_to_js(expand((body.length > 1) ? ["list"].concat(body) : body[0]))
       return js
@@ -69,11 +133,12 @@ var lispz = function() {
   array_to_js = function() {
     var its = slice.call(arguments)
     if (arguments.length === 1 && arguments[0][0] === '[') {
-      return "[" + its.map(ast_to_js).join(',') + "]"
+      return "[" + map_ast_to_js(its, ',') + "]"
     }
-    return its.map(ast_to_js).join(',')
+    return map_ast_to_js(its, ',')
   },
   list_to_js = function(its) {
+    return (its && its.length) ? map_ast_to_js(slice.call(arguments), ';\n') : ""
   },
   // A dictionary can be a symbol table or k-value pair
   dict_to_js = function(kvp) {
@@ -89,25 +154,57 @@ var lispz = function() {
   },
   join_to_js = function(sep, parts) {
     parts = slice.call((arguments.length > 2) ? arguments : parts, 1)
+    return map_ast_to_js(parts, ast_to_js(sep))
   },
   run_ast = function(ast) {
     var context = { context:"run", location: location }
     execution_context.push(context)
+    var results = ast.map(function(code) {
+      return eval(context.code = ast_to_js( code))
+    })
     execution_context.pop()
     return results
   },
   immediate_to_js = function() {
+    execution_context.push({ context: "immediate", args: arguments })
+    // args = slice.call(arguments, 1)
+    // actor = lispz[func] ? lispz[func] : lispz.globals[func]
+    // if (! actor) throw { message: "No immediate function", name: func}
+    // var js = ast_to_js(actor.apply(lispz, args))
+    var lspz = run_ast(slice.call(arguments)).join("\n")
+    var js = ast_to_js(parse_to_ast(lspz))
+    execution_context.pop()
+    return js
+  },
+  immediate_from_ast = function() {
+    execution_context.push({ context: "#ast", args: arguments })
+    var js = ast_to_js(ast_to_ast.apply(this, arguments))
+    execution_context.pop()
+    return js
+  },
+  ast_to_ast = function(func, args) {
+    execution_context.push({ context: "#ast", args: arguments })
+    args = slice.call(arguments, 1)
+    var actor = lispz[func] ? lispz[func] : lispz.globals[func]
+    if (! actor) throw { message: "No immediate function", name: func}
+    var ast = actor.apply(lispz, args)
+    execution_context.pop()
+    return ast
   },
   // processing pairs of list elements
   pairs_to_js = function(pairs, tween, sep) {
     var el = [], tween = ast_to_js(tween);
     if (!(pairs.length % 2)) throw {message:"Unmatched pairs",pairs:pairs}
     for (var i = 1, l = pairs.length; i < l; i += 2) {
+      var second = pairs[i + 1]
+      el.push(ast_to_js(pairs[i]) + tween + ast_to_js(second))
     }
     return el.join(ast_to_js(sep))
   },
   binop_to_js = function(op) {
-    macros[op] = function(list) { return '(' + slice.call(arguments).map(ast_to_js).join(op) + ')' }
+    macros[op] = function(list) {
+      return '(_res_=' + map_ast_to_js(slice.call(arguments), op) + ')'
+    }
   },
   /*
    * When there was a new-line in the source, we inject it into the prior non-atom
@@ -118,6 +215,10 @@ var lispz = function() {
     location = {name:name, line:number}
     var ast = slice.call(arguments, 2)
     var line = ast_to_js(ast)
+    if (ast[0] !== "[" && (ast[0] !== "\n" || ast[3] !== "["))
+      if (line.length > 1  &&  line[line.length - 1] != "\n") {
+        line += "//#" + name + ":" + number + "\n"
+      }
     return line
   },
   parsers = [
@@ -169,7 +270,16 @@ var lispz = function() {
     return (ast instanceof Array) ? macros[ast[0]] ?
       macros[ast[0]].apply(this, ast.slice(1)) : list_to_js(ast) : jsify(ast)
   },
+  map_ast_to_js = function(ast, joiner) {
+    return ast.map(ast_to_js).filter(function(item){return item.length}).join(joiner)
+  },
   compile = function(source, name) {
+    var body = compile_to_ast(source, name)
+    var vars = vars_to_js(function(){ body = body.map(ast_to_js) })
+    body.unshift(vars)
+    return body
+  },
+  compile_to_ast = function(source, name) {
     var last_module = location
     location = { name:name || "", line:0 }
     var context = {
@@ -179,9 +289,12 @@ var lispz = function() {
       source:   source
     }
     execution_context.push(context)
+    var ast = parse_to_ast(source)
     location = last_module
     execution_context.pop()
+    return ast
   },
+  run = function(name, source) { return run_ast(compile_to_ast(source, name)) }
   //######################### Script Loader ####################################//
   cache = {}, manifest = [], pending_module = {},
   http_request = function(uri, type, callback) {
@@ -202,7 +315,7 @@ var lispz = function() {
   module_init = function(uri) {
     var state = { context: "module", uri: uri, state: "compiling Lispz" }
     execution_context.push(state)
-    var js = compile(lispz_modules[uri], uri).join('\n') +
+    var js = compile(lispz_modules[uri], uri).join(';\n') +
       "//# sourceURL=" + uri + ".lispz\n"
     state.state = "compiling JavaScript"
     init_func = new Function('__module_ready__', js)
@@ -319,6 +432,9 @@ var lispz = function() {
   var macros = {
     '(': call_to_js, '[': array_to_js, '{': dict_to_js, 'macro': macro_to_js,
     '#join': join_to_js, '#pairs': pairs_to_js, '#binop': binop_to_js,
+    '#requires': requires_to_js, 'list': list_to_js, "#ast": immediate_from_ast,
+    'immediate': immediate_to_js, 'lambda': function_to_js, '\n': eol_to_js,
+    "return": return_to_js
   }
   // add all standard binary operations (+, -, etc)
   "+,-,*,/,&&,||,==,===,<=,>=,!=,!==,<,>,^,%".split(',').forEach(binop_to_js)
@@ -326,4 +442,11 @@ var lispz = function() {
   return { compile: compile, run: run, parsers: parsers, load: load,
            macros: macros, cache: cache, http_request: http_request,
            clone: clone, manifest: manifest, script: script, css: css,
+           synonyms: synonyms, globals: globals, tags: {}, slice: slice,
+           location: location, execution_contexts: execution_contexts,
+           path_base: lispz_base_path, set_debug_mode: set_debug_mode, log: log,
+           execution_context: execution_context, empty_words: empty_words,
+           compile_to_ast: compile_to_ast, add_reference: add_reference,
+           log_execution_context: log_execution_context
+          }
 }()
