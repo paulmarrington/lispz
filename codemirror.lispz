@@ -1,7 +1,7 @@
 (using  [net diff_match_patch message dict github compilers]
   (ref options-string (localStorage.getItem "CodeMirror-options"))
   (ref options (stateful.morph!
-    (cond options-string (JSON.parse options-string))
+    (cond options-string (JSON.parse options-string)
     (else)  {
       lineNumbers:        true
       foldGutter:         true
@@ -86,7 +86,8 @@
 
         'Alt-Enter':        "run_selection"
        }
-    }))
+    })
+  ))
   ## write changed options back to persistent storage
   (ref update-options (lambda
     (localStorage.setItem "CodeMirror-options" (JSON.stringify options))

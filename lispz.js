@@ -133,7 +133,7 @@ var lispz = function() {
   array_to_js = function() {
     var its = slice.call(arguments)
     if (arguments.length === 1 && arguments[0][0] === '[') {
-      return "[" + map_ast_to_js(its, ',') + "]"
+      return "(_res_=[" + map_ast_to_js(its, ',') + "])"
     }
     return map_ast_to_js(its, ',')
   },
@@ -150,7 +150,7 @@ var lispz = function() {
         dict.push("'"+jsify(key)+"':"+ast_to_js(key));
       }
     }
-    return "{" + dict.join(',') + "}";
+    return "(_res_={" + dict.join(',') + "})";
   },
   join_to_js = function(sep, parts) {
     parts = slice.call((arguments.length > 2) ? arguments : parts, 1)
@@ -167,10 +167,6 @@ var lispz = function() {
   },
   immediate_to_js = function() {
     execution_context.push({ context: "immediate", args: arguments })
-    // args = slice.call(arguments, 1)
-    // actor = lispz[func] ? lispz[func] : lispz.globals[func]
-    // if (! actor) throw { message: "No immediate function", name: func}
-    // var js = ast_to_js(actor.apply(lispz, args))
     var lspz = run_ast(slice.call(arguments)).join("\n")
     var js = ast_to_js(parse_to_ast(lspz))
     execution_context.pop()

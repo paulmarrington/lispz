@@ -75,7 +75,7 @@
 ###
 (macro global [name value]
   (#join '' 'lispz.globals.' name '=' value)
-  (macro name [&params] (#join '' 'lispz.globals.' name '(' &params ')'))
+  (macro name [&params] (#join '' '(_res_=lispz.globals.' name '(' &params '))'))
 )
 
 ### spec: basics -- Conditionals
