@@ -112,7 +112,7 @@ To see if an array contains an element, use 'in':
   if it is not a falsy.
 ###
 (ref for-each (lambda [list action]
-  (conds (not list)               (return null)
+  (cond (not list)               null
         (instance-of Array list) (list.forEach action)
         (else)                   (action list)
   )

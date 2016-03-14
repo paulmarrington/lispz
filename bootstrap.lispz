@@ -32,9 +32,11 @@
   # Loads a bootswatch theme to make the page look different.
   # If no theme is provided, a random one is selected.
   ###
-  (message.listen "bootstrap/change-theme" (lambda [theme]
-    (conds (not (defined? theme))
-      (ref theme (get bootswatch-themes (random themes.length)))
+  (message.listen "bootstrap/change-theme" (lambda [theme-name]
+    (ref theme
+      (cond (not (defined? theme-name))
+        (get bootswatch-themes (random themes.length))
+      (else) theme)
     )
     (net.css (+ "ext/bootstrap-" theme ".css"))
   ))

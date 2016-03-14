@@ -8,16 +8,22 @@
         (ref filtered (json.results.filter (lambda [it]
           (return (=== it.name repo.name))
         )))
-        (conds (not filtered.length) (return false))
-        ((get filtered 0).assets.some (lambda [it]
-          (conds (list.contains "alpha" it.version) (return false))
-          (repo.update! {base: (+
-            "https://cdnjs.cloudflare.com/ajax/libs/"
-            repo.name "/" it.version "/"
-          )})
-          (resolve-promise it.files)
-          (return true) ## found the one we want
-        ))
+        (cond (filtered.length)
+          ((get filtered 0).assets.some (lambda [it]
+            (cond
+              (list.contains "alpha" it.version) false
+              (else) (do
+                (repo.update! {base: (+
+                  "https://cdnjs.cloudflare.com/ajax/libs/"
+                  repo.name "/" it.version "/"
+                )})
+                (resolve-promise it.files)
+                true ## found the one we want
+              ))
+          ))
+        (else)
+          false
+        )
       )
     )
     read: (promise [repo path]

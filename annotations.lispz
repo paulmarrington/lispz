@@ -38,7 +38,7 @@
     (ref annotations (stateful.array!))
     (ref scan (lambda
       (ref res (re.exec source))
-      (conds res (do
+      (cond res (do
         (annotations.push! {title: (get res 1)  body: (get res 2)})
         (scan)
       ))

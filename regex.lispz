@@ -6,8 +6,7 @@ A common problem is finding part of a string given a pattern.
 ###
 (ref substring (lambda [str re]
   (ref match (str.match re))
-  (conds match (return (get match 1)))
-  (return " ")
+  (cond match  (get match 1) (else) " ")
 ))
 
 (export {substring})

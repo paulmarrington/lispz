@@ -1,6 +1,7 @@
 (using [dict]
   (ref append! (lambda [parent element]
-    (document.querySelector parent) (.appendChild element)
+    (ref selector (document.querySelector parent))
+    (selector.appendChild element)
   ))
 
   ### spec: DOM >> Replace inner html

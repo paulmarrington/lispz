@@ -22,7 +22,7 @@
           (dom.inner-html! contents-area (markdown.compile md))
           ((dom.select contents-area "a").forEach (lambda [link]
             (ref href (link.getAttribute "href"))
-            (conds (not (net.external? href)) (do
+            (cond (not (net.external? href)) (do
               (link.addEventListener "click" (lambda [evt]
                 (load (+ from href))
                 (evt.preventDefault)
@@ -43,7 +43,7 @@
           (when loaded [md] (open md (net.url-path href)))
           (promise.failed loaded [err] (debug err))
         ))
-        (conds opts.href (load opts.href))
+        (cond opts.href (load opts.href))
 
         ### spec: Markdown >> Panel
           Showdown can take markdown text or url and display the

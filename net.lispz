@@ -1,9 +1,11 @@
 (using [list dom regex]
   (ref script (promise.callback [uri check max-ms] (lispz.script uri (lambda []
-    (conds (not check) (return (callback)))
-    (ref initialised (wait-for check max-ms))
-    (when  initialised [] (callback))
-    (promise.failed initialised [] (debug (+ uri "didn't load")))
+    (cond check (do
+      (ref initialised (wait-for check max-ms))
+      (when  initialised [] (callback))
+      (promise.failed initialised [] (debug (+ uri "didn't load")))
+    ) (else) (return (callback))
+    )
   ))))
 
   (ref css (lambda [uri]

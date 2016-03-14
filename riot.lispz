@@ -41,7 +41,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
 ###
 (using  [jquery net github dict]
   ## has side-effects as riot caches compile results
-  (ref compile (lambda [html to-js] (return (riot.compile html to-js))))
+  (ref compile (lambda [html to-js] (riot.compile html to-js)))
 
   (ref processed-tags (stateful {}))
 
@@ -55,10 +55,13 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
   (ref load (promise [name uri] (execution-context {context: "riot.load" name uri}
     (ref usings (lambda [tags]
       (ref new-tags (tags.filter (=>
-        (conds (not @.length) (return false))
-        (ref processed (get processed-tags @))
-        (processed-tags.update! @ true)
-        (return (not processed))
+        (cond @.length (do
+          (ref processed (get processed-tags @))
+          (processed-tags.update! @ true)
+          (return (not processed)))
+        (else)
+          false
+        )
       )))
       (ref loaded (promise.all (new-tags.map (lambda [tag] (return (load tag))))))
       (when loaded (resolve-promise))
@@ -72,7 +75,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
     )))
 
     (ref tag-def (get lispz.tags name))
-    (conds
+    (cond
       tag-def   (compile-and-process tag-def)
       (else)    (retrieve-and-compile)
     )
@@ -189,7 +192,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
       (lambda [source options url]
         (execution-context { context: "riot.compile" url options source }
           (ref js (compilers.lispz.compile source "riot-tags"))
-          (return (compilers.to-string js))
+          (compilers.to-string js)
         )
       )
     })

@@ -60,7 +60,7 @@ There is often need to merge multiple dictionaries together to create a new comb
 ###
 (ref from-list (lambda [list key]
   (ref dictionary (stateful))
-  (conds list (list.forEach (lambda [item] (dictionary.update! item))))
+  (cond list (list.forEach (lambda [item] (dictionary.update! item))))
   (return dictionary)
 ))
 
@@ -68,7 +68,7 @@ There is often need to merge multiple dictionaries together to create a new comb
     (dict.for-each dict-1 (lambda [key value] ...))
 ###
 (ref for-each (lambda [dict action=>]
-  (Object.keys dict)(.forEach (lambda [k] (action=> k (get dict k))))
+  ((Object.keys dict).forEach (lambda [k] (action=> k (get dict k))))
 ))
 
 ### spec: lists >> dict >> Morphing dictionary into an Array

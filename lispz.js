@@ -3,7 +3,7 @@ var lispz = function() {
   var logger = window.console.log,
   log = function() { logger.apply(console, arguments) },
   log_execution_context = function() { lispz.log(arguments) },
-  execution_contexts = {}, execution_context = [],
+  execution_contexts = {}, execution_context = [], references = [{}],
   delims = "(){}[],n".split(''), // characters that are not space separated atoms
   not_delims = delims.join("\\"), delims = delims.join('|\\'),
   stringRE =
@@ -13,7 +13,7 @@ var lispz = function() {
   tkre = new RegExp('(' + stringRE + '\\' + delims + "|[^\\s" + not_delims + "]+)", 'g'),
   opens = new Set("({["), closes = new Set(")}]"), ast_to_js, slice = [].slice,
   location = {line:0, name:"boot"}, globals = {}, load_index = 0,
-  synonyms = {and:'&&', or:'||', is:'===', isnt:'!=='},
+  synonyms = {and:'&&', or:'||', is:'===', isnt:'!=='}, javascript = "",
   jsify = function(atom) {
     if (/^'\/(?:.|\n)*'$/.test(atom)) return atom.slice(1, -1).replace(/\n/g, '\\n')
     if (/^'.*'$/.test(atom)) return atom.slice(1, -1).replace(/\\n/g, '\n')
@@ -25,6 +25,9 @@ var lispz = function() {
         return t ? ("_"+t+"_") : (c === "-") ? "_" : c })
     }
   },
+  drop_line_number = function(ast) {
+    return (ast instanceof Array && ast[0] === "\n") ? ast.slice(3) : ast
+  },
   call_to_js = function(func, params) {
     params = slice.call(arguments, 1)
     if (synonyms[func]) func = synonyms[func]
@@ -32,10 +35,9 @@ var lispz = function() {
     func = ast_to_js(func)
     if (params[0] && params[0][0] === '.') func += ast_to_js(params.shift())
     params = params.map(ast_to_js).join(',').replace(/,\s*\./, ".")
-    return func + '(' + params + ')'
-  },
-  drop_line_number = function(ast) {
-    return (ast instanceof Array && ast[0] === "\n") ? ast.slice(3) : ast
+    if (func.startsWith("function(){")) {
+    }
+      ((params === "arguments") ? ".apply(this,arguments)" : ('(' + params + ')'))
   },
   function_to_js = function(params, body) {
     params = drop_line_number(params)
@@ -46,10 +48,6 @@ var lispz = function() {
       params = ["["]  // empty parameter list for macro
     }
     var header = "function("+params.slice(1).map(jsify).join(",")+")"
-    body = body.map(ast_to_js)
-console.debug(body.length ? body[body.length - 1] : "???")
-    body = "{"+body.join("\n")+"}\n"
-    return header + body
   },
   macro_to_js = function(name, pnames, body) {
     pnames = drop_line_number(pnames)
@@ -57,17 +55,11 @@ console.debug(body.length ? body[body.length - 1] : "???")
       body = slice.call(arguments, 2)
     } else {
       body = slice.call(arguments, 1)
-      pnames = ["["]  // empty parameter list for macro
     }
     macros[name] = function(pvalues) {
       pvalues = drop_line_number(slice.call(arguments))
       var args = {}
-      pnames.slice(1).forEach(function(pname, i) {
-        args[pname] = (pname[0] === '*') ? ["list"].concat(pvalues.slice(i)) :
-                      (pname[0] === '&') ? ["["].concat(pvalues.slice(i)) : pvalues[i]
-      })
       var expand = function(ast) {
-        return (ast instanceof Array) ? ast.map(expand) : args[ast] || ast
       }
       var js = ast_to_js(expand((body.length > 1) ? ["list"].concat(body) : body[0]))
       return js
@@ -82,7 +74,6 @@ console.debug(body.length ? body[body.length - 1] : "???")
     return its.map(ast_to_js).join(',')
   },
   list_to_js = function(its) {
-    return slice.call(arguments).map(ast_to_js).join('\n')
   },
   // A dictionary can be a symbol table or k-value pair
   dict_to_js = function(kvp) {
@@ -98,24 +89,20 @@ console.debug(body.length ? body[body.length - 1] : "???")
   },
   join_to_js = function(sep, parts) {
     parts = slice.call((arguments.length > 2) ? arguments : parts, 1)
-    return parts.map(ast_to_js).join(ast_to_js(sep))
   },
   run_ast = function(ast) {
     var context = { context:"run", location: location }
     execution_context.push(context)
-    var results = ast.map(function(code) { eval(context.code = code) })
     execution_context.pop()
     return results
   },
   immediate_to_js = function() {
-    return run_ast(slice.call(arguments))
   },
   // processing pairs of list elements
   pairs_to_js = function(pairs, tween, sep) {
     var el = [], tween = ast_to_js(tween);
     if (!(pairs.length % 2)) throw {message:"Unmatched pairs",pairs:pairs}
     for (var i = 1, l = pairs.length; i < l; i += 2) {
-        el.push(ast_to_js(pairs[i]) + tween + ast_to_js(pairs[i + 1]))
     }
     return el.join(ast_to_js(sep))
   },
@@ -131,9 +118,6 @@ console.debug(body.length ? body[body.length - 1] : "???")
     location = {name:name, line:number}
     var ast = slice.call(arguments, 2)
     var line = ast_to_js(ast)
-    if (ast[0] !== "[" && (ast[0] !== "\n" || ast[3] !== "[")) {
-      line += "//#" + name + ":" + number + "\n"
-    }
     return line
   },
   parsers = [
@@ -195,12 +179,9 @@ console.debug(body.length ? body[body.length - 1] : "???")
       source:   source
     }
     execution_context.push(context)
-    var js = parse_to_ast(source).map(ast_to_js)
     location = last_module
     execution_context.pop()
-    return js
   },
-  run = function(name, source) { return run_ast(compile(source, name)) }
   //######################### Script Loader ####################################//
   cache = {}, manifest = [], pending_module = {},
   http_request = function(uri, type, callback) {
@@ -338,8 +319,6 @@ console.debug(body.length ? body[body.length - 1] : "???")
   var macros = {
     '(': call_to_js, '[': array_to_js, '{': dict_to_js, 'macro': macro_to_js,
     '#join': join_to_js, '#pairs': pairs_to_js, '#binop': binop_to_js,
-    '#requires': requires_to_js, 'list': list_to_js,
-    '\n': eol_to_js, 'immediate': immediate_to_js, 'lambda': function_to_js
   }
   // add all standard binary operations (+, -, etc)
   "+,-,*,/,&&,||,==,===,<=,>=,!=,!==,<,>,^,%".split(',').forEach(binop_to_js)
@@ -347,8 +326,4 @@ console.debug(body.length ? body[body.length - 1] : "???")
   return { compile: compile, run: run, parsers: parsers, load: load,
            macros: macros, cache: cache, http_request: http_request,
            clone: clone, manifest: manifest, script: script, css: css,
-           synonyms: synonyms, globals: globals, tags: {}, slice, location,
-           path_base: lispz_base_path, set_debug_mode: set_debug_mode, log,
-           execution_contexts, execution_context, log_execution_context,
-           empty_words }
 }()

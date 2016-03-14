@@ -2,13 +2,16 @@
   (ref loc  (=> (return (+ @.name ":" @.line))))
   (ref loc2 (=> (return (+ (loc @.location) " from " (loc @.previous)))))
   (ref src  (lambda [source around]
-    (ref lines (source.split "\n")  start 0  end lines.length)
-    (conds around (do
-      (ref start (Math.max 0 (- around 3)))
-      (ref end (Math.min lines.length (+ around 3)))
+    (ref lines (source.split "\n"))
+    (ref bounds (cond
+      around {
+          start: (Math.max 0 (- around 3))
+            end: (Math.min lines.length (+ around 3))
+        }
+      (else) { start: 0  end: lines.length }
     ))
-    (ref lines ((lines.slice start end).map (lambda [line idx]
-      (return (+ "\t" (+ idx start 1) " >>>\t" line))
+    (ref lines ((lines.slice bounds.start bounds.end).map (lambda [line idx]
+      (return (+ "\t" (+ idx bounds.start 1) " >>>\t" line))
     )))
     (return (+ "\n" (lines.join "\n")))
   ))
@@ -26,8 +29,9 @@
   (ref format-context (=>
     (ref name (+ @ ": "))
     (ref spaces (- 16 name.length))
-    (conds (< spaces 1) (return name))
-    (return (+ "    " name (  "                ".slice 0 spaces)))
+    (cond (< spaces 1)  name
+          (else)        (+ "    " name (  "                ".slice 0 spaces))
+    )
   ))
   (ref logger (lambda [execution-context args]
     (ref context (list.reverse execution-context))

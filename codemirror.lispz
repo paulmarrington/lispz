@@ -1,92 +1,92 @@
 (using  [net diff_match_patch message dict github compilers]
   (ref options-string (localStorage.getItem "CodeMirror-options"))
-  (conds options (ref options (JSON.parse options-string))
-        (else)  (ref options {
-    lineNumbers:        true
-    foldGutter:         true
-##  gutters:            ["CodeMirror-lint-markers"
-##                       "CodeMirror-foldgutter"]
-    lint:               true
-    matchBrackets:      true
-    autoCloseBrackets:  true
-    matchTags:          true
-    showTrailingSpace:  true
-    inputStyle:         "textarea" ## change to "contenteditable" after vim cursor bug fix
-    autofocus:          true
-    dragDrop:           false
-    smartIndent:        true
-    indentUnit:         2
-    indentWithTabs:     false
-    cursorScrollMargin: 5
-    scrollbarStyle:     "overlay"
-    extraKeys:          {
-      'Cmd-Left':         "goLineStartSmart"
-      'Ctrl-Q':           "fold_at_cursor"
-      'Ctrl-Space':       "autocomplete"
-      'Ctrl-/':           "toggleComment"
-      'Ctrl-<':           "goColumnLeft"
-      'Ctrl->':           "goColumnRight"
-      'Ctrl-Shift-F':     "clearSearch"
-      'Ctrl-=':           "toMatchingTag"
-      'Alt-S':            "view_source"
-      'Ctrl-`':           "insertSoftTab"
-      'Ctrl-,':           "delLineLeft"
-      'Ctrl-.':           "killLine"
-      'Shift-Ctrl-,':     "delWrappedLineLeft"
-      'Shift-Ctrl-.':     "delWrappedLineRight"
-      'Ctrl-9':           "delWordBefore"
-      'Ctrl-0':           "delWordAfter"
-      'Ctrl-6':           "transposeChars"
-      'Ctrl-Left':        "goWordLeft"
-      'Ctrl-Right':       "goWordRight"
-      'Ctrl-Home':        "goLineLeft"
-      'Ctrl-Shift-Home':  "goLineLeftSmart"
-      'Ctrl-End':         "goLineRight"
-      ## paredit keys that defer if not in lisp code
-      'Backspace':        "subpar_backward_delete"
-      'Delete':           "subpar_forward_delete"
-      'Ctrl-D':           "subpar_forward_delete"
+  (ref options (stateful.morph!
+    (cond options-string (JSON.parse options-string))
+    (else)  {
+      lineNumbers:        true
+      foldGutter:         true
+  ##  gutters:            ["CodeMirror-lint-markers"
+  ##                       "CodeMirror-foldgutter"]
+      lint:               true
+      matchBrackets:      true
+      autoCloseBrackets:  true
+      matchTags:          true
+      showTrailingSpace:  true
+      inputStyle:         "textarea" ## change to "contenteditable" after vim cursor bug fix
+      autofocus:          true
+      dragDrop:           false
+      smartIndent:        true
+      indentUnit:         2
+      indentWithTabs:     false
+      cursorScrollMargin: 5
+      scrollbarStyle:     "overlay"
+      extraKeys:          {
+        'Cmd-Left':         "goLineStartSmart"
+        'Ctrl-Q':           "fold_at_cursor"
+        'Ctrl-Space':       "autocomplete"
+        'Ctrl-/':           "toggleComment"
+        'Ctrl-<':           "goColumnLeft"
+        'Ctrl->':           "goColumnRight"
+        'Ctrl-Shift-F':     "clearSearch"
+        'Ctrl-=':           "toMatchingTag"
+        'Alt-S':            "view_source"
+        'Ctrl-`':           "insertSoftTab"
+        'Ctrl-,':           "delLineLeft"
+        'Ctrl-.':           "killLine"
+        'Shift-Ctrl-,':     "delWrappedLineLeft"
+        'Shift-Ctrl-.':     "delWrappedLineRight"
+        'Ctrl-9':           "delWordBefore"
+        'Ctrl-0':           "delWordAfter"
+        'Ctrl-6':           "transposeChars"
+        'Ctrl-Left':        "goWordLeft"
+        'Ctrl-Right':       "goWordRight"
+        'Ctrl-Home':        "goLineLeft"
+        'Ctrl-Shift-Home':  "goLineLeftSmart"
+        'Ctrl-End':         "goLineRight"
+        ## paredit keys that defer if not in lisp code
+        'Backspace':        "subpar_backward_delete"
+        'Delete':           "subpar_forward_delete"
+        'Ctrl-D':           "subpar_forward_delete"
 
-      'Shift-9':          "subpar_open_bracket"
-      '[':                "subpar_open_square_bracket"
-      'Shift-[':          "subpar_open_braces"
+        'Shift-9':          "subpar_open_bracket"
+        '[':                "subpar_open_square_bracket"
+        'Shift-[':          "subpar_open_braces"
 
-      'Shift-0':          "subpar_close_bracket"
-      ']':                "subpar_close_square_bracket"
-      'Shift-]':          "subpar_close_braces"
+        'Shift-0':          "subpar_close_bracket"
+        ']':                "subpar_close_square_bracket"
+        'Shift-]':          "subpar_close_braces"
 
-      'Shift-\'':          "subpar_double_quote"
+        'Shift-\'':          "subpar_double_quote"
 
-      'Ctrl-Alt-F':       "subpar_forward"
-      'Ctrl-Alt-B':       "subpar_backward"
-      'Ctrl-Alt-U':       "subpar_backward_up"
-      'Ctrl-Alt-D':       "subpar_forward_down"
-      'Ctrl-Alt-P':       "subpar_backward_down"
-      'Ctrl-Alt-N':       "subpar_forward_up"
+        'Ctrl-Alt-F':       "subpar_forward"
+        'Ctrl-Alt-B':       "subpar_backward"
+        'Ctrl-Alt-U':       "subpar_backward_up"
+        'Ctrl-Alt-D':       "subpar_forward_down"
+        'Ctrl-Alt-P':       "subpar_backward_down"
+        'Ctrl-Alt-N':       "subpar_forward_up"
 
-      'Shift-Ctrl-[':     "subpar_backward_barf"
-      'Ctrl-Alt-Right':   "subpar_backward_barf"
-      'Ctrl-]':           "subpar_backward_barf"
+        'Shift-Ctrl-[':     "subpar_backward_barf"
+        'Ctrl-Alt-Right':   "subpar_backward_barf"
+        'Ctrl-]':           "subpar_backward_barf"
 
-      'Shift-Ctrl-]':     "subpar_forward_barf"
-      'Ctrl-Left':        "subpar_forward_barf"
+        'Shift-Ctrl-]':     "subpar_forward_barf"
+        'Ctrl-Left':        "subpar_forward_barf"
 
-      'Shift-Ctrl-9':     "subpar_backward_slurp"
-      'Ctrl-Alt-Left':    "subpar_backward_slurp"
-      'Ctrl-[':           "subpar_backward_slurp"
+        'Shift-Ctrl-9':     "subpar_backward_slurp"
+        'Ctrl-Alt-Left':    "subpar_backward_slurp"
+        'Ctrl-[':           "subpar_backward_slurp"
 
-      'Shift-Ctrl-0':     "subpar_forward_slurp"
-      'Ctrl-Right':       "subpar_forward_slurp"
+        'Shift-Ctrl-0':     "subpar_forward_slurp"
+        'Ctrl-Right':       "subpar_forward_slurp"
 
-      'Alt-Up':           "subpar_splice_delete_backward"
-      'Alt-Down':         "subpar_splice_delete_forward"
-      'Alt-S':            "subpar_splice"
-      'Ctrl-Alt-/':       "subpar_indent_selection"
+        'Alt-Up':           "subpar_splice_delete_backward"
+        'Alt-Down':         "subpar_splice_delete_forward"
+        'Alt-S':            "subpar_splice"
+        'Ctrl-Alt-/':       "subpar_indent_selection"
 
-      'Alt-Enter':        "run_selection"
-     }
-  }))
-  (ref options (stateful.morph! options))
+        'Alt-Enter':        "run_selection"
+       }
+    }))
   ## write changed options back to persistent storage
   (ref update-options (lambda
     (localStorage.setItem "CodeMirror-options" (JSON.stringify options))
@@ -271,10 +271,12 @@
       (ref keys (stateful.array!))
       (ref one-map (lambda [map]
         ((Object.keys map).forEach (lambda [key]
-          (conds
+          (cond
             (is key "fallthrough") (do
-                (ref more (get map key))
-                (conds (is (typeof more) "string") (ref more [[more]]))
+                (ref more (cond
+                  (is (typeof (get map key)) "string") [[(get map key)]]
+                  (else)                               (get map key)
+                ))
                 (more.forEach (lambda [map]
                   (one-map (get CodeMirror.keyMap map))))
               )
@@ -284,7 +286,7 @@
       ))
       (one-map cm.options.extraKeys)
       (ref core (stateful.morph! (get CodeMirror.keyMap cm.options.keyMap)))
-      (conds (not core.fallthrough)
+      (cond (not core.fallthrough)
         (core.update! {fallthrough: CodeMirror.keyMap.default.fallthrough}))
       (one-map core)
       (window.open
@@ -308,15 +310,20 @@
     auto_complete: (lambda [cm]
       (ref not-only (lambda
         (ref result (CodeMirror.hint.anyword.apply null arguments))
-        (conds (isnt result.list.length 1) (return result))
-        (ref size (- result.to.ch result.from.ch))
-        (conds (isnt (do (get list 0).length) size) (return result))
-        (return ((stateful.morph! result) {list: [[]]}))
+        (cond
+          (isnt result.list.length 1) result
+          (else) (do
+            (ref size (- result.to.ch result.from.ch))
+            (ref first-choice (get result.list 0))
+            (cond
+              (isnt first-choice.length size) result
+              (else) ((stateful.morph! result) {list: [[]]}))
+        ))
       ))
     )
   })
   ## Editing modes dependent on file type
-  (ref mode-extensions {
+  (ref default-mode-extensions {
     apl: "apl" as3: "apl" asf: "apl"
     c: "clike" cpp: "clike" h: "clike" cs: "clike"
     chh: "clike" hh: "clike" h__: "clike" hpp: "clike"
@@ -364,23 +371,24 @@
     yaml: "yaml" yml: "yaml" z80: "z80" asm: "z80"
   })
   (ref saved-mode-extensions localStorage.CodeMirror-mode-extensions)
-  (conds saved-mode-extensions (ref mode-extensions
-    (dict.merge mode-extensions saved-mode-extensions)
+  (ref mode-extensions (cond
+    saved-mode-extensions
+      (dict.merge default-mode-extensions saved-mode-extensions)
+    (else)
+      default-mode-extensions
   ))
 
   (ref set-mode (lambda [cm name]
-    (ref try-mode (lambda [exts]
-      (ref ext (exts.join "."))
-      (return? (get mode-extensions ext))
-      (conds (get CodeMirror.modes ext) (return ext))
-      (return false)
-    ))
-    (ref mode ((lambda
+    (ref mode (do
       (ref parts (name.split "."))
-      (conds (> parts.length 2) (return? (try-mode (parts.slice -2))))
-      (return? (try-mode (parts.slice -1)))
-      (return  "text")
-    )))
+      (ref exts (parts.slice (cond (> parts.length 2) -2 (else) -1)))
+      (ref ext (exts.join "."))
+      (ref mode-extension (get mode-extensions ext))
+      (cond mode-extension             mode-extension
+            (get CodeMirror.modes ext) ext
+            (else)                     "text"
+      )
+    ))
     (cm.setOption "mode" mode)
     (CodeMirror.autoLoadMode cm mode)
   ))
@@ -419,32 +427,36 @@
   (CodeMirror.defineMIME "text/lispz" "lispz")
   ## Update htmlmixed to understand lispz scripts
   (ref mimeModes (stateful.morph! CodeMirror.mimeModes))
-  (conds (is (typeof (get mimeModes "text/html")) "string")
+  (cond (is (typeof (get mimeModes "text/html")) "string")
         (mimeModes.update! "text/html" {name: "htmlmixed"}))
   (ref mode (stateful.morph! (get mimeModes "text/html")))
   (ref scriptTypes (stateful.array! mode.scriptTypes))
-  (conds (not mode.scriptTypes) (mode.update! {scriptTypes: [[]]}))
+  (cond (not mode.scriptTypes) (mode.update! {scriptTypes: [[]]}))
   (scriptTypes.push! {matches: '/^text\/lispz$/' mode: "lispz"})
   (mimeModes.update! {htmlmixed: mode})
 
-  (ref compile (lambda [cm name]
-    (ref mode     (cm.getModeAt (cm.getCursor)))
+  (ref get-source (=> (cond
+    (@.somethingSelected)  (@.doc.getSelection)
+    (else)                 (@.doc.getValue)
+  )))
+
+  (ref get-compiler (=>
+    (ref mode     (@.getModeAt (@.getCursor)))
     (ref compiler (get compilers mode.name))
-    (conds (not compiler) (return false))
-    (conds (cm.somethingSelected) (ref source (cm.doc.getSelection))
-          (else)                 (ref source (cm.doc.getValue))
+    (cond
+      compiler compiler
+      (else)   { compile: (=> "") }
     )
-    (return (compiler.compile source name))
+  ))
+
+  (ref compile (lambda [cm name]
+    ((get-compiler cm).compile (get-source cm))
   ))
 
   (ref run_selection (lambda [cm]
-    (ref mode     (cm.getModeAt (cm.getCursor)))
-    (ref compiler (get compilers mode.name))
-    (conds (not compiler) (return CodeMirror.Pass))
+    (ref compiler (get-compiler cm))
+    (ref source (get-source cm))
 
-    (conds (cm.somethingSelected) (ref source (cm.doc.getSelection))
-          (else)                 (ref source (cm.doc.getValue))
-    )
     (message.send "code-editor/run/prepare" { source })
     (ref js (compiler.compile source ))
     (message.send "code-editor/run/compiled" {
@@ -477,8 +489,8 @@
     (return (lambda [cm]
       (return CodeMirror.Pass) ## make a configuration option
       (ref mode (cm.getModeAt (cm.getCursor)))
-      (conds (get lisp-modes mode.name)  ((get subpar.core cmd) cm opt)
-            (else)                      (return CodeMirror.Pass)
+      (cond (get lisp-modes mode.name)  ((get subpar.core cmd) cm opt)
+            (else)                      CodeMirror.Pass
       )
     ))
   ))

@@ -48,8 +48,8 @@
   (ref subpart (lambda [cmd opt]
     (return (lambda [cm]
       (ref mode (cm.getModeAt (cm.getCursor)))
-      (conds (get lisp-modes mode.name)  ((get subpar.core cmd) cm opt)
-            (else)                      (return CodeMirror.Pass)
+      (cond (get lisp-modes mode.name)  ((get subpar.core cmd) cm opt)
+            (else)                      CodeMirror.Pass
       )
     ))
   ))

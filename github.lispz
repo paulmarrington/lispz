@@ -23,9 +23,9 @@
       (return (when (list-dir repo path) [paths]
         (ref children (stateful.array!))
         (paths.forEach (lambda [entry]
-          (conds
+          (cond
             (is "dir"  entry.type)
-              (conds (not single-level) (children.push! (list-path entry.path)))
+              (cond (not single-level) (children.push! (list-path entry.path)))
             (is "file" entry.type)
               (result.push! entry.path)
           )
@@ -39,14 +39,22 @@
     (repo.github.read repo.branch path callback)
   ))
   (ref update (lambda [repo]
-    (conds (is repo.branch repo.username) (return (promise.resolved)))
-    (ref branch-name (or repo.username "master"))
-    (return (branch repo branch-name))
+    (cond
+      (is repo.branch repo.username) (promise.resolved)
+      (else) (do
+        (ref branch-name (or repo.username "master"))
+        (branch repo branch-name)
+      )
+    )
   ))
   (ref write (promise.callback [repo path contents comment]
-    (conds (not contents.length) (return promise.resolved))
-    (ref encoded (unescape (encodeURIComponent contents)))
-    (repo.github.write repo.branch path encoded comment callback)
+    (cond
+      (not contents.length) (promise.resolved)
+      (else) (do
+        (ref encoded (unescape (encodeURIComponent contents)))
+        (repo.github.write repo.branch path encoded comment callback)
+      )
+    )
   ))
   ## preprocess a file to generate css or js dependent on extension
   (ref preprocessors {
@@ -57,18 +65,16 @@
   (ref preprocess (lambda [path code]
     (ref ext (last (path.split ".")))
     (ref preprocessor (get preprocessors ext))
-    (conds (not preprocessor) (return {path ext code}))
-    (return (preprocessor path code))
+    (cond preprocessor (preprocessor path code)
+                (else) {path ext code})
   ))
   ## Build and save a dependency list
   ## We will need to filter the dependencies
   (ref filter (lambda [before include exclude]
     (ref after before)
-    (conds include (ref after
-      (after.filter (lambda [file] (return (include.test file))))
-    ))
-    (conds exclude (ref after
-      (after.filter (lambda [file] (return (not (exclude.test file)))))
+    (ref after (cond
+      include (after.filter (lambda [file] (include.test file)))
+      exclude (after.filter (lambda [file] (not (exclude.test file))))
     ))
     (return after)
   ))
@@ -86,7 +92,7 @@
         (ref files (filter file-list meta.include meta.exclude))
         (resolve-promise (promise.all (files.map (promise [path]
           (when (actors.read source-repo path) [code]
-            (conds
+            (cond
               meta.copy-to (resolve-promise (copy meta.copy-to path code))
               (else)       (resolve-promise (preprocess path code))
             )
@@ -114,14 +120,11 @@
         from:   (first-from.concat rest-from)
       })
       ((list.flatten entry-tree).forEach (lambda [entry]
-        (conds
-          (get store entry.ext)
-            (do
-              (ref ext-list (get store entry.ext))
-              (ext-list.push! "\n\n/* " entry.path " */\n" entry.code)
-            )
-          store.copy
-            (store.copies.push! entry)
+        (cond
+          (get store entry.ext) (do
+            (ref ext-list (get store entry.ext))
+            (ext-list.push! "\n\n/* " entry.path " */\n" entry.code))
+          store.copy            (store.copies.push! entry)
         )
       ))
       (resolve-promise store)

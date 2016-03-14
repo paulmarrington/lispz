@@ -58,7 +58,7 @@
   listeners for modal dialogs, error messages, etc.
 ###
 (using [list]
-  (ref store (stateful)  expecting (stateful)  links (stateful))
+  (ref store (stateful)) (ref expecting (stateful)) (ref links (stateful))
 
   (ref exchange (lambda [address]
     (ref envelopes (get store address))
