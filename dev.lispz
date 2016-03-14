@@ -11,15 +11,14 @@
 
     (ref group (lambda [files]
       (ref modules (stateful.array!) riots (stateful.array!))
-      (files.forEach (lambda [entry]
-        (return? (not (is "file" entry.type)))
+      (files.forEach (lambda [entry] (cond (entry.type "file")
         (ref parts (entry.name.split "."))
-        (conds
+        (cond
           (is (last parts) "lispz")                  (modules.push! (first parts))
           (is ((slice parts -2).join ".") "riot.html") (riots.push! (first parts))
         )
-      ))
-      (return (promise.resolved {modules: modules.array! riots: riots.array!}))
+      )))
+      (promise.resolved {modules: modules.array! riots: riots.array!})
     ))
     (ref stringify (=>
       (return ((@.replace '/[\\"]/g' "\\$&").replace '/\n/g' "\\n"))

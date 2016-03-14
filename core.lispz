@@ -65,7 +65,10 @@
 ### spec: basic >> References
   @TODO
 ###
-(macro ref [*list] (#join '' 'var ' (#pairs *list '=' ',') ';'))
+(macro ref [name value]
+  (#join '' '(' name '=' value ')')
+  (#ast add_reference name)
+)
 
 ### spec: basic >> References >> Global References
   @TODO
@@ -84,22 +87,28 @@
     covered specifically. The default? function takes a value and returns
     it if it exists and is not empty, otherwise it returns the default value.
 
-        (conds (is v "One")  (return 1)
-              (not v)       (return 0)
-              (else)        (return -1)
+        (cond (is v "One")  1
+              (not v)       0
+              (else)       -1
         )
 
     Because conditionals work with list pairs, it is necessary to wrap the actions
     if there are more than one. Lispz provides 'do' for that.
 
-        (conds ok? (do (finish-up) (return true)))
+        (cond ok (do (finish-up) true))
 
     The standard conditional tests (< > <= >=, etc) are augmented by aliases (is isnt not).
 ###
 (macro conds [*list]
   (#join '' 'switch(false){case !' (#pairs *list  ':' ';break;case !') '}')
 )
-(macro else [] 'true')
+(macro cond [*list]
+  ((lambda
+    (#join '' ';switch(false){case !(' (#pairs *list '):return ' ';case!(') '}')
+    (return null)
+  ) arguments)
+)
+(macro else 'true')
 
 ### spec: basics >> Operators ###
 (macro not [value] (#join '' '!(' value ')'))
@@ -109,19 +118,23 @@
 ###
 (macro execution-context [context *body]
   (lispz.execution-context.push context)
-  'try{' *body '}'
-  'finally {' (lispz.execution-context.pop) '}'
+  *body (ref _ecres_ _res_)
+  (lispz.execution-context.pop)
+  (ref _res_ _ecres_)
 )
 ### spec: basic >> Execution Context >> Adding Loggers
 ###
 (global add-execution-context-logger (lambda [name logger]
-  (conds (not lispz.execution-context.loggers) return)
-  (lispz.execution-context.loggers.update! name logger)
+  (cond lispz.execution-context.loggers
+    (lispz.execution-context.loggers.update! name logger)
+  )
 ))
+
+(macro closure [?params *body] ((lambda *body) ?params))
 
 ### spec: basic >> do
 ###
-(macro do [*body] *body)
+(macro do [*body] ((lambda *body) arguments))
 
 ### spec: basic >> Functions
 
@@ -243,40 +256,40 @@
 
 (macro #set! [to-change! value] (#join '' to-change! '=' value ';'))
 (ref #morph! (lambda [obj]
-  (conds obj.update! (return obj)) ## in case we have done it before
-  (Object.defineProperties obj {
-    update!: {value: (lambda [update]
-      (ref context this)
-      (conds (is arguments.length 1)
-        ((Object.keys update).forEach (lambda [key]
-          (#set! (get context key) (get update key))
+  (cond (not obj.update!) ## in case we have done it before
+    (Object.defineProperties obj {
+      update!: {value: (lambda [update]
+        (ref context this)
+        (cond (is arguments.length 1)
+          ((Object.keys update).forEach (lambda [key]
+            (#set! (get context key) (get update key))
+          ))
+        (else) (do
+          (ref list (*arguments 0))
+          (list.forEach (lambda [value idx] (cond (% idx 2) (do
+            (ref key (get list (- idx 1)))
+            (#set! (get context key) value)
+          ))))
         ))
-      (else) (do
-        (ref list (*arguments 0))
-        (list.forEach (lambda [value idx] (conds (% idx 2) (do
-          (ref key (get list (- idx 1)))
-          (#set! (get context key) value)
-        ))))
-      ))
-    )}
+        context
+      )}
 
-    delete!: {value: (lambda [to-delete]
-      (delete (get this to-delete))
-    )}
+      delete!: {value: (lambda [to-delete]
+        (delete (get this to-delete))
+      )}
 
-    push!: {value: (lambda [entry]
-      (Array.prototype.push.apply this.array! (*arguments 0))
-    )}
+      push!: {value: (lambda [entry]
+        (Array.prototype.push.apply this.array! (*arguments 0))
+      )}
 
-    pop!: {value: (lambda [entry]
-      (return (this.array!.pop entry))
-    )}
-  })
+      pop!: {value: (lambda [entry] (this.array!.pop entry))}
+    })
+  )
   (return obj)
 ))
 (global stateful (lambda [seed]
   (ref obj (#morph! (new Object)))
-  (conds seed (obj.update! seed))
+  (cond seed (obj.update! seed))
   (return obj)
 ))
 (global stateful.array! (lambda [seed]
@@ -289,22 +302,6 @@
 
 ### We sometimes need to change Lispz functionality ###
 (stateful.morph! lispz)
-
-(macro closure [params *body] (#join '' '(lambda(' params '){' *body '})(' params ')'))
-(macro return  [value] (#join '' 'return ' value '\n'))
-
-### spec: basics >> functions >> Return if not false
-    As a functional language, most decisions are made by small single-focus functions.
-    As such, conditional returns are a useful shortcut. To this end, return? returns
-    a value if it not false, null or an empty container.
-
-        (return? calculated-value)
-
-    > The return? macro assigns the supplied value to a temporary reference
-    > before using the reference. This stops the value from being evaluated
-    > twice if it is not a simple reference.
-###
-(macro return? [value] (do (ref v value) (conds v (return v))))
 
 (macro new [cls *params] (#join '' '(new ' cls '(' (#join ',' *params) '))'))
 
@@ -330,12 +327,11 @@
       ((expect (chain f1 f2 f3)).toBe 50)
     ))
   ))
-###
 (global chain (lambda [] (ref functions (*arguments 0))
   (ref link (lambda [arg func] (return (func arg))))
   (return (lambdas.reduce link null))
 ))
-
+###
 ### spec: basics >> Iteration
 
 In the functional way of programming, loop style iteration is (almost) never needed.
@@ -386,7 +382,7 @@ To access external modules, wrap your code in 'using'. Data and functions export
 ...and that is all there is to it.
 ###
 (macro using [modules *on_ready] (lispz.load (#join '' '"' modules '"')
-  (lambda [] (#requires modules) *on_ready)
+  (lambda (#requires modules) *on_ready)
 ))
 ### Modules must export to continue processing ###
 (macro export [exports] (#join '' '__module_ready__(' exports ')'))
@@ -433,7 +429,7 @@ Callbacks provide the simplest mechanism for asynchronous responses. Any functio
 Many callbacks producers follow the node-js approach of providing error and response parameters.
 
     (read my-url (lambda [err response]
-      (conds err (throw "read failed"))
+      (cond err (throw "read failed"))
       (return response.text)
     )
 
@@ -464,8 +460,9 @@ it calls (reject-promise err).
 
     (ref read (promise [addr param1 param2]
       (http-get (+ addr "?&" param1 "&" param2) (lambda [err response]
-        (conds err (return (reject-promise err)))
-        (resolve-promise response)
+        (cond err    (reject-promise err)
+              (else) (resolve-promise response)
+        )
       ))
     ))
 
@@ -476,8 +473,9 @@ create a file object that may or may not ever ask a server for the contents.
     (ref file {
       read: (promise.deferred [addr param1 param2]
         (http-get (+ addr "?&" param1 "&" param2) (lambda [err response]
-          (conds err (return (reject-promise err)))
-          (resolve-promise response)
+          (cond err    (reject-promise err)
+                (else) (resolve-promise response)
+          )
         ))
       )
     })
@@ -585,40 +583,44 @@ In summary we have
 ))
 (global promise {})
 
-(macro promise [params *body] (lambda params
+(macro promise [?params *body] (lambda ?params
   (return (#action-promise (#prepare-promise)
     (lambda [resolve-promise reject-promise] *body)
   ))
 ))
-(macro promise.deferred [params *body]
+(macro promise.deferred [*body]
   (return #deferred-promise (lambda [resolve-promise reject-promise] *body))
 )
-(macro promise.callback [params *body] (promise params
+(macro promise.callback [?params *body] (promise ?params
   (ref callback (lambda [err result]
-    (conds err (return (reject-promise err)))
-    (resolve-promise result)
+    (cond err    (reject-promise err)
+          (else) (resolve-promise result)
+    )
   ))
   *body
 ))
 (global promise.resolved (promise [pact] (resolve-promise pact)))
 
 (global promised (lambda [pledge]
-  (conds (and pledge pledge.then) (return pledge))
-  (return (promise.resolved pledge))
+  (cond (and pledge pledge.then) pledge
+        (else)                   (promise.resolved pledge)
+  )
 ))
 
 (global #resolve-deferred (lambda [pledge]
-  (conds pledge.deferred (do
-    (ref deferred pledge.deferred) (delete pledge.deferred) (deferred)
+  (cond pledge.deferred (do
+    (ref deferred pledge.deferred)
+    (delete pledge.deferred)
+    (deferred)
   ))
   (return pledge)
 ))
 
-(macro when [pledge params *body]
-  ((#resolve-deferred pledge).then (lambda params *body))
+(macro when [pledge ?params *body]
+  ((#resolve-deferred pledge).then (lambda ?params *body))
 )
-(macro promise.failed [pledge errors *body]
-  ((#resolve-deferred pledge).catch (lambda errors *body))
+(macro promise.failed [pledge ?errors *body]
+  ((#resolve-deferred pledge).catch (lambda ?errors *body))
 )
 
 (using [list]
@@ -628,11 +630,13 @@ In summary we have
 )
 (global promise.chain (lambda []
   (ref chain-link (lambda [input functions]
-    (conds (not functions.length) (return (promised input)))
-    (ref pledge (promised ((first functions) input)))
-    (when pledge [output] (chain-link output (rest functions)))
+    (cond (not functions.length) (promised input)
+    (else) (do
+      (ref pledge (promised ((first functions) input)))
+      (when pledge [output] (chain-link output (rest functions)))
+    ))
   ))
-  (return chain-link null (*arguments 0))
+  (chain-link null (*arguments 0))
 ))
 
 ### spec: Basic >> Keeping Count
@@ -655,10 +659,10 @@ In summary we have
 (global wait-for (promise [test max-ms]
   (ref timed-out (countdown! (or max-ms 5000) 10))
   (ref waiter (lambda []
-    (conds
-      (test)      (return (resolve-promise))
-      (timed-out) (return (reject-promise))
-      (else)      (delay 10 waiter)
+    (cond
+      (test)      (resolve-promise)
+      (timed-out) (reject-promise)
+      (else)      (delay 10 (waiter))
     )
   )) (waiter)
 ))

@@ -24,7 +24,7 @@
       (ref size 2) ## scheme uses define instead of ref
       ((expect size).toBe 2)
 
-      (ref pi 3.14159  radius 10) ## lispz allows more than one
+      (ref pi 3.14159) (ref radius 10) ## lispz allows more than one
       ((expect (* pi (* radius radius))).toBe 314.159)
       (ref circumference (* 2 pi radius))
       ((expect circumference).toBe 62.8318)
@@ -49,9 +49,9 @@
     )
     (it "1.1.6  Conditional Expressions and Predicates" =>
       (ref abs (lambda [x]
-        (conds ((> x 0) (return x))
-              ((= x 0) (return 0))
-              ((< x 0) (return (- x)))
+        (cond ((> x 0) x)
+              ((= x 0) 0)
+              ((< x 0) (- x))
         )
       ))
 
@@ -60,7 +60,7 @@
       ((expect (abs(0))).toBe 0)
 
       (ref abs2 (lambda [x]
-        (conds (< x 0) -x
+        (cond (< x 0) -x
               (else)   x
         )
       ))

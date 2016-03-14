@@ -15,8 +15,7 @@
 
   (ref attach (lambda [collection db]
     (ref uri (get databases (or db "default")))
-    (conds (not uri) (return null))
-    (return (new Firebase (+ uri "/" (encode collection))))
+    (cond uri (new Firebase (+ uri "/" (encode collection))))
   ))
 
   (ref loaded (net.script "https://cdn.firebase.com/js/client/2.2.9/firebase.js"

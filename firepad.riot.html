@@ -36,11 +36,11 @@
           (codemirror.set-mode cm packet.key)
           (tag.update! {heading: (last (packet.key.split "/"))})
           (localStorage.setItem filename-key packet.key)
-          (conds packet.contents (tag.pad.setText packet.contents))
+          (cond packet.contents (tag.pad.setText packet.contents))
           (tag.update)
         ))
 
-        (conds
+        (cond
           opts.db (do
             (ref db (firebase.attach (+ "firepads/" opts.name) opts.db))
             (tag.update! {pad: (stateful.morph (Firepad.fromCodeMirror db cm
@@ -50,7 +50,7 @@
           ) (else) (do ## without firebase we need to persist locally
             (ref contents-key (+ "codemirror/" opts.name "/contents"))
             (ref filename (localStorage.getItem filename-key))
-            (conds filename (delay 100
+            (cond filename (delay 100
               (open {key:      filename
                      contents: (localStorage.getItem contents-key)})
             ))
