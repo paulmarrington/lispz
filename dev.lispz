@@ -10,14 +10,14 @@
     (ref read-file (github.read.bind null lispz-repo))
 
     (ref group (lambda [files]
-      (ref modules (stateful.array!) riots (stateful.array!))
-      (files.forEach (lambda [entry] (cond (entry.type "file")
+      (ref modules (stateful.array!)) (ref riots (stateful.array!))
+      (files.forEach (lambda [entry] (cond (is entry.type "file") (do
         (ref parts (entry.name.split "."))
         (cond
           (is (last parts) "lispz")                  (modules.push! (first parts))
           (is ((slice parts -2).join ".") "riot.html") (riots.push! (first parts))
         )
-      )))
+      ))))
       (promise.resolved {modules: modules.array! riots: riots.array!})
     ))
     (ref stringify (=>
