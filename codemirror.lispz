@@ -374,7 +374,7 @@
   (ref saved-mode-extensions localStorage.CodeMirror-mode-extensions)
   (ref mode-extensions (cond
     saved-mode-extensions
-      (dict.merge default-mode-extensions saved-mode-extensions)
+      (dict.merge default-mode-extensions (JSON.parse saved-mode-extensions))
     (else)
       default-mode-extensions
   ))
