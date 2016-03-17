@@ -224,7 +224,6 @@ var lispz = function() {
     }],
     [/^(\)|\}|\])$/, function(env) {
       var f = env.node;
-      // if (!env.stack.length) console.log("Missing open brace")
       (env.node = env.stack.pop()).push(f)
     }],
     /*

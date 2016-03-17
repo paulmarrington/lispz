@@ -13,7 +13,7 @@
       matchTags:          true
       showTrailingSpace:  true
       inputStyle:         "textarea" ## change to "contenteditable" after vim cursor bug fix
-      autofocus:          true
+      autofocus:          false
       dragDrop:           false
       smartIndent:        true
       indentUnit:         2
