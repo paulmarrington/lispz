@@ -210,9 +210,9 @@ var lispz = function() {
   eol_to_js = function(name, number) {
     location = {name:name, line:number}
     var ast = slice.call(arguments, 2)
+    while (ast[0] === "\n") ast = slice.call(ast, 3)
     var line = ast_to_js(ast)
-    if (ast[0] !== "[" && (ast[0] !== "\n" || ast[3] !== "["))
-      if (line.length > 1  &&  line[line.length - 1] != "\n") {
+    if (ast[0] !== "["&& line.length > 1 && line[line.length - 1] != "\n") {
         line += "//#" + name + ":" + number + "\n"
       }
     return line
