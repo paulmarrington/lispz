@@ -43,9 +43,13 @@
           (cm.replaceRange packet.contents (CodeMirror.Pos (cm.lastLine)))
         ))
 
-        (ref contents (=> (return (cm.getValue))))
+        (ref contents (=> cm.getValue))
 
-        (message.dispatch (+ "code-editor/" opts.name) { open append contents })
+        (ref focus (=> (cm.focus)))
+
+        (message.dispatch (+ "code-editor/" opts.name)
+          { open append contents focus }
+        )
       )
     )
   </script>

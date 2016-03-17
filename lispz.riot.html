@@ -27,7 +27,10 @@
         (message.send (+ "code-editor/" topic) {action: "open" key contents})
       ))
 
-      (when (message.ready "code-editor/code") (open "code" ".lispz" ""))
+      (when (message.ready "code-editor/code")
+        (open "code" ".lispz" "")
+        (message.send "code-editor/code" {action: "focus"})
+      )
 
       (ref clear_result_panels (=>
         (open "output" ".txt" "") (open "compiled" ".js" "")
