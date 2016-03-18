@@ -4,21 +4,6 @@
   with RESTful or WebSockets. The UI components use messaging to communicate
   between components that are not linked, so cannot make more direct connections.
 
-  Here a code editor will wait on messages to open a new 'file'. The message
-  includes a name unique to each code editor. The dictionary at the end can
-  include any number of named requests. Each associated function takes a packet
-  whose content format is known by clients and services.
-
-      (using [message]
-        (ref open (lambda [packet] ...)
-        (message.dispatch (+ "code-editor/" opts.name) { open })
-
-  The client will send a command to open a new file for display. If the editor
-  is called 'scratch':
-
-      (message.send "code-editor/scratch"
-        {action: "open" key: "scratchpad.lispz" contents: null}
-      )
 
   If it is possible that a client will send an important request before the
   service has had the opportunity to initialise, wrap 'send' in 'wait-for':
@@ -58,7 +43,8 @@
   listeners for modal dialogs, error messages, etc.
 ###
 (using [list]
-  (ref store (stateful)) (ref expecting (stateful)) (ref links (stateful))
+  (ref store (stateful)) (ref expecting   (stateful))
+  (ref links (stateful)) (ref dispatchers (stateful))
 
   (ref exchange (lambda [address]
     (ref envelopes (get store address))
@@ -129,7 +115,31 @@
   (add-execution-context-logger "message.dispatch" (lambda [context error-args]
     (return (+ "received from " context.address " packet " context.packet))
   ))
+  ### spec: async >> Messaging >> dispatch
+  Here a code editor will wait on messages to open a new 'file'. The message
+  includes a name unique to each code editor. The dictionary at the end can
+  include any number of named requests. Each associated function takes a packet
+  whose content format is known by clients and services.
+
+      (using [message]
+        (ref open (lambda [packet] ...)
+        (message.dispatch (+ "code-editor/" opts.name) { open })
+
+  The client will send a command to open a new file for display. If the editor
+  is called 'scratch':
+
+      (message.send "code-editor/scratch"
+        {action: "open" key: "scratchpad.lispz" contents: null}
+      )
+
+  In most cases it is easier to use a connector function
+
+      (ref scratchpad (message.connect "code-editor/scratch"))
+      ...
+      (scratchpad.open {key: "scratchpad.lispz" contents: null})
+  ###
   (ref dispatch (lambda [address actions]
+    (dispatchers.update! address actions)
     (listen address (lambda [packet]
       (execution-context {context: "dispatch" address packet}
         (ref action (get actions packet.action))
@@ -137,6 +147,7 @@
       ) (return (action packet))
     ))
   ))
+  (ref connect (lambda [address] (get dispatchers address)))
 
   (ref log (lambda [text]
     (ref parts (text.split '/\s*:\s*/'))
@@ -148,5 +159,5 @@
     (console.log packet.level "-" packet.text)
   ))
 
-  (export {exchange send expect listen dispatch ready clear link})
+  (export {exchange send expect listen dispatch ready clear link connect})
 )
