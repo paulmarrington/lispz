@@ -69,7 +69,7 @@
       )
 
       (stateful.morph! console)
-      (console.update! {log: (=> (log (+ ((*arguments 0).join " "))))})
+      (console.update! {log: (=> (log (+ ((*arguments 0).join " "))) null)})
       (message.listen "code-editor/run/output" (=> (log @.output)))
     ))
   </script>
