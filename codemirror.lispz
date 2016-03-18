@@ -402,22 +402,22 @@
       {regex: '/"/'                   next: "string" token: "string"}
       {regex: '/\'(?:[^\\]|\\.)*?\'/'                token: "variable-2"}
       {regex: '/###/'                next: "comment" token: "comment" }
-      {regex: '/(\()([!\s\(\[\{\)\}\]]*?!)/'
-                                indent: true  token: [[null "error"]]}
+      {regex: '/(\()(?:([^\s\(\[\{\)\}\]]*?(?:!|\.push!?|\.pop!?\b))|(stateful\b))/'
+                                indent: true  token: [["bracket" "error" "error"]]}
       {regex: '/(\()([^\s\(\[\{\)\}\]]+)/'
-                                indent: true  token: [[null "keyword"]]}
+                                indent: true  token: [["bracket" "keyword"]]}
       {regex: '/true|false|null|undefined|debugger/' token: "atom"}
       {regex: '/0x[a-f\d]+|[-+]?(?:\.\d+|\d+\.?\d*)(?:e[-+]?\d+)?/i'
                                                      token: "number"}
       {regex: '/## .*/'                              token: "comment"}
-      {regex: '/[\{\(\[]/'        indent: true}
-      {regex: '/[\}\)\]]/'      dedent: true}
+      {regex: '/[\{\(\[]/'        indent: true       token: "bracket"}
+      {regex: '/[\}\)\]]/'        dedent: true       token: "bracket"}
       {regex: '/[^\s\(\{\[\)\]\}]+/'                 token: "variable"}
       {regex: '/\s+/' next: "start"}
     ]]
     comment: [[
       {regex: '/###/' token: "comment" next: "start"}
-      {regex: '/.*/' token: "comment"}
+      {regex: '/.*/'  token: "comment"}
     ]]
     string: [[
       {regex: '/[^\\]"/' token: "string" next: "start"}
