@@ -43,7 +43,7 @@
           (cm.replaceRange packet.contents (CodeMirror.Pos (cm.lastLine)))
         ))
 
-        (ref contents (=> cm.getValue))
+        (ref contents (=> (cm.getValue)))
 
         (ref focus (=> (cm.focus)))
 
