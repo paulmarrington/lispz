@@ -14,13 +14,13 @@ Enough... on to lists. JavaScript ES5 has already added quite a few referentiall
     (li.lastIndexOf 2 from)       ## 1  ## from default to last element
     (l1.slice 1 2)               ## [[2]] ## -ve from end
 
-    (l1.every (lambda [item idx lst] (return (< idx 2))))   ## [[1 2]]  ## index, lst are optional
-    (l1.filter (lambda [item idx lst] (return (% idx 2))))  ## [[1 3]]
+    (l1.every (lambda [item idx lst] (< idx 2)))   ## [[1 2]]  ## index, lst are optional
+    (l1.filter (lambda [item idx lst] (% idx 2)))  ## [[1 3]]
     (l1.forEach (lambda [item idx lst] (console.log item))) ## 1\n2\n3
-    (l1.map (lambda [item idx lst] (return (* item 2))))    ## [[2 4 6]]
+    (l1.map (lambda [item idx lst] (* item 2)))    ## [[2 4 6]]
     (l1.some (lambda [item idx lst] (is item 4)))           ## false  ## true if (is item 2)
-    (l1.reduce (lambda [prev item idx lst] (return (+ prev item))) seed) ## 6 ## seed optional
-    (l1.reduceRight (lambda [prev item idx lst] (return (+ prev item))) seed) ## 6 ## seed optional
+    (l1.reduce (lambda [prev item idx lst] (+ prev item)) seed) ## 6 ## seed optional
+    (l1.reduceRight (lambda [prev item idx lst] (+ prev item)) seed) ## 6 ## seed optional
 
 The following are not referentially transparent (use (stateful.array!) instead)
 

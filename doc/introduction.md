@@ -55,6 +55,8 @@ With the understanding that everything appears to be a function, it becomes easi
 # Where functional programming comes in
 Shhh! Don't tell the Haskellers. JavaScript is already a functional language in that it provides functions as first-class operators, closures and bindings. There are other aspects that it does not support - the major ones being immutability and static types. I think of JavaScript as a modern assembler, making it the responsibility of the higher (:) level language to fill in the gaps.
 
+Lispz is way more function than JavaScript. Where JavaScript has statements, (almost) everything in Lispz returns a value. It is best to write Lispz as you would write Haskell where a lambda is one equation that does one thing. Use composition for larger tasks. With practice this becomes a powerful way to build up a system one step at a time. Modules and closures allow decomposition in a controlled manner.
+
 Lispz is too lightweight to do anything about static types.
 
 Immutability is a moving target. For a functional language, this means if a function is called with the same parameters it will always return the same result. Another definition states "no side-effects". A third suggest it means all data on the stack - meaning function call parameters. In the extreme it means that there are no variables, only constants - data once allocated never changes.
