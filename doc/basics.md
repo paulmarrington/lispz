@@ -55,7 +55,7 @@ The defined function, expect takes 2 parameters, being a string address and a fu
 For a traditional list or array, use [[]]. This will translate into a normal JavaScript array with standard functional support such as forEach and map.
 
     (ref a-list [[1 2 6 9]])
-    (ref double (a-list.map [item] (return (* item 2)))) ## JS==> [2, 4, 12, 18]
+    (ref double (a-list.map [item] (* item 2))) ## JS==> [2, 4, 12, 18]
 
 Use the get command to retrieve entries
 
@@ -65,7 +65,7 @@ All the JavaScript list processing functions (every, filter, forEach, ...) are a
 
 To see if an array contains an element, use 'contains':
 
-    (conds (list.contains 12 in my-list) (return "has dozen"))
+    (cond (list.contains 12 in my-list) (return "has dozen"))
 
 ## Associative Array List
 
@@ -82,9 +82,20 @@ access with a key is identical to arrays except that it is a key rather than an 
 
 Lispz does not support the updating of dictionary entries unless they are marked stateful. This should be avoided except where dealing with legacy structures such as the DOM.
 
+    (ref stateful-data {this-is-a-seed: true})
+    (stateful-data.update! {more: 1  less: 2})
+    (console.log stateful-data.more)
+
     (stateful.morph! a-dict)
     (a-dict.update! {error: "it broke"}) ## is the same as;
     (a-dict.update! "error" "it broke")
+
+Array access is slightly more convoluted
+
+    (ref stateful-array (stateful.array! ["optional" "seed"]))
+    (stateful-array.push! "new entry")
+    (ref top (stateful-array.pop!))
+    (ref my-array stateful-array.array!)
 
 Lispz provides some more functional referentially transparent functions.
 
@@ -118,14 +129,14 @@ Thanks to JavaScript 'and' and 'or' short-circuit - meaning that they will stop 
 
 Where possible I am following a policy of simplicity over diversity. To this end, Lispz boasts only one traditional conditional operator. The operator, _cond_ takes pairs of lists where the first is the condition and the second the action. Evaluation stops after the first true condition. There is an else macro that evaluates to true to catch situations not covered specifically.
 
-    (conds (is v "One")  (return 1)
-          (not v)       (return 0)
-          (else)        (return -1)
+    (cond (is v "One")   1
+          (not v)        0
+          (else)        -1
     )
 
 Because conditionals work with list pairs, it is necessary to wrap the actions if there are more than one. Lispz provides _do_ for that.
 
-    (conds ok? (do (finish-up) (return true)))
+    (conds ok (do (finish-up) true))
 
 # Functions
 
@@ -137,7 +148,7 @@ This allows us to call JavaScript functions at any time we can get to them.
 
 Anonymous functions are created with the lambda key-word (which is actually a macro - confused yet?). The parameters are referenced in another list form - that between square brackets. For later use, create a reference (_ref_). A function will return undefined unless a specific return statement is used.
 
-    (ref +1 (lambda [number] (return (+ number 1))))
+    (ref +1 (lambda [number] (+ number 1)))
     ...
     a = 12
     (console.log a (+1 a))  ## 12 13
@@ -154,7 +165,7 @@ In the functional way of programming, loop style iteration is (almost) never nee
 
 Referential transparency is the holy grail of functional programming. An expression is referentially transparent if it can be replaced by it's value without changing the behavior of the program.
 
-    (ref +1 (lambda [v] (return (+ v 1))))
+    (ref +1 (lambda [v] (+ v 1)))
 
 is referentially transparent because (+1 2) will be 3 no matter how often it is called.
 

@@ -69,8 +69,8 @@ A menu is a multi-level option selection. Both menu contents and results selecte
 Menu contents loading can be driven by the menu component or an external provider. For the former, the menu component sends out a message when a user asks to open the menu. It is up to a listener to provide the data requested. Use this if the menu contents change between uses.
 
       (message.listen "specifications-menu-open" (lambda
-        (var menu (dict.map lispz_modules (lambda [title source]
-          (return {topic: "specifications" title source})
+        (ref menu (dict.map lispz_modules (lambda [title source]
+          {topic: "specifications" title source}
         )))
         (message.send "specifications-menu" (menu.sort))
       ))
@@ -84,7 +84,7 @@ If an external controller knows when the menu changes, or if the menu is static,
       )        
 The menu itself is a dictionary with the format:
 
-     (var test-menu
+     (ref test-menu
         [[
           { header: true title: "Heading 1" }
           { title: "Item 1" topic: "Test menu item 1" }

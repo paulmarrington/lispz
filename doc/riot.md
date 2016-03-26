@@ -32,8 +32,15 @@ For riot component files that rely on other files for sub-components, Start the 
         <div name=wrapper class=wrapper></div>
       </panel>
       <style>code-editor .wrapper {...}</style>
-      <script type=text/lispz>(var tag this) ...</script>
+
+      <script type=text/lispz>(riot-tag
+        ...
+        (tag.update! {menu: markdown-menu heading: opts.heading})
+        ...
+      )</script>
     </code-editor>
+
+The _riot-tag_ macro instantiates a stateful _tag_ reference used to manipulate the tag contents. It also provides a context for error reporting.
 
 Riot uses plain JavaScript inside {} as a templating solution. The *opts* dictionary matches the attributes when the custom tag is referenced. Any inner tag with a *name* or *id* attribute can be referenced by the same name. Each component has a unique *_riot_id*.
 

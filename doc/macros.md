@@ -4,15 +4,13 @@ The term "macro" includes text substitution (e.g. ASM and C) and syntactic macro
 
 Perhaps the best road to understanding is by example.
 
-    (macro return? [value] (conds value (return value)))
+    (macro => [\*body] (lambda [@] \*body))
 
-creates a new language element that only returns if the value is a truthy, as in
+creates a simplified lambda definition with one parameter called @.
 
-    (ref result ....)
-    (return? result)
-    ## try something else
+    (ref add-1 (=> (+ @ 1)))
 
-This example would also work with a text substitution macro system, but this one doesn't:
+The above example would also work with a text substitution macro system, but this one doesn't:
 
     (macro closure [params _*body_]
       (#join '' '(function(' params '){' _*body_ '})(' params ')')
@@ -24,11 +22,16 @@ This generates the JavaScript output directly as #join is an immediate function 
 
 A macro is defined by giving it a name, list of parameters and a body. In it's simplest form the parameters are substituted into the body at reference time. It is like a function expanded in-line.
 
-    (macro return-if [test value] (conds test (return value)))
-
 Immediate actions are required to modify the JavaScript output during the compile stage (ast to JavaScript).
 
     (macro lambda [params _*body_] (#join '' '(function(' params '){' _*body_ '})'))
+
+Immediate actions are:
+
+* __#ast__: give a function and an ast, use the function to preprocess. Note that the function must know about the ast structure - being a list of lists.
+* **immediate**: takes lispz code text, compiles it then runs it at compile time. It can be used to inject code into the compile stream where the injected code is also lispz.
+* **#join**: is used to join text components to output JavaScript directly.
+* **#pairs**: works on pairs of values in a list. It is used to create cond statements and the like.
 
 Parameters that start with star must be the last in the list and encapsulate all the remaining parameters in the expansion. This is why lambda works:
 
@@ -52,13 +55,7 @@ Pairs takes a list, the code within each pair and the string between pairs. In t
 
 Macros allow you to change lispz by adding new build-in commands. By their nature, macros allow the use of lispz at compile time to generate the resulting lispz code. Most macros are to generate JavaScipt
 
-    (macro return [value] (#join '' 'return ' value '\n'))
-
-or just substitution
-
-    (macro return? [value] (conds value (return value)))
-
-Double-check substitution macros. The one above must be a macro, but may could be easily converted into global functions
+Double-check substitution macros.
 
     (macro empty? [list] (not list.length))
     # is functionally the same as

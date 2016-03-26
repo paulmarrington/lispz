@@ -1,6 +1,6 @@
 # Installation
 
-This is the shortest section in the book. If you have an Internet connection, then no installation is required. Just point your browser to http://lispz.marrington.net. This points to the latest released version of the Lispz repl. The html is just over a dozen lines.
+This is the shortest section in the book. If you have an Internet connection, then no installation is required. Just point your browser to http://lispz.net. This points to the latest released version of the Lispz repl. The html is just over a dozen lines.
 
     <!DOCTYPE html>
     <html manifest=index.cache-manifest>
@@ -11,7 +11,7 @@ This is the shortest section in the book. If you have an Internet connection, th
       <body>
         <lispz class=riot></lispz>
         <script
-        src=https://cdn.rawgit.com/master/lispz/v0.0.01/ext/lispz.js#riot>
+        src=https://lispz.net/ext/lispz.js#riot>
         </script>
       </body>
     </html>
