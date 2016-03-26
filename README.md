@@ -1,4 +1,5 @@
-# Lispz (<https://github.com/paulmarrington/lispz>)
+# Lispz
+<https://github.com/paulmarrington/lispz>
 
 [QuickStart](https://cdn.rawgit.com/paulmarrington/lispz/master/index.html) - Edit, run and read the documentation on-line
 
