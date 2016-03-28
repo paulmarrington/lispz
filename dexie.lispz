@@ -1,3 +1,8 @@
+### spec: Libraries >> Dexie
+Dexie.js is a wrapper library for indexedDB - the standard database in the browser.
+
+https://github.com/dfahlander/Dexie.js
+###
 (using  [net github]
 
   (ref build (lambda [target-repo]

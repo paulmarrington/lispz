@@ -1,4 +1,8 @@
-## https://github.com/RubaXa/Sortable
+### spec: Libraries >> Sortable
+Sortable — is a minimalist JavaScript library for reorderable drag-and-drop lists on modern browsers and touch devices. No jQuery. Supports Meteor, AngularJS, React, Polymer and any CSS library, e.g. Bootstrap
+
+https://github.com/RubaXa/Sortable
+###
 (using [net cdnjs dict]
 
   (ref sortable-defaults {

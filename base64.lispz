@@ -1,4 +1,8 @@
+### spec: Libraries >> Base64
+A robust base64 encoder/decoder that is fully compatible with `atob()` and btoa()`
 
+https://github.com/mathiasbynens/base64
+###
   (ref build (lambda [target-repo]
     (using  [net github]
       (return (github.build target-repo "base64" [[

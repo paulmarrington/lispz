@@ -1,7 +1,12 @@
-### spec: bootstrap - Twitter Bootstrap
+### spec: Bootstrap
+The most popular HTML, CSS, and JavaScript framework for developing responsive, mobile first projects on the web.
+
   Bootstrap is a popular CSS framework open sourced by Twitter. It includes skins
   so all bootstrap driven sites do not have to look alike. It provides support
   for differing screen sizes and is relatively mobile friendly.
+
+http://getbootstrap.com
+https://github.com/twbs/bootstrap
 ###
 (using [net github cdnjs message]
   (ref bootswatch-themes [["cerulean" "cosmo" "cyborg" "darkly" "flatly"
@@ -27,7 +32,7 @@
   (lispz.css "ext/bootstrap.css")
   (ref themes bootswatch-themes)
 
-  ###
+  ### spec: Bootstrap >> Bootswatch
   # https://bootswatch.com
   # Loads a bootswatch theme to make the page look different.
   # If no theme is provided, a random one is selected.
@@ -65,7 +70,7 @@
       </body>
 
   ###
-  ### spec: bootstrap >> Bootstrap Themes
+  ### spec: Bootstrap >> Bootstrap Themes
 
   Bootstrap sites do not have to look alike. [Bootswatch](https://bootswatch.com/)
   provides 16+ free themes, including ones that fit in with Metro, Polymer and Ubuntu:

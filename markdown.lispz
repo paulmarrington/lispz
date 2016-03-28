@@ -1,3 +1,9 @@
+### spec: Libraries >> Showdown
+A Markdown to HTML converter written in JavaScript
+
+http://showdownjs.github.io/demo/
+https://github.com/showdownjs/showdown
+###
 (using [net cdnjs dict]
   (ref build (lambda [target-repo]
     (return (cdnjs.build target-repo "showdown" [[

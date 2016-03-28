@@ -1,3 +1,8 @@
+### spec: Libraries >> CodeMirror
+In-browser code editor http://codemirror.net/
+
+https://github.com/codemirror/CodeMirror
+###
 (using  [net diff_match_patch message dict github compilers]
   (ref options-string (localStorage.getItem "CodeMirror-options"))
   (ref options (stateful.morph!

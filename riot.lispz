@@ -1,3 +1,10 @@
+### spec: Libraries >> RIOT
+A React-like, user interface library
+
+[Lispz RIOT Support](riot.spec.lispz)
+http://riotjs.com/
+https://github.com/riot/riot
+###
 ### spec: Riot
 
 [Riot](http://riotjs.com) is a tiny UI library then provides the best of Web components (polymer) and react in a package 15% of the size.

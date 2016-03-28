@@ -1,3 +1,9 @@
+### spec: Libraries >> Utf8
+A robust UTF-8 encoder/decoder in JavaScript.
+
+https://git.io/utf8js
+https://github.com/mathiasbynens/utf8.js
+###
   (ref build (lambda [target-repo]
     (using  [net github]
       (return (github.build target-repo "utf8" [[

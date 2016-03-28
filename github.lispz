@@ -1,3 +1,8 @@
+### spec: Libraries >> GitHub
+A higher-level wrapper around the Github API. Intended for the browser.
+
+https://github.com/michael/github
+###
 (using  [net dict list axios base64 utf8]
   (ref version null)
   (ref cdn-uri (lambda [project version filepath]

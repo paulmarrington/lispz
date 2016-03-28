@@ -1,3 +1,9 @@
+### spec: Libraries >> JS-Beautify
+Beautifier for JavaScript
+
+http://jsbeautifier.org/
+https://github.com/beautify-web/js-beautify
+###
 (using [net github]
   (ref build (lambda [target-repo built=>]
     (return (github.build target-repo "js_beautify" [[

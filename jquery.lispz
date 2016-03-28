@@ -1,3 +1,8 @@
+### Libraries >> jQuery
+New Wave JavaScript
+
+https://github.com/jquery/jquery
+###
 (using [net cdnjs]
   (ref build (lambda [target-repo]
     (return (cdnjs.build target-repo "jquery" [[
