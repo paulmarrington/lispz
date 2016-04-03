@@ -107,7 +107,7 @@ To see if an array contains an element, use 'in':
   ) [[]]))
 ))
 ### spec: lists >> for-each
-  This is a lelper for the JavaScript [].forEach(). It has the advantage that
+  This is a helper for the JavaScript [].forEach(). It has the advantage that
   it behaves correctly if the item is not an array by running once for the entry
   if it is not a falsy.
 ###

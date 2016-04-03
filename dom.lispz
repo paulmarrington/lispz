@@ -25,7 +25,7 @@
 
   (ref element (lambda [tag-name attributes]
     (ref elem (document.createElement tag-name))
-    (dict.for-each attributes (lambda [k v] (elem.setAttribute k v)))
+    (dict.for-each (or attributes {}) (lambda [k v] (elem.setAttribute k v)))
     (return elem)
   ))
 
@@ -39,5 +39,17 @@
     (ref add (lambda [] (element.addEventListener event listener)))
   ))
 
-  (export {append! element event-throttle style! inner-html! select})
+  ### spec: DOM >> Forms >> Scraping
+    Given a parent element, return a dictionary
+    of input elements.
+  ###
+  (ref scrape-form (lambda [parent]
+    (ref form (first (select parent "form")))
+    form.elements
+  ))
+
+  (export {
+    append! element event-throttle style! inner-html!
+    select scrape-form
+  })
 )

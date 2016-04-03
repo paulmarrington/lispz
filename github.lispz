@@ -1,14 +1,57 @@
-### spec: Libraries >> GitHub
-A higher-level wrapper around the Github API. Intended for the browser.
+### spec: >> GitHub
+  A higher-level wrapper around the Github API. Intended for the browser.
 
-https://github.com/michael/github
+  https://github.com/michael/github
 ###
 (using  [net dict list axios base64 utf8]
-  (ref version null)
-  (ref cdn-uri (lambda [project version filepath]
-    (return (+ "https://cdn.rawgit.com/" project "/" version "/" filepath))
+  ### spec: GitHub >> CDN
+    It is possible to access GitHub files for direct use in the browser through
+    a CDN. Provide the project name, hash/branch/release and a path to the file.
+  ###
+  (ref cdn-uri (lambda [project hash filepath]
+    (return (+ "https://cdn.rawgit.com/" project "/" hash "/" filepath))
   ))
-  (ref repo (lambda [username password project]
+  ### spec: GitHub >> Specifying the Current Repository
+    This is a non-pure function because if this is the first connection to
+    GitHub, a UI modal dialog is displayed for GitHub log-in details.
+  ###
+  (ref repo> (lambda [project]
+    (ref user (or
+      (sessionStorage.getItem "ghstate")
+      (localStorage.getItem "ghstate")
+    ))
+    (cond user (do
+      (ref up ((atob user).split "||"))
+      (promised (connect (first up) (last up) project))
+    ) (else)
+      ((promise (using [bootstrap]
+        (ref modal-path "github/github-login")
+        (ref modal (bootstrap.modal modal-path {}))
+        (when modal [resp]
+          (cond (is resp.login.value "true") (do
+            (ref user (btoa (+
+              resp.username.value
+              "||" resp.password.value
+            )))
+            (cond (is resp.remember.checked)
+              (localStorage.setItem "ghstate" user)
+            (else) (do ## user wants amnesia
+              (localStorage.removeItem "ghstate")
+              (sessionStorage.setItem "ghstate" user)
+            ))
+            (resolve-promise (connect
+              resp.username resp.password project
+            ))
+          ) (else)
+            (reject-promise {
+              error: true reason: "User abort"
+            })
+          )
+        )
+      )))
+    )
+  ))
+  (ref connect (lambda [username password project]
     (ref auth (new Github {username password auth: "basic"}))
     (ref github (auth.getRepo.apply null (project.split "/")))
     (return (stateful {github auth username password project branch: "master"}))
@@ -231,7 +274,7 @@ https://github.com/michael/github
   ## (promise.failed loaded (export {build}))
   (when loaded
     (export {
-      branch list-all list-dir cdn-uri build builder repo read write update
+      branch list-all list-dir cdn-uri build builder repo> read write update
       build-github retriever grunt preprocessors
       move: (promise.callback [repo from to]
         (repo.github.move repo.branch from to callback)

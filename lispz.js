@@ -298,7 +298,7 @@ var lispz = function() {
     if (lispz.debug_mode && uri.indexOf(":") == -1)
       req.setRequestHeader("Cache-Control", "no-cache")
     req.onerror = function(err) {
-      callback(err)
+      callback(uri+": "+err)
     }
     req.onload = function() {
       manifest.push(req.responseURL)

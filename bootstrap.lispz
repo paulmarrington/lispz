@@ -45,14 +45,43 @@ https://github.com/twbs/bootstrap
     )
     (net.css (+ "ext/bootstrap-" theme ".css"))
   ))
+  ### spec: Bootstrap >> modal
+    Open a named modal dialog box and wait for a user response. Options include
 
-  (ref loaded (net.script "ext/bootstrap.js" (lambda (return (($).modal)))))
-  (when  loaded (export {build themes}))
+    * seed - object to fill modal form fields
+    * attributes - for the element being created
+  ###
+  (ref modal (promise [name-path opts] (using [riot dom]
+    (ref name (last (name-path.split "/")))
+    (ref address (+ "modal/" name))
+    (ref show-modal (=>
+      (message.send address { action: "show" })
+    ))
+    (cond (get lispz.tags name)
+      (show-modal)
+    (else) ## modals are singletons, load once
+      (when (riot.inject name-path opts.attributes)
+        (show-modal)
+      )
+    )
+    (ref hidden-address (+ address "/hidden"))
+    (message.expect hidden-address (=>
+      (resolve-promise (dom.scrape-form @.element))
+    ))
+  )))
+  ### spec: Bootstrap >> loading
+    We know that bootstrap has completed loading
+    when we see _modal_ added to the list of
+    JQuery functions.
+  ###
+  (ref loaded (net.script "ext/bootstrap.js" (=>
+    (return (($).modal))
+  )))
+  (when  loaded (export {build themes modal}))
   (promise.failed loaded (export {build}))
 )
 
 ### spec: Bootstrap >> Bootstrap/RIOT/Lispz Combo
-
   There is a difference of scope between bootstrap and riot.
   [Bootstrap](http://getbootstrap.com/) is designed to be used page-wide.
   Riot is a web component system where each component should be as independent as possible.
