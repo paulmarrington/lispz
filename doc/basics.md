@@ -136,7 +136,7 @@ Where possible I am following a policy of simplicity over diversity. To this end
 
 Because conditionals work with list pairs, it is necessary to wrap the actions if there are more than one. Lispz provides _do_ for that.
 
-    (conds ok (do (finish-up) true))
+    (cond ok (do (finish-up) true))
 
 # Functions
 

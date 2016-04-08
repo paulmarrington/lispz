@@ -47,24 +47,27 @@
   (ref links (stateful)) (ref dispatchers (stateful))
 
   (ref exchange (lambda [address]
-    (ref envelopes (get store address))
-    (conds envelopes (return envelopes))
-    (ref envelopes (stateful.array!))
-    (store.update! address envelopes)
-    (return envelopes)
+    (or (get store address) (do
+      (ref envelopes (stateful.array!))
+      (store.update! address envelopes)
+      envelopes
+    ))
   ))
 
   (ref add (lambda [address envelope]
     (ref envelopes (exchange address))
     (envelopes.push! envelope)
-    (conds (and (is envelopes.array!.length 1)  (get expecting address))
+    (cond (and (is envelopes.array!.length 1)  (get expecting address))
           (do ((get expecting address)) (delete (get expecting address))))
   ))
 
   (ref ready (promise [address]
     (ref envelopes (exchange address))
-    (conds (length envelopes.array!) (return (promise.resolved)))
-    (expecting.update! address resolve-promise)
+    (cond (length envelopes.array!)
+      (promise.resolved)
+    (else)
+      (expecting.update! address resolve-promise)
+    )
   ))
 
   ## remove a recipient from all attached addresses
@@ -81,8 +84,10 @@
   (ref clear (lambda [address] (store.update! address (stateful.array!))))
 
   (ref link (lambda [primary secondary]
-    (conds (not (get links primary)) (links.update! primary (stateful.array!)))
-    (ref primary-links (get links primary))
+    (ref primary-links (or
+      (get links primary)
+      (links.update! primary (stateful.array!)))
+    )
     (primary-links.push! secondary)
   ))
 
@@ -95,7 +100,7 @@
       (ref result (stateful))
       (ref sender (lambda [recipient]
         (result.update! "contents" (recipient.listener=> packet))
-        (conds recipient.once (remove recipient))
+        (cond recipient.once (remove recipient))
       ))
       (ref envelopes (exchange address))
       (envelopes.array!.forEach sender)
@@ -143,15 +148,15 @@
     (listen address (lambda [packet]
       (execution-context {context: "dispatch" address packet}
         (ref action (get actions packet.action))
-        (conds (not action) (return (promise.resolved false)))
-      ) (return (action packet))
+        (cond (not action) (promise.resolved false))
+      ) (action packet)
     ))
   ))
   (ref connect (lambda [address] (get dispatchers address)))
 
   (ref log (lambda [text]
     (ref parts (text.split '/\s*:\s*/'))
-    (conds (is 1 parts.length) (parts.unshift "message"))
+    (cond (is 1 parts.length) (parts.unshift "message"))
     (send "logging" {level: (get parts 0) text: (get parts 1)})
   ))
 

@@ -46,8 +46,7 @@ A function that creates a promise uses the 'promise' keyword instead of 'lambda'
 
     (ref read (promise [addr param1 param2]
       (http-get (+ addr "?&" param1 "&" param2) (lambda [err response]
-        (conds err (return (reject-promise err)))
-        (resolve-promise response)
+        (cond err (reject-promise err) (else) (resolve-promise response))
       ))
     ))
 
