@@ -62,8 +62,7 @@
         )
         (message.listen "code/run" (=>
           (when (message.send "code-editor/code" {action: "contents"}) [source]
-            (ref compiled (compile-and-show source))
-            (((compilers.run compiled).filter (=> (return @))).forEach (=> (log @)))
+            (compilers.run (compile-and-show source))
           )
         ))
       )

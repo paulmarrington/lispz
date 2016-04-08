@@ -468,7 +468,7 @@ https://github.com/codemirror/CodeMirror
     (message.send "code-editor/run/compiled" {
       source js: (compilers.to-string js)
     })
-    (ref output (((compilers.run js).filter (=> (return @))).join "\n"))
+    (ref output ((compilers.run js).toString))
     (message.send "code-editor/run/output" { source output })
   ))
   ### spec: codemirror >> Compiling Code
