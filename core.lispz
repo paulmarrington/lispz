@@ -1,39 +1,33 @@
-### spec: basics >> Syntax
-    One of the really cool things about a lisp language is that there is very little syntax.
-    On the flip-side one of the disadantages of minimal syntax is the need for work-arounds -
-    and by definition a work-around is syntax. The core for lispz is 4 sorts of lists
+### spec: Modules >> Module Structure
 
-        (action a b c ...) ## functional list
-        [a b c]            ## raw list (typically parameters for a function definition)
-        [[a b c]]          ## an array list
-        {a: 1 b c}         ## an associative array or dictionary
-
-    Named references are created using 'var'. They exist only inside the module or function
-    in which they are first defined. This includes inner functions, but if the inner function
-    defines a 'var' of the same name it will be distinct and hide the outer reference.
-
-        (ref ref 23)
+All Lispz source files are modules. They are loaded on first request by client code. Subsequent requests returns a cached reference to the exports.
 ###
-### spec: basics >> Operator
-    A pure lisp system does not have any operators. Everything is a function or a macro.
-    Because Lispz compiles to JavaScript, all unary and many binary operators are exposed.
+### spec: Modules >> Module Usage
 
-        debugger           ## JS==> debugger
-        (+ 2 3 4)          ## JS==> (2 + 3 + 4)
+Every module must include an export statement including a dictionary of symbols to be exported
 
-    While unary operators are transparent to Lispz and convert directly, binary operators
-    are expanced with macros. Some operators have convenience names.
+    (ref one (lambda [] ...)
+    (ref two 22)
+    (export {one two})
 
-        (and a b c)        ## JS==> a && b && c
-        (or a b c)         ## JS==> a || b || c
-        (is a 12)          ## JS==> a === 12
-        (isnt a 12)        ## JS==> a !== 12
+If a module requires other asynchronous operations it can defer the export statement until they are ready.
 
-    Thanks to JavaScript 'and' and 'or' short-circuit - meaning that they will stop when
-    they find truth for and or false for or.
+    (lispz.script "ext/jquery.js" (lambda [] (export { ... })))
 
-        (return (or value "default value string"))
+To access external modules, wrap your code in 'using'. Data and functions exported from a module are linked to the import name.
+
+    (using [dict net list]
+      (ref combined (dict.merge d1 d2 d3))
+    )
+
+...and that is all there is to it.
 ###
+(macro using [modules *on_ready] (lispz.load (#join '' '"' modules '"')
+  (lambda (#requires modules) *on_ready)
+))
+### Modules must export to continue processing ###
+(macro export [exports] (#join '' '__module_ready__(' exports ')'))
+
 ### spec: developer >> debug
   `(debug)` is a development helper macro. It will print a stack trace
   and the contents of any parameters on the console. If you left-align it
@@ -66,7 +60,7 @@
   @TODO
 ###
 (macro ref [name value]
-  (#join '' '(' name '=' value ')')
+  (#join '' '(_res_=(' name '=' value '))')
   (#ast add_reference name)
 )
 
@@ -99,9 +93,6 @@
 
     The standard conditional tests (< > <= >=, etc) are augmented by aliases (is isnt not).
 ###
-(macro conds [*list]
-  (#join '' 'switch(false){case !' (#pairs *list  ':' ';break;case !') '}')
-)
 (macro cond [*list]
   ((lambda
     (#join '' ';switch(false){case !(' (#pairs *list '):return ' ';case!(') '}')
@@ -114,50 +105,12 @@
 (macro not [value] (#join '' '!(' value ')'))
 (macro instance-of [type obj] (#join '' '(' obj ' instanceof ' type ')'))
 
-### spec: basic >> Execution Context
-###
-(macro execution-context [context *body]
-  (lispz.execution-context.push context)
-  *body (ref _ecres_ _res_)
-  (lispz.execution-context.pop)
-  (ref _res_ _ecres_)
-)
-### spec: basic >> Execution Context >> Adding Loggers
-###
-(global add-execution-context-logger (lambda [name logger]
-  (cond lispz.execution-context.loggers
-    (lispz.execution-context.loggers.update! name logger)
-  )
-))
-
 (macro closure [?params *body] ((lambda *body) ?params))
 
 ### spec: basic >> do
 ###
 (macro do [*body] ((lambda *body) arguments))
 
-### spec: basic >> Functions
-
-    As I am sure I mentioned before the default lisp/lispz element is the list surrounded by brackets.
-    In most cases in lisp and all cases in list the first element of the list is a reference to a function.
-    In JavaScript perspective this makes a lispz list a JavaScript function where the first element
-    is the reference and the rest a list of parameters.
-
-    This allows us to call JavaScript functions at any time we can get to them.
-
-        (console.log "This is the" count "log message")
-
-    Anonymous functions are created with the function key-word
-    (which is actually a macro - confused yet?). The parameters are referenced
-    in another list form - that between square brackets. For later use, assign
-    it to or in a variable. A function will return undefined
-    unless a specific return statement is used.
-
-        (ref +1 (lambda [number] (return (+ number 1))))
-        ...
-        a = 12
-        (console.log a (+1 a))  ## 12 13
-###
 ### spec: function
   (describe "(lambda [p1 p2 ...] ...) ## function definition" (lambda []
     (it "defines an anonymous function that can be called" (lambda []
@@ -194,201 +147,8 @@
 (macro empty? [list] (not list.length))
 (macro defined? [field] (!== (typeof field) "undefined"))
 
-### spec: basic >> state -- Stateful Containers
-  State is the elephant in the room - particularly in the functional programming paradigm.
-  When you have state that can be changed from outside, then any function that reads from it
-  no longer has referential integrity. This means that identical calls may not return identical
-  results.
-
-  But we need state. Without it the system is fully enclosed without input or output.
-  A referentially integrous :) function can be replaced by it's return value,
-  so why ever run it?
-
-  The aim is to be like any machine with the internals always working the same.
-  Think of a clock. The input is someone setting the time.
-  After that the external gearing, etc is meant to work consistently so that the
-  time advances at the correct pace. The current time is state. You can build and
-  test the entire device without the state. It is on the very outside. Once the
-  mechanism is working as expected, add a clock face and hands. Changing the hands
-  is input and displaying the time output. The latter can be considered a
-  side-effect.
-
-  The state container for lispz relies on polite access, not enforced rules. By custom an
-  function that changes ends in an exclamation mark. Use this to highlight review.
-  The default builder return an empty JavaScript dictionary.
-
-      (describe "Create a new stateful object -- (ref context (stateful seed))" (lambda []
-        (ref options (stateful {name: "undefined" address: "nowhere"}))
-        (it "is able to read members directly -- context.member" (lambda []
-          ((expect options.name).toBeEqual "undefined")
-        ))
-        (it "is able to read members by key -- context[key]" (lambda []
-          ((expect options["name"]).toBeEqual "undefined")
-        ))
-        (it (+ "is able to update a dictionary with changes -- "
-          "(context.update! {a: dictionary})") (lambda []
-            (options.update! {name: "Barney Rubble" address: "Next Door"})
-            ((expect options.name).toBeEqual "Barney Rubble")
-            ((expect options.address).toBeEqual "Next Door")
-        )
-          )
-      ))
-
-  Javascript lives in the world of objects as well as functions. Sometimes to work in this world
-  objects need to be labelled as stateful. Use this approach as sparingly as possible. Always
-  consider other alternatives first.
-
-      (describe "Creating a stateful reference -- (ref context (stateful.morph! this))" (lambda []
-        (ref that {a: 1 b: 2})
-        (ref context (stateful.morph! that))
-        (it "looks the same as the original object" (lambda []
-          ((expect context.a).toBeEqual that.a)
-        ))
-        (it "reflects changes to the original object" (lambda []
-          (context.update! {a: 99})
-          ((expect that.a).toBeEqual 99)
-        ))
-      ))
-
-  Be polite and use this container responsibly. Adding protection adds overhead.
-  If you want to cheat, then on your head be it.
-###
-
-(macro #set! [to-change! value] (#join '' to-change! '=' value ';'))
-(ref #morph! (lambda [obj]
-  (cond (not obj.update!) ## in case we have done it before
-    (Object.defineProperties obj {
-      update!: {value: (lambda [update]
-        (ref context this)
-        (cond (is arguments.length 1)
-          ((Object.keys update).forEach (lambda [key]
-            (#set! (get context key) (get update key))
-          ))
-        (else) (do
-          (ref list (*arguments 0))
-          (list.forEach (lambda [value idx] (cond (% idx 2) (do
-            (ref key (get list (- idx 1)))
-            (#set! (get context key) value)
-          ))))
-        ))
-        context
-      )}
-
-      delete!: {value: (lambda [to-delete]
-        (delete (get this to-delete))
-      )}
-
-      push!: {value: (lambda [entry]
-        (Array.prototype.push.apply this.array! (*arguments 0))
-      )}
-
-      pop!: {value: (lambda [entry] (this.array!.pop entry))}
-    })
-  )
-  (return obj)
-))
-(global stateful (lambda [seed]
-  (ref obj (#morph! (new Object)))
-  (cond seed (obj.update! seed))
-  (return obj)
-))
-(global stateful.array! (lambda [seed]
-  (ref obj (#morph! (new Object)))
-  (ref seeder (or seed [[]]))
-  (obj.update! {array!: (seeder.slice)})
-  (return obj)
-))
-(global stateful.morph! #morph!)
-
-### We sometimes need to change Lispz functionality ###
-(stateful.morph! lispz)
 
 (macro new [cls *params] (#join '' '(new ' cls '(' (#join ',' *params) '))'))
-
-### spec: functions >> chaining -- Chaining functions
-  In a functional style we often call multiple functions to incrementally move
-  from problem to solution. Each step takes the results from the step before and
-  transforms it. It is allways a good idea to have short functions that do one
-  thing - for testing, maintenance and readability. Speaking of readability,
-  chain makes the sequence of events clear.
-
-      (parse-titles (lambda [sections] (return (sections.map ...)))
-      (sort-titles  (lambda [sections] (return (sections.map ...)))
-      (merge-titles (lambda [sections] (return (sections.map ...)))
-
-      ((chain parse-titles sort-titles merge-titles) sections)
-###
-### spec: chain
-  (describe "chain: run each function with the results from the one before" (llbda []
-    (it "(chain f1 f2 ...)" (lambda []
-      (ref f1 (lambda [a] (return 2)))
-      (ref f2 (lambda [a] (return (+ a 3))))
-      (ref f3 (lambda [a] (return (* a 10))))
-      ((expect (chain f1 f2 f3)).toBe 50)
-    ))
-  ))
-(global chain (lambda [] (ref functions (*arguments 0))
-  (ref link (lambda [arg func] (return (func arg))))
-  (return (lambdas.reduce link null))
-))
-###
-### spec: basics >> Iteration
-
-In the functional way of programming, loop style iteration is (almost) never needed.
-Because of the 'almost' and to provide for those week on functional will,
-lispz provides one loop operator. It takes a test and a body.
-
-    (while (not (result)) (look-again))
-
-In this case both are functions. Lispz furthers the functional cause by making
-assignment difficult and ugly.
-
-Of course the need for iteration remains no matter what programming discipline you follow.
-In the functional world it is filled by ... you guessed it ... functions.
-For arrays, JavaScript provides an excellent set documented in [List Processing](list-processing.md).
-###
-## Javascript does not (yet) have tail recursion - it is scheduled for 2016
-(macro while [test *body] (#join '' 'while(' test '){' *body '}'))
-
-### spec: List and dictionary manipulation ###
-(macro length [list] (#join '' list '.length'))
-(macro first [list] (get list 0))
-(macro rest [list] (list .slice 1))
-(macro last [list] (get (list .slice -1) 0))
-(global slice (lambda [list from to]  (return (lispz.slice.call list from to))))
-
-### spec: Modules >> Module Structure
-
-All Lispz source files are modules. They are loaded on first request by client code. Subsequent requests returns a cached reference to the exports.
-###
-### spec: Modules >> Module Usage
-
-Every module must include an export statement including a dictionary of symbols to be exported
-
-    (ref one (lambda [] ...)
-    (ref two 22)
-    (export {one two})
-
-If a module requires other asynchronous operations it can defer the export statement until they are ready.
-
-    (lispz.script "ext/jquery.js" (lambda [] (export { ... })))
-
-To access external modules, wrap your code in 'using'. Data and functions exported from a module are linked to the import name.
-
-    (using [dict net list]
-      (ref combined (dict.merge d1 d2 d3))
-    )
-
-...and that is all there is to it.
-###
-(macro using [modules *on_ready] (lispz.load (#join '' '"' modules '"')
-  (lambda (#requires modules) *on_ready)
-))
-### Modules must export to continue processing ###
-(macro export [exports] (#join '' '__module_ready__(' exports ')'))
-
-(macro delay [ms *body] (setTimeout (=> *body) ms))
-(macro yield [*body] (delay 0 *body))
 ###
 # Use contain to contain state changes. Any var inside a contain can be changed
 # no matter how many times the contain is called concurrently. It is also allows
@@ -398,273 +158,9 @@ To access external modules, wrap your code in 'using'. Data and functions export
 (macro contain [contain#args *contain#body]
   ((lambda contain#args *contain#body) contain#args)
 )
-###
-# Return a random integer between 0 and the range given
-###
-(global random (lambda [range] (return (Math.floor (* (Math.random) range)))))
 
 ### Update log-execution-context to be more helpful ###
-(using [log_execution_context] (lispz.update! { log_execution_context }) )
-
-### spec: async -- Asynchronous Support
-There are three kinds of people in the world - those that can count and those who can't. And there are two ways to treat asynchronous events at the language/platform level. Either stop the process while waiting for something...
-
-    (while (read) (print)) ## this won't work in a JavaScript engine
-
-...or provide actions to do when an event happens...
-
-    (read (lambda [] (print))) ## Call an anonymous function when event fires.
-
-For some reason the first approach is called synchronous. In practice it means you can't do anything until the event you are waiting for occurs. Systems that work this way compensate by making it easy to create multiple threads - allowing code to appear to work in parallel. The developer does not have much control on when the processor switches from one thread to another. This means that data can appear to change like magic between two instructions on one thread because another thread has been active. Not only does this make referential integrity impossible, but it makes for the need for locks and semaphores and other mind-bending and program-slowing mechanisms.
-
-By contrast the second approach is called asynchronous. It takes the mind-bending from an apparently optional later process and makes it important from the start. This is because we humans have been trained to think in a synchronous manner when solving problems or writing programs.
-
-One more tale before getting back to lispz. Microsoft Windows prior to '95 used what they called "cooperative multi-processing". This meant that the operating system never took the CPU away from a program without the program first giving permission. Hmmm, very similar to a JavaScript machine based on asynchronous methods, isn't it. The complaint then is that badly behaved applications could freeze the UI by not releasing the CPU often enough. Since JavaScript runs on the UI thread it can also freeze the UI in the same way. A well behaved program, on the other hand, is more efficient and far easier to write.
-###
-### spec: async >> Callbacks
-Callbacks provide the simplest mechanism for asynchronous responses. Any function that want to initiate something that will complete at an undetermined later time can take a reference to a function to call at that time (or thereabouts)
-
-    (delay 2000 (lambda [] (console.log "delay over")))
-
-Many callbacks producers follow the node-js approach of providing error and response parameters.
-
-    (read my-url (lambda [err response]
-      (cond err (throw "read failed"))
-      (return response.text)
-    )
-
-## Benefits
-1. Very simple with minimal overheads
-2. Can be called many times
-3. Cause and effect are sequential in code
-
-## Disadvantages
-1. Empiric in nature
-2. Highly coupled
-3. Leads to hard-to-read code in more complex event sequences.
-4. Exceptions are lost if not processed within the callback
-5. Actions triggered before the callback is set are lost
-###
-### spec: async >> Promises
-ES2015 has introduced native promises into the language. As of November 2015 it
-is available on all mainstream browsers. Even if not, there are shims that work
-in an identical(ish) manner.
-
-Functions that want to return information in an asynchronous manner return a
-promise object. This object can be passed around and whoever needs the data it
-will or does contain can ask for it with a callback function.
-
-A function that creates a promise uses the 'promise' keyword instead of 'function'.
-When the promise is fulfilled it will call (resolve-promise data). If it fails
-it calls (reject-promise err).
-
-    (ref read (promise [addr param1 param2]
-      (http-get (+ addr "?&" param1 "&" param2) (lambda [err response]
-        (cond err    (reject-promise err)
-              (else) (resolve-promise response)
-        )
-      ))
-    ))
-
-In _promise_ the function is run immediately. In many situations it is nice to
-have a promise that only runs when it is first needed. You may, for example,
-create a file object that may or may not ever ask a server for the contents.
-
-    (ref file {
-      read: (promise.deferred [addr param1 param2]
-        (http-get (+ addr "?&" param1 "&" param2) (lambda [err response]
-          (cond err    (reject-promise err)
-                (else) (resolve-promise response)
-          )
-        ))
-      )
-    })
-    ...
-    ## This will trigger a server request...
-    (when file.read [response] (console.log response))
-
-Because it is common to turn a callback into a promise, lispz provides a helper
-macro. The following provides identical functionality. One of the benefits of a
-language with real macros :)
-
-    (ref read (promise.callback [addr param1 param2]
-      (http-get (+ addr "?&" param1 "&" param2) callback)
-    ))
-
-Now that we have a promise, we can use it just like a callback if we want:
-
-    (ref reading (read "http://blat.com/blah" 1 2))
-    (when reading [result] (return (process result)))
-    (promise.failed reading [err] (console.log "ERROR: "+err))
-
-Even without further knowledge, promises clean up errors and exceptions. If you do not catch errors, exceptions thrown in the asynchronous function can be caught in the code containing the promise.
-
-The power of promises starts to become clearer with the understanding that 'when' can return a promise.
-
-    (ref processed (when reading [result] (return (process result))))
-    (when processed (console.log "All done"))
-
-So far this adds very little at the cost of a relatively large supporting library. if we start thinking functionally instead of sequentially, promises provides a way to clarify our code (a little).
-
-    # change branch we will be working with
-    (ref update-mode (github.update lispz-repo))
-    # Once in update mode we can retrieve lispz.js and ask for a list of other file in parallel
-    (ref lispz-js    (when update-mode [] (read-file "lispz.js")))
-    (ref listing     (when update-mode [] (github.list-dir lispz-repo "")))
-    # We can only sort files once we have a listing from the server
-    (ref groups      (when listing [files] (group files)))
-    # but then we can process the different groups in parallel (retrieving source as needed)
-    (ref modules     (when groups [files] (return (build-modules files.modules))))
-    (ref riots       (when groups [files] (return (build-riots files.riots))))
-
-    # Now to pull it all together into a single file
-    (ref  source     (stateful.array [["window.lispz_modules={}"]]))
-    # promise.sequence forces the order.
-    (ref all-loaded  (promise.sequence
-      (when modules  [sources] (source.concat sources) (return (promise.resolved))
-      # lisp.js is added after modules and lisp-js are resolved
-      (when lispz-js [code]    (source.push! code) (return (promise.resolved))
-      # riot tags are added after lisp.js and lisp-js is added and riots promise is resolved
-      (when riots    [sources] (source.concat sources) (return (promise.resolved))
-    ))
-    # Only write the result when the sequence above is complete
-    (return (when all-loaded (write-lispz)))
-    # returns a promise that is complete once the results are written
-
-In summary we have
-
-1. **(promise [params...] ...)** is a macro that generates a function that returns a promise
-  1. **(resolve-promise results...)** sets results used in **when [results...] ...** macros
-  2. **(reject-promise err)** sets results used in **(promise.failed [err] ...)** macros
-2. **(promise.callback [params...] ...)** is a macro to creates promises from traditional callbacks
-  1. **callback** is a function reference to use where callbacks would normally be defined
-3. **(promise.resolved results)** Will return a promise that will always provide the results supplied to when. Use it to turn a synchronous function into a promise to use in sequences.
-4. **(when a-promise [results...] ...)** is a macro that works like a function where the function body is executed with the results supplied once (and if) the promise is resolved. If a **when** statement returns a promise it can be used for chaining.
-5. **(promise.failed a-promise [err] ...) is a macro that works like a function where the function body is executed if any of a set of chained promises uses **reject-promise** to indicate an error.
-6. **(promise.all promise-1 promise-2 [[promises]])** will return a promise that is fulfilled when all the promises specified are resolved or rejected. It will flatten arrays of promises.
-7. **(promise.sequence promise-1 promise-2 [[promises]])** will return a promise that is fulfilled when all the promises specified are resolved or rejected. Unlike **all**, each promise is triggered when the preceding promise is resolved.
-
-## Benefits
-1. Separates cause and effect more clearly
-2. Results are available even it the promise is resolved before inspection
-3. You can pass around a promise just like the data it will contain
-4. Handles exceptions in a structured way
-
-## Disadvantages
-2. Still fairly highly coupled
-3. Only allows one action - not for repetitive events
-4. Developer view needs to change from sequential perspective
-5. Being selective about errors and exceptions is painful. Once a promise is resolved it cannot change. Any promises that rely on a rejected promise will themselves be rejected causing a cascade of failures. To be selective you need to wrap a promise catch in an outer promise and resolve the outer one if the error itself can be resolved. Don't forget to resolve the outer promise with the data from the inner one when there are no errors.
-###
-(global #prepare-promise (lambda
-  (ref callbacks (stateful {ok: (lambda) fail: (lambda)}))
-  (ref pledge (stateful.morph!
-    (new Promise (lambda [ok fail] (callbacks.update! {ok fail})))
-  ))
-  (ref resolve (lambda (callbacks.ok.apply null (*arguments 0))))
-  (ref reject (lambda [err] (callbacks.fail err)))
-  (return { pledge resolve reject })
-))
-(global #action-promise (lambda [context promise-body]
-  (context.pledge.update! "execution_context" lispz.execution-context)
-  (#join '' 'try{' (promise-body context.resolve context.reject) '}catch(err){'
-    (lispz.log-execution-context context.pledge.execution-context [["own-promise"]])
-    (lispz.log-execution-context lispz.execution-context [["in-promise"]])
-    (context.reject err) '}'
-  )
-  (return context.pledge)
-))
-(global #deferred-promise (lambda [promise-body]
-  (ref context (#prepare-promise))
-  (context.pledge.update! {deferred: (lambda
-    (return (#action-promise context promise-body))
-  )})
-  (return context.pledge)
-))
-(global promise {})
-
-(macro promise [?params *body] (lambda ?params
-  (return (#action-promise (#prepare-promise)
-    (lambda [resolve-promise reject-promise] *body)
-  ))
-))
-(macro promise.deferred [*body]
-  (return #deferred-promise (lambda [resolve-promise reject-promise] *body))
+(using [fp stateful log_execution_context promise counters]
+  (lispz.update! { log_execution_context })
+  (export {})
 )
-(macro promise.callback [?params *body] (promise ?params
-  (ref callback (lambda [err result]
-    (cond err    (reject-promise err)
-          (else) (resolve-promise result)
-    )
-  ))
-  *body
-))
-(global promise.resolved (promise [pact] (resolve-promise pact)))
-
-(global promised (lambda [pledge]
-  (cond (and pledge pledge.then) pledge
-        (else)                   (promise.resolved pledge)
-  )
-))
-
-(global #resolve-deferred (lambda [pledge]
-  (cond pledge.deferred (do
-    (ref deferred pledge.deferred)
-    (delete pledge.deferred)
-    (deferred)
-  ))
-  (return pledge)
-))
-
-(macro when [pledge ?params *body]
-  ((#resolve-deferred pledge).then (lambda ?params *body))
-)
-(macro promise.failed [pledge ?errors *body]
-  ((#resolve-deferred pledge).catch (lambda ?errors *body))
-)
-
-(using [list]
-  (global promise.all (=>
-    (return (Promise.all (list.flatten (*arguments 0))))
-  ))
-)
-(global promise.chain (lambda []
-  (ref chain-link (lambda [input functions]
-    (cond (not functions.length) (promised input)
-    (else) (do
-      (ref pledge (promised ((first functions) input)))
-      (when pledge [output] (chain-link output (rest functions)))
-    ))
-  ))
-  (chain-link null (*arguments 0))
-))
-
-### spec: Basic >> Keeping Count
-###
-(global counter! (lambda
-  (ref count (stateful {to: 0}))
-  (return (lambda
-    (count.update! "to" (+ count.to 1))
-    (return count.to)
-  ))
-))
-(global countdown! (lambda [from by]
-  (ref count (stateful {from}))
-  (return (lambda []
-    (from.update! "from" (- count.from by))
-    (return (<= count.from 0))
-  ))
-))
-
-(global wait-for (promise [test max-ms]
-  (ref timed-out (countdown! (or max-ms 5000) 10))
-  (ref waiter (lambda []
-    (cond
-      (test)      (resolve-promise)
-      (timed-out) (reject-promise)
-      (else)      (delay 10 (waiter))
-    )
-  )) (waiter)
-))
-
-(export {})

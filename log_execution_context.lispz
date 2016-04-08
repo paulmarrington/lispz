@@ -1,4 +1,20 @@
 (using [list]
+  ### spec: basic >> Execution Context
+  ###
+  (macro execution-context [context *body]
+    (lispz.execution-context.push context)
+    *body (ref _ecres_ _res_)
+    (lispz.execution-context.pop)
+    (ref _res_ _ecres_)
+  )
+  ### spec: basic >> Execution Context >> Adding Loggers
+  ###
+  (global add-execution-context-logger (lambda [name logger]
+    (cond lispz.execution-context.loggers
+      (lispz.execution-context.loggers.update! name logger)
+    )
+  ))
+  
   (ref loc  (=> (return (+ @.name ":" @.line))))
   (ref loc2 (=> (return (+ (loc @.location) " from " (loc @.previous)))))
   (ref src  (lambda [source around]
