@@ -259,7 +259,7 @@ https://github.com/codemirror/CodeMirror
     (ref args (data.item.meta.split ","))
     (ref command (args.shift))
     (args.unshift cm)
-    ((get CodeMirror.commands command).apply CodeMirror args)
+    ((get CodeMirror command).apply CodeMirror args)
   ))
   (ref open (lambda [owner wrapper]
     (ref cm (stateful.morph! (CodeMirror wrapper options)))
@@ -272,26 +272,29 @@ https://github.com/codemirror/CodeMirror
     (message.remove cm.listener)
   ))
   (ref spaces "                ")
+
   (ref extra-commands {
     view_keyboard_shortcuts: (lambda [cm]
       (ref keys (stateful.array!))
-      (ref one-map (lambda [map]
-        ((Object.keys map).forEach (lambda [key]
+      (ref one-map (lambda [key-map]
+        ((Object.keys key-map).forEach (lambda [key]
+          (ref key-value (get key-map key))
           (cond
             (is key "fallthrough") (do
                 (ref more (cond
-                  (is (typeof (get map key)) "string") [[(get map key)]]
-                  (else)                               (get map key)
+                  (is (typeof key-value) "string") [[key-value]]
+                  (else)                           key-value
                 ))
-                (more.forEach (lambda [map]
-                  (one-map (get CodeMirror.keyMap map))))
+                (more.forEach (lambda [key-map]
+                  (one-map (get CodeMirror.keyMap key-map))
+                ))
               )
-            (else) (keys.push! (+ key ": " (get map key)))
+            (else) (keys.push! (+ key ": " key-value))
           )
         ))
       ))
       (one-map cm.options.extraKeys)
-      (ref core (stateful.morph! (get CodeMirror.keyMap cm.options.keyMap)))
+      (ref core (stateful.morph! (get CodeMirror.keyMap key-map cm.options.keyMap)))
       (cond (not core.fallthrough)
         (core.update! {fallthrough: CodeMirror.keyMap.default.fallthrough}))
       (one-map core)
@@ -320,7 +323,7 @@ https://github.com/codemirror/CodeMirror
           (isnt result.list.length 1) result
           (else) (do
             (ref size (- result.to.ch result.from.ch))
-            (ref first-choice (get result.list 0))
+            (ref first-choice (first result.list))
             (cond
               (isnt first-choice.length size) result
               (else) ((stateful.morph! result) {list: [[]]}))
@@ -383,16 +386,18 @@ https://github.com/codemirror/CodeMirror
     (else)
       default-mode-extensions
   ))
+  (ref get-mode-extension (pull mode-extensions))
 
   (ref set-mode (lambda [cm name]
     (ref mode (do
       (ref parts (name.split "."))
       (ref exts (parts.slice (cond (> parts.length 2) -2 (else) -1)))
       (ref ext (exts.join "."))
-      (ref mode-extension (get mode-extensions ext))
-      (cond mode-extension             mode-extension
-            (get CodeMirror.modes ext) ext
-            (else)                     "text"
+      (ref mode-extension (get CodeMirror.modes ext))
+      (cond mode-extension
+        (get CodeMirror.modes ext)
+      (else)
+        "text"
       )
     ))
     (cm.setOption "mode" mode)
@@ -490,13 +495,15 @@ https://github.com/codemirror/CodeMirror
   ))
 
   (ref lisp-modes {lispz: true clojure: true commonlisp: true scheme: true})
+  (ref lisp-mode  (pull lisp-modes))
+  (ref subpar-command (pull subpar.core))
 
   (ref subpart (lambda [cmd opt]
     (return (lambda [cm]
       (return CodeMirror.Pass) ## make a configuration option
       (ref mode (cm.getModeAt (cm.getCursor)))
-      (cond (get lisp-modes mode.name)  ((get subpar.core cmd) cm opt)
-            (else)                      CodeMirror.Pass
+      (cond (lisp-mode mode.name)  ((subpar-command cmd) cm opt)
+            (else)                 CodeMirror.Pass
       )
     ))
   ))

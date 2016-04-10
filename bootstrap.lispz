@@ -31,6 +31,7 @@ https://github.com/twbs/bootstrap
 
   (lispz.css "ext/bootstrap.css")
   (ref themes bootswatch-themes)
+  (ref random-theme (dot (random themes.length) in bootswatch-themes))
 
   ### spec: Bootstrap >> Bootswatch
   # https://bootswatch.com
@@ -39,9 +40,9 @@ https://github.com/twbs/bootstrap
   ###
   (message.listen "bootstrap/change-theme" (lambda [theme-name]
     (ref theme
-      (cond (not (defined? theme-name))
-        (get bootswatch-themes (random themes.length))
-      (else) theme)
+      (cond (not (defined? theme-name)) (random-theme)
+            (else)                      theme-name
+      )
     )
     (net.css (+ "ext/bootstrap-" theme ".css"))
   ))

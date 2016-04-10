@@ -58,7 +58,8 @@
   If you want to cheat, then on your head be it.
 ###
 
-(macro #set! [to-change! value] (#join '' to-change! '=' value ';'))
+(macro #set! [list index value] (#join '' list '[' index ']=' value ';'))
+
 (ref #morph! (lambda [obj]
   (cond (not obj.update!) ## in case we have done it before
     (Object.defineProperties obj {
@@ -66,13 +67,13 @@
         (ref context this)
         (cond (is arguments.length 1)
           ((Object.keys update).forEach (lambda [key]
-            (#set! (get context key) (get update key))
+            (#set! context key (get update key))
           ))
         (else) (do
           (ref list (*arguments 0))
           (list.forEach (lambda [value idx] (cond (% idx 2) (do
             (ref key (get list (- idx 1)))
-            (#set! (get context key) value)
+            (#set! context key value)
           ))))
         ))
         context

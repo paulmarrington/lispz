@@ -7,7 +7,7 @@
   ### spec: DOM >> Replace inner html
   Given an element, replace the contents with the html provided as a string.
   ###
- (ref inner-html! (lambda [el html] (#set! el.innerHTML html)))
+ (ref inner-html! (lambda [el html] (#set! el "innerHTML" html)))
 
   ### spec: DOM >> Select Elements
   This is a shortcut for element.querySelectorAll. It copies the
@@ -19,7 +19,7 @@
 
   (ref style! (lambda [el styles]
     (dict.for-each styles(lambda [name value]
-      (#set! (get el.style name) value))
+      (#set! el.style name value))
     ))
   )
 

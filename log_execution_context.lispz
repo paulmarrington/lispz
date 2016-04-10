@@ -14,7 +14,7 @@
       (lispz.execution-context.loggers.update! name logger)
     )
   ))
-  
+
   (ref loc  (=> (return (+ @.name ":" @.line))))
   (ref loc2 (=> (return (+ (loc @.location) " from " (loc @.previous)))))
   (ref src  (lambda [source around]
@@ -42,6 +42,8 @@
     compile: (=> (return (+ (loc2 @) (src @.source @.location.line))))
     other:   (=> (return (json @)))
   }))
+  (ref logger-for (pull loggers))
+  
   (ref format-context (=>
     (ref name (+ @ ": "))
     (ref spaces (- 16 name.length))
@@ -52,9 +54,9 @@
   (ref logger (lambda [execution-context args]
     (ref context (list.reverse execution-context))
     (lispz.log "Context:" context) ## to JavaScript console just in case...
-    (console.log (get args 0) "\nContext:")
+    (console.log (first args) "\nContext:")
     (context.forEach (lambda [item]
-      (ref logger (or (get loggers item.context) loggers.other))
+      (ref logger (or (logger-for item.context) loggers.other))
       (console.log (+ (format-context item.context) (logger item)))
     ))
   ))

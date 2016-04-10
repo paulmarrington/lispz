@@ -49,10 +49,15 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
 (using  [jquery net github dict dom]
   ## we need to update the tags cache
   (stateful.morph! lispz.tags)
+  ### spec: RIOT >> Get Tag Definition by Name
+  ###
+  (ref tag-by-name (pull lispz.tags))
+
   ## has side-effects as riot caches compile results
   (ref compile (lambda [html to-js] (riot.compile html to-js)))
 
   (ref processed-tags (stateful {}))
+  (ref processed-tag  (pull processed-tags))
 
   (add-execution-context-logger "riot.load" (lambda [context error-args]
     (return (+ "tag" context.name " from " context.uri))
@@ -70,7 +75,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
     (ref usings (lambda [tags]
       (ref new-tags (tags.filter (=>
         (cond @.length (do
-          (ref processed (get processed-tags @))
+          (ref processed (processed-tag @))
           (processed-tags.update! @ true)
           (return (not processed)))
         (else)
@@ -97,7 +102,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
       )
     )))
 
-    (ref tag-def (get lispz.tags name))
+    (ref tag-def (tag-by-name name))
     (cond
       tag-def   (compile-and-process tag-def)
       (else)    (retrieve-and-compile)
@@ -123,17 +128,17 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
     (ref parts (name-path.split "/"))
     (ref name  (last parts))
     (ref file (first parts))
-    (ref exists (get lispz.tags name))
+    (ref exists (tag-by-name name))
     (when (load name (+ file ".riot.html"))
       (cond exists (do
         (ref tags (riot.mount name))
-        (resolve-promise (get tags 0))
+        (resolve-promise (first tags))
       ) (else) (do
         (ref element (dom.element name attributes))
         (ref parent (or parent-selector "body"))
         (dom.append! parent element)
         (ref tags (riot.mount element name))
-        (resolve-promise (get tags 0))
+        (resolve-promise (first tags))
       ))
     )
   ))
@@ -250,7 +255,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
     ))))
     (when load-all
       (riot.mount "*")
-      (export {build compile load mount inject update! child-tags})
+      (export {build compile load mount inject update! child-tags tag-by-name})
     )
   ))
 )

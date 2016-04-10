@@ -35,4 +35,13 @@
 ###
 (global random (lambda [range] (return (Math.floor (* (Math.random) range)))))
 
+### spec: Counters >> UUID
+# Generate a fairly unique ID - at least as unique as Math.random can make it.
+###
+(global uuid (=>
+  ("xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace '/[xy]/g' (=>
+    (ref r = (Math.floor (* (Math.random) 16)))
+    ((cond (is @ "x") r (else) (| (& r 0x3) 0x8)).toString 16)
+  ))
+))
 (export {})

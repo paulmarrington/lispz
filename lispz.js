@@ -432,7 +432,7 @@ var lispz = function() {
     "return": return_to_js
   }
   // add all standard binary operations (+, -, etc)
-  "+,-,*,/,&&,||,==,===,<=,>=,!=,!==,<,>,^,%".split(',').forEach(binop_to_js)
+  "+,-,*,/,&&,||,==,===,<=,>=,!=,!==,<,>,^,%,|,&,^".split(',').forEach(binop_to_js)
 
   return { compile: compile, run: run, parsers: parsers, load: load,
            macros: macros, cache: cache, http_request: http_request,

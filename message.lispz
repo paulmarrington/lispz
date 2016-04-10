@@ -45,9 +45,11 @@
 (using [list]
   (ref store (stateful)) (ref expecting   (stateful))
   (ref links (stateful)) (ref dispatchers (stateful))
+  (ref in-store (pull store))
+  (ref get-link (pull links))
 
   (ref exchange (lambda [address]
-    (or (get store address) (do
+    (or (in-store address) (do
       (ref envelopes (stateful.array!))
       (store.update! address envelopes)
       envelopes
@@ -57,8 +59,9 @@
   (ref add (lambda [address envelope]
     (ref envelopes (exchange address))
     (envelopes.push! envelope)
+    (ref expected-mail-action (get expecting address))
     (cond (and (is envelopes.array!.length 1)  (get expecting address))
-          (do ((get expecting address)) (delete (get expecting address))))
+          (do (expected-mail-action) (delete expected-mail-action)))
   ))
 
   (ref ready (promise [address]
@@ -85,7 +88,7 @@
 
   (ref link (lambda [primary secondary]
     (ref primary-links (or
-      (get links primary)
+      (get-link primary)
       (links.update! primary (stateful.array!)))
     )
     (primary-links.push! secondary)
@@ -104,7 +107,7 @@
       ))
       (ref envelopes (exchange address))
       (envelopes.array!.forEach sender)
-      (ref secondaries (or (get links address) [[]]))
+      (ref secondaries (or (get-link address) [[]]))
       (list.for-each secondaries.array! (lambda [link] (send link packet)))
     ) (return (promised result.contents))
   ))
@@ -144,12 +147,14 @@
       (scratchpad.open {key: "scratchpad.lispz" contents: null})
   ###
   (ref dispatch (lambda [address actions]
+    (ref get-action (pull actions))
     (dispatchers.update! address actions)
     (listen address (lambda [packet]
       (execution-context {context: "dispatch" address packet}
-        (ref action (get actions packet.action))
+        (ref action (get-action packet.action))
         (cond (not action) (promise.resolved false))
-      ) (action packet)
+      )
+      (action packet)
     ))
   ))
   (ref connect (lambda [address] (get dispatchers address)))
@@ -157,7 +162,7 @@
   (ref log (lambda [text]
     (ref parts (text.split '/\s*:\s*/'))
     (cond (is 1 parts.length) (parts.unshift "message"))
-    (send "logging" {level: (get parts 0) text: (get parts 1)})
+    (send "logging" {level: (first parts) text: (second parts)})
   ))
 
   (listen "logging" (lambda [packet]

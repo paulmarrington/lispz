@@ -110,9 +110,10 @@
       (return {path ext: "js" code: (window.lispz.compile code name)})
     )
   })
+  (ref get-preprocessor (pull preprocessors))
   (ref preprocess (lambda [path code]
     (ref ext (last (path.split ".")))
-    (ref preprocessor (get preprocessors ext))
+    (ref preprocessor (get-preprocessor ext))
     (cond preprocessor (preprocessor path code)
                 (else) {path ext code})
   ))
@@ -168,11 +169,13 @@
         from:   (first-from.concat rest-from)
       })
       ((list.flatten entry-tree).forEach (lambda [entry]
+        (ref ext-list (get store entry.ext))
         (cond
-          (get store entry.ext) (do
-            (ref ext-list (get store entry.ext))
-            (ext-list.push! "\n\n/* " entry.path " */\n" entry.code))
-          store.copy            (store.copies.push! entry)
+          (ext-list) (do
+            (ext-list.push! "\n\n/* " entry.path " */\n" entry.code)
+          )
+          store.copy
+            (store.copies.push! entry)
         )
       ))
       (resolve-promise store)

@@ -39,7 +39,7 @@
     (ref scan (lambda
       (ref res (re.exec source))
       (cond res (do
-        (annotations.push! {title: (get res 1)  body: (get res 2)})
+        (annotations.push! {title: (second res)  body: (third res)})
         (scan)
       ))
     ))(scan)

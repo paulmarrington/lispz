@@ -160,7 +160,7 @@ To access external modules, wrap your code in 'using'. Data and functions export
 )
 
 ### Update log-execution-context to be more helpful ###
-(using [fp stateful log_execution_context promise counters]
+(using [fp] (using [fp stateful log_execution_context]
   (lispz.update! { log_execution_context })
-  (export {})
-)
+  (using [promise counters] (export {}))
+))
