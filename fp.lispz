@@ -1,0 +1,70 @@
+### spec: Functional Programming >> curry
+###
+(global curry (lambda [func]
+  (ref curried (=>
+    (ref args (*arguments 0))
+    (cond (>= args.length func.length)
+      (func.apply func args)  ## all done, run it
+    (else)
+      (=> ## otherwise return a partual function
+        (curried.apply this (args.concat (*arguments 0)))
+      )
+    )
+  ))
+))
+(macro curry [params *body] (lispz.globals.curry (lambda params *body)))
+
+### spec: Functional Programming >> compose
+###
+(global compose (=>
+  (ref funcs (*arguments 0))
+  (=>
+    (funcs.reduceRight (lambda [previous current]
+      [[(current.apply this previous)]]
+    ) (*arguments 0))
+  )
+))
+
+### spec: Functional Programming >> flip
+  Flip calling order of 2 parameters
+###
+(global flip (curry [fn] (curry [a b] (fn b a))))
+
+### spec: basic >> Retrieval - can be used for objects and arrays
+  Retrieve elements by index for arrays and property for objects.
+
+      (get 1 [3,4,5])
+      ## is 4 the same as
+      (ref second (get 1))
+      (second [3,4,5])
+
+  Included are curries for _first_, _second_ and _third_. For objects, use
+  _in_ to clarify order
+
+      (get "b" in {a: 1 b: 2 c: 3})
+
+  or use _pull_ as a curry
+
+      (ref commands {a: 1 b: 2 c: 3})
+      (ref command (pull commands))
+      (command "b")
+###
+(global dot    (curry [index array] (#join '' '(_res_=' array '[' index '])')))
+(global pull   (flip lispz.globals.dot))
+(global first  (dot 0))
+(global second (dot 1))
+(global third  (dot 2))
+### spec: Functional Programming >> map
+  Works on functors.
+###
+(global map (lambda [item action] (item.map action)))
+### spec: Functional Programming >> filter
+  Works on functors.
+###
+(global filter (lambda [item action] (item.filter action)))
+### spec: Functional Programming >> map and filter
+  (map-and-filter list (=> list.end))
+###
+(global map-and-filter (compose lispz.globals.filter lispz.globals.map))
+
+(export [])
