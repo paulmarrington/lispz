@@ -40,7 +40,7 @@
               (sessionStorage.setItem "ghstate" user)
             ))
             (resolve-promise (connect
-              resp.username resp.password project
+              resp.username.value resp.password.value project
             ))
           ) (else)
             (reject-promise {

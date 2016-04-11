@@ -6,7 +6,10 @@
     (return (text.array!.join "\n"))
   ))
   ### Package Lispz for distribution ###
-  (ref package (lambda [lispz-repo]
+  (ref package (lambda [repo-name]
+    (when (github.repo> repo-name) [repo] (package-repo repo))
+  ))
+  (ref package-repo (lambda [lispz-repo]
     (ref read-file (github.read.bind null lispz-repo))
 
     (ref group (lambda [files]
