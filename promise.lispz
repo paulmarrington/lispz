@@ -66,8 +66,14 @@
 )
 
 (using [list]
+  ### Promises >> promise.all
+    Given a list of promises and constant data, will return a list of
+    returned data when all the promises have been resolved.
+  ###
   (global promise.all (=>
-    (return (Promise.all (list.flatten (*arguments 0))))
+    (ref flattened (list.flatten (*arguments 0)))
+    (ref promisified (flattened.map (=> (promised @))))
+    (return (Promise.all promisified))
   ))
 )
 (global promise.chain (lambda []

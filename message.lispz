@@ -97,6 +97,26 @@
   (add-execution-context-logger "message.send" (lambda [context error-args]
     (return (+ "to " context.address ", packet " context.packet))
   ))
+  ###
+  (ref send (promise [address packet]
+    (execution-context {context: "message.send" address packet}
+      ## take a copy so that it does not change during processing
+      (ref result-promises (stateful.array!))
+      (ref sender (lambda [recipient]
+        ## yield so that we don't lock up the current thread
+        (result-promises.push! (recipient.listener=> packet))
+        (cond recipient.once (remove recipient))
+      ))
+      (ref envelopes (exchange address))
+      (envelopes.array!.forEach sender)
+      (ref secondaries (or (get-link address) [[]]))
+      (list.for-each secondaries.array! (lambda [link] (send link packet)))
+      (when (promise.all result-promises.array!) [results]
+        (resolve-promise (list.squash results))
+      )
+    )
+  ))
+  ###
   (ref send (lambda [address packet]
     (execution-context {context: "message.send" address packet}
       ## take a copy so that it does not change during processing
