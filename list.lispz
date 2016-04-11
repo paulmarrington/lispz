@@ -6,6 +6,13 @@
     (return (a.concat bflat))
   ) [[]])
 ))
+
+### spec Lists >> squash
+  It is a common pattern to return a value or a list of more than one value is
+  expected.
+###
+(ref squash (=> (cond (is @.length 1) (get @ 1) (else) @)))
+
 ### spec: lists >> for-each
   This is a helper for the JavaScript [].forEach(). It has the advantage that
   it behaves correctly if the item is not an array by running once for the entry
@@ -34,4 +41,4 @@
   (return ((slice list).reverse))
 ))
 
-(export {flatten for-each contains reverse})
+(export {flatten squash for-each contains reverse})
