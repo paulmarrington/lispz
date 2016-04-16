@@ -393,11 +393,10 @@ https://github.com/codemirror/CodeMirror
       (ref parts (name.split "."))
       (ref exts (parts.slice (cond (> parts.length 2) -2 (else) -1)))
       (ref ext (exts.join "."))
-      (ref mode-extension (get CodeMirror.modes ext))
-      (cond mode-extension
-        (get CodeMirror.modes ext)
-      (else)
-        "text"
+      (ref mode-extension (get mode-extensions ext))
+      (cond mode-extension             mode-extension
+            (get CodeMirror.modes ext) ext
+            (else)                     "text"
       )
     ))
     (cm.setOption "mode" mode)
