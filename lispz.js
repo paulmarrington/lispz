@@ -237,7 +237,7 @@ var lispz = function() {
       atom.unshift('\n', location.name, location.line)
     }]
   ],
-  empty_words = { "of": true, "on": true, ",": true, "to": true, "in": true },
+  empty_words = { "of": true, ",": true, "in": true },
   comment = function(atom) {
     return atom[0] === "#" && atom[1] === "#" && (atom[2] === '#' || atom[2] == ' ')
   },
