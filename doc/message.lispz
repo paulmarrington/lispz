@@ -1,0 +1,193 @@
+### spec: async >> Messaging
+  Lispz includes a complete decoupled communications solution based on messaging.
+  The base version is in-browser, but the API is designed to work across systems
+  with RESTful or WebSockets. The UI components use messaging to communicate
+  between components that are not linked, so cannot make more direct connections.
+
+
+  If it is possible that a client will send an important request before the
+  service has had the opportunity to initialise, wrap 'send' in 'wait-for':
+
+      (message.wait-for "code-editor/scratch" (lambda
+        (message.send "code-editor/scratch"
+          {action: "open" key: "scratchpad.lispz" contents: null}
+        )
+
+  'dispatch' uses an entry called 'action' to decide on which function to call.
+  For raw processing, use 'listen' instead. The following example changes the
+  left padding on a DOM element if asked.
+
+      (message.listen "dom/page-content-wrapper-padding" (lambda [px]
+        (set! tag.page-content-wrapper.style.paddingLeft (+ px "px"))
+
+  For a one-off message, use 'expect' rather than 'listen':
+
+      (message.expect "editor-loaded" (lambda ...)
+
+  Lispz uses exchanges defined as part of the address. Plain string addresses as
+  used so far will use a local in-browser exchange. The address can include
+  details that will define different exchanges (when implemented).
+
+  It is possible to remove listeners if you have access to the callback used to
+  create the listener
+
+      (message.remove "my-message" my-message-listener=>)
+
+  Messages also includes a common log processor. The following two calls behave
+  in an identical manner.
+
+      (message.log "message: message-text")
+      (message.send "logging" {level: "message"  text: "message-text"})
+
+  The default processor sends them to the browser console. Add additional
+  listeners for modal dialogs, error messages, etc.
+###
+(using [list]
+  (ref store (stateful)) (ref expecting   (stateful))
+  (ref links (stateful)) (ref dispatchers (stateful))
+  (ref in-store (pull store))
+  (ref get-link (pull links))
+
+  (ref exchange (lambda [address]
+    (or (in-store address) (do
+      (ref envelopes (stateful []))
+      (store.update! address envelopes)
+      envelopes
+    ))
+  ))
+
+  (ref add (lambda [address envelope]
+    (ref envelopes (exchange address))
+    (envelopes.push! envelope)
+    (ref expected-mail-action (get expecting address))
+    (cond (and (is envelopes.length 1)  (get expecting address))
+          (do (expected-mail-action) (delete expected-mail-action)))
+  ))
+
+  (ref ready (promise [address]
+    (ref envelopes (exchange address))
+    (cond (length envelopes)
+      (promise.resolved)
+    (else)
+      (expecting.update! address resolve-promise)
+    )
+  ))
+
+  ## remove a recipient from all attached addresses
+  (ref remove (lambda [address recipient]
+    (ref envelopes (exchange address))
+    (store.update! address
+      (stateful (envelopes.filter (lambda [possibility]
+        (return (isnt recipient possibility)))
+      ))
+    )
+  ))
+
+  ## clear all listeners for an address
+  (ref clear (lambda [address] (store.update! address (stateful []))))
+
+  (ref link (lambda [primary secondary]
+    (ref primary-links (or
+      (get-link primary)
+      (links.update! primary (stateful [])))
+    )
+    (primary-links.push! secondary)
+  ))
+
+  (add-execution-context-logger "message.send" (lambda [context error-args]
+    (return (+ "to " context.address ", packet " context.packet))
+  ))
+  ###
+  (ref send (promise [address packet]
+    (execution-context {context: "message.send" address packet}
+      ## take a copy so that it does not change during processing
+      (ref result-promises (stateful []))
+      (ref sender (lambda [recipient]
+        ## yield so that we don't lock up the current thread
+        (result-promises.push! (recipient.listener=> packet))
+        (cond recipient.once (remove recipient))
+      ))
+      (ref envelopes (exchange address))
+      (envelopes.forEach sender)
+      (ref secondaries (or (get-link address) [[]]))
+      (list.for-each secondaries (lambda [link] (send link packet)))
+      (when (promise.all result-promises) [results]
+        (resolve-promise (list.squash results))
+      )
+    )
+  ))
+  ###
+  (ref send (lambda [address packet]
+    (execution-context {context: "message.send" address packet}
+      ## take a copy so that it does not change during processing
+      (ref result (stateful))
+      (ref sender (lambda [recipient]
+        (result.update! "contents" (recipient.listener=> packet))
+        (cond recipient.once (remove recipient))
+      ))
+      (ref envelopes (exchange address))
+      (envelopes.forEach sender)
+      (ref secondaries (or (get-link address) [[]]))
+      (list.for-each secondaries (lambda [link] (send link packet)))
+    ) (return (promised result.contents))
+  ))
+
+  (ref expect (lambda [address listener=>]
+    (add address {once: true listener=>})
+  ))
+
+  (ref listen (lambda [address listener=>]
+    (add address {listener=>})
+  ))
+
+  (add-execution-context-logger "message.dispatch" (lambda [context error-args]
+    (return (+ "received from " context.address " packet " context.packet))
+  ))
+  ### spec: async >> Messaging >> dispatch
+  Here a code editor will wait on messages to open a new 'file'. The message
+  includes a name unique to each code editor. The dictionary at the end can
+  include any number of named requests. Each associated function takes a packet
+  whose content format is known by clients and services.
+
+      (using [message]
+        (ref open (lambda [packet] ...)
+        (message.dispatch (+ "code-editor/" opts.name) { open })
+
+  The client will send a command to open a new file for display. If the editor
+  is called 'scratch':
+
+      (message.send "code-editor/scratch"
+        {action: "open" key: "scratchpad.lispz" contents: null}
+      )
+
+  In most cases it is easier to use a connector function
+
+      (ref scratchpad (message.connect "code-editor/scratch"))
+      ...
+      (scratchpad.open {key: "scratchpad.lispz" contents: null})
+  ###
+  (ref dispatch (lambda [address actions]
+    (ref get-action (pull actions))
+    (dispatchers.update! address actions)
+    (listen address (lambda [packet]
+      (execution-context {context: "dispatch" address packet}
+        (ref action (get-action packet.action))
+        (cond (not action) (promise.resolved false))
+      )
+      (action packet)
+    ))
+  ))
+  (ref connect (lambda [address] (get dispatchers address)))
+
+  (ref log (lambda [text]
+    (ref parts (text.split '/\s*:\s*/'))
+    (cond (is 1 parts.length) (parts.unshift "message"))
+    (send "logging" {level: (first parts) text: (second parts)})
+  ))
+
+  (listen "logging" (lambda [packet]
+    (console.log packet.level "-" packet.text)
+  ))
+
+  (export {exchange send expect listen dispatch ready clear link connect})
+)
