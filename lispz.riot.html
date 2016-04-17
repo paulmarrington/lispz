@@ -55,14 +55,14 @@
           (ref compiled (compiler.compile source "Scratchpad"))
           (ref js (window.js_beautify (compiled.join "")))
           (open "compiled" ".js" js)
-          (return compiled)
+          js
         ))
         (message.listen "code-editor/code/change" (=>
           (compile-and-show @.contents))
         )
         (message.listen "code/run" (=>
           (when (message.send "code-editor/code" {action: "contents"}) [source]
-            (compilers.run (compile-and-show source))
+            (compilers.run [[(compile-and-show source)]])
           )
         ))
       )
