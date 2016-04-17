@@ -275,7 +275,7 @@ https://github.com/codemirror/CodeMirror
 
   (ref extra-commands {
     view_keyboard_shortcuts: (lambda [cm]
-      (ref keys (stateful.array!))
+      (ref keys (stateful []))
       (ref one-map (lambda [key-map]
         ((Object.keys key-map).forEach (lambda [key]
           (ref key-value (get key-map key))
@@ -299,7 +299,7 @@ https://github.com/codemirror/CodeMirror
         (core.update! {fallthrough: CodeMirror.keyMap.default.fallthrough}))
       (one-map core)
       (window.open
-        (+ "data:text/html," (encodeURIComponent (keys.array!.join "<br>")))
+        (+ "data:text/html," (encodeURIComponent (keys.join "<br>")))
         "Keys" "width=300,height=600")
     )
     fold_at_cursor: (lambda [cm]
@@ -440,8 +440,8 @@ https://github.com/codemirror/CodeMirror
   (cond (is (typeof (get mimeModes "text/html")) "string")
         (mimeModes.update! "text/html" {name: "htmlmixed"}))
   (ref mode (stateful.morph! (get mimeModes "text/html")))
-  (ref scriptTypes (stateful.array! mode.scriptTypes))
   (cond (not mode.scriptTypes) (mode.update! {scriptTypes: [[]]}))
+  (ref scriptTypes (stateful mode.scriptTypes))
   (scriptTypes.push! {matches: '/^text\/lispz$/' mode: "lispz"})
   (mimeModes.update! {htmlmixed: mode})
 
@@ -472,8 +472,7 @@ https://github.com/codemirror/CodeMirror
     (message.send "code-editor/run/compiled" {
       source js: (compilers.to-string js)
     })
-    (ref output ((compilers.run js).toString))
-    (message.send "code-editor/run/output" { source output })
+    (compilers.run js)
   ))
   ### spec: codemirror >> Compiling Code
     To send the compiler output to anywhere but the console, use a copy of the

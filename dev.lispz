@@ -1,9 +1,9 @@
 (using [github riot list]
   (ref manifest (lambda
-    (ref text (statefularray![["CACHE MANIFEST"]]))
+    (ref text (stateful ["CACHE MANIFEST"]))
     (lispz.manifest.forEach (lambda [uri] (text.push! uri)))
     (text.push! "NETWORK:" "*")
-    (return (text.array!.join "\n"))
+    (return (text.join "\n"))
   ))
   ### Package Lispz for distribution ###
   (ref package (lambda [repo-name]
@@ -13,7 +13,7 @@
     (ref read-file (github.read.bind null lispz-repo))
 
     (ref group (lambda [files]
-      (ref modules (stateful.array!)) (ref riots (stateful.array!))
+      (ref modules (stateful [])) (ref riots (stateful []))
       (files.forEach (lambda [entry] (cond (is entry.type "file") (do
         (ref parts (entry.name.split "."))
         (cond
@@ -21,7 +21,7 @@
           (is ((slice parts -2).join ".") "riot.html") (riots.push! (first parts))
         )
       ))))
-      (promise.resolved {modules: modules.array! riots: riots.array!})
+      (promise.resolved { modules riots })
     ))
     (ref stringify (=>
       (return ((@.replace '/[\\"]/g' "\\$&").replace '/\n/g' "\\n"))

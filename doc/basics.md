@@ -92,10 +92,10 @@ Lispz does not support the updating of dictionary entries unless they are marked
 
 Array access is slightly more convoluted
 
-    (ref stateful-array (stateful.array! ["optional" "seed"]))
+    (ref stateful-array (stateful ["optional" "seed"]))
     (stateful-array.push! "new entry")
     (ref top (stateful-array.pop!))
-    (ref my-array stateful-array.array!)
+    (ref my-array stateful-array)
 
 Lispz provides some more functional referentially transparent functions.
 

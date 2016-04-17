@@ -61,48 +61,50 @@
 (macro #set! [list index value] (#join '' list '[' index ']=' value ';'))
 
 (ref #morph! (lambda [obj]
-  (cond (not obj.update!) ## in case we have done it before
-    (Object.defineProperties obj {
-      update!: {value: (lambda [update]
-        (ref context this)
-        (cond (is arguments.length 1)
-          ((Object.keys update).forEach (lambda [key]
-            (#set! context key (get update key))
-          ))
-        (else) (do
-          (ref list (*arguments 0))
-          (list.forEach (lambda [value idx] (cond (% idx 2) (do
-            (ref key (get list (- idx 1)))
-            (#set! context key value)
-          ))))
-        ))
-        context
-      )}
-
-      delete!: {value: (lambda [to-delete]
-        (delete (get this to-delete))
-      )}
-
-      push!: {value: (lambda [entry]
-        (Array.prototype.push.apply this.array! (*arguments 0))
-      )}
-
-      pop!: {value: (lambda [entry] (this.array!.pop entry))}
-    })
+  (cond
+    obj.update!               obj ## already morphed
+    (instance-of Array obj)   (#morph-array!  obj)
+    (instance-of Object obj)  (#morph-object! obj)
+    (else)                    (#morph-object! { data: obj })
   )
-  (return obj)
 ))
+(ref #morph-object! (lambda [obj]
+  (Object.defineProperties obj {
+
+    update!: {value: (lambda [update value]
+      (ref context this)
+      (cond (is arguments.length 1)
+        ((Object.keys update).forEach (lambda [key]
+          (#set! context key (get update key))
+        ))
+      (else)
+        (#set! context update value)
+      )
+      context
+    )}
+
+    delete!: { value: (lambda [to-delete] (delete (get this to-delete))) }
+  })
+  obj
+))
+
+(ref #morph-array! (lambda [array]
+  (Object.defineProperties array {
+    update!:  { value: (lambda [index value] (#set! this index value)) }
+    push!:    { value: (=> (Array.prototype.push.apply this (*arguments 0))) }
+    pop!:     { value: (=> (Array.prototype.pop.apply this)) }
+  })
+  array
+))
+
 (global stateful (lambda [seed]
-  (ref obj (#morph! (new Object)))
-  (cond seed (obj.update! seed))
-  (return obj)
+  (ref item (cond
+    (instance-of Array seed)    (#morph-array!  (seed.slice))
+    (instance-of Object seed)   ((#morph-object! {}).update! seed)
+    (else)                      (#morph-object! (or seed {}))
+  ))
 ))
-(global stateful.array! (lambda [seed]
-  (ref obj (#morph! (new Object)))
-  (ref seeder (or seed [[]]))
-  (obj.update! {array!: (seeder.slice)})
-  (return obj)
-))
+
 (global stateful.morph! #morph!)
 
 ### We sometimes need to change Lispz functionality ###

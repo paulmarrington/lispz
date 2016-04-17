@@ -132,8 +132,8 @@
   <script type=text/lispz>
     (riot-tag (using [dom]
       (cond opts.buttons (do
-        (ref buttons (stateful.array!))
-        (tag.update! {buttons: buttons.array!})
+        (ref buttons (stateful []))
+        (tag.update! {buttons: buttons})
         ((opts.buttons.split ",").forEach (lambda [title]
           (buttons.push! (cond
             (ref primary (is "*" (first title))) (do
