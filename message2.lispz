@@ -1,41 +1,23 @@
 ### spec: async >> Messaging
 ###
-### spec: async >> Messaging >> exchange
-  The exchange is a location (box) that keeps lists of observers for each
-  known address.
-###
 (using [list dict]
   (ref exchange (stateful))
-  (ref in-exchange (pull exchange))
-
-  (ref add-to-exchange (=>
-    (ref box (stateful []))
-    (exchange.update! @ box)
-    box
-  ))
+  (ref observers (stateful.cache exchange (=> (stateful []))))
 
   ### spec: async >> Messaging >> (clear)
-    Clear al observers from a message box.
+    Clear all observers from a message box.
   ###
   (ref clear (lambda [matcher]
-    (cond
-      (instance-of RegExp matcher) (do
-        (list.for-each (dict.filter exchange (=> matcher.test @))
-          (=> (add-to-exchange @))
-        )
-      ) (else)
-        (add-to-exchange @)
+    (cond (instance-of RegExp matcher)  (clear-by-regexp matcher)
+          (else)                        (clear-by-name   matcher)
     )
   ))
-
-  ### spec: async >> Messaging >> (observers)
-    given an address return the list of recipients who are interested in
-    mail sent to this address. It will create a new list of observers
-    if needed.
-  ###
-  (ref observers (lambda [address]
-    (ref observer (or (in-exchange address) (add-to-exchange address)))
-    observer
+  (ref clear-by-regexp (lambda [matcher]
+    (ref matches (dict.filter exchange (=> (matcher.test @))))
+    (list.for-each matches (=> (clear-by-name @)))
+  ))
+  (ref clear-by-name (lambda [name]
+    (exchange.update! name (stateful []))
   ))
 
   ### spec: async >> Messaging >> Sources >> (post>)
@@ -86,7 +68,7 @@
   ### spec: async >> Messaging >> Sources >> (observe)
     You can post to a dispatched action directly, as in
 
-        (message.post "my-component/open" "file-name.txt")
+        (message.post> "my-component/open" "file-name.txt")
 
     or you can create a curried connector.
 
@@ -128,11 +110,21 @@
 
     both will send messages to address _dom-click/my-message-name/_. For
     convenience the method returns the full address for mapping and filtering.
+
+    We cache dom event listeners agains the address being posted to. that
+    way the dom will not send the message multiple times if the source is
+    reinvoked.
   ###
+  (ref dom-events (stateful))
+  (ref post-dom-event> (lambda [address]
+    (stateful.cache dom-events (=> (message.post> address)) address)
+  ))
   (ref from (stateful {
     dom:  (curry [event-name to element]
       (ref address (combine-address (+ "dom-" event-name) to))
-      (element.addEventListener event-name (=> (message.post> address @)))
+      (cond (not (get dom-events address))
+        (element.addEventListener event-name (post-dom-event> address))
+      )
       address
     )
   }))

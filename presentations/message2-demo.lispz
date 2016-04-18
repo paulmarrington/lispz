@@ -1,7 +1,7 @@
 (using [message2]
   (ref message message2)
 
-  (message.clear /my-message-address/)
+  (message.clear '/my-message-address/')
   (message.trace false)
 
   (ref @click       (message.from.click "my-message-address" document.body))
