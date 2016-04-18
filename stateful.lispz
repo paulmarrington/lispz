@@ -105,6 +105,10 @@
   ))
 ))
 
+(global stateful.cache (curry [store update key]
+  (or (get store key) (do (store.update! key (update)) (get store key)))
+))
+
 (global stateful.morph! #morph!)
 
 ### We sometimes need to change Lispz functionality ###
