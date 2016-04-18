@@ -141,7 +141,7 @@ To access external modules, wrap your code in 'using'. Data and functions export
 ### spec: basic >> Retrieval - can be used for objects and arrays
   @TODO
 ###
-(macro get [dict *key] (#join '' dict '[' (#join '][' *key) ']'))
+(macro get [dict *key] (#join '' '(_res_=' dict '[' (#join '][' *key) '])'))
 
 ### spec: conditional processing ###
 (macro empty? [list] (not list.length))
