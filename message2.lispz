@@ -171,7 +171,7 @@
   ###
 
   (ref with-tracing (lambda [name action filterRE has-packet]
-    (lambda [address packet]
+    (curry [address packet]
       (cond (filterRE.test address)
         (console.trace name "\t" address (cond has-packet packet (else) ""))
       )
