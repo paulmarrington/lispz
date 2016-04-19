@@ -1,0 +1,27 @@
+### spec: functions >> chaining -- Chaining functions
+  In a functional style we often call multiple functions to incrementally move
+  from problem to solution. Each step takes the results from the step before and
+  transforms it. It is allways a good idea to have short functions that do one
+  thing - for testing, maintenance and readability. Speaking of readability,
+  chain makes the sequence of events clear.
+
+      (parse-titles (lambda [sections] (return (sections.map ...)))
+      (sort-titles  (lambda [sections] (return (sections.map ...)))
+      (merge-titles (lambda [sections] (return (sections.map ...)))
+
+      ((chain parse-titles sort-titles merge-titles) sections)
+###
+### spec: chain
+  (describe "chain: run each function with the results from the one before" (llbda []
+    (it "(chain f1 f2 ...)" (lambda []
+      (ref f1 (lambda [a] (return 2)))
+      (ref f2 (lambda [a] (return (+ a 3))))
+      (ref f3 (lambda [a] (return (* a 10))))
+      ((expect (chain f1 f2 f3)).toBe 50)
+    ))
+  ))
+###
+(export (lambda [] (ref functions (*arguments 0))
+  (ref link (lambda [arg func] (return (func arg))))
+  (return (lambdas.reduce link null))
+))

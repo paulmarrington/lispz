@@ -53,7 +53,7 @@ var lispz = function() {
     }
     function_body_to_js = function() {
       if (body.length === 0) return ""
-      var full_body = (body.length === 1) ? body[0] : body
+      var full_body = (body.length === 1 && body[0] instanceof Array) ? body[0] : body
       var end = full_body.length - 1
       if (!(full_body[end] instanceof Array)  &&  full_body[end][0] != ".") {
         full_body[end] = ["(","ref","_res_",full_body[end]]
@@ -61,7 +61,7 @@ var lispz = function() {
       body = map_ast_to_js(body, ";\n") + "\n;return _res_"
     }
 
-    var header = "function("+params.slice(1).map(jsify).join(",")+")"
+    var header = "_res_=function("+params.slice(1).map(jsify).join(",")+")"
     var vars = vars_to_js(function_body_to_js)
     return header + "{\n"+vars+"\n"+body+"\n}\n"
   },
@@ -237,7 +237,7 @@ var lispz = function() {
       atom.unshift('\n', location.name, location.line)
     }]
   ],
-  empty_words = { "of": true, "on": true, ",": true, "to": true, "in": true },
+  empty_words = { "of": true, ",": true, "in": true },
   comment = function(atom) {
     return atom[0] === "#" && atom[1] === "#" && (atom[2] === '#' || atom[2] == ' ')
   },
@@ -298,7 +298,7 @@ var lispz = function() {
     if (lispz.debug_mode && uri.indexOf(":") == -1)
       req.setRequestHeader("Cache-Control", "no-cache")
     req.onerror = function(err) {
-      callback(err)
+      callback(uri+": "+err)
     }
     req.onload = function() {
       manifest.push(req.responseURL)
@@ -432,7 +432,7 @@ var lispz = function() {
     "return": return_to_js
   }
   // add all standard binary operations (+, -, etc)
-  "+,-,*,/,&&,||,==,===,<=,>=,!=,!==,<,>,^,%".split(',').forEach(binop_to_js)
+  "+,-,*,/,&&,||,==,===,<=,>=,!=,!==,<,>,^,%,|,&,^".split(',').forEach(binop_to_js)
 
   return { compile: compile, run: run, parsers: parsers, load: load,
            macros: macros, cache: cache, http_request: http_request,

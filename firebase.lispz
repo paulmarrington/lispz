@@ -1,5 +1,11 @@
+### spec: Libraries >> FireBase
+Firebase can power your app's backend, including data storage, user authentication, static hosting, and more. Focus on creating extraordinary user experiences. We'll take care of the rest.
+
+https://www.firebase.com/
+###
 (using  [net]
-  ( var databases (stateful.morph! (JSON.parse (or (localStorage.getItem "firebases") "{}"))))
+  (ref databases (stateful.morph! (JSON.parse (or (localStorage.getItem "firebases") "{}"))))
+  (ref database-uri (pull databases))
 
   (ref register (lambda [key uri]
     (databases.update! key uri)
@@ -14,7 +20,7 @@
   ))
 
   (ref attach (lambda [collection db]
-    (ref uri (get databases (or db "default")))
+    (ref uri (database-uri (or db "default")))
     (cond uri (new Firebase (+ uri "/" (encode collection))))
   ))
 

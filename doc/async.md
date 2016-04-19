@@ -46,8 +46,7 @@ A function that creates a promise uses the 'promise' keyword instead of 'lambda'
 
     (ref read (promise [addr param1 param2]
       (http-get (+ addr "?&" param1 "&" param2) (lambda [err response]
-        (conds err (return (reject-promise err)))
-        (resolve-promise response)
+        (cond err (reject-promise err) (else) (resolve-promise response))
       ))
     ))
 
@@ -101,14 +100,14 @@ So far this adds very little at the cost of a relatively large supporting librar
     (ref riots       (when groups [files] (build-riots files.riots)))
 
     # Now to pull it all together into a single file
-    (ref  source     (stateful.array! [["window.lispz_modules={}"]]))
+    (ref  source     (stateful ["window.lispz_modules={}"]))
     # promise.sequence forces the order.
     (ref all-loaded  (promise.sequence
       (when modules  [sources] (source.concat sources) (promise.resolved)
       # lisp.js is added after modules and lisp-js are resolved
       (when lispz-js [code]    (source.push! code) (promise.resolved)
       # riot tags are added after lisp.js and lisp-js is added and riots promise is resolved
-      (when riots    [sources] (source.array!.concat sources) (promise.resolved)
+      (when riots    [sources] (source.concat sources) (promise.resolved)
     ))
     # Only write the result when the sequence above is complete
     (when all-loaded [] (write-lispz))

@@ -105,13 +105,11 @@
       <modal name=login-dialog title="..." buttons="Log in,Cancel">...</modal>
       ....
       (message.listen "login-dialog/Log in/button" (lambda ...)
-
-        <modal name=n [title=heading-text] [buttons=a,*b]>
-          modal-body-content-html
-        </modal>
   ### -->
-  <div class="modal fade" role="dialog" aria-labelledby={ opts.name }>
-    <div class="modal-dialog" role="document">
+  <div class="modal fade" role="dialog" aria-labelledby={ opts.name }
+  name=modal style="display:none;">
+    <div class="modal-dialog { modal-lg: opts.size=='large' }
+    { modal-sm: opts.size=='small' }" role="document">
       <div class="modal-content">
         <div class="modal-header" if={ opts.title }>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -121,7 +119,8 @@
         </div>
         <div class="modal-body"><yield/></div>
         <div class="modal-footer">
-          <button each={ buttons } class="btn btn-{ type }" name={ name }>
+          <push-button each={ buttons }
+          type={ type } name={ name }>
             { title }
           </button>
         </div>
@@ -133,18 +132,39 @@
   <script type=text/lispz>
     (riot-tag (using [dom]
       (cond opts.buttons (do
-        (ref buttons (stateful.array!))
-        (tag.update! {buttons: buttons.array!})
+        (ref buttons (stateful []))
+        (tag.update! {buttons: buttons})
         ((opts.buttons.split ",").forEach (lambda [title]
-          (ref type (cond
-            (ref primary (is "*" (first title)))
-              (do (title.shift) "primary")
-            (else)
-              "default"
+          (buttons.push! (cond
+            (ref primary (is "*" (first title))) (do
+              (ref fixed-title (title.slice 1))
+              (ref name
+                (+ "modal/" opts.name "/" fixed-title)
+              )
+              {name title: fixed-title type: "primary"}
+            ) (else) (do
+              (ref name (+ "modal/" opts.name "/" title))
+              {name title type: "default"}
+            )
           ))
-          (buttons.push! { title type name: title })
         ))
       ))
+      (mount-tag-using [bootstrap message]
+        (ref modal-tag ($ tag.modal))
+        (ref show (=> (modal-tag.modal "show")))
+        (ref hide (=> (modal-tag.modal "hide")))
+        (message.dispatch
+          (+ "modal/" opts.name) { show hide }
+        )
+        (ref transfer-event (=>
+          (ref address (+ "modal/" opts.name "/" @))
+          (modal-tag.on (+ @ ".bs.modal") (=>
+            (message.send address { element: tag.root })
+          ))
+        ))
+        (transfer-event "hidden")
+        (transfer-event "shown")
+      )
     ))
   </script>
 </modal>
@@ -193,7 +213,9 @@
   <style></style>
   <script type=text/lispz>
     (riot-tag (mount-tag-using [message]
-      (tag.button.addEventListener "click" (=> (message.send opts.name {})))
+      (tag.button.addEventListener "click" (=>
+        (message.send opts.name {})
+      ))
     ))
   </script>
 </push-button>

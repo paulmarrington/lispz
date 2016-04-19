@@ -22,7 +22,7 @@ Enough... on to lists. JavaScript ES5 has already added quite a few referentiall
     (l1.reduce (lambda [prev item idx lst] (+ prev item)) seed) ## 6 ## seed optional
     (l1.reduceRight (lambda [prev item idx lst] (+ prev item)) seed) ## 6 ## seed optional
 
-The following are not referentially transparent (use (stateful.array!) instead)
+The following are not referentially transparent (use (stateful []) instead)
 
     (l1.pop)                    ## 3  ## (is l1 [[1 2]])
     (l1.push 88)                ## [[1 2 3 88]]

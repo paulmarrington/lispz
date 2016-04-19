@@ -1,0 +1,90 @@
+(global #prepare-promise (lambda
+  (ref callbacks (stateful {ok: (lambda) fail: (lambda)}))
+  (ref pledge (stateful.morph!
+    (new Promise (lambda [ok fail] (callbacks.update! {ok fail})))
+  ))
+  (ref resolve (lambda (callbacks.ok.apply null (*arguments 0))))
+  (ref reject (lambda [err] (callbacks.fail err)))
+  (return { pledge resolve reject })
+))
+(global #action-promise (lambda [context promise-body]
+  (context.pledge.update! "execution_context" lispz.execution-context)
+  (#join '' 'try{' (promise-body context.resolve context.reject) '}catch(err){'
+    (lispz.log-execution-context context.pledge.execution-context [["own-promise"]])
+    (lispz.log-execution-context lispz.execution-context [["in-promise"]])
+    (context.reject err) '}'
+  )
+  (return context.pledge)
+))
+(global #deferred-promise (lambda [promise-body]
+  (ref context (#prepare-promise))
+  (context.pledge.update! {deferred: (lambda
+    (return (#action-promise context promise-body))
+  )})
+  (return context.pledge)
+))
+(global promise {})
+
+(macro promise [?params *body] (lambda ?params
+  (return (#action-promise (#prepare-promise)
+    (lambda [resolve-promise reject-promise] *body)
+  ))
+))
+(macro promise.deferred [*body]
+  (return #deferred-promise (lambda [resolve-promise reject-promise] *body))
+)
+(macro promise.callback [?params *body] (promise ?params
+  (ref callback (lambda [err result]
+    (cond err    (reject-promise err)
+          (else) (resolve-promise result)
+    )
+  ))
+  *body
+))
+(global promise.resolved (promise [pact] (resolve-promise pact)))
+
+(global promised (lambda [pledge]
+  (cond (and pledge pledge.then) pledge
+        (else)                   (promise.resolved pledge)
+  )
+))
+
+(global #resolve-deferred (lambda [pledge]
+  (cond pledge.deferred (do
+    (ref deferred pledge.deferred)
+    (delete pledge.deferred)
+    (deferred)
+  ))
+  (return pledge)
+))
+
+(macro when [pledge ?params *body]
+  ((#resolve-deferred pledge).then (lambda ?params *body))
+)
+(macro promise.failed [pledge ?errors *body]
+  ((#resolve-deferred pledge).catch (lambda ?errors *body))
+)
+
+(using [list]
+  ### Promises >> promise.all
+    Given a list of promises and constant data, will return a list of
+    returned data when all the promises have been resolved.
+  ###
+  (global promise.all (=>
+    (ref flattened (list.flatten (*arguments 0)))
+    (ref promisified (flattened.map (=> (promised @))))
+    (return (Promise.all promisified))
+  ))
+)
+(global promise.chain (lambda []
+  (ref chain-link (lambda [input functions]
+    (cond (not functions.length) (promised input)
+    (else) (do
+      (ref pledge (promised ((first functions) input)))
+      (when pledge [output] (chain-link output (rest functions)))
+    ))
+  ))
+  (chain-link null (*arguments 0))
+))
+
+(export [])

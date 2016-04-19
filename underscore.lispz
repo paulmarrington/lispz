@@ -1,3 +1,9 @@
+### spec: Libraries >> Underscore
+JavaScript's utility _ belt
+
+http://underscorejs.org
+https://github.com/jashkenas/underscore
+###
 (using [net github]
   (ref build (lambda [target-repo]
     (ref sources [[{repo: "jashkenas/underscore" files:

@@ -1,0 +1,117 @@
+### spec: basic >> state -- Stateful Containers
+  State is the elephant in the room - particularly in the functional programming paradigm.
+  When you have state that can be changed from outside, then any function that reads from it
+  no longer has referential integrity. This means that identical calls may not return identical
+  results.
+
+  But we need state. Without it the system is fully enclosed without input or output.
+  A referentially integrous :) function can be replaced by it's return value,
+  so why ever run it?
+
+  The aim is to be like any machine with the internals always working the same.
+  Think of a clock. The input is someone setting the time.
+  After that the external gearing, etc is meant to work consistently so that the
+  time advances at the correct pace. The current time is state. You can build and
+  test the entire device without the state. It is on the very outside. Once the
+  mechanism is working as expected, add a clock face and hands. Changing the hands
+  is input and displaying the time output. The latter can be considered a
+  side-effect.
+
+  The state container for lispz relies on polite access, not enforced rules. By custom an
+  function that changes ends in an exclamation mark. Use this to highlight review.
+  The default builder return an empty JavaScript dictionary.
+
+      (describe "Create a new stateful object -- (ref context (stateful seed))" (lambda []
+        (ref options (stateful {name: "undefined" address: "nowhere"}))
+        (it "is able to read members directly -- context.member" (lambda []
+          ((expect options.name).toBeEqual "undefined")
+        ))
+        (it "is able to read members by key -- context[key]" (lambda []
+          ((expect options["name"]).toBeEqual "undefined")
+        ))
+        (it (+ "is able to update a dictionary with changes -- "
+          "(context.update! {a: dictionary})") (lambda []
+            (options.update! {name: "Barney Rubble" address: "Next Door"})
+            ((expect options.name).toBeEqual "Barney Rubble")
+            ((expect options.address).toBeEqual "Next Door")
+        )
+          )
+      ))
+
+  Javascript lives in the world of objects as well as functions. Sometimes to work in this world
+  objects need to be labelled as stateful. Use this approach as sparingly as possible. Always
+  consider other alternatives first.
+
+      (describe "Creating a stateful reference -- (ref context (stateful.morph! this))" (lambda []
+        (ref that {a: 1 b: 2})
+        (ref context (stateful.morph! that))
+        (it "looks the same as the original object" (lambda []
+          ((expect context.a).toBeEqual that.a)
+        ))
+        (it "reflects changes to the original object" (lambda []
+          (context.update! {a: 99})
+          ((expect that.a).toBeEqual 99)
+        ))
+      ))
+
+  Be polite and use this container responsibly. Adding protection adds overhead.
+  If you want to cheat, then on your head be it.
+###
+
+(macro #set! [list index value] (#join '' list '[' index ']=' value ';'))
+
+(ref #morph! (lambda [obj]
+  (cond
+    obj.update!               obj ## already morphed
+    (instance-of Array obj)   (#morph-array!  obj)
+    (instance-of Object obj)  (#morph-object! obj)
+    (else)                    (#morph-object! { data: obj })
+  )
+))
+(ref #morph-object! (lambda [obj]
+  (Object.defineProperties obj {
+
+    update!: {value: (lambda [update value]
+      (ref context this)
+      (cond (is arguments.length 1)
+        ((Object.keys update).forEach (lambda [key]
+          (#set! context key (get update key))
+        ))
+      (else)
+        (#set! context update value)
+      )
+      context
+    )}
+
+    delete!: { value: (lambda [to-delete] (delete (get this to-delete))) }
+  })
+  obj
+))
+
+(ref #morph-array! (lambda [array]
+  (Object.defineProperties array {
+    update!:  { value: (lambda [index value] (#set! this index value)) }
+    push!:    { value: (=> (Array.prototype.push.apply this (*arguments 0))) }
+    pop!:     { value: (=> (Array.prototype.pop.apply this)) }
+  })
+  array
+))
+
+(global stateful (lambda [seed]
+  (ref item (cond
+    (instance-of Array seed)    (#morph-array!  (seed.slice))
+    (instance-of Object seed)   ((#morph-object! {}).update! seed)
+    (else)                      (#morph-object! (or seed {}))
+  ))
+))
+
+(global stateful.cache (curry [store update key]
+  (or (get store key) (do (store.update! key (update)) (get store key)))
+))
+
+(global stateful.morph! #morph!)
+
+### We sometimes need to change Lispz functionality ###
+(stateful.morph! lispz)
+
+(export [])

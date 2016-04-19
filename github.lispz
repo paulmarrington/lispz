@@ -1,9 +1,57 @@
+### spec: >> GitHub
+  A higher-level wrapper around the Github API. Intended for the browser.
+
+  https://github.com/michael/github
+###
 (using  [net dict list axios base64 utf8]
-  (ref version null)
-  (ref cdn-uri (lambda [project version filepath]
-    (return (+ "https://cdn.rawgit.com/" project "/" version "/" filepath))
+  ### spec: GitHub >> CDN
+    It is possible to access GitHub files for direct use in the browser through
+    a CDN. Provide the project name, hash/branch/release and a path to the file.
+  ###
+  (ref cdn-uri (lambda [project hash filepath]
+    (return (+ "https://cdn.rawgit.com/" project "/" hash "/" filepath))
   ))
-  (ref repo (lambda [username password project]
+  ### spec: GitHub >> Specifying the Current Repository
+    This is a non-pure function because if this is the first connection to
+    GitHub, a UI modal dialog is displayed for GitHub log-in details.
+  ###
+  (ref repo> (lambda [project]
+    (ref user (or
+      (sessionStorage.getItem "ghstate")
+      (localStorage.getItem "ghstate")
+    ))
+    (cond user (do
+      (ref up ((atob user).split "||"))
+      (promised (connect (first up) (last up) project))
+    ) (else)
+      ((promise (using [bootstrap]
+        (ref modal-path "github/github-login")
+        (ref modal (bootstrap.modal modal-path {}))
+        (when modal [resp]
+          (cond (is resp.login.value "true") (do
+            (ref user (btoa (+
+              resp.username.value
+              "||" resp.password.value
+            )))
+            (cond (is resp.remember.checked)
+              (localStorage.setItem "ghstate" user)
+            (else) (do ## user wants amnesia
+              (localStorage.removeItem "ghstate")
+              (sessionStorage.setItem "ghstate" user)
+            ))
+            (resolve-promise (connect
+              resp.username.value resp.password.value project
+            ))
+          ) (else)
+            (reject-promise {
+              error: true reason: "User abort"
+            })
+          )
+        )
+      )))
+    )
+  ))
+  (ref connect (lambda [username password project]
     (ref auth (new Github {username password auth: "basic"}))
     (ref github (auth.getRepo.apply null (project.split "/")))
     (return (stateful {github auth username password project branch: "master"}))
@@ -18,10 +66,10 @@
     (repo.github.contents repo.branch path callback)
   ))
   (ref list-all (promise [repo path single-level]
-    (ref result (stateful.array!))
+    (ref result (stateful []))
     (ref list-path (lambda [path]
       (return (when (list-dir repo path) [paths]
-        (ref children (stateful.array!))
+        (ref children (stateful []))
         (paths.forEach (lambda [entry]
           (cond
             (is "dir"  entry.type)
@@ -30,10 +78,10 @@
               (result.push! entry.path)
           )
         ))
-        (return (promise.all children.array!))
+        (return (promise.all children))
       ))
     ))
-    (when (list-path path) (resolve-promise result.array!))
+    (when (list-path path) (resolve-promise result))
   ))
   (ref read (promise.callback [repo path]
     (repo.github.read repo.branch path callback)
@@ -62,9 +110,10 @@
       (return {path ext: "js" code: (window.lispz.compile code name)})
     )
   })
+  (ref get-preprocessor (pull preprocessors))
   (ref preprocess (lambda [path code]
     (ref ext (last (path.split ".")))
-    (ref preprocessor (get preprocessors ext))
+    (ref preprocessor (get-preprocessor ext))
     (cond preprocessor (preprocessor path code)
                 (else) {path ext code})
   ))
@@ -114,17 +163,19 @@
       (ref first-from [["Gathered from: "]])
       (ref rest-from (sources.map (lambda [source] (return source.repo))))
       (ref store {
-        js:     (stateful.array!)
-        css:    (stateful.array!)
-        copies: (stateful.array!)
+        js:     (stateful [])
+        css:    (stateful [])
+        copies: (stateful [])
         from:   (first-from.concat rest-from)
       })
       ((list.flatten entry-tree).forEach (lambda [entry]
+        (ref ext-list (get store entry.ext))
         (cond
-          (get store entry.ext) (do
-            (ref ext-list (get store entry.ext))
-            (ext-list.push! "\n\n/* " entry.path " */\n" entry.code))
-          store.copy            (store.copies.push! entry)
+          (ext-list) (do
+            (ext-list.push! "\n\n/* " entry.path " */\n" entry.code)
+          )
+          store.copy
+            (store.copies.push! entry)
         )
       ))
       (resolve-promise store)
@@ -132,12 +183,12 @@
   ))
   ## Given a file type, save the concatenated source contents
   (ref save-store (promise [target-repo store name ext comment]
-    (ref contents ((get store ext).array!.join ""))
+    (ref contents ((get store ext).join ""))
     (return (write target-repo (+ "ext/" name "." ext) contents comment))
   ))
   ## copy files identified as needed as-is
   (ref copy-store (lambda [target-repo store comment]
-    (return (promise.all (store.copies.array!.map (lambda [entry]
+    (return (promise.all (store.copies.map (lambda [entry]
       (return (write target-repo entry.path entry.code comment))
     ))))
   ))
@@ -166,7 +217,7 @@
   (ref build (builder.bind null github-actors))
   ## Use gruntfile to decide which files to include and it what order
   (ref grunt-build (promise [meta]
-    (ref js (stateful.array! [[(or meta.pre "")]]))
+    (ref js (stateful [(or meta.pre "")]))
     (ref read-all (promise.all (meta.files.map (promise
       (when (github-actors.read source-repo path) [data]
         (js.push! data) (resolve-promise)
@@ -174,7 +225,7 @@
     ))))
     (when read-all
       (js.push! (or meta.post ""))
-      (ref contents (js.array!.join "\n"))
+      (ref contents (js.join "\n"))
       (when (write target-repo (+ "ext/" meta.target) contents comment)
         (resolve-promise)
       )
@@ -226,7 +277,7 @@
   ## (promise.failed loaded (export {build}))
   (when loaded
     (export {
-      branch list-all list-dir cdn-uri build builder repo read write update
+      branch list-all list-dir cdn-uri build builder repo> read write update
       build-github retriever grunt preprocessors
       move: (promise.callback [repo from to]
         (repo.github.move repo.branch from to callback)

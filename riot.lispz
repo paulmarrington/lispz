@@ -1,3 +1,10 @@
+### spec: Libraries >> RIOT
+A React-like, user interface library
+
+[Lispz RIOT Support](riot.spec.lispz)
+http://riotjs.com/
+https://github.com/riot/riot
+###
 ### spec: Riot
 
 [Riot](http://riotjs.com) is a tiny UI library then provides the best of Web components (polymer) and react in a package 15% of the size.
@@ -39,11 +46,18 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
       (lambda [source] (return ((lispz.compile source "riot-tags").join "\n")))
     )
 ###
-(using  [jquery net github dict]
+(using  [jquery net github dict dom]
+  ## we need to update the tags cache
+  (stateful.morph! lispz.tags)
+  ### spec: RIOT >> Get Tag Definition by Name
+  ###
+  (ref tag-by-name (pull lispz.tags))
+
   ## has side-effects as riot caches compile results
   (ref compile (lambda [html to-js] (riot.compile html to-js)))
 
   (ref processed-tags (stateful {}))
+  (ref processed-tag  (pull processed-tags))
 
   (add-execution-context-logger "riot.load" (lambda [context error-args]
     (return (+ "tag" context.name " from " context.uri))
@@ -52,29 +66,43 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
     (ref raw-tags (html.match '/<[^>\s]+[^>]*?class=[\'\"]riot[\s\'\"]/g'))
     (return ((or raw-tags [[]]).map (=> (return (last ('/^<(\S*)/'.exec @))))))
   ))
+  ### spec: RIOT >> load
+    Returns true if tag has been previously loaded. This
+    allows the caller to decided whether to reuse or
+    reinstate.
+  ###
   (ref load (promise [name uri] (execution-context {context: "riot.load" name uri}
     (ref usings (lambda [tags]
       (ref new-tags (tags.filter (=>
         (cond @.length (do
-          (ref processed (get processed-tags @))
+          (ref processed (processed-tag @))
           (processed-tags.update! @ true)
           (return (not processed)))
         (else)
           false
         )
       )))
-      (ref loaded (promise.all (new-tags.map (lambda [tag] (return (load tag))))))
+      (ref loaded (promise.all (new-tags.map (=>
+        (return (load @))
+      ))))
       (when loaded (resolve-promise))
     ))
 
-    (ref compile-and-process (=> (usings (child-tags (compile @)))))
+    (ref compile-and-process (=>
+      (usings (child-tags (compile @)))
+    ))
 
     (ref retrieve-and-compile (lambda
-      (ref url (or uri (+ (name.toLowerCase) ".riot.html")))
-      (when (net.http-get url) [tag-html] (compile-and-process tag-html))
+      (ref url
+        (or uri (+ (name.toLowerCase) ".riot.html"))
+      )
+      (when (net.http-get url) [tag-html]
+        (lispz.tags.update! name tag-html)
+        (compile-and-process tag-html)
+      )
     )))
 
-    (ref tag-def (get lispz.tags name))
+    (ref tag-def (tag-by-name name))
     (cond
       tag-def   (compile-and-process tag-def)
       (else)    (retrieve-and-compile)
@@ -88,8 +116,32 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
       ]]}
     ]]))
   ))
+  ### spec: RIOT >> mount
+  ###
+  (ref mount (=> (riot.mount.apply riot arguments)))
 
-  (ref mount (lambda [tags] (riot.mount.apply riot arguments)))
+  ### spec: RIOT >> inject
+    Load a named tag if needed, inject an instance into the DOM then mount it.
+    The name can be the name of the file followed by the specific element.
+  ###
+  (ref inject (promise [name-path attributes parent-selector]
+    (ref parts (name-path.split "/"))
+    (ref name  (last parts))
+    (ref file (first parts))
+    (ref exists (tag-by-name name))
+    (when (load name (+ file ".riot.html"))
+      (cond exists (do
+        (ref tags (riot.mount name))
+        (resolve-promise (first tags))
+      ) (else) (do
+        (ref element (dom.element name attributes))
+        (ref parent (or parent-selector "body"))
+        (dom.append! parent element)
+        (ref tags (riot.mount element name))
+        (resolve-promise (first tags))
+      ))
+    )
+  ))
 
   ### spec: riot >> Trigger Display Changes
     Given a component context called *tag*, it is possible to change context
@@ -203,7 +255,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
     ))))
     (when load-all
       (riot.mount "*")
-      (export {build compile load mount update! child-tags})
+      (export {build compile load mount inject update! child-tags tag-by-name})
     )
   ))
 )

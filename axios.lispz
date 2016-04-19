@@ -1,3 +1,8 @@
+### spec: Libraries >> Axios
+A Promise based HTTP client
+
+https://github.com/mzabriskie/axios
+###
   (ref build (lambda [target-repo]
     (using [net github]
       (return (github.build target-repo "axios" [[

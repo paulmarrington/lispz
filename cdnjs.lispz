@@ -9,7 +9,7 @@
           (return (=== it.name repo.name))
         )))
         (cond (filtered.length)
-          ((get filtered 0).assets.some (lambda [it]
+          ((first filtered).assets.some (lambda [it]
             (cond
               (list.contains "alpha" it.version) false
               (else) (do

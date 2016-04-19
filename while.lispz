@@ -1,0 +1,17 @@
+### spec: basics >> Iteration
+
+In the functional way of programming, loop style iteration is (almost) never needed.
+Because of the 'almost' and to provide for those week on functional will,
+lispz provides one loop operator. It takes a test and a body.
+
+    (while (not (result)) (look-again))
+
+In this case both are functions. Lispz furthers the functional cause by making
+assignment difficult and ugly.
+
+Of course the need for iteration remains no matter what programming discipline you follow.
+In the functional world it is filled by ... you guessed it ... functions.
+For arrays, JavaScript provides an excellent set documented in [List Processing](list-processing.md).
+###
+## Javascript does not (yet) have tail recursion - it is scheduled for 2016
+(macro while [test *body] (#join '' 'while(' test '){' *body '}'))

@@ -1,0 +1,15 @@
+(using [message2]
+  (ref message message2)
+
+  (message.clear '/my-message-address/')
+  (message.trace false)
+
+  (ref @click       (message.from.click "my-message-address" document.body))
+  (ref @mouse       (message.map @click "mouse" (lambda [event]
+                      {x: event.clientX  y: event.clientY}
+                    )))
+  (ref @top-left    (message.filter @mouse "top-left" (lambda [pos]
+                      (< pos.x pos.y)
+                    )))
+  (message.observe  @top-left (=> (console.log @.x @.y)))
+)

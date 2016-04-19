@@ -1,0 +1,195 @@
+### spec: async >> Promises
+ES2015 has introduced native promises into the language. As of November 2015 it
+is available on all mainstream browsers. Even if not, there are shims that work
+in an identical(ish) manner.
+
+Functions that want to return information in an asynchronous manner return a
+promise object. This object can be passed around and whoever needs the data it
+will or does contain can ask for it with a callback function.
+
+A function that creates a promise uses the 'promise' keyword instead of 'function'.
+When the promise is fulfilled it will call (resolve-promise data). If it fails
+it calls (reject-promise err).
+
+    (ref read (promise [addr param1 param2]
+      (http-get (+ addr "?&" param1 "&" param2) (lambda [err response]
+        (cond err    (reject-promise err)
+              (else) (resolve-promise response)
+        )
+      ))
+    ))
+
+In _promise_ the function is run immediately. In many situations it is nice to
+have a promise that only runs when it is first needed. You may, for example,
+create a file object that may or may not ever ask a server for the contents.
+
+    (ref file {
+      read: (promise.deferred [addr param1 param2]
+        (http-get (+ addr "?&" param1 "&" param2) (lambda [err response]
+          (cond err    (reject-promise err)
+                (else) (resolve-promise response)
+          )
+        ))
+      )
+    })
+    ...
+    ## This will trigger a server request...
+    (when file.read [response] (console.log response))
+
+Because it is common to turn a callback into a promise, lispz provides a helper
+macro. The following provides identical functionality. One of the benefits of a
+language with real macros :)
+
+    (ref read (promise.callback [addr param1 param2]
+      (http-get (+ addr "?&" param1 "&" param2) callback)
+    ))
+
+Now that we have a promise, we can use it just like a callback if we want:
+
+    (ref reading (read "http://blat.com/blah" 1 2))
+    (when reading [result] (return (process result)))
+    (promise.failed reading [err] (console.log "ERROR: "+err))
+
+Even without further knowledge, promises clean up errors and exceptions. If you do not catch errors, exceptions thrown in the asynchronous function can be caught in the code containing the promise.
+
+The power of promises starts to become clearer with the understanding that 'when' can return a promise.
+
+    (ref processed (when reading [result] (return (process result))))
+    (when processed (console.log "All done"))
+
+So far this adds very little at the cost of a relatively large supporting library. if we start thinking functionally instead of sequentially, promises provides a way to clarify our code (a little).
+
+    # change branch we will be working with
+    (ref update-mode (github.update lispz-repo))
+    # Once in update mode we can retrieve lispz.js and ask for a list of other file in parallel
+    (ref lispz-js    (when update-mode [] (read-file "lispz.js")))
+    (ref listing     (when update-mode [] (github.list-dir lispz-repo "")))
+    # We can only sort files once we have a listing from the server
+    (ref groups      (when listing [files] (group files)))
+    # but then we can process the different groups in parallel (retrieving source as needed)
+    (ref modules     (when groups [files] (return (build-modules files.modules))))
+    (ref riots       (when groups [files] (return (build-riots files.riots))))
+
+    # Now to pull it all together into a single file
+    (ref  source     (stateful.array [["window.lispz_modules={}"]]))
+    # promise.sequence forces the order.
+    (ref all-loaded  (promise.sequence
+      (when modules  [sources] (source.concat sources) (return (promise.resolved))
+      # lisp.js is added after modules and lisp-js are resolved
+      (when lispz-js [code]    (source.push! code) (return (promise.resolved))
+      # riot tags are added after lisp.js and lisp-js is added and riots promise is resolved
+      (when riots    [sources] (source.concat sources) (return (promise.resolved))
+    ))
+    # Only write the result when the sequence above is complete
+    (return (when all-loaded (write-lispz)))
+    # returns a promise that is complete once the results are written
+
+In summary we have
+
+1. **(promise [params...] ...)** is a macro that generates a function that returns a promise
+  1. **(resolve-promise results...)** sets results used in **when [results...] ...** macros
+  2. **(reject-promise err)** sets results used in **(promise.failed [err] ...)** macros
+2. **(promise.callback [params...] ...)** is a macro to creates promises from traditional callbacks
+  1. **callback** is a function reference to use where callbacks would normally be defined
+3. **(promise.resolved results)** Will return a promise that will always provide the results supplied to when. Use it to turn a synchronous function into a promise to use in sequences.
+4. **(when a-promise [results...] ...)** is a macro that works like a function where the function body is executed with the results supplied once (and if) the promise is resolved. If a **when** statement returns a promise it can be used for chaining.
+5. **(promise.failed a-promise [err] ...) is a macro that works like a function where the function body is executed if any of a set of chained promises uses **reject-promise** to indicate an error.
+6. **(promise.all promise-1 promise-2 [[promises]])** will return a promise that is fulfilled when all the promises specified are resolved or rejected. It will flatten arrays of promises.
+7. **(promise.sequence promise-1 promise-2 [[promises]])** will return a promise that is fulfilled when all the promises specified are resolved or rejected. Unlike **all**, each promise is triggered when the preceding promise is resolved.
+
+## Benefits
+1. Separates cause and effect more clearly
+2. Results are available even it the promise is resolved before inspection
+3. You can pass around a promise just like the data it will contain
+4. Handles exceptions in a structured way
+
+## Disadvantages
+2. Still fairly highly coupled
+3. Only allows one action - not for repetitive events
+4. Developer view needs to change from sequential perspective
+5. Being selective about errors and exceptions is painful. Once a promise is resolved it cannot change. Any promises that rely on a rejected promise will themselves be rejected causing a cascade of failures. To be selective you need to wrap a promise catch in an outer promise and resolve the outer one if the error itself can be resolved. Don't forget to resolve the outer promise with the data from the inner one when there are no errors.
+###
+(global #prepare-promise (lambda
+  (ref callbacks (stateful {ok: (lambda) fail: (lambda)}))
+  (ref pledge (stateful.morph!
+    (new Promise (lambda [ok fail] (callbacks.update! {ok fail})))
+  ))
+  (ref resolve (lambda (callbacks.ok.apply null (*arguments 0))))
+  (ref reject (lambda [err] (callbacks.fail err)))
+  (return { pledge resolve reject })
+))
+(global #action-promise (lambda [context promise-body]
+  (context.pledge.update! "execution_context" lispz.execution-context)
+  (#join '' 'try{' (promise-body context.resolve context.reject) '}catch(err){'
+    (lispz.log-execution-context context.pledge.execution-context [["own-promise"]])
+    (lispz.log-execution-context lispz.execution-context [["in-promise"]])
+    (context.reject err) '}'
+  )
+  (return context.pledge)
+))
+(global #deferred-promise (lambda [promise-body]
+  (ref context (#prepare-promise))
+  (context.pledge.update! {deferred: (lambda
+    (return (#action-promise context promise-body))
+  )})
+  (return context.pledge)
+))
+(global promise {})
+
+(macro promise [?params *body] (lambda ?params
+  (return (#action-promise (#prepare-promise)
+    (lambda [resolve-promise reject-promise] *body)
+  ))
+))
+(macro promise.deferred [*body]
+  (return #deferred-promise (lambda [resolve-promise reject-promise] *body))
+)
+(macro promise.callback [?params *body] (promise ?params
+  (ref callback (lambda [err result]
+    (cond err    (reject-promise err)
+          (else) (resolve-promise result)
+    )
+  ))
+  *body
+))
+(global promise.resolved (promise [pact] (resolve-promise pact)))
+
+(global promised (lambda [pledge]
+  (cond (and pledge pledge.then) pledge
+        (else)                   (promise.resolved pledge)
+  )
+))
+
+(global #resolve-deferred (lambda [pledge]
+  (cond pledge.deferred (do
+    (ref deferred pledge.deferred)
+    (delete pledge.deferred)
+    (deferred)
+  ))
+  (return pledge)
+))
+
+(macro when [pledge ?params *body]
+  ((#resolve-deferred pledge).then (lambda ?params *body))
+)
+(macro promise.failed [pledge ?errors *body]
+  ((#resolve-deferred pledge).catch (lambda ?errors *body))
+)
+
+(using [list]
+  (global promise.all (=>
+    (return (Promise.all (list.flatten (*arguments 0))))
+  ))
+)
+(global promise.chain (lambda []
+  (ref chain-link (lambda [input functions]
+    (cond (not functions.length) (promised input)
+    (else) (do
+      (ref pledge (promised ((first functions) input)))
+      (when pledge [output] (chain-link output (rest functions)))
+    ))
+  ))
+  (chain-link null (*arguments 0))
+))
+
+(export [])

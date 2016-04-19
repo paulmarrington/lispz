@@ -77,10 +77,14 @@ There is often need to merge multiple dictionaries together to create a new comb
   (return ((Object.keys dict).map (lambda [k] (return (action=> k (get dict k))))))
 ))
 
+(ref filter (lambda [dict action=>]
+  (return ((Object.keys dict).filter (lambda [k] (return (action=> k (get dict k))))))
+))
+
 ### spec: lists >> dict >> Check a Dictionary for an Entry
 ###
 (ref contains (lambda [test against]
   (return (#join '' '(' test ' in ' against ')'))
 ))
 
-(export {merge from-list insert! for-each map contains})
+(export {merge from-list insert! for-each map filter contains})

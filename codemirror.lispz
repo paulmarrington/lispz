@@ -1,3 +1,8 @@
+### spec: Libraries >> CodeMirror
+In-browser code editor http://codemirror.net/
+
+https://github.com/codemirror/CodeMirror
+###
 (using  [net diff_match_patch message dict github compilers]
   (ref options-string (localStorage.getItem "CodeMirror-options"))
   (ref options (stateful.morph!
@@ -254,7 +259,7 @@
     (ref args (data.item.meta.split ","))
     (ref command (args.shift))
     (args.unshift cm)
-    ((get CodeMirror.commands command).apply CodeMirror args)
+    ((get CodeMirror command).apply CodeMirror args)
   ))
   (ref open (lambda [owner wrapper]
     (ref cm (stateful.morph! (CodeMirror wrapper options)))
@@ -267,31 +272,34 @@
     (message.remove cm.listener)
   ))
   (ref spaces "                ")
+
   (ref extra-commands {
     view_keyboard_shortcuts: (lambda [cm]
-      (ref keys (stateful.array!))
-      (ref one-map (lambda [map]
-        ((Object.keys map).forEach (lambda [key]
+      (ref keys (stateful []))
+      (ref one-map (lambda [key-map]
+        ((Object.keys key-map).forEach (lambda [key]
+          (ref key-value (get key-map key))
           (cond
             (is key "fallthrough") (do
                 (ref more (cond
-                  (is (typeof (get map key)) "string") [[(get map key)]]
-                  (else)                               (get map key)
+                  (is (typeof key-value) "string") [[key-value]]
+                  (else)                           key-value
                 ))
-                (more.forEach (lambda [map]
-                  (one-map (get CodeMirror.keyMap map))))
+                (more.forEach (lambda [key-map]
+                  (one-map (get CodeMirror.keyMap key-map))
+                ))
               )
-            (else) (keys.push! (+ key ": " (get map key)))
+            (else) (keys.push! (+ key ": " key-value))
           )
         ))
       ))
       (one-map cm.options.extraKeys)
-      (ref core (stateful.morph! (get CodeMirror.keyMap cm.options.keyMap)))
+      (ref core (stateful.morph! (get CodeMirror.keyMap key-map cm.options.keyMap)))
       (cond (not core.fallthrough)
         (core.update! {fallthrough: CodeMirror.keyMap.default.fallthrough}))
       (one-map core)
       (window.open
-        (+ "data:text/html," (encodeURIComponent (keys.array!.join "<br>")))
+        (+ "data:text/html," (encodeURIComponent (keys.join "<br>")))
         "Keys" "width=300,height=600")
     )
     fold_at_cursor: (lambda [cm]
@@ -315,7 +323,7 @@
           (isnt result.list.length 1) result
           (else) (do
             (ref size (- result.to.ch result.from.ch))
-            (ref first-choice (get result.list 0))
+            (ref first-choice (first result.list))
             (cond
               (isnt first-choice.length size) result
               (else) ((stateful.morph! result) {list: [[]]}))
@@ -378,6 +386,7 @@
     (else)
       default-mode-extensions
   ))
+  (ref get-mode-extension (pull mode-extensions))
 
   (ref set-mode (lambda [cm name]
     (ref mode (do
@@ -431,8 +440,8 @@
   (cond (is (typeof (get mimeModes "text/html")) "string")
         (mimeModes.update! "text/html" {name: "htmlmixed"}))
   (ref mode (stateful.morph! (get mimeModes "text/html")))
-  (ref scriptTypes (stateful.array! mode.scriptTypes))
   (cond (not mode.scriptTypes) (mode.update! {scriptTypes: [[]]}))
+  (ref scriptTypes (stateful mode.scriptTypes))
   (scriptTypes.push! {matches: '/^text\/lispz$/' mode: "lispz"})
   (mimeModes.update! {htmlmixed: mode})
 
@@ -463,8 +472,7 @@
     (message.send "code-editor/run/compiled" {
       source js: (compilers.to-string js)
     })
-    (ref output (((compilers.run js).filter (=> (return @))).join "\n"))
-    (message.send "code-editor/run/output" { source output })
+    (compilers.run js)
   ))
   ### spec: codemirror >> Compiling Code
     To send the compiler output to anywhere but the console, use a copy of the
@@ -485,13 +493,15 @@
   ))
 
   (ref lisp-modes {lispz: true clojure: true commonlisp: true scheme: true})
+  (ref lisp-mode  (pull lisp-modes))
+  (ref subpar-command (pull subpar.core))
 
   (ref subpart (lambda [cmd opt]
     (return (lambda [cm]
       (return CodeMirror.Pass) ## make a configuration option
       (ref mode (cm.getModeAt (cm.getCursor)))
-      (cond (get lisp-modes mode.name)  ((get subpar.core cmd) cm opt)
-            (else)                      CodeMirror.Pass
+      (cond (lisp-mode mode.name)  ((subpar-command cmd) cm opt)
+            (else)                 CodeMirror.Pass
       )
     ))
   ))

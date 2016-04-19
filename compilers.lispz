@@ -10,7 +10,7 @@
   ###
   (export {
     to-string: (lambda [js] (return (js.join "\n")))
-    run:       (lambda [js] (return (js.map  eval)))
+    run:       (lambda [js] (return (eval (js.join "\n"))))
 
     lispz: { compile: (lambda [source name]
       (return (lispz.compile (+ source "\n") name))
