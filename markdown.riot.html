@@ -14,8 +14,10 @@
 
         ## hamburget menu lists a history of pages followed
         (ref history (stateful))
-        (message.listen (+ tag._riot_id "/" markdown-menu-action) (lambda [packet]
-          (load packet.item.href) ## load an item selected from the hamburger
+        (ref address (+ tag._riot_id "/" markdown-menu-action))
+        (message.listen  address (lambda [packet]
+          ## load an item selected from the hamburger
+          (load packet.item.href)
         ))
         (ref open (lambda [md from]
           (ref from (or from ""))
@@ -60,15 +62,15 @@
           The final part of the address is the name attribute to the showdown
           element above.
 
-              (message.send "showdown/manual" {
-                action: "open"  href: "another-url"
+              ((message.send "showdown/manual/open") {
+                href: "another-url"
               })
 
           Alternatively, pass the markdown directly in a string with the load
           message.
 
-              (message.send "showdown/manual" {
-                action: "load"  markdown: "# Heading\n*This is markdown*"
+              ((message.send "showdown/manual/load") {
+                markdown: "# Heading\n*This is markdown*"
               })
         ###
         (message.dispatch (+ "showdown/" opts.name) { open load })

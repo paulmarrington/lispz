@@ -249,7 +249,7 @@
   is displayed the menu will not be loaded.
   To fix this, wait for the menu to be ready.
 
-        (when (message.ready "specifications-menu")
+        (when (message.ready> "specifications-menu")
           (message.send "specifications-menu" nenu)
         )
   The menu itself is a dictionary with the format:
@@ -387,8 +387,7 @@
       (tag.update! {goto: (lambda [ev]
         (ref item ev.item.item)
         (ref topic (or item.topic item.title ))
-        (cond topic (message.send topic
-          {item action: "select"}))
+        (cond topic (message.send topic {item action: "select"}))
         (cond item.children (do
           (ref tree ev.currentTarget.nextElementSibling)
           (tree.classList.toggle "open")

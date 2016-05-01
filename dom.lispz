@@ -1,4 +1,4 @@
-(using [dict]
+(using [dict message]
   (ref append! (lambda [parent element]
     (ref selector (document.querySelector parent))
     (selector.appendChild element)
@@ -48,8 +48,45 @@
     form.elements
   ))
 
+  ### spec: async >> Messaging >> Sources >> (dom.message)
+    Start a message stream from different sources. All curried
+    to create convenient functions.
+
+        (dom.message "click" "my-message-address" document.body)
+
+    will send messages to address _dom-click/my-message-name/_. For
+    convenience the method returns the full address for mapping and filtering.
+
+    We cache dom event listeners against the address being posted to. that
+    way the dom will not send the message multiple times if the source is
+    reinvoked.
+  ###
+  (ref dom-events (stateful))
+  (ref post-dom-event> (lambda [address]
+    (ref send-to-address (lambda [pkt] (message.send address pkt)))
+    (stateful.cache dom-events (=> send-to-address) address)
+  ))
+  ### ref: (dom.message event-name message-name element)
+    e.g. (ref address (dom.message "click" "monitor" document.body))
+  ###
+  (ref dom-message (lambda [event-name address-base element]
+    (ref address (message.combine-address (+ "dom-" event-name) address-base))
+    (cond (not (get dom-events address))
+      (element.addEventListener event-name (post-dom-event> address))
+    )
+    address
+  ))
+
+  ### ref: (dom.click message-name element)
+    e.g. (dom.click "monitor" document.body)
+    messages sent to returned address (**dom-click/monitor**)
+  ###
+  (ref click (lambda [address-base element]
+    (dom-message "click" address-base element)
+  ))
+
   (export {
     append! element event-throttle style! inner-html!
-    select scrape-form
+    select scrape-form message: dom-message click
   })
 )

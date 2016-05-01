@@ -1,157 +1,189 @@
 ### spec: async >> Messaging
 ###
-(using [list]
-  (ref store (stateful)) (ref expecting   (stateful))
-  (ref links (stateful)) (ref dispatchers (stateful))
-  (ref in-store (pull store))
-  (ref get-link (pull links))
+(using [list dict]
+  (ref exchange  (stateful))
+  (ref observers (stateful.cache exchange (=> (stateful []))))
 
-  (ref add-to-store (=>
-    (ref observers (stateful []))
-    (store.update! @ observers)
-    observers
-  ))
-
-  ### spec: async >> Messaging >> (exchange)
-    given an address return the list of recipients who are interested in
-    mail sent to this address. It will create a new list of observers if needed.
+  ### spec: async >> Messaging >> (clear)
+    Clear all observers from a message box.
   ###
-  (ref exchange (lambda [address]
-    (or (in-store address) (add-to-store address))
-  ))
-
-  (ref ready (promise [address]
-    (ref observers (exchange address))
-    (cond (length observers)
-      (promise.resolved)
-    (else)
-      (expecting.update! address resolve-promise)
+  (ref clear (lambda [matcher]
+    (cond (instance-of RegExp matcher)  (clear-by-regexp matcher)
+          (else)                        (clear-by-name   matcher)
     )
   ))
-
-  ## remove a recipient from all attached addresses
-  (ref remove (lambda [address recipient]
-    (ref observers (exchange address))
-    (store.update! address
-      (stateful (observers.filter (lambda [possibility]
-        (return (isnt recipient possibility)))
-      ))
-    )
+  (ref clear-by-regexp (lambda [matcher]
+    (ref matches (dict.filter exchange (=> (matcher.test @))))
+    (list.for-each matches (=> (clear-by-name @)))
+  ))
+  (ref clear-by-name (lambda [name]
+    (exchange.update! name (stateful []))
   ))
 
-  ## clear all listeners for an address
-  (ref clear (lambda [address] (store.update! address (stateful []))))
+  ### spec: async >> Messaging >> Sources >> (request>)
+    Send a message directly to an address so that it is picked up by
+    all observers. Call returns a promise
+    that is fulfulled when all listeners have responded. The promise
+    returns an array of results for each listener.
 
-  (ref link (lambda [primary secondary]
-    (ref primary-links (or
-      (get-link primary)
-      (links.update! primary (stateful [])))
-    )
-    (primary-links.push! secondary)
-  ))
+        (ref requested (message.request> "examples/my-address"
+          { msg: "whatsit" read-now: true }
+        ))
+        (when requested [results context] ...)
 
-  (add-execution-context-logger "message.send" (lambda [context error-args]
-    (return (+ "to " context.address ", packet " context.packet))
-  ))
+    For in-process addresses, the observers are expected to be well behaved.
+    They should (yield) the CPU rather that take too much time.
   ###
-  (ref send (promise [address packet]
-    (execution-context {context: "message.send" address packet}
-      ## take a copy so that it does not change during processing
-      (ref result-promises (stateful []))
-      (ref sender (lambda [recipient]
-        ## yield so that we don't lock up the current thread
-        (result-promises.push! (recipient.listener=> packet))
-        (cond recipient.once (remove recipient))
-      ))
-      (ref observers (exchange address))
-      (observers.forEach sender)
-      (ref secondaries (or (get-link address) [[]]))
-      (list.for-each secondaries (lambda [link] (send link packet)))
-      (when (promise.all result-promises) [results]
-        (resolve-promise (list.squash results))
-      )
-    )
+  (ref request> (lambda [address packet]
+    (ref postman (lambda [obs] (promised (obs.action> packet obs))))
+    (promise.all ((observers address).map postman))
   ))
+
+  ### spec: async >> Messaging >> Sources >> (send)
+    Send a message directly to an address so that it is picked up by
+    all observers. Unlike _request>_, _send_
+    does not expect the receivers to respond.
   ###
   (ref send (lambda [address packet]
-    (execution-context {context: "message.send" address packet}
-      ## take a copy so that it does not change during processing
-      (ref result (stateful))
-      (ref sender (lambda [recipient]
-        (result.update! "contents" (recipient.listener=> packet))
-        (cond recipient.once (remove recipient))
-      ))
-      (ref observers (exchange address))
-      (observers.forEach sender)
-      (ref secondaries (or (get-link address) [[]]))
-      (list.for-each secondaries (lambda [link] (send link packet)))
-    ) (return (promised result.contents))
+    (ref postman (lambda [obs] (yield (obs.action> packet obs))))
+    ((observers address).map postman)
   ))
 
-  (ref add-observer (lambda [address envelope]
-    (ref observers (exchange address))
-    (observers.push! envelope)
-    (ref expected-mail-action (get expecting address))
-    (cond (and (is observers.length 1)  (get expecting address))
-          (do (expected-mail-action) (delete expected-mail-action)))
-  ))
-
-  (ref expect (lambda [address listener=>]
-    (add-observer address {once: true listener=>})
-  ))
-
-  (ref listen (lambda [address listener=>]
-    (add-observer address {listener=>})
-  ))
-
-  (add-execution-context-logger "message.dispatch" (lambda [context error-args]
-    (return (+ "received from " context.address " packet " context.packet))
-  ))
-  ### spec: async >> Messaging >> dispatch
-  Here a code editor will wait on messages to open a new 'file'. The message
-  includes a name unique to each code editor. The dictionary at the end can
-  include any number of named requests. Each associated function takes a packet
-  whose content format is known by clients and services.
-
-      (using [message]
-        (ref open (lambda [packet] ...)
-        (message.dispatch (+ "code-editor/" opts.name) { open })
-
-  The client will send a command to open a new file for display. If the editor
-  is called 'scratch':
-
-      (message.send "code-editor/scratch"
-        {action: "open" key: "scratchpad.lispz" contents: null}
-      )
-
-  In most cases it is easier to use a connector function
-
-      (ref scratchpad (message.connect "code-editor/scratch"))
-      ...
-      (scratchpad.open {key: "scratchpad.lispz" contents: null})
+  ### spec: async >> Messaging >> (ready>)
+    If a _post>_ can happen before a listener is set - and it is important
+    that the _post>_ is heard, wrap it in a _ready>_.
   ###
-  (ref dispatch (lambda [address actions]
-    (ref get-action (pull actions))
-    (dispatchers.update! address actions)
-    (listen address (lambda [packet]
-      (execution-context {context: "dispatch" address packet}
-        (ref action (get-action packet.action))
-        (cond (not action) (promise.resolved false))
+  (ref ready> (promise [address]
+    (ref ready-check (=>
+      (ref listeners = (observers address))
+      (cond listeners.length
+        (resolve-promise)
+      (else)
+        (delay 100 ready-check)
       )
-      (action packet)
     ))
   ))
-  (ref connect (lambda [address] (get dispatchers address)))
 
-  (ref log (lambda [text]
-    (ref parts (text.split '/\s*:\s*/'))
-    (cond (is 1 parts.length) (parts.unshift "message"))
-    (send "logging" {level: (first parts) text: (second parts)})
+  ### spec: async >> Messaging >> Sources >> (observe)
+    Observe the passage of a message. An action is called with the packet
+    and a reference to the observer object as stateful local context.
+    The action can return a promise and preferably not do anything too
+    time-costly in-process.
+  ###
+  (ref listen (lambda [address action>]
+    ((observers address).push! (stateful { action> }))
   ))
 
-  (listen "logging" (lambda [packet]
-    (console.log packet.level "-" packet.text)
+  ### spec: async >> Messaging >> Sources >> (dispatch)
+    Dispatch is a specialised version of observe where a number of actions
+    can be defined and messages built to dispatch to them.
+
+        (ref open  (=> ...))
+        (ref close (=> ...))
+        (message.dispatch "my-component" { open close })
+
+    Each action creates a separate message-box using the given address followed
+    by the action name. In this example, _my-component/open_ and _my-component/close_.
+  ###
+  (ref dispatch (lambda [address actions]
+    (dict.for-each actions (lambda [name action>]
+      (message.listen (+ address "/" name) action>)
+    ))
   ))
 
-  (export {exchange send expect listen dispatch ready clear link connect})
+  ### spec: async >> Messaging >> Sources >> (combine-address)
+    Mapping and filtering messages are given source and target
+    addresses. If the target address starts with a / it is used
+    alone, otherwise the source and target addresses are concatenated.
+
+        (combine-address "left" "right")  ## left/right
+        (combine-address "left" "/right") ## right
+  ###
+  (ref combine-address (lambda [from to]
+    (cond
+      (is (first to) "/")   (slice to 1)
+      (else)                (+ from "/" to)
+    )
+  ))
+
+  (ref from (stateful {}))
+
+  ### spec: async >> Messaging >> Modifiers >> (map)
+    Map message streams to change the results
+        (ref @click (message.from.click "my-message-address" document.body))
+        (ref @mouse (message.map @click "mouse" (lambda [event]
+          {x: event.clientX  y: event.clientY}
+        )))
+        (message.listen @mouse (=> (console.log @.x @.y)))
+  ###
+  ### ref: (message.map from to mapper)
+    e.g. (message.map @click "mouse" (=> {x: @.clientX y: clientY}))
+    will send messages to (+ @click "/mouse") - use "/to" for abs address
+  ###
+  (ref message-map (lambda [from to mapper]
+    (ref address (combine-address from to))
+    (message.listen from (=> (message.send address (mapper @))))
+    address
+  ))
+
+  ### spec: async >> Messaging >> Modifiers >> (filter)
+    Map message streams to change the results
+        (ref @click (message.from.click "my-message-address" document.body))
+        (ref @mouse (message.map @click "mouse" (lambda [event]
+          {x: event.clientX  y: event.clientY}
+        )))
+        (ref @top-left (message.filter @mouse "top-left" (lambda [pos]
+          (< pos.x pos.y)
+        )))
+        (message.listen @top-left (=> (console.log @.x @.y)))
+  ###
+  ### ref: (message.filter from to filterer)
+    e.g. (message.filter @mouse "top-left" (=> (< @.x @.y)))
+    will send messages to (+ @mouse "/top-left") - use "/to" for abs address
+  ###
+  (ref message-filter (lambda [from to filterer]
+    (ref address (combine-address from to))
+    (message.listen from (=> (cond (filterer @) (message.send address @))))
+    address
+  ))
+
+  ### spec: async >> Messaging >> Sources >> (trace)
+    Turning tracing on will display messages posted and received to
+    the browser console. Use a regular expression to reduce the number
+    of messages to a manageable amount. A parameter of false will turn
+    trace off again.
+  ###
+
+  (ref with-tracing (lambda [name action filterRE has-packet]
+    (lambda [address packet]
+      (cond (filterRE.test address)
+        (console.trace name "\t" address (cond has-packet packet (else) ""))
+      )
+      (action address packet)
+    )
+  ))
+
+  (ref set-trace (lambda [filterRE]
+    (message.update! {
+      send:     (with-tracing "SEND    "  send      filterRE true)
+      request>: (with-tracing "REQUEST "  request>  filterRE true)
+      listen:   (with-tracing "LISTEN  "  listen    filterRE false)
+    })
+  ))
+
+  (ref trace (=>
+    (cond
+      (is @ false)    (message.update! { send request> listen })
+      (not @)         (set-trace '/.*/')
+      (else)          (set-trace @)
+    )
+  ))
+
+  (ref message (stateful {
+    send listen dispatch request> clear trace from ready>
+    map: message-map filter: message-filter combine-address
+    exchange
+  }))
+  (lispz.update! {message})
+  (export message)
 )

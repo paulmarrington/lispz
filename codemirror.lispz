@@ -3,7 +3,7 @@ In-browser code editor http://codemirror.net/
 
 https://github.com/codemirror/CodeMirror
 ###
-(using  [net diff_match_patch message dict github compilers]
+(using  [net diff_match_patch message message dict github compilers]
   (ref options-string (localStorage.getItem "CodeMirror-options"))
   (ref options (stateful.morph!
     (cond options-string (JSON.parse options-string)
@@ -263,13 +263,13 @@ https://github.com/codemirror/CodeMirror
   ))
   (ref open (lambda [owner wrapper]
     (ref cm (stateful.morph! (CodeMirror wrapper options)))
-    (cm.update! {listener: (lambda [data] (listener cm data))})
+    (cm.update! {listener-address: (+ owner "/" topic)})
     (message.send "codemirror/menu" menu)
-    (message.listen (+ owner "/" topic) cm.listener)
+    (message.listen cm.listener-address (lambda [data] (listener cm data)))
     (return cm)
   ))
   (ref close (lambda [cm]
-    (message.remove cm.listener)
+    (message.clear cm.listener-address)
   ))
   (ref spaces "                ")
 
@@ -477,7 +477,7 @@ https://github.com/codemirror/CodeMirror
   ### spec: codemirror >> Compiling Code
     To send the compiler output to anywhere but the console, use a copy of the
     following code.
-      (message.listen "code-editor/compile/js" (lambda [compiled]
+      (message.send "code-editor/compile/js" (lambda [compiled]
         ## compiled: {name source js}
       ))
   ###

@@ -41,11 +41,11 @@ A sample using riot with bootstrap:
     <script src=/lispz/lispz.js#riot,bootstrap></script>
     <script id=test_code type="text/lispz">
       (using [message]
-        (message.send "test-menu" [[
+        (message.post> "test-menu" [[
           { title: "Item 1" topic:     "Test menu item 1" }
           { title: "Item 2" children:  [[{ title: "Item 2a" }]] }
         ]] (=>))
-        (message.listen (+ tag.\_riot_id "Test menu item 1") (lambda [data]
+        (message.observe (+ tag.\_riot_id "Test menu item 1") (lambda [data]
           (console.log data)
         ))
       )

@@ -29,9 +29,7 @@
       ))
       (message.listen "modal/github-login/Sign In" (=>
         (login-element.setAttribute "value" "true")
-        (message.send "modal/github-login"
-          {action: "hide"}
-        )
+        (message.send "modal/github-login/hide")
       ))
     ))
   </script>
