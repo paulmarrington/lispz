@@ -14,8 +14,9 @@
   ## Same again using compose
   (cascade
     (=> (dom.click "my-message-address" document.body))
-    (=> (message.map    @	"mouse" 	(=> {x: @.clientX  y: @.clientY})))
-    (=> (message.filter	@	"top-left"  (=> (< @.x @.y))))
-    (=> (message.listen @ 	(=> (console.log @.x @.y))))
+    (=> (message.map      @	"mouse" 	(=> {x: @.clientX  y: @.clientY})))
+    (=> (message.filter	  @	"top-left"  (=> (< @.x @.y))))
+    (=> (message.throttle @ 2000))
+    (=> (message.listen   @ (=> (console.log @.x @.y))))
   )
 )
