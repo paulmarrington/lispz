@@ -147,6 +147,23 @@
     address
   ))
 
+  ### ref: (message.throttle address milliseconds)
+    e.g. (message.throttle @mouse 100) sends (+ @mouse "/100ms")
+    will only pass messages every 100ms or more apart to
+  ###
+  (ref throttle (lambda [from ms]
+    (ref address (+ from "/" ms "ms"))
+    (message.listen from (lambda [packet context]
+      (ref now (new Date))
+      (ref elapsed (- now (or context.last-message-time 0)))
+      (cond (> elapsed ms) (do
+        (context.update! { last-message-time: now })
+        (message.send address packet)
+      ))
+    ))
+    address
+  ))
+
   ### spec: async >> Messaging >> Sources >> (trace)
     Turning tracing on will display messages posted and received to
     the browser console. Use a regular expression to reduce the number
@@ -182,7 +199,7 @@
   (ref message (stateful {
     send listen dispatch request> clear trace from ready>
     map: message-map filter: message-filter combine-address
-    exchange
+    exchange throttle
   }))
   (lispz.update! {message})
   (export message)
