@@ -24,12 +24,12 @@
       (lispz.set-debug-mode true)
 
       (ref open (lambda [topic key contents]
-        (message.send (+ "code-editor/" topic) {action: "open" key contents})
+        (message.send (+ "code-editor/" topic "/open") {key contents})
       ))
 
-      (when (message.ready "code-editor/code")
+      (when (message.ready> "code-editor/code/open")
         (open "code" ".lispz" "")
-        (message.send "code-editor/code" {action: "focus"})
+        (message.send "code-editor/code/focus" {})
       )
 
       (ref clear_result_panels (=>
@@ -38,8 +38,7 @@
       (message.listen "code-editor/run/prepare" clear_result_panels)
 
       (ref log (lambda [output]
-        (message.send "code-editor/output" {
-          action:   "append"
+        (message.send "code-editor/output/append" {
           key:      ".text"
           contents: (+ output "\n")
         })
@@ -61,8 +60,9 @@
           (compile-and-show @.contents))
         )
         (message.listen "code/run" (=>
-          (when (message.send "code-editor/code" {action: "contents"}) [source]
-            (compilers.run [[(compile-and-show source)]])
+          (ref sources> (message.request> "code-editor/code/contents" @))
+          (when sources> [sources]
+            (compilers.run [[(compile-and-show (first sources))]])
           )
         ))
       )

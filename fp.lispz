@@ -14,15 +14,23 @@
 ))
 (macro curry [params *body] (lispz.globals.curry (lambda params *body)))
 
-### spec: Functional Programming >> compose
+### ref: ((compose func1, func2 ...) seed) -- runs left to right
+  e.g. ((compose (=> (+ @ 1)) (=> (+ @ 2))) 3) ==> 6
 ###
 (global compose (=>
   (ref funcs (*arguments 0))
   (=>
-    (funcs.reduceRight (lambda [previous current]
+    (funcs.reduce (lambda [previous current]
       [[(current.apply this previous)]]
     ) (*arguments 0))
   )
+))
+
+### ref: (cascade func1, func2 ...)
+  e.g. (cascade (=> 1) (=> (+ @ 1)) (=> (+ @ 2))) ==> 4
+###
+(global cascade (=>
+  ((lispz.globals.compose.apply null arguments) null)
 ))
 
 ### spec: Functional Programming >> flip

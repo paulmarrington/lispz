@@ -14,7 +14,7 @@
   <script type=text/lispz>
     (riot-tag
       (tag.update! {menu: "codemirror/menu" heading: (or opts.heading "Edit")})
-      (mount-tag-using [codemirror message dict events]
+      (mount-tag-using [codemirror message message dict events]
         (ref filename-key (+ "code-editor/" opts.name "/filename"))
         (ref cm (codemirror.open tag._riot_id tag.tags.panel.body))
 

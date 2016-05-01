@@ -47,7 +47,7 @@ https://github.com/twbs/bootstrap
     (net.css (+ "ext/bootstrap-" theme ".css"))
   ))
   ### spec: Bootstrap >> modal
-    Open a named modal dialog box and wait for a user response. Options include
+    Open a named modal dialog box and wait for a user response. Options:
 
     * seed - object to fill modal form fields
     * attributes - for the element being created
@@ -55,18 +55,16 @@ https://github.com/twbs/bootstrap
   (ref modal (promise [name-path opts] (using [riot dom]
     (ref name (last (name-path.split "/")))
     (ref address (+ "modal/" name))
-    (ref show-modal (=>
-      (message.send address { action: "show" })
-    ))
-    (cond (get lispz.tags name)
-      (show-modal)
+    (ref show-modal (=> (message.send (+ address "/show"))))
+    (cond (get lispz.tags name) (show-modal)
     (else) ## modals are singletons, load once
       (when (riot.inject name-path opts.attributes)
         (show-modal)
       )
     )
     (ref hidden-address (+ address "/hidden"))
-    (message.expect hidden-address (=>
+    (message.listen hidden-address (=>
+      (message.clear hidden-address)
       (resolve-promise (dom.scrape-form @.element))
     ))
   )))
