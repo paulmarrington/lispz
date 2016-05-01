@@ -186,47 +186,70 @@ Here a code editor will wait on messages to open a new 'file'. The message inclu
 
 The client will send a command to open a new file for display. If the editor is called 'scratch':
 
-    (message.send "code-editor/scratch" {
-      action:   "open"
+    (message.send "code-editor/scratch/open" {
       key:      "scratchpad.lispz"
       contents: null
     })
 
-As an aid when sending messages to a dispatcher, use the connect shortcut:
-
-    (ref scratch (message.commect "code-editor/scratch"))
-    ...
-    (scratch.open {key: "scratchpad.lispz" contents: ""})
-
 If it is possible that a client will send an important request before the service has had the opportunity to initialise, wrap 'send' in 'wait-for':
 
-    (message.wait-for "code-editor/scratch" (lambda
-      (message.send "code-editor/scratch" {
-        action:   "open"
+    (when (message.ready> "code-editor/scratch")
+      (message.send "code-editor/scratch/action" {
         key:      "scratchpad.lispz"
         contents: null
       })
+    )
 
-'dispatch' uses an entry called 'action' to decide on which function to call. For raw processing, use 'listen' instead. The following example changes the left padding on a DOM element if asked.
+To react to messages, use _listen_:
 
     (message.listen "page-content-wrapper-padding" (lambda [px]
       (stateful.morph! tag.page-content-wrapper.style)
       (tag.page-content-wrapper.style.update! { paddingLeft: (+ px "px") })
     ))
 
-For a one-off message, use 'expect' rather than 'listen':
-
-    (message.expect "editor-loaded" (lambda ...)
-
 Lispz uses exchanges defined as part of the address. The address can include details that will define different exchanges (when implemented).
 
-It is possible to remove listeners if you have access to the callback used to create the listener
+It is possible to remove all listeners by name or regular expression. The latter helps for message streams.
 
-    (message.remove "my-message" my-message-listener=>)
+    (message.clear "my-message")
 
-Messages also includes a common log processor. The following two calls behave in an identical manner.
+## Message Streams
 
-    (message.log "message: message-text")
-    (message.send "logging" {level: "message"  text: "message-text"})
+Lispz Message Streams provide a base implementation of reactive programming. This allows streams to be prepared for consumption in a readable and organised manner. All stream sources and processors return the address of the resulting message stream. This will often be built on the address of earlier streams.
 
-The default processor sends them to the browser console. Add additional listeners for modal dialogs, error messages, etc.
+### Stream Sources
+A source is a generator that creates messages for a stream. You can create your own, but Lispz provides some common ones:
+
+    (dom.message "click" "my-address" document.body)
+    (dom.click "my-address" document.body)
+    (message.from.callback "my-callback")
+
+### Stream Processors
+Stream processors will typically modify messages or filter them. Both cases provide both the message packet and a stream specific stateful context object. In the examples below, @pre is the message from the previous stage in the stream.
+
+    (message.map      @pre "title" (lambda [packet context]))
+    (message.filter   @pre "title" (lambda [packet context]))
+    (message.throttle @pre 1000)
+
+### Stream Consumers
+The _listen_ function acts as a consumer and the end of the line for a stream. A consumer may be part of the stream cascade or uncoupled in another component.
+
+### Stream Cascades
+
+Cascade calls a list of functions using the output of one as the input of the next. Use it to provide a stream processing group, whether they have immediate consumers or not.
+
+    (cascade
+      (=> (dom.click "my-message-address" document.body))
+      (=> (message.map      @	"mouse" 	(=> {x: @.clientX  y: @.clientY})))
+      (=> (message.filter	  @	"top-left"  (=> (< @.x @.y))))
+      (=> (message.throttle @ 2000))
+      (=> (message.listen   @ (=> (console.log @.x @.y))))
+    )
+
+## Tracing Messages
+
+One of the nice things about streams when dealing with asynchronous processes is that you can trace them to see what is happening. Messages with an address matching the regular expression are sent to the console - along with the contents of any packet.
+
+    (message.trace)
+    (message.trace '/my-/')
+    (message.trace false)
