@@ -106,7 +106,14 @@
     )
   ))
 
-  (ref from (stateful {}))
+  ### ref: (from.update! {source: (lambda [address ...])})
+      e.g. (from.update! {callback: (lambda [address] ...)})
+      then use as (message.from.callback "my-address")
+  (ref from (stateful {
+    promise: (lambda [address a-promise]
+      (when a-promise [packet] message.send (*arguments 0))
+    )
+  }))
 
   ### spec: async >> Messaging >> Modifiers >> (map)
     Map message streams to change the results
