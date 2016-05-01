@@ -222,7 +222,7 @@ A source is a generator that creates messages for a stream. You can create your 
 
     (dom.message "click" "my-address" document.body)
     (dom.click "my-address" document.body)
-    (message.from.callback "my-callback")
+    (message.from.promise "my-promise" a-promise)
 
 ### Stream Processors
 Stream processors will typically modify messages or filter them. Both cases provide both the message packet and a stream specific stateful context object. In the examples below, @pre is the message from the previous stage in the stream.
