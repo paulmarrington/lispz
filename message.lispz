@@ -109,6 +109,7 @@
   ### ref: (from.update! {source: (lambda [address ...])})
       e.g. (from.update! {callback: (lambda [address] ...)})
       then use as (message.from.callback "my-address")
+  ###
   (ref from (stateful {
     promise: (lambda [address a-promise]
       (when a-promise [packet] message.send (*arguments 0))
