@@ -52,7 +52,7 @@ https://github.com/twbs/bootstrap
     * seed - object to fill modal form fields
     * attributes - for the element being created
   ###
-  (ref modal (promise [name-path opts] (using [riot dom]
+  (ref modal> (promise [name-path opts] (using [riot dom]
     (ref name (last (name-path.split "/")))
     (ref address (+ "modal/" name))
     (ref show-modal (=> (message.send (+ address "/show"))))
@@ -76,7 +76,7 @@ https://github.com/twbs/bootstrap
   (ref loaded (net.script "ext/bootstrap.js" (=>
     (return (($).modal))
   )))
-  (when  loaded (export {build themes modal}))
+  (when  loaded (export {build themes modal>}))
   (promise.failed loaded (export {build}))
 )
 
