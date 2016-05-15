@@ -53,33 +53,5 @@
     (ref promisified (flattened.map (=> (promised @))))
     (return (Promise.all promisified))
   ))
-  ### ref: (promise.cascade> functions-that-return-data-or-promises)
-    Each function is called with the value from the previous step
-    after the promise is resolved. Returns last promise.
-  ###
-  (global promise.cascade> (lambda
-    (ref promise-functions (list.flatten (*arguments 0)))
-    ((promise
-      (ref process-level (lambda [input functions]
-        (cond functions.length (do
-          (ref pledge (promised ((first functions) input)))
-          (when pledge [output] (process-level output (rest functions)))
-        ) (else)
-          (resolve-promise input)
-        )
-      ))
-      (process-level null promise-functions)
-    ))
-  ))
-  ### ref: (promise.sequence> promise-or-data)
-    e.g. (promise.sequence> (session>) (request @))
-    is the same as (promise.cascade session> request)
-  ###
-  (macro promise.sequence> [*body]
-    (#join '' '(_res_=lispz.globals.promise.cascade_g_(function(_t_){return '
-      (#join '},function(_t_){return ' *body) '}))'
-    )
-  )
-)
 
 (export [])
