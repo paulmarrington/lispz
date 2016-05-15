@@ -10,7 +10,7 @@
     (when (github.repo> repo-name) [repo] (package-repo repo))
   ))
   (ref package-repo (lambda [lispz-repo]
-    (ref read-file (github.read.bind null lispz-repo))
+    (ref read-file (github.read>.bind null lispz-repo))
 
     (ref group (lambda [files]
       (ref modules (stateful [])) (ref riots (stateful []))
@@ -46,18 +46,18 @@
       (return (promise.all (names.map load-riot)))
     ))
 
-    (ref update-mode (github.update lispz-repo))
-    (ref lispz-js    (when update-mode (return (read-file "lispz.js"))))
-    (ref listing     (when update-mode (return (github.list-dir lispz-repo ""))))
-    (ref groups      (when listing [files] (return (group files))))
-    (ref modules     (when groups  [files] (return (build-modules files.modules))))
-    (ref riots       (when groups  [files] (return (build-riots files.riots))))
+    (github.branch lispz-repo lispz-repo.username)
+    (ref lispz-js    (read-file "lispz.js"))
+    (ref listing     (github.list-dir> lispz-repo ""))
+    (ref groups      (when listing (group @)))
+    (ref modules     (when groups  (build-modules @.modules)))
+    (ref riots       (when groups  (build-riots @.riots)))
 
     (ref all-loaded  (promise.all modules lispz-js riots))
 
     (return (when all-loaded [sources]
       (ref  code  (list.flatten [["window.lispz_modules={}\n" sources]]))
-      (return (github.write lispz-repo "ext/lispz.js"
+      (return (github.write> lispz-repo "ext/lispz.js"
         (code.join "") "lispz release code")
       )
     ))

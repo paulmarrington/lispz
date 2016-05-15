@@ -1,41 +1,22 @@
-(global #prepare-promise (lambda
-  (ref callbacks (stateful {ok: (lambda) fail: (lambda)}))
-  (ref pledge (stateful.morph!
-    (new Promise (lambda [ok fail] (callbacks.update! {ok fail})))
-  ))
-  (ref resolve (lambda (callbacks.ok.apply null (*arguments 0))))
-  (ref reject (lambda [err] (callbacks.fail err)))
-  (return { pledge resolve reject })
+(ref reject-promise (lambda [message data type]
+  (ref name (or type "Promise-Error"))
+  (ref error (stateful.morph! (new Error message)))
+  (error.update! { name data })
+  (#join '' 'throw ' error)
 ))
-(global #action-promise (lambda [context promise-body]
-  (context.pledge.update! "execution_context" lispz.execution-context)
-  (#join '' 'try{' (promise-body context.resolve context.reject) '}catch(err){'
-    (lispz.log-execution-context context.pledge.execution-context [["own-promise"]])
-    (lispz.log-execution-context lispz.execution-context [["in-promise"]])
-    (context.reject err) '}'
-  )
-  (return context.pledge)
-))
-(global #deferred-promise (lambda [promise-body]
-  (ref context (#prepare-promise))
-  (context.pledge.update! {deferred: (lambda
-    (return (#action-promise context promise-body))
-  )})
-  (return context.pledge)
-))
+(global reject-promise reject-promise)
+(global throw reject-promise)
+
 (global promise {})
+(global promise.rejected reject-promise)
 
 (macro promise [?params *body] (lambda ?params
-  (return (#action-promise (#prepare-promise)
-    (lambda [resolve-promise reject-promise] *body)
-  ))
+  (new Promise (lambda [resolve-promise catch-promise] *body))
 ))
-(macro promise.deferred [*body]
-  (return #deferred-promise (lambda [resolve-promise reject-promise] *body))
-)
+
 (macro promise.callback [?params *body] (promise ?params
   (ref callback (lambda [err result]
-    (cond err    (reject-promise err)
+    (cond err    (catch-promise  err)
           (else) (resolve-promise result)
     )
   ))
@@ -43,26 +24,23 @@
 ))
 (global promise.resolved (promise [pact] (resolve-promise pact)))
 
-(global promised (lambda [pledge]
+(ref promised (lambda [pledge]
   (cond (and pledge pledge.then) pledge
         (else)                   (promise.resolved pledge)
   )
 ))
-
-(global #resolve-deferred (lambda [pledge]
-  (cond pledge.deferred (do
-    (ref deferred pledge.deferred)
-    (delete pledge.deferred)
-    (deferred)
-  ))
-  (return pledge)
-))
+(global promised promised)
 
 (macro when [pledge ?params *body]
-  ((#resolve-deferred pledge).then (lambda ?params *body))
+  (ref #last-promise#
+    ((promised pledge).then (lambda ?params *body))
+  )
 )
+
+(macro when-rejected [*body] (#last-promise#.catch (=> *body)))
+
 (macro promise.failed [pledge ?errors *body]
-  ((#resolve-deferred pledge).catch (lambda ?errors *body))
+  ((promised pledge).catch (lambda ?errors *body))
 )
 
 (using [list]
@@ -75,16 +53,33 @@
     (ref promisified (flattened.map (=> (promised @))))
     (return (Promise.all promisified))
   ))
-)
-(global promise.chain (lambda []
-  (ref chain-link (lambda [input functions]
-    (cond (not functions.length) (promised input)
-    (else) (do
-      (ref pledge (promised ((first functions) input)))
-      (when pledge [output] (chain-link output (rest functions)))
+  ### ref: (promise.cascade> functions-that-return-data-or-promises)
+    Each function is called with the value from the previous step
+    after the promise is resolved. Returns last promise.
+  ###
+  (global promise.cascade> (lambda
+    (ref promise-functions (list.flatten (*arguments 0)))
+    ((promise
+      (ref process-level (lambda [input functions]
+        (cond functions.length (do
+          (ref pledge (promised ((first functions) input)))
+          (when pledge [output] (process-level output (rest functions)))
+        ) (else)
+          (resolve-promise input)
+        )
+      ))
+      (process-level null promise-functions)
     ))
   ))
-  (chain-link null (*arguments 0))
-))
+  ### ref: (promise.sequence> promise-or-data)
+    e.g. (promise.sequence> (session>) (request @))
+    is the same as (promise.cascade session> request)
+  ###
+  (macro promise.sequence> [*body]
+    (#join '' '(_res_=lispz.globals.promise.cascade_g_(function(_t_){return '
+      (#join '},function(_t_){return ' *body) '}))'
+    )
+  )
+)
 
 (export [])

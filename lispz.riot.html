@@ -52,7 +52,7 @@
         (ref compile-and-show (lambda [source]
           (clear_result_panels)
           (ref compiled (compiler.compile source "Scratchpad"))
-          (ref js (window.js_beautify (compiled.join "")))
+          (ref js (window.js_beautify (compiled.join ";")))
           (open "compiled" ".js" js)
           js
         ))

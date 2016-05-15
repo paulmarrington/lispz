@@ -116,10 +116,12 @@ var lispz = function() {
       var args = {}
       for (var n = 0, v = 0; n < pnames.length; n++, v++) {
         var pname = pnames[n]
-        if (pname[0] == '?' && v == pvalues.length - 1) args[pname] = "", v-- // skip ?param
+        var pvalue = drop_line_number(pvalues[v])
+        // if (pname[0] === '?' && v === pvalues.length - 1) args[pname] = "", v-- // skip ?param
+        if (pname[0] === '?' && pvalue[0] != "[") args[pname] = "", v-- // skip ?param
         else args[pname] =
           (pname[0] === '*') ? ["list"].concat(pvalues.slice(v)) :
-          (pname[0] === '&') ? ["["].concat(pvalues.slice(v)) : pvalues[v]
+          (pname[0] === '&') ? ["["].concat(pvalues.slice(v)) : pvalue
       }
       var expand = function(ast) {
         return (ast instanceof Array) ? ast.map(expand) : args[ast] ||
@@ -292,20 +294,24 @@ var lispz = function() {
   run = function(name, source) { return run_ast(compile_to_ast(source, name)) }
   //######################### Script Loader ####################################//
   cache = {}, manifest = [], pending_module = {},
-  http_request = function(uri, type, callback) {
+  http_request = function(uri, type, callback, headers, body) {
     var req = new XMLHttpRequest()
     req.open(type, uri, true)
     if (lispz.debug_mode && uri.indexOf(":") == -1)
       req.setRequestHeader("Cache-Control", "no-cache")
+    for (var key in (headers || {})) req.setRequestHeader(key, headers[key])
     req.onerror = function(err) {
-      callback(uri+": "+err)
+      callback(JSON.stringify({ uri: uri, error: err }, null, 2))
     }
     req.onload = function() {
       manifest.push(req.responseURL)
-      if (req.status === 200) callback(null, req.responseText)
-      else                    req.onerror(req.statusText)
+      if (req.status >= 200 && req.status <= 299) {
+        callback(null, req.responseText)
+      } else {
+        req.onerror({ status: req.statusText, response: req.responseText })
+      }
     }
-    req.send()
+    req.send(body)
   },
   module_init = function(uri) {
     var state = { context: "module", uri: uri, state: "compiling Lispz" }
@@ -335,6 +341,11 @@ var lispz = function() {
       lispz_modules[uri] = response_text
       execution_context.pop()
       module_init(uri)
+    })
+  },
+  reload = function(uris) {
+    uris.split(",").forEach(function(uri) {
+      delete pending_module[uri]; delete cache[uri]; delete lispz_modules[uri]
     })
   },
   // Special to set variables loaded with requires
@@ -375,15 +386,15 @@ var lispz = function() {
     el.addEventListener("error", function(evt) { console.log(evt); when_loaded(evt) })
     el.setAttribute("src", lispz_base_path+uri)
   }
-  window.onerror = function(msg, url, line, column, error) {
-    console.debug(arguments)
-    if (!execution_context.length) return true;
-    var context = execution_context
-    execution_context = []
-    var name = context[0].name
-    lispz.log_execution_context(context, arguments)
-    return true
-  }
+  // window.onerror = function(msg, url, line, column, error) {
+  //   console.debug(arguments)
+  //   if (!execution_context.length) return true;
+  //   var context = execution_context
+  //   execution_context = []
+  //   var name = context[0].name
+  //   lispz.log_execution_context(context, arguments)
+  //   return true
+  // }
   window.addEventListener("error", window.onerror)
   other_window_onload = window.onload
   window.onload = function() {
@@ -442,6 +453,6 @@ var lispz = function() {
            path_base: lispz_base_path, set_debug_mode: set_debug_mode, log: log,
            execution_context: execution_context, empty_words: empty_words,
            compile_to_ast: compile_to_ast, add_reference: add_reference,
-           log_execution_context: log_execution_context
+           log_execution_context: log_execution_context, reload: reload
           }
 }()

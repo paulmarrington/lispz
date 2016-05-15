@@ -3,14 +3,16 @@ A robust base64 encoder/decoder that is fully compatible with `atob()` and btoa(
 
 https://github.com/mathiasbynens/base64
 ###
-  (ref build (lambda [target-repo]
-    (using  [net github]
-      (return (github.build target-repo "base64" [[
-        {repo: "mathiasbynens/base64" files: [[
-          {base: "" include: '/base64.js$/'}
-        ]]}
-      ]]))
-    )
-  ))
+(using  [net]
+  (ref build (lambda [target-repo] (using [github]
+    (return (github.build target-repo "base64" [[
+      {repo: "mathiasbynens/base64" files: [[
+        {base: "" include: '/base64.js$/'}
+      ]]}
+    ]]))
+  )))
 
-  (lispz.script "ext/base64.js" (lambda (export { build })))
+  (when (net.script "ext/base64.js" (=> window.base64)) (export {
+    build  encode: base64.encode  decode: base64.decode
+  }))
+)
