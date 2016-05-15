@@ -1,4 +1,4 @@
-(using [list dom regex]
+(using [list dom regex dict]
   (ref script (promise.callback [uri check max-ms] (lispz.script uri (lambda []
     (cond check (do
       (ref initialised (wait-for check max-ms))
@@ -15,12 +15,18 @@
     (dom.append! "head" el)
   ))
 
-  (ref http-get (promise.callback [uri]
-    (lispz.http_request uri "GET" callback)
+  (ref http-request> (promise.callback [type uri headers body]
+    (lispz.http_request uri type callback headers body)
   ))
 
-  (ref json-request (promise [uri]
-    (when (http-get uri) [response] (resolve-promise (JSON.parse response)))
+  (ref http-get (promise.callback [uri headers]
+    (lispz.http_request uri "GET" callback headers)
+  ))
+
+  (ref json-request (promise [uri headers]
+    (when (http-get uri headers) [response]
+      (resolve-promise (JSON.parse response))
+    )
   ))
 
   ### spec: Network >> Is URL external
@@ -33,13 +39,24 @@
     (return (regex.substring href '/(.*\/)[^\/]*$/'))
   ))
 
-    ### spec: Network >> Retrieve the last element in a URL path
-    ###
-    (ref url-actor (lambda [href]
-      (return (regex.substring href '/.*\/([^\/]*)(?:\?.*)?$/'))
-    ))
+  ### spec: Network >> Retrieve the last element in a URL path
+  ###
+  (ref url-actor (lambda [href]
+    (return (regex.substring href '/.*\/([^\/]*)(?:\?.*)?$/'))
+  ))
+
+  ### ref: (net.dict-to-query data)
+    e.g. (net.dict-to-query { a: 1  b: 2 }) ## ==> "?a=1&b=2"
+  ###
+  (ref dict-to-query (=>
+    (ref kvp (dict.map (or @ {}) (lambda [k v]
+      (+ (encodeURIComponent k) "=" (encodeURIComponent v))
+    )))
+    (+ "?" (kvp.join "&"))
+  ))
 
   (export {
     script css http-get json-request external? url-actor url-path
+    dict-to-query http-request>
   })
 )

@@ -1,18 +1,22 @@
-  ### spec: Compilers
-    The compiler entry for each language is a function that is called with the
-    name of the source code followed by the source itself.
+### spec: Compilers
+  The compiler entry for each language is a function that is called with the
+  name of the source code followed by the source itself.
 
-        (using [compilers]
-          (ref js (compilers.lispz.compile "(console.log \"Hi\")" "name"))
-          (console.log (compilers.to-string js))
-          (console.log (compilers.run js))
-        )
-  ###
+      (using [compilers]
+        (ref js (compilers.lispz.compile "(console.log \"Hi\")" "name"))
+        (console.log (compilers.to-string js))
+        (console.log (compilers.run js))
+      )
+###
+(using [log_execution_context]
   (export {
-    to-string: (lambda [js] (return (js.join "\n")))
-    run:       (lambda [js] (return (eval (js.join "\n"))))
+    to-string: (=> (@.join ";\n"))
+    run:       (=>
+      (log_execution_context.clear)
+      (eval (@.join ";\n")))
 
     lispz: { compile: (lambda [source name]
-      (return (lispz.compile (+ source "\n") name))
+      (lispz.compile (+ source "\n") name)
     )}
   })
+)

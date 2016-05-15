@@ -22,7 +22,7 @@ To access external modules, wrap your code in 'using'. Data and functions export
 
 ...and that is all there is to it.
 ###
-(macro using [modules *on_ready] (lispz.load (#join '' '"' modules '"')
+(macro using [modules *on_ready] ';' (lispz.load (#join '' '"' modules '"')
   (lambda (#requires modules) *on_ready)
 ))
 ### Modules must export to continue processing ###
@@ -148,7 +148,7 @@ To access external modules, wrap your code in 'using'. Data and functions export
 (macro defined? [field] (!== (typeof field) "undefined"))
 
 
-(macro new [cls *params] (#join '' '(new ' cls '(' (#join ',' *params) '))'))
+(macro new [cls *params] (#join '' '(_res_=(new ' cls '(' (#join ',' *params) ')))'))
 ###
 # Use contain to contain state changes. Any var inside a contain can be changed
 # no matter how many times the contain is called concurrently. It is also allows
@@ -160,7 +160,7 @@ To access external modules, wrap your code in 'using'. Data and functions export
 )
 
 ### Update log-execution-context to be more helpful ###
-(using [fp] (using [fp stateful log_execution_context]
+(using [fp] (using [stateful log_execution_context]
   (lispz.update! { log_execution_context })
   (using [promise counters] (export {}))
 ))

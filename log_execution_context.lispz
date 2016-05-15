@@ -43,7 +43,7 @@
     other:   (=> (return (json @)))
   }))
   (ref logger-for (pull loggers))
-  
+
   (ref format-context (=>
     (ref name (+ @ ": "))
     (ref spaces (- 16 name.length))
@@ -60,6 +60,9 @@
       (console.log (+ (format-context item.context) (logger item)))
     ))
   ))
-  (stateful.morph! logger) (logger.update! {loggers})
+  (ref clear (=>
+    (lispz.execution_context.splice 0 lispz.execution_context.length)
+  ))
+  (stateful.morph! logger) (logger.update! { loggers clear })
   (export logger)
 )

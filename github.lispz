@@ -1,5 +1,6 @@
 ### spec: >> GitHub
-  A higher-level wrapper around the Github API. Intended for the browser.
+  A higher-level wrapper around the Github API.
+  Intended for the browser.
 
   https://github.com/michael/github
 ###
@@ -8,6 +9,9 @@
     It is possible to access GitHub files for direct use in the browser through
     a CDN. Provide the project name, hash/branch/release and a path to the file.
   ###
+  ### ref: (github.cdn-uri project hash filepath)
+    e.g. (ref uri (github.cdn-uri "atogov/RAM" "develop" "tests/pasckages.json"))
+  ###
   (ref cdn-uri (lambda [project hash filepath]
     (return (+ "https://cdn.rawgit.com/" project "/" hash "/" filepath))
   ))
@@ -15,57 +19,76 @@
     This is a non-pure function because if this is the first connection to
     GitHub, a UI modal dialog is displayed for GitHub log-in details.
   ###
+  ### ref: (github.repo> project) ## log in form displayed if necessary
+    e.g. (ref repo (github.repo> "paulmarrington/lispz"))
+  ###
   (ref repo> (lambda [project]
+    (ref connect-to-repo (lambda [session]
+      (ref parts (project.split "/"))
+      (ref github (session.auth.getRepo (first parts) (second parts)))
+      (stateful { project github session branch: "master" })
+    ))
+
+    (promise.cascade> session> connect-to-repo)
+  ))
+  ### (projects> session-or-repo project-owner)
+    promise returns a list of projects for owner/org
+  ###
+  (ref projects> (lambda [session-or-repo project-owner]
+    (ref session (or session-or-repo.session session-or-repo))
+    (ref org (session.auth.getOrganization project-owner))
+    (=> org.getRepos)
+  ))
+
+  ### ref: (github.session>)
+    Start a GitHub session. User-name and password are retrieved from
+    browser storage if available. If not a modal dialog allows a user
+    to enter the details.
+  ###
+  (ref session> (=>
     (ref user (or
       (sessionStorage.getItem "ghstate")
       (localStorage.getItem "ghstate")
     ))
     (cond user (do
-      (ref up ((atob user).split "||"))
-      (promised (connect (first up) (last up) project))
-    ) (else)
+      (ref user&pwd ((atob user).split "||"))
+      (promised (start-session (first user&pwd) (last user&pwd)))
+    ) (else) ## no user has logged in yet
       ((promise (using [bootstrap]
-        (ref modal-path "github/github-login")
-        (ref modal (bootstrap.modal modal-path {}))
-        (when modal [resp]
-          (cond (is resp.login.value "true") (do
-            (ref user (btoa (+
-              resp.username.value
-              "||" resp.password.value
-            )))
-            (cond (is resp.remember.checked)
-              (localStorage.setItem "ghstate" user)
-            (else) (do ## user wants amnesia
-              (localStorage.removeItem "ghstate")
-              (sessionStorage.setItem "ghstate" user)
-            ))
-            (resolve-promise (connect
-              resp.username.value resp.password.value project
-            ))
+        (when (bootstrap.modal> "github/github-login" {}) [r]
+          (cond (is r.login.value "true") (do
+            (save-user r.username.value r.password.value r.remember.checked)
+            (resolve-promise (start-session r.username.value r.password.value))
           ) (else)
-            (reject-promise {
-              error: true reason: "User abort"
-            })
+            (reject-promise { error: true reason: "User abort" })
           )
         )
       )))
     )
   ))
-  (ref connect (lambda [username password project]
+  (ref start-session (lambda [username password]
     (ref auth (new Github {username password auth: "basic"}))
-    (ref github (auth.getRepo.apply null (project.split "/")))
-    (return (stateful {github auth username password project branch: "master"}))
+    { username password auth }
   ))
-  ## Set the branch to use for repo - defaults to master
+  (ref save-user (lambda [name password remember]
+    (ref user (btoa (+ user "||" password)))
+    (cond (is remember)
+      (localStorage.setItem "ghstate" user)
+    (else) (do ## user wants amnesia
+      (localStorage.removeItem "ghstate")
+      (sessionStorage.setItem "ghstate" user)
+    ))
+  ))
+  ### ref: (github.branch repo branch-name)  ## set branch (default master) ###
   (ref branch (promise [repo branch-name]
-    (repo.update! {branch: branch-name})
-    (repo.github.branch branch-name (lambda [err result] (resolve-promise)))
+    (repo.update! { branch: branch-name })
   ))
-  ## list files in a specific path on the repo
-  (ref list-dir (promise.callback [repo path]
+  ### ref: (github.list-dir> repo dir-path) ###
+  (ref list-dir> (promise.callback [repo path]
     (repo.github.contents repo.branch path callback)
   ))
-  (ref list-all (promise [repo path single-level]
+  ### ref: (github.list-all> repo dir-path) ## list sub-directories as well ###
+  (ref list-all> (promise [repo path]
     (ref result (stateful []))
     (ref list-path (lambda [path]
       (return (when (list-dir repo path) [paths]
@@ -83,19 +106,12 @@
     ))
     (when (list-path path) (resolve-promise result))
   ))
-  (ref read (promise.callback [repo path]
+  ### ref: (github.read> repo file-path) ###
+  (ref read> (promise.callback [repo path]
     (repo.github.read repo.branch path callback)
   ))
-  (ref update (lambda [repo]
-    (cond
-      (is repo.branch repo.username) (promise.resolved)
-      (else) (do
-        (ref branch-name (or repo.username "master"))
-        (branch repo branch-name)
-      )
-    )
-  ))
-  (ref write (promise.callback [repo path contents comment]
+  ### ref: (gibhut.write> repo file-path contents comment) ###
+  (ref write> (promise.callback [repo path contents comment]
     (cond
       (not contents.length) (promise.resolved)
       (else) (do
@@ -137,7 +153,7 @@
   (ref process-repo (lambda [source-repo files actors]
     (return (promise.all (files.map (promise [meta]
       (ref base (or meta.base ""))
-      (when (actors.list-all source-repo base meta.single-level) [file-list]
+      (when (actors.list-all> source-repo base meta.single-level) [file-list]
         (ref files (filter file-list meta.include meta.exclude))
         (resolve-promise (promise.all (files.map (promise [path]
           (when (actors.read source-repo path) [code]
@@ -207,7 +223,7 @@
     )
   ))
   (ref github-actors {
-    list-all read
+    list-all> read>
     repo: (lambda [target-repo name]
       (return (repo target-repo.username
         target-repo.password name
@@ -277,8 +293,8 @@
   ## (promise.failed loaded (export {build}))
   (when loaded
     (export {
-      branch list-all list-dir cdn-uri build builder repo> read write update
-      build-github retriever grunt preprocessors
+      branch list-all> list-dir> cdn-uri build builder repo> read> write>
+      build-github retriever grunt preprocessors session> projects>
       move: (promise.callback [repo from to]
         (repo.github.move repo.branch from to callback)
       )
