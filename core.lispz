@@ -44,10 +44,6 @@ To access external modules, wrap your code in 'using'. Data and functions export
 ###
 (macro debug [*msg] (console.trace (#join ',' *msg)))
 
-### spec: basic >> lambda
-###
-(macro => [*body] (lambda [@] *body))
-
 ### spec: basic >> functions >> Variable Parameter Lists
     Like JavaScript, lispz function definitions specify a fixed number of arguments.
     To gain access to the full list of arguments, use *arguments, with a starting index.
@@ -161,6 +157,20 @@ To access external modules, wrap your code in 'using'. Data and functions export
 
 ### Update log-execution-context to be more helpful ###
 (using [fp] (using [stateful log_execution_context]
+  ### ref: (once function) ## lazy evaluation
+    e.g. (ref read-it (once (promise ...))) ... (when (read-it) ...)
+  ###
+  (global #once (lambda [lazy-expression]
+    (ref first-time (=>
+      (ref evaluated-value (lazy-expression))
+      (action.update! { func: (=> evaluated-value) })
+      evaluated-value
+    ))
+    (ref action (lispz.globals.stateful { func: first-time }))
+    (=> (action.func))
+  ))
+  (macro once [*body] (lispz.globals.#once (=> *body)))
+
   (lispz.update! { log_execution_context })
   (using [promise counters] (export {}))
 ))
