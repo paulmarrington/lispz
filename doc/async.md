@@ -51,21 +51,24 @@ A function that creates a promise uses the 'promise' keyword instead of 'lambda'
     ))
 
 In _promise_ the function is run immediately. In many situations it is nice to
-have a promise that only runs when it is first needed. You may, for example,
-create a file object that may or may not ever ask a server for the contents.
+have a promise that only runs when it is first needed. This is where lazy evaluation using _once_ comes in. The following example is from _github.lispz_ and is used to access a repository.
 
-    (ref file {
-      read: (promise.deferred [addr param1 param2]
-        (http-get (+ addr "?&" param1 "&" param2) (lambda [err response]
-          (cond err    (reject-promise err)
-                (else) (resolve-promise response)
-          )
-        ))
-      )
-    })
+    (ref fs (lambda [name]
+      (ref repo  _(once (repo> name)_))
+      (ref entries> _(once (when (tree> (repo))_ [tree]
+        (dict.from-list tree.tree "path")
+      )))
+      (ref read> (lambda [path] (github.read> _(repo)_ path)))
+      (ref fs { name entries> read> })
+    ))
     ...
-    ## This will trigger a server request...
-    (when file.read (lambda [response] (console.log response)))
+    (ref fs (github.fs "paulmarrington/lispz"))
+
+    (when (fs.entries>) (@.forEach (lambda [entry]
+      (when (fs.read> entry.path) [contents]
+        (register entry.path contents)
+      )
+    )))
 
 Because it is common to turn a callback into a promise, lispz provides a helper macro. The following provides identical functionality. One of the benefits of a language with real macros :)
 
@@ -123,6 +126,7 @@ In summary we have
   1. **callback** is a function reference to use where callbacks would normally be defined
 3. **(promise.resolved results)** Will return a promise that will always provide the results supplied to when. Use it to turn a synchronous function into a promise to use in sequences.
 4. **(when a-promise [results...] ...)** is a macro that works like a lambda where the function body is executed with the results supplied once (and if) the promise is resolved. If a **when** statement returns a promise it can be used for chaining.
+4. **(when-rejected [err] ...) Will evaluate for all rejections in the closest when-stack above.
 5. **(promise-failed a-promise [err] ...) is a macro that works like a lambda where the function body is executed if any of a set of chained promises uses **reject-promise** to indicate an error.
 6. **(promise.all promise-1 promise-2 [[promises]])** will return a promise that is fulfilled when all the promises specified are resolved or rejected. It will flatten arrays of promises.
 7. **(promise.sequence promise-1 promise-2 [[promises]])** will return a promise that is fulfilled when all the promises specified are resolved or rejected. Unlike **all**, each promise is triggered when the preceding promise is resolved.
