@@ -146,16 +146,40 @@ This allows us to call JavaScript functions at any time we can get to them.
 
     (console.log "This is the" count "log message")
 
-Anonymous functions are created with the lambda key-word (which is actually a macro - confused yet?). The parameters are referenced in another list form - that between square brackets. For later use, create a reference (_ref_). A function will return undefined unless a specific return statement is used.
+Anonymous functions are created with the _lambda_ key-word (which is actually a macro - confused yet?). The parameters are referenced in another list form - that between square brackets. For later use, create a reference (_ref_). A function will return undefined unless a specific return statement is used.
 
     (ref +1 (lambda [number] (+ number 1)))
     ...
     a = 12
     (console.log a (+1 a))  ## 12 13
 
+This is one of the few places where I add complexity by providing an alternate syntax. The fat arrow, _=>_, is a synonym for _lambda_. It is convenient for in-line functions without any named parameters.
+
+Speaking of named parameters, the parameter list construct is optional. You don't need to provide it for functions, such as closures, that may not next explicit parameters. In this case you have access to an implicit single parameter using _@_.
+
+    (ref my-array [[{ name: "terry" position: "driver" } ...]])
+    (ref names (my-array.map **(=> @.name)**))
+    (ref positions (my-array.map **(lambda @.position)**))
+
 Like JavaScript, Lispz function definitions specify a fixed number of arguments. To gain access to the full list of arguments, use \*arguments, with starting index.
 
     (lambda [type rest] (console.log type "=" (\*arguments 1)))
+
+# Lazy Evaluation
+
+Lispz by default does not support lazy evaluation. This is a good thing. Lazy evaluation adds overhead. It is rarely needed. And when implicit (as in Haskell) can lead to some spectacular confusion. Sometimes it is very valuable - and for those cases Lispz supplies the _once_ macro.
+
+    (ref start-date (once (new Date)))
+
+Lazy expressions have a special syntax (sort of). They need to be wrapped in braces of their own.
+
+    (ref start (start-date))
+
+I can reference _(start-date)_ anywhere and it will always return the same value - the _Date_ object from the first time it was referenced.
+
+I am sure you have worked out that the _once_ macro returns a function reference. The first time the function is run it evaluates the supplied expression. On subsequent calls it returns the result of the evaluation without re-evaluating.
+
+Lazy evaluation is used for deferred promises. Read the promises chapter for mre detail.
 
 # Iteration
 
