@@ -29,7 +29,9 @@
 (macro length [list] (#join '' list '.length'))
 (macro rest [list] (list .slice 1))
 (macro last [list] (first (list .slice -1)))
-(global slice (lambda [list from to]  (list.slice from to)))
+(global slice (lambda [list from to]
+  (Array.prototype.slice.call list from to)
+))
 
 ### spec: lists >> contains
 ###
