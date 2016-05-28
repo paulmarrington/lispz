@@ -37,10 +37,10 @@
   ))
 
   (ref loggers (stateful {
-    load:    (=> (return @.uri))
-    module:  (=> (return (+ @.uri " - " @.state)))
-    compile: (=> (return (+ (loc2 @) (src @.source @.location.line))))
-    other:   (=> (return (json @)))
+    load:    (=> @.uri)
+    module:  (=> (+ @.uri " - " @.state))
+    compile: (=> (+ (loc2 @) (src @.source @.location.line)))
+    other:   (=> (json @))
   }))
   (ref logger-for (pull loggers))
 
@@ -57,7 +57,10 @@
     (console.log (first args) "\nContext:")
     (context.forEach (lambda [item]
       (ref logger (or (logger-for item.context) loggers.other))
-      (console.log (+ (format-context item.context) (logger item)))
+      (console.log (+
+        (format-context item.context) (logger item)
+        " (" item.location.name " " item.location.line ")"
+      ))
     ))
   ))
   (ref clear (=>

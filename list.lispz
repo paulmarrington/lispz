@@ -29,7 +29,7 @@
 (macro length [list] (#join '' list '.length'))
 (macro rest [list] (list .slice 1))
 (macro last [list] (first (list .slice -1)))
-(global slice (lambda [list from to]  (return (lispz.slice.call list from to))))
+(global slice (lambda [list from to]  (list.slice from to)))
 
 ### spec: lists >> contains
 ###

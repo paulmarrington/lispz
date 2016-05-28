@@ -22,6 +22,7 @@ it calls (reject-promise err).
 In _promise_ the function is run immediately. In many situations it is nice to
 have a promise that only runs when it is first needed. You may, for example,
 create a file object that may or may not ever ask a server for the contents.
+This is where lazy evaluation using _once_ shines.
 
     (ref file {
       read: (promise.deferred [addr param1 param2]
