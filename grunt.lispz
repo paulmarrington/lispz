@@ -1,0 +1,54 @@
+(using  [github compilers]
+
+  (ref grunt-build (promise [meta]
+    (ref js (stateful [(or meta.pre "")]))
+    (ref read-all (promise.all (meta.files.map (promise
+      (when (github.fs.read source-repo path) [data]
+        (js.push! data) (resolve-promise)
+      )
+    ))))
+    (when read-all
+      (js.push! (or meta.post ""))
+      (ref contents (js.join "\n"))
+      (when (write target-repo (+ "ext/" meta.target) contents comment)
+        (resolve-promise)
+      )
+    )
+  ))
+  (ref grunt-copy (promise [files]
+    (ref copy-all (promise.all (files.map (promise [item]
+      (ref path (or item.src item))
+      (when (github.fs.read source-repo path) [contents]
+        (ref path (+ "ext/" (last (path.split "/"))))
+        (when (write target-repo path contents comment)  (resolve-promise))
+      )
+    ))))
+  ))
+  (ref grunt (promise [target-repo source-project]
+    (ref source-repo (github.fs.repo target-repo source-project))
+    (ref comment (+ "from " source-project))
+    (ref sources [[
+      {repo: source-project files: [[
+        {include: '/^Gruntfile.js$/' single-level: true}
+      ]]}
+    ]])
+    (when (retriever target-repo sources github.fs) [store]
+      (ref grunt-config ((Function
+        (+ "var module={};" (last store.js) "return module.exports"))))
+      (grunt-config {
+        loadNpmTasks: (lambda) registerTask: (lambda)
+        initConfig: (lambda [config-data]
+          (ref grunt-processor {
+            build: grunt-build
+            copy:  grunt-copy
+          })
+          (when (update target-repo)
+            (resolve-promise grunt-processor config-data)
+          )
+        )
+      })
+    )
+  ))
+
+  (export { grunt })
+)

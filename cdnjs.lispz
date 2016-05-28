@@ -34,6 +34,5 @@
   })
 
   (export {
-    build: (github.builder.bind null cdnjs-actors)
   })
 )

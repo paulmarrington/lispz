@@ -8,14 +8,14 @@ The most popular HTML, CSS, and JavaScript framework for developing responsive, 
 http://getbootstrap.com
 https://github.com/twbs/bootstrap
 ###
-(using [net github cdnjs message]
+(using [net cdnjs message]
   (ref bootswatch-themes [["cerulean" "cosmo" "cyborg" "darkly" "flatly"
     "journal" "lumen" "paper" "readable" "sandstone" "simplex" "slate"
     "spacelab" "superhero" "united" "yeti" "default"]])
 
   (ref build (lambda [target-repo]
     (return (promise.all
-      (github.build target-repo "bootstrap" [[
+      (code-builder target-repo "bootstrap" [[
         {repo: "twbs/bootstrap" files: [[
           {base: "dist" exclude: '/\.map$|\.min\.|npm.js$/'}
           {base: "dist/fonts" copy-to: "fonts"}
@@ -73,11 +73,10 @@ https://github.com/twbs/bootstrap
     when we see _modal_ added to the list of
     JQuery functions.
   ###
-  (ref loaded (net.script "ext/bootstrap.js" (=>
-    (return (($).modal))
-  )))
-  (when  loaded (export {build themes modal>}))
-  (promise.failed loaded (export {build}))
+  (when (net.script "ext/bootstrap.js" (=> (($).modal)))
+    (export { build themes modal> })
+  )
+  (when-rejected (export { build }))
 )
 
 ### spec: Bootstrap >> Bootstrap/RIOT/Lispz Combo

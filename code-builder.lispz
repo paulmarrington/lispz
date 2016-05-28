@@ -1,0 +1,127 @@
+(using  [github compilers]
+  ###
+    Code-builder needs to be provided source and destination file-system
+    objects that contain:
+
+    # (ref fs = (github.fs name [branch]))
+    # (fs.list>)
+    # (fs.read> path)
+    # (fs.write> path contents comment)
+
+    Sources are defined as an array of entries with:
+
+    # system: file-system (default github)
+    # repo:   fully qualified (e.g. "paulmarrington/lispz")
+    # branch: branch or has to qualify repo requests (default "master")
+    # files:  array of file filters
+    ## base:  base path to the file(s)
+    ## include: regular expression of files to include; or
+    ## exclude: regular expression of files to exclude
+  ###
+
+  ## Compile down to js, css or html
+  (ref preprocess> (lambda [path code]
+    (ref ext (last (path.split ".")))
+    (ref preprocessor  (get compilers ext))
+    (cond preprocessor
+      (when (preprocessor.compile code path) [code] { path ext code })
+    (else)
+      { path ext code }
+    )
+  ))
+
+  ## Build and save a dependency list
+  ## We will need to filter the dependencies
+  (ref filter (lambda [before include exclude]
+    (cond
+      include (before.filter (lambda [file] (include.test file)))
+      exclude (before.filter (lambda [file] (not (exclude.test file))))
+    )
+  ))
+
+  ## and see which to save and which to copy
+  (ref copy (lambda [copy-to path code]
+    ## not working yet for binary files
+    (ref filename (last (path.split "/")))
+    (return {path code copy: (+ copy-to "/" filename)})
+  ))
+
+  (ref read-file> (lambda [file repo]
+    (when (repo.list>) [file-tree]
+    (when (repo.read> path) [code]
+      (ref meta (get file-tree path))
+      (cond
+        meta.copy-to (copy meta.copy-to path code)
+        (else)       (preprocess> path code)
+      )
+    ))
+  ))
+
+  (ref process-entry> (lambda [entry repo]
+    (ref base (or entry.base ""))
+    (when (repo.list>) [file-tree]
+      (ref files (dict.map file-tree.map (=> @)))
+      (ref filtered (filter file-list entry.include entry.exclude))
+      (promise.all (filtered.map (=> (read-file> @ repo))))
+    )
+  ))
+
+  (ref process-repo> (lambda [repo files]
+    (promise.all (files.map (=> (process-entry> @ repo))))
+  ))
+
+  (ref process-repos> (lambda [sources]
+    (promise.all (sources.map (lambda [source]
+      (ref fs (or source.system github).fs)
+      (ref repo (fs source.repo source.branch))
+      (return (process-repo> repo source.files))
+    )))
+  ))
+  ## Retrieve file contents based of filtering meta-data
+  (ref retriever> (lambda [sources]
+    (when (process-repos sources) [entry-tree]
+      (ref entries  (list.flatten entry-tree))
+      (ref filter   (lambda [ext] (entries.filter (=> (= @.ext ext)))))
+      (ref for-unknown (=> (not (list.contains(@ [["js" "css"]])))))
+      (ref format   (=> "\n\n/* " @.path " */\n" @.code))
+      (ref from     [["Gathered from: "]])
+      {
+        js:     ((filter  "js").map format)
+        css:    ((filter "css").map format)
+        copies: (entries.filter for-unknown)
+        from:   (from.concat sources.map(=> @.repo))
+      }
+    )
+  ))
+
+  ## Given a file type, save the concatenated source contents
+  (ref save-store (promise [target store ext comment]
+    (ref contents ((get store ext).join ""))
+    (target.repo.write> (+ "ext/" target.name "." ext) contents comment)
+  ))
+
+  ## copy files identified as needed as-is
+  (ref copy-store (lambda [target store comment]
+    (promise.all (store.copies.map (lambda [entry]
+      (target.repo.write> entry.path entry.code comment)
+    )))
+  ))
+
+  ### ref: (code-builder repo name)
+    e.g. (code-builder {
+      repo: (github.fs "paulmarrington/lispz" "master")})
+  ###
+  (ref builder (lambda [target-repo name sources]
+    (when (retriever sources) [store]
+      (ref target { repo: target-repo  name })
+      (ref comment (store.from.join " "))
+      (promise.all
+        (save-store target store "js"  comment)
+        (save-store target store "css" comment)
+        (copy-store target store       comment)
+      )
+    )
+  ))
+
+  (export builder)
+)

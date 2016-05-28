@@ -3,15 +3,13 @@ Dexie.js is a wrapper library for indexedDB - the standard database in the brows
 
 https://github.com/dfahlander/Dexie.js
 ###
-(using  [net github]
 
-  (ref build (lambda [target-repo]
-    (return (github.build target-repo "dexie" [[
-      {repo: "dfahlander/Dexie.js" files: [[
-        {base: "dist/latest" include: '/Dexie.js$/'}
-      ]]}
-    ]]))
-  ))
+(ref build (lambda [target-repo] (using  [code-builder]
+  (code-builder target-repo "dexie" [[
+    {repo: "dfahlander/Dexie.js" files: [[
+      {base: "dist/latest" include: '/Dexie.js$/'}
+    ]]}
+  ]])
+)))
 
-  (lispz.script "ext/dexie.js" (lambda (export { build })))
-)
+(lispz.script "ext/dexie.js" (lambda (export { build })))
