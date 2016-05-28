@@ -25,8 +25,11 @@
 (global promise.resolved (promise [pact] (resolve-promise pact)))
 
 (ref promised (lambda [pledge]
-  (cond (and pledge pledge.then) pledge
-        (else)                   (promise.resolved pledge)
+  (ref is-function (=> (and (instance-of Function @) (is @.length 1))))
+  (cond (not pledge)              (promise.resolved pledge)
+        pledge.then               pledge
+        (is-function pledge)      (promised (pledge))
+        (else)                    (promise.resolved pledge)
   )
 ))
 (global promised promised)
@@ -37,7 +40,9 @@
   )
 )
 
-(macro when-rejected [*body] (#last-promise#.catch (=> *body)))
+(macro when-rejected [?params *body]
+  (#last-promise#.catch (lambda ?params *body))
+)
 
 (macro promise.failed [pledge ?errors *body]
   ((promised pledge).catch (lambda ?errors *body))
@@ -53,5 +58,6 @@
     (ref promisified (flattened.map (=> (promised @))))
     (return (Promise.all promisified))
   ))
+)
 
 (export [])
