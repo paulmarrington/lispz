@@ -1,22 +1,40 @@
-### spec: Compilers
-  The compiler entry for each language is a function that is called with the
-  name of the source code followed by the source itself.
+### ref: (compilers.add source-type dest-type compiler)
+  e.g. (compilers.add "less" "css" (promise.callback [src filename]
+         (less.render src { filename } (lambda [err output]
+           (callback err ((or output {}).css))
+         ))
+       ))
+###
+(ref add (lambda [source-type ext compile]
+  (compilers.update! source-type { ext compile })
+))
 
-      (using [compilers]
-        (ref js (compilers.lispz.compile "(console.log \"Hi\")" "name"))
-        (console.log (compilers.to-string js))
-        (console.log (compilers.run js))
-      )
+### ref: (compilers.to-string js)
+  e.g. (compilers.to-string ["var a = 1" "console.log(a)"])
+###
+(ref to-string (lambda [js]
+  (ref array (cond (instance-of Array js) js (else) [js]))
+  (array.join ";\n")
+))
+
+### ref: (ref js-promise (compilers.source-type.compile source file-name))
+  e.g. (when (compilers.lispz.compile "(debug \"Hi\")" "test")) [js] ...)
 ###
 (using [log_execution_context]
-  (export {
-    to-string: (=> (@.join ";\n"))
-    run:       (=>
-      (log_execution_context.clear)
-      (eval (@.join ";\n")))
+  ### ref: (compilers.run js)
+    e.g. (compilers.run (compilers.lispz.compile source))
+  ###
+  (ref run (lambda [js]
+    (log_execution_context.clear)
+    (eval (to-string js))
+  ))
+  
+  (ref compilers (stateful {
+    to-string run add
 
     lispz: { compile: (lambda [source name]
       (lispz.compile (+ source "\n") name)
-    )}
-  })
+    ) ext: "js" }
+  }))
+  (export compilers)
 )
