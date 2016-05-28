@@ -4,14 +4,12 @@ A robust UTF-8 encoder/decoder in JavaScript.
 https://git.io/utf8js
 https://github.com/mathiasbynens/utf8.js
 ###
-  (ref build (lambda [target-repo]
-    (using  [net github]
-      (return (github.build target-repo "utf8" [[
-        {repo: "utf8/utf8" files: [[
-          {base: "" include: '/utf8.js$/'}
-        ]]}
-      ]]))
-    )
-  ))
+  (ref build (lambda [target-repo] (using  [net github]
+    (return (code-builder target-repo "utf8" [[
+      {repo: "utf8/utf8" files: [[
+        {base: "" include: '/utf8.js$/'}
+      ]]}
+    ]]))
+  )))
 
   (lispz.script "ext/utf8.js" (lambda (export { build })))

@@ -4,14 +4,14 @@ Beautifier for JavaScript
 http://jsbeautifier.org/
 https://github.com/beautify-web/js-beautify
 ###
-(using [net github]
-  (ref build (lambda [target-repo built=>]
-    (return (github.build target-repo "js_beautify" [[
+(using [net]
+  (ref build (lambda [target-repo built=>] (using [code-builder]
+    (return (code-builder target-repo "js_beautify" [[
       {repo: "beautify-web/js-beautify" files: [[
         {base: "js/lib" include: '/^beautify.js$/'}
       ]]}
     ]]))
-  ))
+  )))
   (ref loaded (net.script "ext/js-beautify.js" (lambda []
     (return window.js_beautify))
   ))

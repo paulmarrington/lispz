@@ -3,7 +3,7 @@ In-browser code editor http://codemirror.net/
 
 https://github.com/codemirror/CodeMirror
 ###
-(using  [net diff_match_patch message message dict github compilers]
+(using  [net diff_match_patch message message dict compilers]
   (ref options-string (localStorage.getItem "CodeMirror-options"))
   (ref options (stateful.morph!
     (cond options-string (JSON.parse options-string)
@@ -553,8 +553,8 @@ https://github.com/codemirror/CodeMirror
 
   ## elm script has a bug - restore for a later version.
   ## tern is for javascript features - overrides console.log
-  (ref build-base (lambda [target-repo]
-    (return (github.build target-repo "codemirror" [[
+  (ref build-base (lambda [target-repo] (using [code-builder]
+    (return (code-builder target-repo "codemirror" [[
       {repo: "codemirror/CodeMirror" files: [[
         {base: "lib" include: '/codemirror\.(js|css)$/'}
         {base: "addon/mode" include: '/^simple.js$/'}
@@ -568,16 +568,16 @@ https://github.com/codemirror/CodeMirror
         {base: "resources/public/js" include: '/subpar.core.js/'}
       ]]}
     ]]))
-  ))
+  )))
   (ref build-themes (lambda [target-repo]
-    (return (github.build target-repo "codemirror-themes" [[
+    (return (code-builder target-repo "codemirror-themes" [[
       {repo: "codemirror/CodeMirror" files: [[
         {base: "theme"}
       ]]}
     ]]))
   ))
   (ref build-mode (lambda [target-repo]
-    (return (github.build target-repo "codemirror-modes" [[
+    (return (code-builder target-repo "codemirror-modes" [[
       {repo: "codemirror/CodeMirror" files: [[
         {base: "mode" exclude: '/htmlmixed|javascript|css|elm.js$|test.js$/'}
       ]]}
@@ -588,16 +588,17 @@ https://github.com/codemirror/CodeMirror
   ))
 
   (lispz.css "ext/codemirror.css")
-  (ref loaded (net.script "ext/codemirror.js"(lambda (return window.CodeMirror))))
-  (when loaded
-    (ref modes-loaded (net.script "ext/codemirror-modes.js" (lambda (return CodeMirror.modes.z80))))
+  (when (net.script "ext/codemirror.js" (=> window.CodeMirror))
+    (ref modes-loaded (net.script "ext/codemirror-modes.js"
+      (=> CodeMirror.modes.z80)
+    ))
     (when modes-loaded
       (stateful.morph! CodeMirror.commands)
       (CodeMirror.commands.update! extra-commands)
       (init-lispz-mode)
       (export {options open close set-mode build})
     )
-    (promise.failed loaded (export {build}))
   )
+  (when-rejected (export { build }))
   (delay 100 (lispz.css "ext/codemirror-themes.css"))
 )

@@ -42,11 +42,11 @@ Styles are global (unlike *true* web components). This is easily overcome using 
 
 Scripting can be any language of choice that runs on the browser. JavaScript, Lispz, Es6 (with babel) and CoffeeScript are available out-of-the-box. For the latter two you will need to load the compiler by *(using babel coffeescript)* in the startup code. Other languages can be added as long as they compile code on the browser.
 
-    (set! riot.parsers.js.lispz
-      (lambda [source] (return ((lispz.compile source "riot-tags").join "\n")))
-    )
+    (set! riot.parsers.js.lispz (lambda [source]
+      (lispz.compile source "riot-tags").join "\n")
+    ))
 ###
-(using  [jquery net github dict dom]
+(using  [jquery net dict dom]
   ## we need to update the tags cache
   (stateful.morph! lispz.tags)
   ### spec: RIOT >> Get Tag Definition by Name
@@ -109,13 +109,13 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
     )
   ))
 
-  (ref build (lambda [target-repo]
-    (return (github.build target-repo "riot" [[
+  (ref build (lambda [target-repo] (using [code-builder]
+    (return (code-builder target-repo "riot" [[
       {repo: "riot/riot" files: [[
         {include: '/^riot\+compiler.js$/'}
       ]]}
     ]]))
-  ))
+  )))
   ### spec: RIOT >> mount
   ###
   (ref mount (=> (riot.mount.apply riot arguments)))
@@ -243,8 +243,8 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
     (riot.parsers.js.update! {lispz:
       (lambda [source options url]
         (execution-context { context: "riot.compile" url options source }
-          (ref js (compilers.lispz.compile source "riot-tags"))
-          (compilers.to-string js)
+          (ref code (compilers.lispz.compile source "riot-tags"))
+          (compilers.to-string code)
         )
       )
     })

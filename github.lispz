@@ -1,306 +1,324 @@
-### spec: >> GitHub
-  A higher-level wrapper around the Github API.
-  Intended for the browser.
-
-  https://github.com/michael/github
+### https://developer.github.com/v3/ ###
+### spec: Support
+  (using [github]
+    (ref delete-file> (lambda [path]
+      (ref repo (github.repo> "paulmarrington/lispz"))
+      (when (github.contents> repo "master" "README.md") [contents]
+        (github.delete> repo "master" contents.sha "deleted")
+      )
+    ))
+    (ref get-sha> (lambda [path]
+      (ref repo (github.repo> "paulmarrington/lispz"))
+      (when (github.contents> repo "master" path) @.sha)
+    ))
+    (ref create-file> (lambda [path]
+      (ref repo (github.repo> "paulmarrington/lispz"))
+      (when (github.create> repo "master" path "Hi" "created") @ ))
+    ))
+  )
 ###
-(using  [net dict list axios base64 utf8]
-  ### spec: GitHub >> CDN
-    It is possible to access GitHub files for direct use in the browser through
-    a CDN. Provide the project name, hash/branch/release and a path to the file.
+(using [net dict]
+
+  ### spec: Retrieve repository details
+    (it "will include the full name of the repo" (lambda [done]
+      (using [github]
+        (when (github.repo> "paulmarrington/lispz") [repo]
+        	((expect repo.full_name).toEqual "paulmarrington/lispz")
+          (done)
+        )
+      )
+    ))
   ###
+  ### ref: (github.repo> project) ## log in form displayed if necessary
+    e.g. (when (github.repo> "paulmarrington/lispz") [repo] ...)
+    https://developer.github.com/v3/repos/contents/#get-contents
+  ###
+  (ref repo> (lambda [name] (get> (+ "repos/" name) {})))
+
+  ### spec: List repositories for a user
+    (it "will include the full name of the repo" (lambda [done]
+      (using [github]
+        (when (github.repos> "paulmarrington") [repos]
+        	((expect repos.length).toBeGreaterThan 7)
+          (done)
+        )
+      )
+    ))
+  ###
+  ### ref: (github.repos> organisation)
+    e.g. (when (github.repos> "paulmarrington") [repos] ...)
+    https://developer.github.com/v3/repos/#list-user-repositories
+  ###
+  (ref repos> (lambda [owner]
+    (get> (+ "users/" owner "/repos") {
+      type: "all" sort: "updated" direction: "desc"
+    })
+  ))
+
+  ### spec: Read contents given a branch and path
+    (it "can be read as base64" (lambda [done]
+      (using [github]
+        (ref (github.repo> "paulmarrington/lispz"))
+        (when (github.contents> repo "master" "README.md") [contents]
+        	((expect contents.encoding).toEqual "base64")
+          (done)
+        )
+      )
+    ))
+  ###
+  ### ref: (github.contents> <repo> branch path) ## info on dir or file
+    e.g. (when (github.contents> repo "master" "/lib" }))
+    https://developer.github.com/v3/repos/contents/#get-contents
+  ###
+  (ref contents> (lambda [repo branch path]
+    (when repo
+      (get> (+ "repos/" @.full_name "/contents/" path) { ref: branch })
+    )
+  ))
+
+  ### spec: Read contents given SHA
+    (it "can be read as base64" (lambda [done]
+      (using [github]
+        (ref repo (github.repo> "paulmarrington/lispz"))
+        (when (github.blob> repo "master" "README.md") [blob]
+        	((expect blob.encoding).toEqual "base64")
+          (done)
+        )
+      )
+    ))
+  ###
+  ### ref: (github.blob> <repo> sha)
+    e.g. (when (github.blob> repo tree[path].sha) [blob] blob.contents)
+    https://developer.github.com/v3/git/blobs/#get-a-blob
+  ###
+  (ref blob> (lambda [repo sha]
+    (when repo (get> (+ "repos/" @.full_name "/git/blobs/" sha)))
+  ))
+
+  ### spec: Download a file from the repository
+    (it "can be read in text form" (lambda [done]
+      (using [github]
+        (ref repo (github.repo> "paulmarrington/lispz"))
+        (when (github.read> repo "master" "README.md") [contents]
+        	((expect contents).toEqual "base64")
+          (done)
+        )
+      )
+    ))
+  ###
+  ### ref: (github.read> <repo> branch path)
+    e.g. (when (github.read> repo "master" "README.md") [contents] ...)
+  ###
+  (ref read> (lambda [repo branch path] (when repo
+    (ref base "https://raw.githubusercontent.com")
+    (ref url (+ base "/" @.full_name "/" branch "/" path))
+    (net.http-get url)
+  )))
+
+  ### spec: Create a new entry
+    (it "can create a new entry" (lambda [done]
+      (using [github]
+        (ref repo (github.repo> "paulmarrington/lispz"))
+        (when (github.create> repo "master" "test/tmp.txt" "Hi" "msg") [result]
+        	((expect result.message).toEqual "msg")
+          (done)
+        )
+        (when-rejected [err] (fail "Can't create -" err) (done))
+      )
+    ))
+  ###
+  ### ref: (github.create> <repo> branch path contents commit-message)
+    (when (github.create> repo "master" "test/tmp.txt" "Hi" "msg") [result] ...)
+    https://developer.github.com/v3/repos/contents/#create-a-file
+  ###
+  (ref create> (lambda [repo branch path contents message] (when repo
+    (ref url (+ "repos/" @.full_name "/contents/" path))
+    (ref options { branch message content: (base64 contents) })
+    (request> "PUT" url options)
+  )))
+
+  ### spec: Update an entry
+    (it "can update an entry" (lambda [done]
+      (using [github]
+        (when (create-file> "test/tmp.txt" "created")
+        (when (get-sha> "test/tmp.txt") [sha]
+        (ref repo (github.repo> "paulmarrington/lispz")
+        (when (github.update> repo "master"
+        "test/tmp.txt" sha "2nd" "changed") [results]
+          ((expect results.message).toEqual "changed")
+        ))))
+        (when-rejected [err] (fail "Can't update -" err) (done))
+      )
+    ))
+  ###
+  ### ref: (github.update> <repo> branch path sha contents commit-message)
+    (when (github.update> repo "master" "test/tmp.txt" sha "Hi" "msg") [result] ...)
+    https://developer.github.com/v3/repos/contents/#update-a-file
+  ###
+  (ref update> (lambda [repo branch path sha contents message] (when repo
+    (ref url (+ "repos/" @.full_name "/contents/" path))
+    (ref options { branch message sha content: (base64 contents) })
+    (request> "PUT" url options)
+  )))
+
+  ### spec: Delete an entry
+    (it "can delete an entry" (lambda [done]
+      (using [github]
+        (when (create-file> "test/tmp.txt" "created")
+        (when (get-sha> "test/tmp.txt") [sha]
+        (ref repo (github.repo> "paulmarrington/lispz")
+        (when (github.delete> repo "master" "test/tmp.txt" sha "no more")
+          ((expect results.commit.message).toEqual "no more")
+        ))))
+        (when-rejected [err] (fail "Can't delete -" err) (done))
+      )
+    ))
+  ###
+  ### ref: (github.delete> <repo> branch path sha commit-message)
+    (when (github.delete> repo "master" "test/tmp.txt" sha "msg") [result] ...)
+    https://developer.github.com/v3/repos/contents/#delete-a-file
+  ###
+  (ref delete> (lambda [repo branch path sha message] (when repo
+    (ref url (+ "repos/" @.full_name "/contents/" path))
+    (ref options { branch message sha })
+    (request> "DELETE" url options)
+  )))
+
+  ### spec: List contents of a repository
+    (it "can retrieve a tree object" (lambda [done]
+      (using [github]
+        (ref repo (github.repo> "paulmarrington/lispz")
+        (when (github.tree> repo "master") [tree]
+        	((expect tree.tree.length).toBeGreaterThan 100)
+          (done)
+        ))
+      )
+    ))
+  ###
+  ### ref: (github.tree> <repo> branch) ## recursive info tree
+    e.g. (when (github.tree> repo "master" }))
+    https://developer.github.com/v3/git/trees/#get-a-tree-recursively
+  ###
+  (ref tree> (lambda [repo branch] (when repo [repo]
+    (when (branch> repo branch) [branch]
+    (get>
+      (+ "repos/" repo.full_name "/git/trees/" branch.commit.sha)
+      { recursive: 1 }
+    ))
+  )))
+
+  ### spec: Retrieve branch
+    (it "can retrieve branch details" (lambda [done]
+      (using [github]
+        (ref repo (github.repo> "paulmarrington/lispz")
+        (when (github.branch> repo "master") [branch]
+        	((expect branch.name).toequal "master")
+          (done)
+        ))
+      )
+    ))
+  ###
+  ### ref: (github.branch> <repo> [branch]) ## branch defaults to master
+    e.g. (when (github.branch repo) [branch] ...)
+    https://developer.github.com/v3/repos/#get-branch
+  ###
+  (ref branch> (lambda [repo branch] (when repo [data]
+    (get> (+ "repos/" data.full_name "/branches/" (or branch "master")))
+  )))
+
+  ### ref: (github.session>)
+    Start a GitHub session. Shows modal dialog if user-name and password
+    are not in browser storage.
+  ###
+  (ref session> (=>
+    (ref auth (or
+      (sessionStorage.getItem "ghcontext")
+      (localStorage.getItem "ghcontext")
+    ))
+    (cond
+      auth    (promised { auth-header: auth })
+      (else)  (ask-user-to-login>)
+    )
+  ))
+
+  (ref ask-user-to-login> (promise (using [bootstrap]
+    (when (bootstrap.modal> "github/github-login" {}) [r]
+      (cond (is r.login.value "true") (do
+        (ref joined (+ r.username.value ":" r.password.value))
+        (ref auth (+ "Basic " (btoa joined)))
+        (save-user auth r.remember.checked)
+        (resolve-promise { auth-header: auth })
+      ) (else)
+        (reject-promise { error: true reason: "User abort" })
+      )
+    )
+  )))
+  (ref save-user (lambda [auth remember]
+    (cond (is remember)
+      (localStorage.setItem "ghcontext" auth)
+    (else) (do ## user wants amnesia
+      (localStorage.removeItem "ghcontext")
+      (sessionStorage.setItem "ghcontext" auth)
+    ))
+  ))
+
+  (ref request> (lambda [type url options]
+    (ref send-request (lambda [session]
+      (ref headers {
+        Accept:           "application/vnd.github.v3+json"
+        Authorization:    session.auth-header
+        'Content-Type':   "application/json;charset=UTF-8"
+      })
+      (net.http-request> type
+        (+ "https://api.github.com/" url) headers
+        (JSON.stringify options)
+      )
+    ))
+
+    (when session> (when (send-request @) [response]
+      (JSON.parse response)
+    ))
+  ))
+
+  (ref get> (lambda [url options]
+    (request> "GET" (+ url (net.dict-to-query options)) {})
+  ))
+
   ### ref: (github.cdn-uri project hash filepath)
     e.g. (ref uri (github.cdn-uri "atogov/RAM" "develop" "tests/pasckages.json"))
   ###
   (ref cdn-uri (lambda [project hash filepath]
     (return (+ "https://cdn.rawgit.com/" project "/" hash "/" filepath))
   ))
-  ### spec: GitHub >> Specifying the Current Repository
-    This is a non-pure function because if this is the first connection to
-    GitHub, a UI modal dialog is displayed for GitHub log-in details.
-  ###
-  ### ref: (github.repo> project) ## log in form displayed if necessary
-    e.g. (ref repo (github.repo> "paulmarrington/lispz"))
-  ###
-  (ref repo> (lambda [project]
-    (ref connect-to-repo (lambda [session]
-      (ref parts (project.split "/"))
-      (ref github (session.auth.getRepo (first parts) (second parts)))
-      (stateful { project github session branch: "master" })
-    ))
 
-    (promise.cascade> session> connect-to-repo)
-  ))
-  ### (projects> session-or-repo project-owner)
-    promise returns a list of projects for owner/org
+  ### ref: (ref fs (once github.fs repo branch)) ## entries> read> write>
+    e.g. (when fs (when (@.read> "README.md") [md] ...))
   ###
-  (ref projects> (lambda [session-or-repo project-owner]
-    (ref session (or session-or-repo.session session-or-repo))
-    (ref org (session.auth.getOrganization project-owner))
-    (=> org.getRepos)
+  (ref fs (lambda [name branch]
+    (ref repo  (once (repo> name)))
+    (ref entries> (once (when (tree> (repo) fs.branch) [tree]
+      (dict.from-list tree.tree "path")
+    )))
+    (ref read> (lambda [path] (github.read> (repo) fs.branch path)))
+    (ref write> (lambda [path contents message]
+      (when entries>
+        (cond (ref meta (get @ path))
+          (github.update> (repo) fs.branch path meta.sha contents message)
+        (else)
+          (github.create> (repo) fs.branch path contents message)
+        )
+      )
+    ))
+    (ref fs { name entries> read> write> branch: (or branch "master")})
   ))
 
-  ### ref: (github.session>)
-    Start a GitHub session. User-name and password are retrieved from
-    browser storage if available. If not a modal dialog allows a user
-    to enter the details.
-  ###
-  (ref session> (=>
-    (ref user (or
-      (sessionStorage.getItem "ghstate")
-      (localStorage.getItem "ghstate")
-    ))
-    (cond user (do
-      (ref user&pwd ((atob user).split "||"))
-      (promised (start-session (first user&pwd) (last user&pwd)))
-    ) (else) ## no user has logged in yet
-      ((promise (using [bootstrap]
-        (when (bootstrap.modal> "github/github-login" {}) [r]
-          (cond (is r.login.value "true") (do
-            (save-user r.username.value r.password.value r.remember.checked)
-            (resolve-promise (start-session r.username.value r.password.value))
-          ) (else)
-            (reject-promise { error: true reason: "User abort" })
-          )
-        )
-      )))
-    )
+  (ref base64 (lambda [content]
+    (btoa (content.replace '/[^\0-\xFF]/', " "))
   ))
-  (ref start-session (lambda [username password]
-    (ref auth (new Github {username password auth: "basic"}))
-    { username password auth }
-  ))
-  (ref save-user (lambda [name password remember]
-    (ref user (btoa (+ user "||" password)))
-    (cond (is remember)
-      (localStorage.setItem "ghstate" user)
-    (else) (do ## user wants amnesia
-      (localStorage.removeItem "ghstate")
-      (sessionStorage.setItem "ghstate" user)
-    ))
-  ))
-  ### ref: (github.branch repo branch-name)  ## set branch (default master) ###
-  (ref branch (promise [repo branch-name]
-    (repo.update! { branch: branch-name })
-  ))
-  ### ref: (github.list-dir> repo dir-path) ###
-  (ref list-dir> (promise.callback [repo path]
-    (repo.github.contents repo.branch path callback)
-  ))
-  ### ref: (github.list-all> repo dir-path) ## list sub-directories as well ###
-  (ref list-all> (promise [repo path]
-    (ref result (stateful []))
-    (ref list-path (lambda [path]
-      (return (when (list-dir repo path) [paths]
-        (ref children (stateful []))
-        (paths.forEach (lambda [entry]
-          (cond
-            (is "dir"  entry.type)
-              (cond (not single-level) (children.push! (list-path entry.path)))
-            (is "file" entry.type)
-              (result.push! entry.path)
-          )
-        ))
-        (return (promise.all children))
-      ))
-    ))
-    (when (list-path path) (resolve-promise result))
-  ))
-  ### ref: (github.read> repo file-path) ###
-  (ref read> (promise.callback [repo path]
-    (repo.github.read repo.branch path callback)
-  ))
-  ### ref: (gibhut.write> repo file-path contents comment) ###
-  (ref write> (promise.callback [repo path contents comment]
-    (cond
-      (not contents.length) (promise.resolved)
-      (else) (do
-        (ref encoded (unescape (encodeURIComponent contents)))
-        (repo.github.write repo.branch path encoded comment callback)
-      )
-    )
-  ))
-  ## preprocess a file to generate css or js dependent on extension
-  (ref preprocessors {
-    lispz: (lambda [name code]
-      (return {path ext: "js" code: (window.lispz.compile code name)})
-    )
+
+  (ref github {
+    repo> repos> cdn-uri contents> tree> branch> blob> read>
+    create> update> delete> fs
   })
-  (ref get-preprocessor (pull preprocessors))
-  (ref preprocess (lambda [path code]
-    (ref ext (last (path.split ".")))
-    (ref preprocessor (get-preprocessor ext))
-    (cond preprocessor (preprocessor path code)
-                (else) {path ext code})
-  ))
-  ## Build and save a dependency list
-  ## We will need to filter the dependencies
-  (ref filter (lambda [before include exclude]
-    (ref after before)
-    (ref after (cond
-      include (after.filter (lambda [file] (include.test file)))
-      exclude (after.filter (lambda [file] (not (exclude.test file))))
-    ))
-    (return after)
-  ))
-  ## and see which to save and which to copy
-  (ref copy (lambda [copy-to path code]
-    ## not working yet for binary files
-    (ref filename (last (path.split "/")))
-    (return {path code copy: (+ copy-to "/" filename)})
-  ))
-  ## Load the contents of the files we need from a single repo
-  (ref process-repo (lambda [source-repo files actors]
-    (return (promise.all (files.map (promise [meta]
-      (ref base (or meta.base ""))
-      (when (actors.list-all> source-repo base meta.single-level) [file-list]
-        (ref files (filter file-list meta.include meta.exclude))
-        (resolve-promise (promise.all (files.map (promise [path]
-          (when (actors.read source-repo path) [code]
-            (cond
-              meta.copy-to (resolve-promise (copy meta.copy-to path code))
-              (else)       (resolve-promise (preprocess path code))
-            )
-          )
-        ))))
-      )
-    ))))
-  ))
-  ## Given a list of repos, go through them all for files in need
-  (ref process-repos (lambda [target-repo sources actors]
-    (return (promise.all (sources.map (lambda [source]
-      (ref source-repo (actors.repo target-repo source.repo))
-      (return (process-repo source-repo source.files actors))
-    ))))
-  ))
-  ## Retrieve file contents based of filtering meta-data
-  (ref retriever (promise [target-repo sources actors]
-    (when (process-repos target-repo sources actors) [entry-tree]
-      (ref first-from [["Gathered from: "]])
-      (ref rest-from (sources.map (lambda [source] (return source.repo))))
-      (ref store {
-        js:     (stateful [])
-        css:    (stateful [])
-        copies: (stateful [])
-        from:   (first-from.concat rest-from)
-      })
-      ((list.flatten entry-tree).forEach (lambda [entry]
-        (ref ext-list (get store entry.ext))
-        (cond
-          (ext-list) (do
-            (ext-list.push! "\n\n/* " entry.path " */\n" entry.code)
-          )
-          store.copy
-            (store.copies.push! entry)
-        )
-      ))
-      (resolve-promise store)
-    )
-  ))
-  ## Given a file type, save the concatenated source contents
-  (ref save-store (promise [target-repo store name ext comment]
-    (ref contents ((get store ext).join ""))
-    (return (write target-repo (+ "ext/" name "." ext) contents comment))
-  ))
-  ## copy files identified as needed as-is
-  (ref copy-store (lambda [target-repo store comment]
-    (return (promise.all (store.copies.map (lambda [entry]
-      (return (write target-repo entry.path entry.code comment))
-    ))))
-  ))
-  ## Now we have gathered needed resources, build and save the output file
-  (ref builder (promise [actors target-repo name sources]
-    (when (retriever target-repo sources actors) [store]
-      (ref comment (store.from.join " "))
-      (ref saved (when (update target-repo)
-        (return (promise.all
-          (save-store target-repo store name "js"  comment)
-          (save-store target-repo store name "css" comment)
-          (copy-store target-repo store            comment)
-        ))
-      ))
-      (when saved (resolve-promise))
-    )
-  ))
-  (ref github-actors {
-    list-all> read>
-    repo: (lambda [target-repo name]
-      (return (repo target-repo.username
-        target-repo.password name
-      ))
-    )
-  })
-  (ref build (builder.bind null github-actors))
-  ## Use gruntfile to decide which files to include and it what order
-  (ref grunt-build (promise [meta]
-    (ref js (stateful [(or meta.pre "")]))
-    (ref read-all (promise.all (meta.files.map (promise
-      (when (github-actors.read source-repo path) [data]
-        (js.push! data) (resolve-promise)
-      )
-    ))))
-    (when read-all
-      (js.push! (or meta.post ""))
-      (ref contents (js.join "\n"))
-      (when (write target-repo (+ "ext/" meta.target) contents comment)
-        (resolve-promise)
-      )
-    )
-  ))
-  (ref grunt-copy (promise [files]
-    (ref copy-all (promise.all (files.map (promise [item]
-      (ref path (or item.src item))
-      (when (github-actors.read source-repo path) [contents]
-        (ref path (+ "ext/" (last (path.split "/"))))
-        (when (write target-repo path contents comment)  (resolve-promise))
-      )
-    ))))
-  ))
-  (ref grunt (promise [target-repo source-project]
-    (ref source-repo (github-actors.repo target-repo source-project))
-    (ref comment (+ "from " source-project))
-    (ref sources [[
-      {repo: source-project files: [[
-        {include: '/^Gruntfile.js$/' single-level: true}
-      ]]}
-    ]])
-    (when (retriever target-repo sources actors) [store]
-      (ref grunt-config ((Function
-        (+ "var module={};" (last store.js) "return module.exports"))))
-      (grunt-config {
-        loadNpmTasks: (lambda) registerTask: (lambda)
-        initConfig: (lambda [config-data]
-          (ref grunt-processor {
-            build: grunt-build
-            copy:  grunt-copy
-          })
-          (when (update target-repo)
-            (resolve-promise grunt-processor config-data)
-          )
-        )
-      })
-    )
-  ))
-  (ref build-github (lambda [target-repo]
-    (ref sources [[
-      {repo: "michael/github" files: [[
-        {include: "/src/github.js$/"}
-      ]]}
-    ]])
-    (return (build target-repo "github" sources))
-  ))
-  (ref loaded (net.script "ext/github.js" (lambda (return window.Github))))
-  ## (promise.failed loaded (export {build}))
-  (when loaded
-    (export {
-      branch list-all> list-dir> cdn-uri build builder repo> read> write>
-      build-github retriever grunt preprocessors session> projects>
-      move: (promise.callback [repo from to]
-        (repo.github.move repo.branch from to callback)
-      )
-      delete: (promise.callback [repo path]
-        (repo.github.remove repo.branch path script callback)
-      )
-    })
-  )
+  (export github)
 )

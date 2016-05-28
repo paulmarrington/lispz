@@ -3,13 +3,11 @@ This is an unofficial mirror of the JavaScript version of the google-diff-match-
 
 https://github.com/tanaka-de-silva/google-diff-match-patch-js
 ###
-(using [net github]
-  (ref build (lambda [target-repo built=>]
-    (return (github.build target-repo "diff_match_patch" [[
-      {repo: "tanaka-de-silva/google-diff-match-patch-js" files: [[
-        {base: "" include: '/^diff_match_patch_uncompressed.js$/'}
-      ]]}
-    ]]))
-  ))
-  (lispz.script "ext/diff_match_patch.js" (lambda (export { build })))
-)
+(ref build (lambda [target-repo built=>] (using [code-builder]
+  (return (code-builder target-repo "diff_match_patch" [[
+    {repo: "tanaka-de-silva/google-diff-match-patch-js" files: [[
+      {base: "" include: '/^diff_match_patch_uncompressed.js$/'}
+    ]]}
+  ]]))
+)))
+(lispz.script "ext/diff_match_patch.js" (lambda (export { build })))

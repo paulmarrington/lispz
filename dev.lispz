@@ -1,4 +1,4 @@
-(using [github riot list]
+(using [github riot list dict]
   (ref manifest (lambda
     (ref text (stateful ["CACHE MANIFEST"]))
     (lispz.manifest.forEach (lambda [uri] (text.push! uri)))
@@ -7,60 +7,56 @@
   ))
   ### Package Lispz for distribution ###
   (ref package (lambda [repo-name]
-    (when (github.repo> repo-name) [repo] (package-repo repo))
+    (package-repo (github.fs repo-name (first (repo-name.split "/"))))
   ))
-  (ref package-repo (lambda [lispz-repo]
-    (ref read-file (github.read>.bind null lispz-repo))
+  (ref package-repo (lambda [repo]
+    (ref group (lambda [tree]
+      (ref files (Object.keys tree))
+      (ref modules (files.filter (=>
+        (is "lispz" (last (@.split ".")))
+      )))
+      (ref riots   (files.filter (=>
+        (is "riot.html" ((slice (@.split ".") -2).join "."))
+      )))
 
-    (ref group (lambda [files]
-      (ref modules (stateful [])) (ref riots (stateful []))
-      (files.forEach (lambda [entry] (cond (is entry.type "file") (do
-        (ref parts (entry.name.split "."))
-        (cond
-          (is (last parts) "lispz")                  (modules.push! (first parts))
-          (is ((slice parts -2).join ".") "riot.html") (riots.push! (first parts))
-        )
-      ))))
-      (promise.resolved { modules riots })
+      (promise.resolved {
+        modules:  (modules.map (=> ((slice (@.split ".") 0 -1).join ".")))
+        riots:    (riots.map   (=> ((slice (@.split ".") 0 -2).join ".")))
+      })
     ))
     (ref stringify (=>
       (return ((@.replace '/[\\"]/g' "\\$&").replace '/\n/g' "\\n"))
     ))
     (ref load-module (lambda [name]
       (ref uri (+ name ".lispz"))
-      (return (when (read-file uri) [text]
-        (return [["\nlispz_modules['" name "']=\"" (stringify text) "\"\n"]])
-      ))
+      (when (repo.read> uri) [text]
+        [["\nlispz_modules['" name "']=\"" (stringify text) "\"\n"]]
+      )
     ))
     (ref build-modules (lambda [names]
       (return (promise.all (names.map load-module)))
     ))
 
     (ref load-riot (lambda [name]
-      (return (when (read-file (+ name ".riot.html")) [text]
-        (return [["\n\n/*" name "*/\n\nlispz.tags['" name "']=\""
-          (stringify text) "\"\n"]])
-      ))
+      (when (repo.read> (+ name ".riot.html")) [text]
+        [["\n\n/*" name "*/\n\nlispz.tags['" name "']=\""
+          (stringify text) "\"\n"]]
+      )
     ))
     (ref build-riots (lambda [names]
       (return (promise.all (names.map load-riot)))
     ))
 
-    (github.branch lispz-repo lispz-repo.username)
-    (ref lispz-js    (read-file "lispz.js"))
-    (ref listing     (github.list-dir> lispz-repo ""))
-    (ref groups      (when listing (group @)))
+    (ref lispz-js    (repo.read> "lispz.js"))
+    (ref groups      (when repo.entries> (group @)))
     (ref modules     (when groups  (build-modules @.modules)))
     (ref riots       (when groups  (build-riots @.riots)))
 
-    (ref all-loaded  (promise.all modules lispz-js riots))
-
-    (return (when all-loaded [sources]
+    (when (promise.all modules lispz-js riots) [sources]
       (ref  code  (list.flatten [["window.lispz_modules={}\n" sources]]))
-      (return (github.write> lispz-repo "ext/lispz.js"
-        (code.join "") "lispz release code")
+      (return (repo.write> "ext/lispz.js" (code.join "") "lispz release code")
       )
-    ))
+    )
   ))
 
   ### Distribution ###
