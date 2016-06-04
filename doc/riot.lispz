@@ -1,0 +1,258 @@
+### spec: Libraries >> RIOT
+A React-like, user interface library
+
+[Lispz RIOT Support](riot.spec.lispz)
+http://riotjs.com/
+https://github.com/riot/riot
+###
+### spec: Riot
+
+[Riot](http://riotjs.com) is a tiny UI library then provides the best of Web components (polymer) and react in a package 15% of the size.
+
+Riot, like web components, each file (of type .riot.html) is a html fragment that also includes style and script elements. Like web components it is based on creating custom tags. This provides clean and readable HTML. Custom tags makes the HTML more readable.
+
+The *panel* tags is a Riot wrapper around bootstrap panels.
+
+Riot, like React it works with a virtual DOM and only updates changes to the real DOM. Like React it compiles to JavaScript. It can be supported on older browsers.
+
+Small tight API that provides all needed web component functionality for reactive views, events and routing.
+###
+
+### spec: Riot >> Structure of a RIOT/Lispz Program
+
+Riot components have the extension *.riot.html*. They are loaded from the HTML file or from another component. In the HTML, give a custom tag the class or *riot* and it will load a component file of the same name - including any other tags in the file. The html below will load *bootstrap.riot.html* and *code-editor.riot.html*, while *page-content* does not need a riot class as it is defined withing *bootstrap*.
+
+    <bootstrap class=riot>
+      <page-content fluid=true>
+        <div class=col-sm-6>
+          <code-editor class=riot name=literate height=48% />
+        </div>
+        <div class=col-sm-6>
+          <code-editor class=riot name=code height=48% />
+        </div>
+      </page-content>
+    </bootstrap>
+
+Riot uses plain JavaScript inside {} as a templating solution. The *opts* dictionary matches the attributes when the custom tag is referenced. Any inner tag with a *name* or *id* attribute can be referenced by the same name. Each component has a unique *_id*.
+
+Styles are global (unlike *true* web components). This is easily overcome using explicit name-spacing as above.
+###
+
+### spec: Riot >> Using other languages
+
+Scripting can be any language of choice that runs on the browser. JavaScript, Lispz, Es6 (with babel) and CoffeeScript are available out-of-the-box. For the latter two you will need to load the compiler by *(using babel coffeescript)* in the startup code. Other languages can be added as long as they compile code on the browser.
+
+    (set! riot.parsers.js.lispz (lambda [source]
+      (lispz.compile source "riot-tags").join "\n")
+    ))
+###
+(using  [jquery net dict dom]
+  ## we need to update the tags cache
+  (stateful.morph! lispz.tags)
+  ### spec: RIOT >> Get Tag Definition by Name
+  ###
+  (ref tag-by-name (pull lispz.tags))
+
+  ## has side-effects as riot caches compile results
+  (ref compile (=> (riot.compile.apply riot ``(*arguments 0))))
+
+  (ref processed-tags (stateful {}))
+  (ref processed-tag  (pull processed-tags))
+
+  (add-execution-context-logger "riot.load" (lambda [context error-args]
+    (return (+ "tag" context.name " from " context.uri))
+  ))
+  (ref child-tags (lambda [html]
+    (ref raw-tags (html.match '/<[^>\s]+[^>]*?class=[\'\"]riot[\s\'\"]/g'))
+    ((or raw-tags [[]]).map (=> (last ('/^<(\S*)/'.exec @))))
+  ))
+  ### spec: RIOT >> load
+    Returns true if tag has been previously loaded. This
+    allows the caller to decided whether to reuse or
+    reinstate.
+  ###
+  (ref load (promise [name uri] (execution-context {context: "riot.load" name uri}
+    (ref usings (lambda [tags]
+      (ref new-tags (tags.filter (=>
+        (cond @.length (do
+          (ref processed (processed-tag @))
+          (processed-tags.update! @ true)
+          (not processed)
+        ) (else) false)
+      )))
+      (ref loaded (promise.all (new-tags.map (=>
+        (return (load @))
+      ))))
+      (when loaded (resolve-promise))
+    ))
+
+    (ref compile-and-process (lambda [tag-html]
+      (usings (child-tags (compile tag-html)))
+    ))
+
+    (ref retrieve-and-compile (lambda
+      (ref url
+        (or uri (+ (name.toLowerCase) ".riot.html"))
+      )
+      (when (net.http-get url) [tag-html]
+        (lispz.tags.update! name tag-html)
+        (compile-and-process tag-html)
+      )
+    ))
+
+    (ref tag-def (tag-by-name name))
+    (cond
+      tag-def   (compile-and-process tag-def)
+      (else)    (retrieve-and-compile)
+    )
+  )))
+
+  (ref build (lambda [target-repo] (using [code-builder]
+    (return (code-builder target-repo "riot" [[
+      {repo: "riot/riot" files: [[
+        {include: '/^riot\+compiler.js$/'}
+      ]]}
+    ]]))
+  )))
+  ### spec: RIOT >> mount
+  ###
+  (ref mount (=> (riot.mount.apply riot arguments)))
+
+  ### spec: RIOT >> inject
+    Load a named tag if needed, inject an instance into the DOM then mount it.
+    The name can be the name of the file followed by the specific element.
+  ###
+  (ref inject (promise [name-path attributes parent-selector]
+    (ref parts (name-path.split "/"))
+    (ref name  (last parts))
+    (ref file (first parts))
+    (ref exists (tag-by-name name))
+    (when (load name (+ file ".riot.html"))
+      (cond exists (do
+        (ref tags (riot.mount name))
+        (resolve-promise (first tags))
+      ) (else) (do
+        (ref element (dom.element name attributes))
+        (ref parent (or parent-selector "body"))
+        (dom.append! parent element)
+        (ref tags (riot.mount element name))
+        (resolve-promise (first tags))
+      ))
+    )
+  ))
+
+  ### spec: riot >> Trigger Display Changes
+    Given a component context called *tag*, it is possible to change context
+    data using the state component.
+
+      <script type=text/lispz>
+        (ref tag (stateful.morph this))
+        ...
+        (ref async-set-title (lambda [title]
+          (tag.update! {title})
+          (tag.update)
+        ))
+      </script>
+
+    For the confused, *update!* changes entries in the stateful context,
+    while *update* is a riot function to update the display for bound
+    data changes. Continue to use this approach where the data has logic
+    around the change, but for the common situation where data is changed
+    at the end of the logic, use *riot.update!*.
+
+      (using [riot]
+        ...
+        (ref async-set-titles (lambda [title footer]
+          (riot.update! tag {title footer})
+        ))
+      )
+  ###
+  (ref update! (lambda [tag changes]
+    (tag.update! changes)
+    (tag.update) ## repaint
+  ))
+
+  ### spec: riot >> Tag support
+    Riot uses _this_ as context for codes within a tag. Also, when errors are
+    found it throws excepts that are difficult to track. Lispz provides help
+    with a riot-tag macro which invokes _using_,  provides a _tag_ reference
+    and wraps the code in a _try/catch_ to provide improved error reporting.
+
+      @TODO example
+  ###
+  (add-execution-context-logger "riot" (lambda [context error-args]
+    (return (+ "for <" context.node "/>"))
+  ))
+  (macro riot-tag [*body]
+    (ref tag (stateful.morph! this))
+    (execution-context {context: "riot" node: tag.root.nodeName tag}
+      *body
+    )
+  )
+  ## modules must be on mount or mounting will happen before trigger is set
+  (macro mount-tag-using [modules *body] (tag.on "mount" (=> (using modules
+    (execution-context {context: "riot" node: tag.root.nodeName tag}
+      *body
+    )
+  ))))
+
+  ### spec: async >> Events
+    Events follow [the observer pattern](https://en.wikipedia.org/wiki/Observer_pattern). Lispz provides access to the light-weight version in Riot. If you use Riot for UI components, the custom tags are always observers. You don't need to use riot to make use of events. You can either create an observable or make any object in the system observable.
+
+        (using [riot]
+          (ref observable-1 (riot.observable))
+          (ref element (get-my-element))
+          (riot.observable element)
+        )
+
+    Once that is out of the way, tell the observable what to do if it receives an event either once or every time.
+
+        (observable-1.on "event-name" (lambda [params...] what to do...))
+        (element.one "focus" (lambda [contents] (element.set contents)))
+
+    One observable can have many listeners for the same or different events. Use 'trigger' to wake an observable.
+
+        (observable-1.trigger "event-name" param1 param2)
+
+    Finally there needs to be a way to stop listening.
+
+        (observable-1.off "event-name" event-function-reference) ## stops one listener
+        (observable-1.off "event-name") ## stops all listeners to an event
+        (observable-1.off "*")          ## stops all listeners to all events for observable
+
+    ## Benefits
+    1. Decouples the code to whatever extent is necessary.
+    2. Associates code and data (such as the DOM).
+    3. Allows multiple invocations
+
+    ## Disadvantages
+    1. Too convoluted to use as an easy replacement for callbacks
+    2. One-way communication
+    3. No way of knowing if event was processed as expected.
+  ###
+
+  (ref loaded (net.script "ext/riot.js" (lambda (return window.riot))))
+  (promise.failed loaded (export {build}))
+  (when loaded (using [compilers]
+    (stateful.morph! riot.parsers.js)
+    (add-execution-context-logger "riot.compile" (lambda [context error-args]
+      (return (+ context.url " -- source: " context.source))
+    ))
+    (riot.parsers.js.update! {lispz:
+      (lambda [source options url]
+        (execution-context { context: "riot.compile" url options source }
+          (compilers.lispz.compile source "riot-tags")
+        )
+      )
+    })
+    (ref riot-elements (slice (document.getElementsByClassName "riot")))
+    (ref load-all (promise.all (riot-elements.map (lambda [element]
+      (ref name (element.tagName.toLowerCase))
+      (return (load name (element.getAttribute "uri")))
+    ))))
+    (when load-all
+      (riot.mount "*")
+      (export {build compile load mount inject update! child-tags tag-by-name})
+    )
+  ))
+)
