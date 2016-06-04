@@ -162,8 +162,7 @@ To access external modules, wrap your code in 'using'. Data and functions export
   ((lambda contain#args *contain#body) contain#args)
 )
 
-### Update log-execution-context to be more helpful ###
-(using [fp] (using [stateful log_execution_context]
+(using [fp] (using [stateful]
   ### ref: (once function) ## lazy evaluation
     e.g. (ref read-it (once (promise ...))) ... (when (read-it) ...)
   ###
@@ -178,6 +177,5 @@ To access external modules, wrap your code in 'using'. Data and functions export
   ))
   (macro once [*body] (lispz.globals.#once (=> *body)))
 
-  (lispz.update! { log_execution_context })
   (using [promise counters] (export {}))
 ))
