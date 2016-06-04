@@ -49,9 +49,9 @@
     )
     (it "1.1.6  Conditional Expressions and Predicates" =>
       (ref abs (lambda [x]
-        (cond ((> x 0) x)
-              ((= x 0) 0)
-              ((< x 0) (- x))
+        (cond
+          (< x 0) (- x)
+          (else)  x
         )
       ))
 
@@ -59,19 +59,31 @@
       ((expect (abs(22))).toBe 22)
       ((expect (abs(0))).toBe 0)
 
-      (ref abs2 (lambda [x]
-        (cond (< x 0) -x
-              (else)   x
-        )
-      ))
-
-      ((expect (abs2(-33))).toBe 33)
-      ((expect (abs2(22))).toBe 22)
-      ((expect (abs2(0))).toBe 0)
-
       (ref x 7)
       (expect (and (> x 5) (< x 10)).toBeTruthy)
       (ref x 111)
       (expect (and (> x 5) (< x 10)).toBeFalsy)
     )
+  (it "1.1.7 Newton's Square Root" =>
+    (ref sqrt-iter [guess x]
+      (cond
+        (good-enough? guess x)  guess
+        (else)  (sqrt-iter (improve guess x) x)
+      )
+    )
+    (ref improve [guess x]
+      (average guess (/ x guess))
+    )
+    (ref average [x y] (/ (+ x y) 2))
+
+    (ref good-enough? [guess x]
+      (< (abs (- (square guess) x) 0.001))
+    )
+    (ref sqrt [x] (sqrt-iter 1.0 x))
+
+    (expect ((sqrt 9).toBeCloseTo 3))
+    (expect ((sqrt (+ 100 37)).toBeCloseTo 11.7))
+    (expect (+ (sqrt 2) (sqrt 3)).toBeCloseTo 1.774)
+    (expect (square (sqrt 1000)).toBeCloseTo(1000))
+  )
 )

@@ -1,0 +1,15 @@
+### spec: Libraries >> source-map
+https://github.com/mozilla/source-map
+###
+  (ref build (lambda [target-repo]
+    (using [code-builder]
+      (return (code-builder target-repo "source-map" [[
+        {repo: "mozilla/source-map" files: [[
+          {base: "dist" include: '/source-map.js$/'}
+        ]]}
+      ]]))
+    )
+  ))
+
+  ## loaded by lispz.js as it is needed early on
+  (=> (export { build }))
