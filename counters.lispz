@@ -6,11 +6,26 @@
 
 (global counter! (lambda
   (ref count (stateful {to: 0}))
-  (return (lambda
+  (lambda
     (count.update! "to" (+ count.to 1))
     (return count.to)
-  ))
+  )
 ))
+### (unique base-string) ## used to make unique strings from one base
+  (lambda (ref unique-tag (unique! "tag") (lambda (unique-tag)))
+###
+(global unique! (lambda [base]
+  (ref counter (counter!))
+  (lambda
+    (ref uid (counter))
+    (cond
+      (is uid 1)  base
+      (< uid 10)  (+ base "-0" uid)
+      (else)      (+ base "-" uid)
+    )
+  )
+))
+
 (global countdown! (lambda [from by]
   (ref count (stateful {from}))
   (return (lambda []
