@@ -17,7 +17,7 @@
     ))
   )
 ###
-(using [net dict]
+(using [net dict dom]
 
   ### spec: Retrieve repository details
     (it "will include the full name of the repo" (lambda [done]
@@ -133,7 +133,7 @@
   ###
   (ref create> (lambda [repo branch path contents message] (when repo
     (ref url (+ "repos/" @.full_name "/contents/" path))
-    (ref options { branch message content: (base64 contents) })
+    (ref options { branch message content: (net.base64 contents) })
     (request> "PUT" url options)
   )))
 
@@ -157,7 +157,7 @@
   ###
   (ref update> (lambda [repo branch path sha contents message] (when repo
     (ref url (+ "repos/" @.full_name "/contents/" path))
-    (ref options { branch message sha content: (base64 contents) })
+    (ref options { branch message sha content: (net.base64 contents) })
     (request> "PUT" url options)
   )))
 
@@ -310,10 +310,6 @@
       )
     ))
     (ref fs { name entries> read> write> branch: (or branch "master")})
-  ))
-
-  (ref base64 (lambda [content]
-    (btoa (content.replace '/[^\0-\xFF]/', " "))
   ))
 
   (ref github {
