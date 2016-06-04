@@ -63,7 +63,7 @@ There is often need to merge multiple dictionaries together to create a new comb
   (cond list (list.forEach (lambda [item]
     (dictionary.update! (get item key) item)
   )))
-  (return dictionary)
+  (return (merge dictionary))
 ))
 
 ### spec: lists >> dict >> For Each Entry...
@@ -79,6 +79,17 @@ There is often need to merge multiple dictionaries together to create a new comb
   (return ((Object.keys dict).map (lambda [k] (return (action=> k (get dict k))))))
 ))
 
+### ref: (list.set array) ## returns a dictionary of key=key pairs
+    e.g. (list.set [[1 1 2 2]]) ## ==> { 1:1 2:2 }
+###
+(ref set (lambda [array]
+  (ref dictionary (stateful))
+  (cond array (array.forEach (lambda [item]
+    (dictionary.update! item item)
+  )))
+  (merge dictionary)
+))
+
 (ref filter (lambda [dict action=>]
   (return ((Object.keys dict).filter (lambda [k] (return (action=> k (get dict k))))))
 ))
@@ -89,4 +100,4 @@ There is often need to merge multiple dictionaries together to create a new comb
   (return (#join '' '(' test ' in ' against ')'))
 ))
 
-(export {merge from-list insert! for-each map filter contains})
+(export { merge from-list insert! for-each map filter contains set })
