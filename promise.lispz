@@ -20,7 +20,7 @@
           (else) (resolve-promise result)
     )
   ))
-  *body
+  (catch-errors (do *body) (catch-promise error))
 ))
 (global promise.resolved (promise [pact] (resolve-promise pact)))
 
