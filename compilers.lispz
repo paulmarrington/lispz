@@ -9,24 +9,16 @@
   (compilers.update! source-type { ext compile })
 ))
 
-### ref: (ref js-promise (compilers.source-type.compile source file-name))
-  e.g. (when (compilers.lispz.compile "(debug \"Hi\")" "test")) [js] ...)
+### ref: (compilers.run js)
+  e.g. (compilers.run (compilers.lispz.compile source))
 ###
-(using [log_execution_context]
-  ### ref: (compilers.run js)
-    e.g. (compilers.run (compilers.lispz.compile source))
-  ###
-  (ref run (lambda [js]
-    (log_execution_context.clear)
-    ((new Function js))
-  ))
+(ref run (lambda [js] ((new Function js))))
 
-  (ref compilers (stateful {
-    run add
+(ref compilers (stateful {
+  run add
 
-    lispz: { compile: (lambda [source name]
-      (lispz.compile (+ source "\n") name)
-    ) ext: "js" }
-  }))
-  (export compilers)
-)
+  lispz: { compile: (lambda [source name]
+    (lispz.compile (+ source "\n") name)
+  ) ext: "js" }
+}))
+(export compilers)

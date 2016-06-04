@@ -1,13 +1,7 @@
 var lispz = function() {
   if (!window.lispz_modules) window.lispz_modules = {}
   var logger = window.console.log,
-  log = function() { logger.apply(console, arguments) },
-  log_execution_context = function() { lispz.log(arguments) },
-  execution_contexts = {}, execution_context = [], references = [{}],
-  execution_context_push = function(context) {
-    context.location = location
-    execution_context.push(context)
-  },
+  log = function() { logger.apply(console, arguments) }, references = [{}],
   delims = "(){}[],n".split(''), // characters that are not space separated atoms
   not_delims = delims.join("\\"), delims = delims.join('|\\'),
   stringRE =
@@ -180,34 +174,22 @@ var lispz = function() {
     return map_ast_to_js(parts, ast_to_js(sep))
   },
   run_ast = function(ast) {
-    var context = { context:"run", location: location }
-    execution_context_push(context)
-    var results = ast.map(function(code) {
-      return eval(context.code = ast_to_js(code))
-    })
-    execution_context.pop()
-    return results
+    return ast.map(function(code) { return eval(ast_to_js(code)) })
   },
   immediate_to_js = function() {
-    execution_context_push({ context: "immediate", args: arguments })
     var lspz = run_ast(slice(arguments)).join("\n")
     var js = ast_to_js(parse_to_ast(lspz))
-    execution_context.pop()
     return js
   },
   immediate_from_ast = function() {
-    execution_context_push({ context: "#ast", args: arguments })
     var js = ast_to_js(ast_to_ast.apply(this, arguments))
-    execution_context.pop()
     return js
   },
   ast_to_ast = function(func, args) {
-    execution_context_push({ context: "#ast", args: arguments })
     args = slice(arguments, 1)
     var actor = lispz[func] ? lispz[func] : lispz.globals[func]
     if (! actor) throw { message: "No immediate function", name: func}
     var ast = actor.apply(lispz, args)
-    execution_context.pop()
     return ast
   },
   // processing pairs of list elements
@@ -312,16 +294,8 @@ var lispz = function() {
   compile = function(source, name) {
     var last_module = location
     location = { name:name || "", line:1 }
-    var context = {
-      context: "compile",
-      location: location,
-      previous: last_module,
-      source:   source
-    }
-    execution_context_push(context)
     var ast = parse_to_ast(source)
     location = last_module
-    execution_context.pop()
 
     var body, vars = vars_to_js(function(){ body = ast.map(ast_to_js) })
     body.unshift(vars)
@@ -349,18 +323,13 @@ var lispz = function() {
     req.send(body)
   },
   module_init = function(uri) {
-    var state = { context: "module", uri: uri, state: "compiling Lispz" }
-    execution_context_push(state)
     var js = compile(lispz_modules[uri], uri) + "//# sourceURL=" + uri + ".lispz.js\n"
-    state.state = "compiling JavaScript"
     init_func = new Function('__module_ready__', js)
-    state.state = "initialising"
     init_func(function(exports) {
       cache[uri.split('/').pop()] = cache[uri] = exports
       var on_readies = pending_module[uri]
       delete pending_module[uri]
       on_readies.forEach(function(call_module) {call_module(exports)})
-      execution_context.pop()
     })
   },
   load_one = function(uri, on_ready) {
@@ -368,12 +337,10 @@ var lispz = function() {
     if (pending_module[uri]) return pending_module[uri].push(on_ready)
     pending_module[uri] = [on_ready]; var js = ""
     if (lispz_modules[uri]) return module_init(uri)
-    execution_context_push({ context: "load", uri: uri })
     http_request(uri + ".lispz", 'GET', function(err, response_text) {
       if (err) throw err
       var name = uri.split('/').pop()
       lispz_modules[uri] = response_text
-      execution_context.pop()
       module_init(uri)
     })
   },
@@ -420,15 +387,6 @@ var lispz = function() {
     el.addEventListener("error", function(evt) { console.log(evt); when_loaded(evt) })
     el.setAttribute("src", lispz_base_path+uri)
   }
-  window.onerror = function(msg, url, line, column, error) {
-    console.debug(arguments)
-    if (!execution_context.length) return true;
-    var context = execution_context
-    execution_context = []
-    var name = context[0].name
-    lispz.log_execution_context(context, arguments)
-    return true
-  }
   window.addEventListener("error", window.onerror)
   other_window_onload = window.onload
   window.onload = function() {
@@ -453,8 +411,6 @@ var lispz = function() {
         var end_run = function() {
           if (to_run.length) {
             to_run.forEach(function(script) {
-              execution_context = []
-              execution_context_push({ context: "script", script: script })
               run("script", script.textContent)
             })
           }
@@ -485,11 +441,8 @@ var lispz = function() {
            macros: macros, cache: cache, http_request: http_request,
            clone: clone, manifest: manifest, script: script, css: css,
            synonyms: synonyms, globals: globals, tags: {}, slice: slice,
-           location: location, execution_contexts: execution_contexts,
-           path_base: lispz_base_path, set_debug_mode: set_debug_mode, log: log,
-           execution_context: execution_context, empty_words: empty_words,
-           add_reference: add_reference,
-           log_execution_context: log_execution_context, reload: reload,
-           execution_context_push: execution_context_push, base64, data_uri
+           location: location, path_base: lispz_base_path,
+           set_debug_mode: set_debug_mode, log: log, empty_words: empty_words,
+           add_reference: add_reference, reload: reload, base64, data_uri
           }
 }()

@@ -17,9 +17,6 @@ https://github.com/riot/riot
   (ref processed-tags (stateful {}))
   (ref processed-tag  (pull processed-tags))
 
-  (add-execution-context-logger "riot.load" (lambda [context error-args]
-    (return (+ "tag" context.name " from " context.uri))
-  ))
   (ref child-tags (lambda [html-object]
     (ref html (or html-object.html html-object))
     (ref raw-tags (html.match '/<[^>\s]+[^>]*?class=[\'\"]?riot[\s\'\">]/g'))
@@ -42,7 +39,7 @@ https://github.com/riot/riot
     allows the caller to decided whether to reuse or
     reinstate.
   ###
-  (ref load (promise [name uri] (execution-context {context: "riot.load" name uri}
+  (ref load (promise [name uri]
     (ref usings (lambda [tags]
       (ref new-tags (tags.filter (=>
         (cond @.length (do
@@ -92,7 +89,7 @@ https://github.com/riot/riot
       tag-def   (compile-and-process tag-def)
       (else)    (retrieve-and-compile)
     )
-  )))
+  ))
 
   (ref build (lambda [target-repo] (using [code-builder]
     (return (code-builder target-repo "riot" [[
@@ -134,39 +131,24 @@ https://github.com/riot/riot
     (tag.update! changes)
     (tag.update) ## repaint
   ))
-
-  ### spec: riot >> Tag support
-  ###
-  (add-execution-context-logger "riot" (lambda [context error-args]
-    (return (+ "for <" context.node "/>"))
-  ))
   (macro riot-tag [*body]
     (ref tag (stateful.morph! this))
-    (execution-context {context: "riot" node: tag.root.nodeName tag}
-      *body
-    )
+    *body
   )
   ## modules must be on mount or mounting will happen before trigger is set
-  (macro mount-tag-using [modules *body] (tag.on "mount" (=> (using modules
-    (execution-context {context: "riot" node: tag.root.nodeName tag}
-      *body
-    )
-  ))))
+  (macro mount-tag-using [modules *body]
+    (tag.on "mount" (=> (using modules *body)))
+  )
 
   (ref loaded (net.script "ext/riot.js" (lambda (return window.riot))))
   (promise.failed loaded (export {build}))
   (when loaded (using [compilers]
     (stateful.morph! riot.parsers.js)
-    (add-execution-context-logger "riot.compile" (lambda [context error-args]
-      (return (+ context.url " -- source: " context.source))
-    ))
     (riot.parsers.js.update! {lispz:
       (lambda [source options url]
-        (execution-context { context: "riot.compile" url options source }
-          (ref opts (or options url {}))
-          (ref name (+ (or url opts.url "tags") ".riot"))
-          (compilers.lispz.compile source name)
-        )
+        (ref opts (or options url {}))
+        (ref name (+ (or url opts.url "tags") ".riot"))
+        (compilers.lispz.compile source name)
       )
     })
     (ref riot-elements (slice (document.getElementsByClassName "riot")))
