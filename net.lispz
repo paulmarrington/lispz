@@ -55,8 +55,14 @@
     (+ "?" (kvp.join "&"))
   ))
 
+  ### ref: (ref encoded (base64 contents)) ## replaces >0xFF with space ###
+  (ref base64 lispz.base-64)
+
+  ### ref: (ref uri (data-uri (base64 contents))) ###
+  (ref data-uri lispz.data_uri)
+
   (export {
     script css http-get json-request external? url-actor url-path
-    dict-to-query http-request>
+    dict-to-query http-request> base64 data-uri
   })
 )
