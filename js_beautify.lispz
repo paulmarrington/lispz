@@ -15,5 +15,12 @@ https://github.com/beautify-web/js-beautify
   (ref loaded (net.script "ext/js-beautify.js" (lambda []
     (return window.js_beautify))
   ))
-  (when loaded [] (export {build}))
+  (ref beautify (stateful.morph! (lambda [js]
+    (ref no-refs (js.replace '/\/\*##\d+##\*\//g' ""))
+    (ref no-semis (no-refs.replace '/(;(\s*;)+)/g' ";"))
+    (ref beautified (window.js_beautify no-semis))
+    (beautified.replace '/^\s*\/\/#.*$/m' "")
+  )))
+  (beautify.update! { build })
+  (when loaded [] (export beautify))
 )

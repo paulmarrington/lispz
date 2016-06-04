@@ -44,15 +44,15 @@
         })
       ))
 
-      (using [js-beautify compilers]
+      (using [js_beautify compilers]
         (ref compiler (get compilers "lispz"))
         (message.listen "code-editor/run/compiled" (lambda [compiled]
-          (open "compiled" ".js" (window.js_beautify compiled.js))
+          (open "compiled" ".js" (js_beautify compiled.js))
         ))
         (ref compile-and-show (lambda [source]
           (clear_result_panels)
           (ref compiled (compiler.compile source "Scratchpad"))
-          (ref js (window.js_beautify (compiled.join ";")))
+          (ref js (js_beautify compiled))
           (open "compiled" ".js" js)
           js
         ))
