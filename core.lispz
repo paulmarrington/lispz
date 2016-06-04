@@ -28,6 +28,13 @@ To access external modules, wrap your code in 'using'. Data and functions export
 ### Modules must export to continue processing ###
 (macro export [exports] (#join '' '__module_ready__(' exports ')'))
 
+### ref: (try actions error) ## error has error reference set
+    e.g. (try (do *body) (console.log error))
+###
+(macro catch-errors [actions on-error]
+  (#join '' 'try{' actions '}catch(error){' on-error '}')
+)
+
 ### spec: developer >> debug
   `(debug)` is a development helper macro. It will print a stack trace
   and the contents of any parameters on the console. If you left-align it
@@ -50,7 +57,7 @@ To access external modules, wrap your code in 'using'. Data and functions export
 
         (lambda [type rest] (console.log type "=" (*arguments 1)))
 ###
-(macro *arguments [from] (lispz.slice.call arguments from))
+(macro *arguments [from] (lispz.slice arguments from))
 
 ### spec: basic >> References
   @TODO
