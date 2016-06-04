@@ -9,14 +9,6 @@
   (compilers.update! source-type { ext compile })
 ))
 
-### ref: (compilers.to-string js)
-  e.g. (compilers.to-string ["var a = 1" "console.log(a)"])
-###
-(ref to-string (lambda [js]
-  (ref array (cond (instance-of Array js) js (else) [js]))
-  (array.join ";\n")
-))
-
 ### ref: (ref js-promise (compilers.source-type.compile source file-name))
   e.g. (when (compilers.lispz.compile "(debug \"Hi\")" "test")) [js] ...)
 ###
@@ -26,11 +18,11 @@
   ###
   (ref run (lambda [js]
     (log_execution_context.clear)
-    (eval (to-string js))
+    ((new Function js))
   ))
-  
+
   (ref compilers (stateful {
-    to-string run add
+    run add
 
     lispz: { compile: (lambda [source name]
       (lispz.compile (+ source "\n") name)
