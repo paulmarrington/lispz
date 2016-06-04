@@ -469,9 +469,7 @@ https://github.com/codemirror/CodeMirror
 
     (message.send "code-editor/run/prepare" { source })
     (ref js (compiler.compile source ))
-    (message.send "code-editor/run/compiled" {
-      source js: (compilers.to-string js)
-    })
+    (message.send "code-editor/run/compiled" { source js })
     (compilers.run js)
   ))
   ### spec: codemirror >> Compiling Code
