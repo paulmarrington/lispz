@@ -1,7 +1,7 @@
 <code-editor>
   <panel height={ opts.height } heading={ heading }
       menu={ menu } owner={ _riot_id }>
-      <yield to=buttons></yield>
+      <yield to=buttons><yield from=buttons></yield></yield>
   </panel>
   <style>
     code-editor .CodeMirror {
