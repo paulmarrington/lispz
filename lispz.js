@@ -12,7 +12,7 @@ var lispz = function() {
   opens = new Set("({["), closes = new Set(")}]"), ast_to_js,
   location = {line:1, name:"boot"}, globals = {}, load_index = 0,
   synonyms = {and:'&&', or:'||', is:'===', isnt:'!==', "=>": "lambda"},
-  javascript = "", source_map,
+  javascript = "",
   slice = function(list, from, to) {
     var line = list.line
     var sliced = [].slice.call(list, from, to)
@@ -283,13 +283,13 @@ var lispz = function() {
         source_map.addMapping({
           source:    name,
           // generated line + 1 for base 1, 2 for function definition
-          generated: { line: line_number + 3,  column: 0 },
-          original:  { line: +match[2],        column: column }
+          generated: { line: line_number + 2,  column: column },
+          original:  { line: +match[2],        column: 0 }
         })
       }
     })
     var url = data_uri(base64(source_map.toString()))
-    return js + "\n//# sourceMappingURL=" + url + "\n"
+    return js + "\n//# sourceMappingURL=" + url + "\n//# sourceURL=" + name + ".js\n"
   }
   compile = function(source, name) {
     var last_module = location
@@ -323,8 +323,8 @@ var lispz = function() {
     req.send(body)
   },
   module_init = function(uri) {
-    var js = compile(lispz_modules[uri], uri) + "//# sourceURL=" + uri + ".lispz.js\n"
-    init_func = new Function('__module_ready__', js)
+    var js = compile(lispz_modules[uri], uri)
+    init_func = eval('(function(__module_ready__){\n' + js + '\n})')
     init_func(function(exports) {
       cache[uri.split('/').pop()] = cache[uri] = exports
       var on_readies = pending_module[uri]

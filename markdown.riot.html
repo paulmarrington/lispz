@@ -12,7 +12,7 @@
       (mount-tag-using [markdown dom net message dict]
         (ref contents-area tag.tags.panel.body)
 
-        ## hamburget menu lists a history of pages followed
+        ## hamburger menu lists a history of pages followed
         (ref history (stateful))
         (ref address (+ tag._riot_id "/" markdown-menu-action))
         (message.listen  address (lambda [packet]
