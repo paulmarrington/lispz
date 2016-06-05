@@ -56,7 +56,7 @@
   ))
 
   ### ref: (ref encoded (base64 contents)) ## replaces >0xFF with space ###
-  (ref base64 lispz.base-64)
+  (ref base64 lispz.base64)
 
   ### ref: (ref uri (data-uri (base64 contents))) ###
   (ref data-uri lispz.data_uri)
