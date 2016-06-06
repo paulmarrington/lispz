@@ -50,8 +50,8 @@
     https://developer.github.com/v3/repos/#list-user-repositories
   ###
   (ref repos> (lambda [owner]
-    (get> (+ "users/" owner "/repos") {
-      type: "all" sort: "updated" direction: "desc"
+    (get> (cond owner (+ "users/" owner "/repos") (else) "user/repos") {
+      affiliation: "owner,collaborator" sort: "full-name"
     })
   ))
 
