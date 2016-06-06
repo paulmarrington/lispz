@@ -64,26 +64,35 @@
       (ref x 111)
       (expect (and (> x 5) (< x 10)).toBeFalsy)
     )
-  (it "1.1.7 Newton's Square Root" =>
-    (ref sqrt-iter [guess x]
-      (cond
-        (good-enough? guess x)  guess
-        (else)  (sqrt-iter (improve guess x) x)
+    (it "1.1.7 Newton's Square Root" =>
+      (ref sqrt-iter [guess x]
+        (cond
+          (good-enough? guess x)  guess
+          (else)  (sqrt-iter (improve guess x) x)
+        )
       )
-    )
-    (ref improve [guess x]
-      (average guess (/ x guess))
-    )
-    (ref average [x y] (/ (+ x y) 2))
+      (ref improve [guess x]
+        (average guess (/ x guess))
+      )
+      (ref average [x y] (/ (+ x y) 2))
 
-    (ref good-enough? [guess x]
-      (< (abs (- (square guess) x) 0.001))
-    )
-    (ref sqrt [x] (sqrt-iter 1.0 x))
+      (ref good-enough? [guess x]
+        (< (abs (- (square guess) x) 0.001))
+      )
+      (ref sqrt [x] (sqrt-iter 1.0 x))
 
-    (expect ((sqrt 9).toBeCloseTo 3))
-    (expect ((sqrt (+ 100 37)).toBeCloseTo 11.7))
-    (expect (+ (sqrt 2) (sqrt 3)).toBeCloseTo 1.774)
-    (expect (square (sqrt 1000)).toBeCloseTo(1000))
+      (expect ((sqrt 9).toBeCloseTo 3))
+      (expect ((sqrt (+ 100 37)).toBeCloseTo 11.7))
+      (expect (+ (sqrt 2) (sqrt 3)).toBeCloseTo 1.774)
+      (expect (square (sqrt 1000)).toBeCloseTo(1000))
+    )
+  )
+  (define "1.2 Procedures and Processes They Generate" =>
+    (it "1.2.1 Linear Recursion and Iteration" =>
+      (ref factorial (lambda [n]
+        (cond (= n 1) 1
+        (else) (* n (factorial (- n 1))))
+      ))
+    )
   )
 )
