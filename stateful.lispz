@@ -59,6 +59,18 @@
 ###
 
 (macro #set! [list index value] (#join '' list '[' index ']=' value ';'))
+(ref #merge! (lambda [target source]
+  (ref keys (Object.keys source))
+  (ref own-keys (keys.filter (=> (source.hasOwnProperty @))))
+  (own-keys.forEach (lambda [key]
+    (cond (and (target.hasOwnProperty key)
+    (instance-of Object (get source key)))
+      (#merge! (get target key) (get source key))
+    (else) ## either does not exist or in super
+      (#set! target key (get source key))
+    )
+  ))
+))
 
 (ref #morph! (lambda [obj]
   (cond
@@ -72,15 +84,15 @@
   (Object.defineProperties obj {
 
     update!: {value: (lambda [update value]
-      (ref context this)
+      (ref target this)
       (cond (is arguments.length 1)
-        ((Object.keys update).forEach (lambda [key]
-          (#set! context key (get update key))
-        ))
+        (#merge! target update)
+      (and (target.hasOwnProperty update) (instance-of Object value))
+        (#merge! target update value)
       (else)
-        (#set! context update value)
+        (#set! target update value)
       )
-      context
+      target
     )}
 
     delete!: { value: (lambda [to-delete] (delete (get this to-delete))) }
