@@ -37,10 +37,12 @@
 ###
 (ref contains (lambda [substr str] (return (isnt -1 (str .indexOf substr)))))
 
-### spec: lists >> sort
+### ref: (list.sort my-list) ## return a new list with items sorted
 ###
-(ref reverse (lambda [list]
-  (return ((slice list).reverse))
-))
+(ref sort (lambda [list] ((slice list).sort)))
 
-(export {flatten squash for-each contains reverse})
+### ref: (list.reverse my-list) ## return a new list with item order reversed
+###
+(ref reverse (lambda [list] ((slice list).reverse)))
+
+(export { flatten squash for-each contains reverse sort })
