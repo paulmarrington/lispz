@@ -59,6 +59,7 @@
 ###
 
 (macro #set! [list index value] (#join '' list '[' index ']=' value ';'))
+
 (ref #merge! (lambda [target source]
   (ref keys (Object.keys source))
   (ref own-keys (keys.filter (=> (source.hasOwnProperty @))))
@@ -88,7 +89,7 @@
       (cond (is arguments.length 1)
         (#merge! target update)
       (and (target.hasOwnProperty update) (instance-of Object value))
-        (#merge! target update value)
+        (#merge! (get target update) value)
       (else)
         (#set! target update value)
       )

@@ -116,7 +116,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
   )))
   ### spec: RIOT >> mount
   ###
-  (ref mount (=> (riot.mount.apply riot arguments)))
+  (ref mount (=> (riot.mount *arguments)))
 
   ### spec: RIOT >> inject
     Load a named tag if needed, inject an instance into the DOM then mount it.

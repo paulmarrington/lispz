@@ -21,7 +21,7 @@
     ))
   ))
 ###
-(export (lambda [] (ref functions (*arguments 0))
+(export (lambda [] (ref functions (*arguments))
   (ref link (lambda [arg func] (return (func arg))))
   (return (lambdas.reduce link null))
 ))

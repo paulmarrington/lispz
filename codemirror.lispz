@@ -318,7 +318,7 @@ https://github.com/codemirror/CodeMirror
     )
     auto_complete: (lambda [cm]
       (ref not-only (lambda
-        (ref result (CodeMirror.hint.anyword.apply null arguments))
+        (ref result (CodeMirror.hint.anyword arguments))
         (cond
           (isnt result.list.length 1) result
           (else) (do
