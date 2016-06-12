@@ -42,7 +42,7 @@ There is often need to merge multiple dictionaries together to create a new comb
     (ref big-dict (dict.merge dict-1 dict-2 dict-3))
 ###
 (ref merge (lambda [dictionaries]
-  (return (insert {} (*arguments 0)))
+  (return (insert {} (*arguments)))
 ))
 
 ### spec: lists >> dict >> Inserting One Dictionary in Another
@@ -51,7 +51,7 @@ There is often need to merge multiple dictionaries together to create a new comb
     (dict.insert! dict-1 dict-2 dict-3)      ## changes dict-1
 ###
 (ref insert! (lambda [target dictionaries]
-  (return (insert target (*arguments 0)))
+  (return (insert target (*arguments)))
 ))
 
 ### spec: lists >> dict >> Create a Dictionary from a List
@@ -76,7 +76,7 @@ There is often need to merge multiple dictionaries together to create a new comb
 ### spec: lists >> dict >> Morphing dictionary into an Array
 ###
 (ref map (lambda [dict action=>]
-  (return ((Object.keys dict).map (lambda [k] (return (action=> k (get dict k))))))
+  (return ((Object.keys dict).map (lambda [k] (action=> k (get dict k)))))
 ))
 
 ### ref: (list.set array) ## returns a dictionary of key=key pairs
