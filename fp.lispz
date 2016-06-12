@@ -74,5 +74,28 @@
   ###
   (global map-and-filter (compose lispz.globals.filter lispz.globals.map))
 
+  ### ref: (recurse function)
+      e.g. (ref sum (recursion [x y]
+             (cond (> y 0) (sum (+ x 1) (- x 1)) (else) x)
+           ))
+  ###
+  (global #recursion (lambda [context func]
+    (lambda
+        (ref args (*arguments))
+        (cond context.queue
+          (context.queue.push args)
+        (else)  (do
+          (context.update! { queue: [[args]]})
+          (#join '' 'while(' (ref next-args (context.queue.shift)) '){'
+            (context.update! { result: (func.apply null next-args)})
+          '}'))
+        )
+        context.result
+      )
+  ))
+  (macro recursion [?params *body]
+    (#recursion (stateful) (lambda ?params *body))
+  )
+
   (export [])
 )
