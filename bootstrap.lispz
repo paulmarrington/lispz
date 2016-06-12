@@ -1,14 +1,11 @@
 ### spec: Bootstrap
-The most popular HTML, CSS, and JavaScript framework for developing responsive, mobile first projects on the web.
+  The most popular HTML, CSS, and JavaScript framework for
+  developing responsive, mobile first projects on the web.
 
-  Bootstrap is a popular CSS framework open sourced by Twitter. It includes skins
-  so all bootstrap driven sites do not have to look alike. It provides support
-  for differing screen sizes and is relatively mobile friendly.
-
-http://getbootstrap.com
-https://github.com/twbs/bootstrap
+  http://getbootstrap.com
+  https://github.com/twbs/bootstrap
 ###
-(using [net cdnjs message]
+(using [net cdnjs message list]
   (ref bootswatch-themes [["cerulean" "cosmo" "cyborg" "darkly" "flatly"
     "journal" "lumen" "paper" "readable" "sandstone" "simplex" "slate"
     "spacelab" "superhero" "united" "yeti" "default"]])
@@ -68,60 +65,38 @@ https://github.com/twbs/bootstrap
       (resolve-promise (dom.scrape-form @.element))
     ))
   )))
+  ### ref: (bootstrap.path-to-tree path-list) ## ready for tree or menu
+    item is { divider: true disabled: true title header children: {} }
+    e.g. (bootstrap.path-to-tree ["a/b" "a/c" "d/e" "f"])
+  ###
+  (ref path-to-tree (lambda [path-list]
+    (ref paths ((list.sort path-list).map (=> (@.split "/"))))
+    (ref tree (stateful))
+    (list.for-each paths (lambda [path]
+      (ref level (lambda [branches]
+        (cond (> branches.length 1) (do
+          ## we are at a branch, recursive call to add more
+          (ref title 	 (first branches))
+          (ref sub-branch (level (rest branches)))
+          (ref children  (stateful))
+          (children.update! (second branches) sub-branch)
+          { title children }
+        )(else) ## at leaf - time to retrace the recursion
+          { title: (first branches) }
+        )
+      ))
+      (tree.update! (first path) (level path))
+    ))
+    tree
+  ))
+
   ### spec: Bootstrap >> loading
     We know that bootstrap has completed loading
     when we see _modal_ added to the list of
     JQuery functions.
   ###
   (when (net.script "ext/bootstrap.js" (=> (($).modal)))
-    (export { build themes modal> })
+    (export { build themes modal> path-to-tree })
   )
   (when-rejected (export { build }))
 )
-
-### spec: Bootstrap >> Bootstrap/RIOT/Lispz Combo
-  There is a difference of scope between bootstrap and riot.
-  [Bootstrap](http://getbootstrap.com/) is designed to be used page-wide.
-  Riot is a web component system where each component should be as independent as possible.
-  ###
-  ### spec: bootstrap >> Page Level Bootstrap
-
-  Any single page application that is going to use bootstrap to simplify the UI wraps the contents inside the body with a bootstrap tag. Use an inner page-content tag to allow for fluid layouts - those that change as the window changes size.
-
-      <body>
-        <bootstrap class=riot>
-          <page-content fluid=true>
-            ...
-          </page-content>
-        </bootstrap>
-      </body>
-
-  ###
-  ### spec: Bootstrap >> Bootstrap Themes
-
-  Bootstrap sites do not have to look alike. [Bootswatch](https://bootswatch.com/)
-  provides 16+ free themes, including ones that fit in with Metro, Polymer and Ubuntu:
-
-  > Default, Cerulean, Cosmo, Cyborg, Darkly, Flatly, Journal, Lumen, Paper, Readable,
-  > Sandstone, Simplex, Slate, Spacelab, Superhero, United, Yeti
-
-  To select a theme, send a message to _change-bootstrap-theme_ with the name of the theme
-  to change to. If you don't provide a theme name, a random one is chosen.
-
-  ###
-  ### spec: bootstrap >> Component Specific Bootstrap
-
-  Riot components can include a _style_ section.
-  If you preface all entries with the name of the component then you have
-  name-spaced your css.
-
-      <code-editor>
-        <panel height={ opts.height } heading={ heading } menu={ menu } owner={ _riot_id }>
-          <div name=wrapper class=wrapper></div>
-        </panel>
-        <style>
-          code-editor .wrapper {
-            ...
-          }
-      </code-editor>
-###

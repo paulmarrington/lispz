@@ -381,9 +381,11 @@
       (tag.on "update" (lambda [data]
         (cond (and opts.name tag.parent.children) (do
           (tag.update! {items: (get tag.parent.children opts.name "children")})
-          (cond (and tag.items tag.items.length)
-                (tag.update! {children: (dict.from-list tag.items "title")})
-          )
+          ## convert children into a dictionary if necessary
+          (tag.update! {children: (cond
+            (instance-of Array tag.items) (dict.from-list tag.items "title")
+            tag.items                     tag.items
+          )})
         ))
       ))
 

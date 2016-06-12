@@ -43,13 +43,19 @@ var lispz = function() {
     if (macros[func]) return macros[func].apply(lispz, params)
     func = ast_to_js(func)
     if (params[0] && params[0][0] === '.') func += ast_to_js(params.shift())
-    params = map_ast_to_js(params, ',').replace(/,\s*\./, ".")
-    if (func.startsWith("function(){")) {
-      func = "(" + func + ")"
+    if (params.length === 1 && params[0] === "arguments") {
+      var parts = func.split(".")
+      if (parts.length < 2 || /[\(\[\{]/.test(func)){
+        params = ".apply(this,arguments)"
+      } else {
+        var context = parts.slice(0, -1).join(".")
+        params = ".apply(" + context + ",arguments)"
+      }
+    } else {
+      params = "(" + map_ast_to_js(params, ',').replace(/,\s*\./, ".") + ")"
     }
-    var js = "_res_=" + func +
-      ((params === "arguments") ? ".apply(this,arguments)" : ('(' + params + ')'))
-    return "(" + js + ")"
+    if (func.startsWith("function(){")) func = "(" + func + ")"
+    return "(_res_=" + func + params + ")"
   },
   function_to_js = function(params, body) {
     // functions can be created without a parameter list
@@ -66,7 +72,7 @@ var lispz = function() {
       return body[body.length-1][0] == "."
     }
     is_func = function(body) {
-      return body.length > 1 && body[body.length-2] == "("
+      return body.length > 1 && body[body.length-2] === "("
     }
     function_body_to_js = function() {
       if (body.length === 0) return ""
