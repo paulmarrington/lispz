@@ -7,7 +7,7 @@
       (cond (>= args.length func.length)
         (func.apply func args)  ## all done, run it
       (else)
-        (=> ## otherwise return a partual function
+        (=> ## otherwise return a partial function
           (curried.apply this (args.concat (*arguments 0)))
         )
       )

@@ -172,7 +172,8 @@ To access external modules, wrap your code in 'using'. Data and functions export
       (action.update! { func: (=> evaluated-value) })
       evaluated-value
     ))
-    (ref action (lispz.globals.stateful { func: first-time }))
+    (ref action (lispz.globals.stateful
+      { func: first-time when: (new Date) }))
     (=> (action.func))
   ))
   (macro once [*body] (lispz.globals.#once (=> *body)))
