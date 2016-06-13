@@ -64,11 +64,17 @@
   (ref keys (Object.keys source))
   (ref own-keys (keys.filter (=> (source.hasOwnProperty @))))
   (own-keys.forEach (lambda [key]
-    (cond (and (target.hasOwnProperty key)
-    (instance-of Object (get source key)))
-      (#merge! (get target key) (get source key))
+    (ref source-child (get source key))
+    (ref target-child (get target key))
+    (ref is-dictionary (and
+      source-child target-child
+      (is source-child.constructor Object)
+      (is target-child.constructor Object)
+    ))
+    (cond is-dictionary
+      (#merge! target-child source-child)
     (else) ## either does not exist or in super
-      (#set! target key (get source key))
+      (#set! target key source-child)
     )
   ))
 ))
