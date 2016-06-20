@@ -1,0 +1,12 @@
+<tree-view>
+  <div name=tree></div>
+  <css></css>
+
+  <script type="text/lispz">
+    (riot-tag (mount-tag-using [tree-view]
+      (ref tree-view (($ tag.tree).treeview {}))
+      (message.listen (+ "tree-view/" opts.name) (lambda [data]
+      ))
+    ))
+  </script>
+</tree-view>

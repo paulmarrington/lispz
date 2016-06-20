@@ -1,0 +1,44 @@
+### spec: Libraries >> Tree-View
+
+https://github.com/jonmiles/bootstrap-treeview
+###
+
+(ref build (lambda [target-repo] (using  [code-builder]
+  (code-builder target-repo "bootstrap-treeview.min" [[
+    {repo: "jonmiles/bootstrap-treeview" files: [[
+      {base: "dist" include: '/bootstrap-treeview.min.*/'}
+    ]]}
+  ]])
+)))
+(lispz.css "ext/bootstrap-treeview.min.css")
+
+(using [net]
+  ### ref: (bootstrap.path-to-tree path-list) ## ready for tree or menu
+    item is { divider: true disabled: true title header children: {} }
+    e.g. (bootstrap.path-to-tree ["a/b" "a/c" "d/e" "f"])
+  ###
+  (ref path-to-tree (lambda [path-list]
+    (ref paths ((list.sort path-list).map (=> (@.split "/"))))
+    (ref tree (stateful))
+    (list.for-each paths (lambda [path]
+      (ref level (lambda [branches]
+        (cond (> branches.length 1) (do
+          ## we are at a branch, recursive call to add more
+          (ref title 	 (first branches))
+          (ref sub-branch (level (rest branches)))
+          (ref children  (stateful))
+          (children.update! (second branches) sub-branch)
+          { title children }
+        )(else) ## at leaf - time to retrace the recursion
+          { title: (first branches) }
+        )
+      ))
+      (tree.update! (first path) (level path))
+    ))
+    tree
+  ))
+
+  (when (net.script "ext/bootstrap-treeview.min.js" (=> true)) (=>
+    (export { build })
+  ))
+)
