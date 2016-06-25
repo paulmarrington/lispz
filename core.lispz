@@ -162,7 +162,18 @@ To access external modules, wrap your code in 'using'. Data and functions export
   ((lambda contain#args *contain#body) contain#args)
 )
 
+### ref: (symbol-to-string symbol) ## ==> "symbol" ###
+(macro symbol-to-string [symbol] (#join '' '"' symbol '"'))
+
 (using [fp] (using [stateful]
+  ### ref: (annotate function annotations)
+      e.g. (ref act (annotate (=> ...) { mapper to-string }))
+  ###
+  (global annotate (lambda [func annotations]
+    (ref primary (lispz.globals.stateful.morph! func))
+    (primary.update! annotations)
+  ))
+
   ### ref: (once function) ## lazy evaluation
     e.g. (ref read-it (once (promise ...))) ... (when (read-it) ...)
   ###
@@ -178,5 +189,5 @@ To access external modules, wrap your code in 'using'. Data and functions export
   ))
   (macro once [*body] (lispz.globals.#once (=> *body)))
 
-  (using [promise counters] (export {}))
+  (using [promise counters message] (export {}))
 ))
