@@ -23,7 +23,7 @@ https://github.com/riot/riot
     (ref children ((or raw-tags [[]]).map (=> (last ('/^<(\S*)/'.exec @)))))
     (Object.keys (dict.set children))
   ))
-  (ref tag-splitting-regex '/<([^\/\s]+)>((?:.|\n)*)<\/\1>/g')
+  (ref tag-splitting-regex '/<([^\/\s]+)>((?:.|\r?\n)*)<\/\1>/g')
   (ref split-tags (lambda [html]
     (ref find-one (lambda
       (cond (ref match (tag-splitting-regex.exec html)) (do
