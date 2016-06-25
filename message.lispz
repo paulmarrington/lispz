@@ -211,16 +211,15 @@
            (log.filter    odd         (=> (/ @ 2)))
            (log.throttle  1000)
   ###
-  (macro actor [id *body]
+  (macro actor [id #body-length *body]
     ## creates symbol 'id' as well as builds/retrieves the actor
-    (ref id (#actor (symbol-to-string id) (lambda [packet context] *body)))
+    (ref id (#actor (symbol-to-string id) #body-length
+      (lambda [packet context] *body)))
   )
 
-  (global #actor (lambda [id listener]
+  (global #actor (lambda [id has-listener listener]
     (ref address (+ "actor/" id))
-    (cond (not (get message.exchange address))
-      (message.listen address listener)
-    )
+    (cond has-listener (message.listen address listener))
     (annotate   (lambda [packet]      (message.send     address packet)) {
       map:      (lambda [id mapper]   (message.map      address (symbol-to-string id) mapper))
       filter:   (lambda [id filterer] (message.filter   address (symbol-to-string id) filterer))
