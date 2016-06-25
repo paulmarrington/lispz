@@ -139,16 +139,24 @@ var lispz = function() {
       for (var n = 0, v = 0; n < pnames.length; n++, v++) {
         var pname = pnames[n]
         var pvalue = pvalues[v]
-        // if (pname[0] === '?' && v === pvalues.length - 1) args[pname] = "", v-- // skip ?param
-        if (pname[0] === '?' && pvalue[0] != "[") {
-          args[pname] = "", v-- // skip ?param
-        } else if (pname[0] === "*") {
-          args[pname] = (v < pvalues.length) ?
-            ["list"].concat(slice(pvalues, v)) : ""
-        } else if (pname[0] === "&") {
-          args[pname] = ["["].concat(slice(pvalues, v))
-        } else {
-          args[pname] = pvalue
+        switch (pname[0]) {
+          case "?": // parameter list - used to generate functions
+            if (pvalue[0] == "[") args[pname] = pvalue
+            else args[pname] = "", v-- // no parameter list this time
+            break;
+          case "*": // raw list of the rest of the parameters
+            args[pname] = (v < pvalues.length) ?
+              ["list"].concat(slice(pvalues, v)) : ""
+            break;
+          case "&": // array containing rest of parameter list
+            args[pname] = ["["].concat(slice(pvalues, v))
+            break;
+          case "#": // count of the parameters remaining
+            args[pname] = (pvalues.length - v--).toString()
+            break;
+          default: // normal positional parameter
+            args[pname] = pvalue
+            break;
         }
       }
       var expand = function(ast) {
