@@ -71,7 +71,7 @@
     time-costly in-process.
   ###
   (ref listen (lambda [address action>]
-    ((observers address).push! (stateful { action> }))
+    ((observers address).push! (stateful { address action> }))
   ))
 
   ### spec: async >> Messaging >> Sources >> (dispatch)
@@ -112,7 +112,7 @@
   ###
   (ref from (stateful {
     promise: (lambda [address a-promise]
-      (when a-promise [packet] message.send (*arguments 0))
+      (when a-promise [packet] (message.send (*arguments 0)))
     )
   }))
 
@@ -202,6 +202,30 @@
       (not @)         (set-trace '/.*/')
       (else)          (set-trace @)
     )
+  ))
+
+  ### ref: (actor my-actor [process])) (my-actor message)
+      e.g. (actor log (console.log packet))) (log "message")
+           ... (actor log)) (log "another message")
+           (log.map       lower-case  (=> (@.toLowerCase)))
+           (log.filter    odd         (=> (/ @ 2)))
+           (log.throttle  1000)
+  ###
+  (macro actor [id *body]
+    ## creates symbol 'id' as well as builds/retrieves the actor
+    (ref id (#actor (symbol-to-string id) (lambda [packet context] *body)))
+  )
+
+  (global #actor (lambda [id listener]
+    (ref address (+ "actor/" id))
+    (cond (not (get message.exchange address))
+      (message.listen address listener)
+    )
+    (annotate   (lambda [packet]      (message.send     address packet)) {
+      map:      (lambda [id mapper]   (message.map      address (symbol-to-string id) mapper))
+      filter:   (lambda [id filterer] (message.filter   address (symbol-to-string id) filterer))
+      throttle: (lambda [ms]         (message.throttle  address ms))
+    })
   ))
 
   (ref message (stateful {
