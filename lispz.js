@@ -76,10 +76,11 @@ var lispz = function() {
     }
     function_body_to_js = function() {
       if (body.length === 0) return ""
-      var full_body = (body.length === 1 && body[0] instanceof Array) ? body[0] : body
-      if (!is_array(full_body) && !is_attr(full_body) && !is_func(full_body)) {
-        var end = full_body.length - 1
-        full_body[end] = ["(","ref","_res_",full_body[end]]
+      var fb = (body.length === 1 && body[0] instanceof Array) ? body[0] : body
+      if (!is_array(fb) && !is_attr(fb) && !is_func(fb)) {
+        if (fb[0] === "" && fb.length === 1) return "null"
+        var end = fb.length - 1
+        fb[end] = ["(","ref","_res_", fb[end]]
       }
       body = map_ast_to_js(body, ";\n") + "\n;return _res_"
     }
@@ -139,10 +140,16 @@ var lispz = function() {
         var pname = pnames[n]
         var pvalue = pvalues[v]
         // if (pname[0] === '?' && v === pvalues.length - 1) args[pname] = "", v-- // skip ?param
-        if (pname[0] === '?' && pvalue[0] != "[") args[pname] = "", v-- // skip ?param
-        else args[pname] =
-          (pname[0] === '*') ? ["list"].concat(slice(pvalues, v)) :
-          (pname[0] === '&') ? ["["].concat(slice(pvalues, v)) : pvalue
+        if (pname[0] === '?' && pvalue[0] != "[") {
+          args[pname] = "", v-- // skip ?param
+        } else if (pname[0] === "*") {
+          args[pname] = (v < pvalues.length) ?
+            ["list"].concat(slice(pvalues, v)) : ""
+        } else if (pname[0] === "&") {
+          args[pname] = ["["].concat(slice(pvalues, v))
+        } else {
+          args[pname] = pvalue
+        }
       }
       var expand = function(ast) {
         return (ast instanceof Array) ? ast.map(expand) : args[ast] ||
