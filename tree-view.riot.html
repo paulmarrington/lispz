@@ -1,12 +1,147 @@
 <tree-view>
-  <div name=tree></div>
-  <css></css>
+  <!-- based on work by https://github.com/jhfrench/bootstrap-tree -->
+  <div name=tree class=well>
+    <ul>
+        <li>
+            <button class="btn btn-primary">
+              <span class="glyphicon glyphicon-user" aria-hidden=true></span>
+              <div>paulmarrington</div>
+            </button>
+            <ul>
+                <li>
+                  <button class="btn btn-success">
+                    <span class=" glyphicon glyphicon-book"></span>
+                    <div>lispz</div>
+                  </button>
+                  <ul>
+                      <li class=branch>
+                        <button class="btn btn-default">
+                          <span class="open glyphicon glyphicon-folder-open"></span>
+                          <span class="closed glyphicon glyphicon-folder-close"></span>
+                          <div>ext</div>
+                        </button>
+                        <ul>
+                          <li class=leaf>file item </li>
+                          <li class=leaf>file item </li>
+                          <li class=leaf>file item </li>
+                          <li class=leaf>file item </li>
+                        </ul>
+                      </li>
+                      <li class=leaf>file item </li>
+                      <li class=leaf>file item </li>
+                      <li class=leaf>file item </li>
+                  </ul>
+                </li>
+                <li>
+                  <button class="btn btn-success">
+                    <span class="glyphicon glyphicon-book"></span>
+                    <div>lispz</div>
+                  </button>
+                  <ul>
+                      <li class=branch>
+                        <button class="closed btn btn-default">
+                          <span class="open glyphicon glyphicon-folder-open"></span>
+                          <span class="closed glyphicon glyphicon-folder-close"></span>
+                          <div>ext</div>
+                        </button>
+                        <ul>
+                          <li class=leaf>file item </li>
+                          <li class=leaf>file item </li>
+                          <li class=leaf>file item </li>
+                          <li class=leaf>file item </li>
+                        </ul>
+                      </li>
+                      <li class=leaf>file item </li>
+                      <li class=leaf>file item </li>
+                      <li class=leaf>file item </li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+          </ul>
+  </div>
+
+  <style>
+    tree-view > div {
+      color: black;
+      padding:10px !important;
+      margin-top: 10px;
+    }
+    tree-view ul {
+      padding-left: 16px;
+    }
+    tree-view > ul {
+      padding-left: 0px;
+    }
+    tree-view li > button.btn {
+      padding: 3px 6px;
+    }
+    tree-view button > span.glyphicon + div {
+      float: right;
+      padding-left: 6px;
+      position: relative;
+    }
+    tree-view button > span.open { display: inherit; }
+    tree-view button > span.closed { display: none; }
+    tree-view button.closed > span.open { display: none; }
+    tree-view button.closed > span.closed { display: inherit; }
+
+    tree-view li {
+        list-style-type:none;
+        margin:0;
+        padding:5px 5px 0 5px;
+        position:relative;
+        cursor:pointer;
+    }
+    tree-view li:hover {
+      font-weight: bolder;
+    }
+    tree-view li.branch:hover {
+      color: darkblue;
+    }
+    tree-view li.leaf:hover {
+      font-style: italic;
+      color: brown;
+    }
+    tree-view li.branch > span:hover {
+      color: darkred;
+    }
+    tree-view button.closed + ul {
+      display: none;
+    }
+  </style>
 
   <script type="text/lispz">
-    (riot-tag (mount-tag-using [tree-view]
-      (ref tree-view (($ tag.tree).treeview {}))
-      (message.listen (+ "tree-view/" opts.name) (lambda [data]
+    (riot-tag (mount-tag-using [message dom]
+      (ref address (+ "tree-view/" opts.name))
+
+      (ref get-li (=> (($ @).closest "li")))
+
+      (ref is-branch (=> ((get-li @).hasClass "branch")))
+
+      (ref is-leaf (=> ((get-li @).hasClass "leaf")))
+
+      (ref toggle-open-state (=>
+        (ref button ((get-li @).children "button"))
+        (button.toggleClass "closed")
+        {closed: (button.hasClass "closed") branch: (button.get 0)}
       ))
+
+      (ref process-leaf (=>
+        (ref li (get-li @))
+        {data: (li.get 0)}
+      ))
+(message.trace '/tree-view.*/')
+
+      (cascade
+        (=> (dom.click address tag.tree))
+        (=> (tee @
+          (=> (message.filter @ "branch" (=> (is-branch @.srcElement))))
+          (=> (message.map    @ "state"  (=> (toggle-open-state @.srcElement))))
+        ))
+        (=> (message.filter @ "leaf"   (=> (is-leaf @.srcElement))))
+        (=> (message.map    @ "action" (=> (process-leaf  @.srcElement))))
+      )
     ))
   </script>
 </tree-view>

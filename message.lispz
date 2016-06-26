@@ -151,7 +151,9 @@
   ###
   (ref message-filter (lambda [from to filterer]
     (ref address (combine-address from to))
-    (message.listen from (=> (cond (filterer @) (message.send address @))))
+    (message.listen from (lambda [packet]
+      (cond (filterer packet) (message.send address packet))
+    ))
     address
   ))
 

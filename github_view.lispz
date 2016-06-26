@@ -1,17 +1,3 @@
-### spec: Libraries >> Tree-View
-
-https://github.com/jonmiles/bootstrap-treeview
-###
-
-(ref build (lambda [target-repo] (using  [code-builder]
-  (code-builder target-repo "bootstrap-treeview.min" [[
-    {repo: "jonmiles/bootstrap-treeview" files: [[
-      {base: "dist" include: '/bootstrap-treeview.min.*/'}
-    ]]}
-  ]])
-)))
-(lispz.css "ext/bootstrap-treeview.min.css")
-
 (using [net]
   ### ref: (bootstrap.path-to-tree path-list) ## ready for tree or menu
     item is { divider: true disabled: true title header children: {} }
@@ -36,9 +22,5 @@ https://github.com/jonmiles/bootstrap-treeview
       (tree.update! (first path) (level path))
     ))
     tree
-  ))
-
-  (when (net.script "ext/bootstrap-treeview.min.js" (=> true)) (=>
-    (export { build })
   ))
 )

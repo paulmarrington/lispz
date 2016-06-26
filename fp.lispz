@@ -32,6 +32,23 @@
   ###
   (global cascade (=> ((lispz.globals.compose arguments) null)))
 
+  ### ref: (tee seed func1, func2, ...)
+      Use inside combine/cascade to branch functionality
+      (cascade
+        (=> (dom.click address tag.tree))
+        (=> (tee @
+          (message.filter @ "branches" (=> is-branch @.srcElement))
+          ...
+        ))
+        (=> (message.filter @ "leaves" (=> is-leaf @.srcElement)))
+        ...
+      )
+  ###
+  (global tee (lambda [seed]
+    ((lispz.globals.compose (*arguments 1)) seed)
+    seed
+  ))
+
   ### spec: Functional Programming >> flip
     Flip calling order of 2 parameters
   ###

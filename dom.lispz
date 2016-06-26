@@ -60,26 +60,30 @@
     We cache dom event listeners against the address being posted to. that
     way the dom will not send the message multiple times if the source is
     reinvoked.
+
+    The parameters are _[MouseEvent address]_ - specifically _currentTarget_
+    is the element that the click event is registered against while
+    _srcElement_ is the inner element that was clicked.
   ###
   (ref dom-events (stateful))
   (ref post-dom-event> (lambda [address]
-    (ref send-to-address (lambda [pkt] (message.send address pkt)))
+    (ref send-to-address (lambda [evt] (message.send address evt)))
     (stateful.cache dom-events (=> send-to-address) address)
   ))
   ### ref: (dom.message event-name message-name element)
     e.g. (ref address (dom.message "click" "monitor" document.body))
   ###
   (ref dom-message (lambda [event-name address-base element]
-    (ref address (message.combine-address (+ "dom-" event-name) address-base))
-    (cond (not (get dom-events address))
+    (ref address (+ address-base "/dom/" event-name))
+    (cond (not (get dom-events address)) (do
       (element.addEventListener event-name (post-dom-event> address))
-    )
+    ))
     address
   ))
 
   ### ref: (dom.click message-name element)
     e.g. (dom.click "monitor" document.body)
-    messages sent to returned address (**dom-click/monitor**)
+    messages sent to returned address (**monitor/dom-click**)
   ###
   (ref click (lambda [address-base element]
     (dom-message "click" address-base element)

@@ -20,10 +20,10 @@
     </page-content>
   </bootstrap>
 
-  <css></css>
+  <style></style>
 
   <script type="text/lispz">
-    (riot-tag (using [message github tree-view]
+    (riot-tag (using [message github github-view]
       (lispz.set-debug-mode true)
 
       (ref update-sidebar (lambda [data]
@@ -32,7 +32,7 @@
 
       (when (message.ready> "tree-view/git-sidebar") (when github.repos> [repos]
         (ref repo-paths (repos.map (=> @.full_name)))
-        (ref repo-tree (tree-view.path-to-tree repo-paths))
+        (ref repo-tree (guthub-view.path-to-tree repo-paths))
         (update-sidebar repo-tree)
       ))
 
