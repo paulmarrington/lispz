@@ -361,16 +361,18 @@
   </style>
   <script type=text/lispz>
     (riot-tag (using [message dom]
-      (ref hamburger (stateful.morph! tag.hamburger))
-      (hamburger.update! {onclick: (lambda
-        (tag.sidebar.classList.toggle "toggled")
-        (delay 300 ## must be after slide action
-          (message.send "dom/page-content-wrapper-padding" tag.sidebar.offsetWidth)
+      (ref sidebar-resized (lambda
+        (delay 300 ## must be after changes settle
+          (message.send "dom/page-content-wrapper-padding"
+          tag.sidebar.offsetWidth)
         )
-      )})
-      (mount-tag-using [riot] (delay 300
-        (message.send "dom/page-content-wrapper-padding" tag.sidebar.offsetWidth)
       ))
+      (ref hamburger (stateful.morph! tag.hamburger))
+      (hamburger.update! { onclick: (lambda
+        (tag.sidebar.classList.toggle "toggled") (sidebar-resized)
+      )})
+      (mount-tag-using [riot] (sidebar-resized))
+      (message.listen (+ "sidebar/" opts.name "/resized") sidebar-resized)
     ))
   </script>
 </sidebar>
