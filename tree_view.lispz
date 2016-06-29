@@ -1,0 +1,9 @@
+(using [net list message]
+
+  (ref update (lambda [component base branch options]
+    (ref address (+ "tree-view/" component "/add-branch"))
+    (message.send address { base branch options })
+  ))
+
+  (export { update })
+)

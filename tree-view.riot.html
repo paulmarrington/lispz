@@ -1,77 +1,104 @@
 <tree-view>
-  <!-- based on work by https://github.com/jhfrench/bootstrap-tree -->
-  <div name=tree class=well>
-    <ul>
-        <li>
-            <button class="btn btn-primary">
-              <span class="glyphicon glyphicon-user" aria-hidden=true></span>
-              <div>paulmarrington</div>
-            </button>
-            <ul>
-                <li>
-                  <button class="btn btn-success">
-                    <span class=" glyphicon glyphicon-book"></span>
-                    <div>lispz</div>
-                  </button>
-                  <ul>
-                      <li class=branch>
-                        <button class="btn btn-default">
-                          <span class="open glyphicon glyphicon-folder-open"></span>
-                          <span class="closed glyphicon glyphicon-folder-close"></span>
-                          <div>ext</div>
-                        </button>
-                        <ul>
-                          <li class=leaf>file item </li>
-                          <li class=leaf>file item </li>
-                          <li class=leaf>file item </li>
-                          <li class=leaf>file item </li>
-                        </ul>
-                      </li>
-                      <li class=leaf>file item </li>
-                      <li class=leaf>file item </li>
-                      <li class=leaf>file item </li>
-                  </ul>
-                </li>
-                <li>
-                  <button class="btn btn-success">
-                    <span class="glyphicon glyphicon-book"></span>
-                    <div>lispz</div>
-                  </button>
-                  <ul>
-                      <li class=branch>
-                        <button class="closed btn btn-default">
-                          <span class="open glyphicon glyphicon-folder-open"></span>
-                          <span class="closed glyphicon glyphicon-folder-close"></span>
-                          <div>ext</div>
-                        </button>
-                        <ul>
-                          <li class=leaf>file item </li>
-                          <li class=leaf>file item </li>
-                          <li class=leaf>file item </li>
-                          <li class=leaf>file item </li>
-                        </ul>
-                      </li>
-                      <li class=leaf>file item </li>
-                      <li class=leaf>file item </li>
-                      <li class=leaf>file item </li>
-                  </ul>
-                </li>
-              </ul>
-            </li>
-          </ul>
-  </div>
-
+  <ul name=tree>
+    <li class=branch><tree-item if={ tree_root } branch={ tree_root }/></li>
+  </ul>
   <style>
-    tree-view > div {
+    tree-view {
       color: black;
       padding:10px !important;
       margin-top: 10px;
     }
+
+    tree-view li {
+        list-style-type:none;
+        margin:0;
+        padding:5px 5px 0 5px;
+        position:relative;
+        cursor:pointer;
+    }
+
+    tree-view hidden { display: none }
+  </style>
+
+  <script type="text/lispz">
+    (riot-tag (mount-tag-using [message dom riot]
+      (ref address (+ "tree-view/" opts.name))
+
+      (ref get-li (=> (($ @).closest "li")))
+
+      (ref is-branch (=> ((get-li @).hasClass "branch")))
+
+      (ref is-leaf (=> ((get-li @).hasClass "leaf")))
+
+      (ref toggle-open-state (=>
+        (ref li (get-li @))
+        (ref tree-item (li.children "tree-item"))
+        (ref button (tree-item.children "button"))
+        (button.toggleClass "closed")
+        (ref closed (button.hasClass "closed"))
+        (cond closed (do
+          ## show everyone else on the same level
+          ((li.siblings ".branch").removeClass "hidden")
+        )(else)(do ## opening this branch
+          ## hide everyone else on the same level
+          ((li.siblings ".branch").addClass "hidden")
+          ## and make sure all my children can be seen
+          ((li.find "li").removeClass "hidden")
+        ))
+        { closed li: (li.get 0) }
+      ))
+
+      (ref process-leaf (=>
+        (ref li (get-li @))
+        { li: (li.get 0) }
+      ))
+
+      (cascade
+        (=> (dom.click address tag.tree))
+        (=> (tee @
+          (=> (message.filter @ "branch" (=> (is-branch @.srcElement))))
+          (=> (message.map    @ "state"  (=> (toggle-open-state @.srcElement))))
+          ### ref: tree-view/{{name}}/dom/click/branch/state
+              packet: { closed: boolean button: element }
+          ###
+        ))
+        (=> (message.filter @ "leaf"   (=> (is-leaf @.srcElement))))
+        ### ref: tree-view/{{name}}/dom/click/leaf
+            packet: MouseEvent
+        ###
+        (=> (message.map    @ "action" (=> (process-leaf  @.srcElement))))
+        ### ref: tree-view/{{name}}/dom/click/leaf/action
+            packet: { li: element }
+        ###
+      )
+      ### ref: tree-view/{{name}}/add-branch
+          packet:   { base: path, branch: dict }
+          response: Promise { dom-li of branch }
+      ###
+      (message.listen (+ address "/add-branch") (lambda [packet]
+        (riot.update! tag { tree-root: packet.branch })
+      ))
+    ))
+  </script>
+</tree-view>
+
+<tree-item>
+  <button if={ children } class="closed btn btn-{ color }">
+    <span class="open glyphicon glyphicon-{ open }"></span>
+    <span class="closed glyphicon glyphicon-{ closed }"></span>
+    <div>{ title }</div>
+  </button>
+  <ul if={children}>
+    <li each={ key, child in children }
+    class={ branch: child.children, leaf: !child.children }>
+      <tree-item branch={ child }/>
+    </li>
+  </ul>
+  <span if={ !children }>{title}</span>
+
+  <style>
     tree-view ul {
       padding-left: 16px;
-    }
-    tree-view > ul {
-      padding-left: 0px;
     }
     tree-view li > button.btn {
       padding: 3px 6px;
@@ -86,13 +113,6 @@
     tree-view button.closed > span.open { display: none; }
     tree-view button.closed > span.closed { display: inherit; }
 
-    tree-view li {
-        list-style-type:none;
-        margin:0;
-        padding:5px 5px 0 5px;
-        position:relative;
-        cursor:pointer;
-    }
     tree-view li:hover {
       font-weight: bolder;
     }
@@ -112,36 +132,14 @@
   </style>
 
   <script type="text/lispz">
-    (riot-tag (mount-tag-using [message dom]
-      (ref address (+ "tree-view/" opts.name))
-
-      (ref get-li (=> (($ @).closest "li")))
-
-      (ref is-branch (=> ((get-li @).hasClass "branch")))
-
-      (ref is-leaf (=> ((get-li @).hasClass "leaf")))
-
-      (ref toggle-open-state (=>
-        (ref button ((get-li @).children "button"))
-        (button.toggleClass "closed")
-        {closed: (button.hasClass "closed") branch: (button.get 0)}
-      ))
-
-      (ref process-leaf (=>
-        (ref li (get-li @))
-        {data: (li.get 0)}
-      ))
-(message.trace '/tree-view.*/')
-
-      (cascade
-        (=> (dom.click address tag.tree))
-        (=> (tee @
-          (=> (message.filter @ "branch" (=> (is-branch @.srcElement))))
-          (=> (message.map    @ "state"  (=> (toggle-open-state @.srcElement))))
-        ))
-        (=> (message.filter @ "leaf"   (=> (is-leaf @.srcElement))))
-        (=> (message.map    @ "action" (=> (process-leaf  @.srcElement))))
-      )
+    (riot-tag (mount-tag-using [riot]
+      (riot.update! tag {
+        title:    opts.branch.title
+        color:    (or opts.branch.style.color "default")
+        children: opts.branch.children
+        open:     (or opts.branch.style.open "folder-open")
+        closed:   (or opts.branch.style.closed "folder-close")
+      })
     ))
   </script>
-</tree-view>
+</tree-item>
