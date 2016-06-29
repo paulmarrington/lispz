@@ -21,7 +21,7 @@
 (ref for-each (lambda [list action]
   (cond (not list)               null
         (instance-of Array list) (list.forEach action)
-        (else)                   (action list)
+        (else)                   (action list 0)
   )
 ))
 
