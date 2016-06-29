@@ -222,10 +222,13 @@
   (global #actor (lambda [id has-listener listener]
     (ref address (+ "actor/" id))
     (cond has-listener (message.listen address listener))
-    (annotate   (lambda [packet]      (message.send     address packet)) {
-      map:      (lambda [id mapper]   (message.map      address (symbol-to-string id) mapper))
-      filter:   (lambda [id filterer] (message.filter   address (symbol-to-string id) filterer))
-      throttle: (lambda [ms]         (message.throttle  address ms))
+    (annotate   (lambda [packet] (message.send address packet)) {
+      map:      (lambda [id mapper]
+        (message.map      address (symbol-to-string id) mapper))
+      filter:   (lambda [id filterer]
+        (message.filter   address (symbol-to-string id) filterer))
+      throttle: (lambda [ms]
+        (message.throttle address ms))
     })
   ))
 
