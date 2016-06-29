@@ -231,13 +231,17 @@
     are not in browser storage.
   ###
   (ref session> (=>
-    (ref auth (or
+    (ref user (or
+      (sessionStorage.getItem "github-user")
+      (localStorage.getItem "github-user")
+    ))
+    (ref auth-header (or
       (sessionStorage.getItem "ghcontext")
       (localStorage.getItem "ghcontext")
     ))
     (cond
-      auth    (promised { auth-header: auth })
-      (else)  (ask-user-to-login>)
+      auth-header (promised { auth-header user })
+      (else)      (ask-user-to-login>)
     )
   ))
 
@@ -245,20 +249,23 @@
     (when (bootstrap.modal> "github/github-login" {}) [r]
       (cond (is r.login.value "true") (do
         (ref joined (+ r.username.value ":" r.password.value))
-        (ref auth (+ "Basic " (btoa joined)))
-        (save-user auth r.remember.checked)
-        (resolve-promise { auth-header: auth })
+        (ref auth-header (+ "Basic " (btoa joined)))
+        (save-user r.username.value auth-header r.remember.checked)
+        (resolve-promise { auth-header user: r.username.value })
       ) (else)
         (reject-promise { error: true reason: "User abort" })
       )
     )
   )))
-  (ref save-user (lambda [auth remember]
-    (cond (is remember)
+  (ref save-user (lambda [user-name auth remember]
+    (cond (is remember) (do
       (localStorage.setItem "ghcontext" auth)
-    (else) (do ## user wants amnesia
+      (localStorage.setItem "github-user" user-name)
+    ) (else) (do ## user wants amnesia
       (localStorage.removeItem "ghcontext")
+      (localStorage.removeItem "github-user")
       (sessionStorage.setItem "ghcontext" auth)
+      (sessionStorage.setItem "github-user" user-name)
     ))
   ))
 
