@@ -216,7 +216,7 @@ var lispz = function() {
   // processing pairs of list elements
   pairs_to_js = function(pairs, tween, sep) {
     var el = [], tween = ast_to_js(tween);
-    if (!(pairs.length % 2)) throw {message:"Unmatched pairs",pairs:pairs}
+    if (!(pairs.length % 2)) throw "Unmatched pairs: " + JSON.stringify(pairs)
     for (var i = 1, l = pairs.length; i < l; i += 2) {
       var second = pairs[i + 1]
       el.push(ast_to_js(pairs[i]) + tween + ast_to_js(second))
@@ -348,6 +348,8 @@ var lispz = function() {
     init_func = eval('(function(__module_ready__){\n' + js + '\n})')
     init_func(function(exports) {
       cache[uri.split('/').pop()] = cache[uri] = exports
+      var dashed = uri.replace("_", "-")
+      cache[dashed.split('/').pop()] = cache[dashed] = exports
       var on_readies = pending_module[uri]
       delete pending_module[uri]
       on_readies.forEach(function(call_module) {call_module(exports)})
