@@ -1,26 +1,55 @@
-(using [net]
-  ### ref: (bootstrap.path-to-tree path-list) ## ready for tree or menu
-    item is { divider: true disabled: true title header children: {} }
-    e.g. (bootstrap.path-to-tree ["a/b" "a/c" "d/e" "f"])
+(using [github list tree-view message]
+
+  (ref add-repos (lambda [component owner]
+    (when (github.repos> owner) [repos]
+      (ref paths ((extract-paths repos).map (=> (+ @ "/"))))
+      (ref branches (path-to-tree paths repo-options))
+      (ref tree {
+        title: "GitHub" children: branches
+        style: { open: "cloud-download" closed: "cloud-download" color: "default" }
+      })
+      (tree-view.update component "" tree {})
+    )
+  ))
+
+  (ref repo-options [[
+    { open: "user" closed: "user" color: "primary" }
+    { open: "book" closed: "book" color: "success" }
+  ]])
+
+  (ref load-repo (lambda [name repo paths]
+  ))
+
+  (ref extract-paths (=> (list.sort (@.map (=> @.full-name)))))
+
+  ### ref: (github-view.path-to-tree path-list)
+    e.g. (tree-view.path-to-tree ["a/b" "a/c" "d/e" "f"])
   ###
-  (ref path-to-tree (lambda [path-list]
+  (ref path-to-tree (lambda [path-list options]
     (ref paths ((list.sort path-list).map (=> (@.split "/"))))
     (ref tree (stateful))
     (list.for-each paths (lambda [path]
-      (ref level (lambda [branches]
+      (ref level (lambda [branches depth]
+        (ref style (get options
+          (cond (< depth options.length) depth (else) (- options.length 1))
+        ))
         (cond (> branches.length 1) (do
           ## we are at a branch, recursive call to add more
           (ref title 	 (first branches))
-          (ref sub-branch (level (rest branches)))
+          (ref sub-branch (level (rest branches (+ depth 1))))
           (ref children  (stateful))
-          (children.update! (second branches) sub-branch)
-          { title children }
-        )(else) ## at leaf - time to retrace the recursion
-          { title: (first branches) }
+          (cond sub-branch
+            (children.update! (second branches) sub-branch)
+          )
+          { title children style }
+        ) (first branches) ## at leaf
+          { title: (first branches)  style }
         )
       ))
-      (tree.update! (first path) (level path))
+      (tree.update! (first path) (level path 0))
     ))
     tree
   ))
+
+  (export { add-repos })
 )
