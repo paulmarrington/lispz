@@ -337,14 +337,17 @@
   ### -->
   <a aria-hidden="true" name=hamburger
     class="glyphicon glyphicon-menu-hamburger text-danger"></a>
-  <div id=sidebar class="container bg-primary"><yield/></div>
+  <div name=sidebar class="container bg-primary"><yield/></div>
   <style>
+
+    sidebar .well { padding: 0px; }
+
     sidebar > a {
       text-decoration: none !important;
       position: absolute !important;
       z-index: 2000;
     }
-    #sidebar {
+    sidebar > div.container {
       z-index: 1000;
       position: fixed;
       width: 0;
@@ -355,9 +358,11 @@
       -o-transition: all 0.5s ease;
       transition: all 0.5s ease;
       padding-right: 0;
+      padding-top: 10px;
       overflow: hidden;
     }
-    #sidebar.toggled { width: auto; padding-right: 15px; }
+    sidebar > div.toggled { width: auto; padding-right: 15px; }
+
   </style>
   <script type=text/lispz>
     (riot-tag (using [message dom]

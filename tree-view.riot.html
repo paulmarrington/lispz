@@ -5,8 +5,10 @@
   <style>
     tree-view {
       color: black;
-      padding:10px !important;
       margin-top: 10px;
+    }
+    tree-view > ul {
+      padding-left: 0 !important;
     }
 
     tree-view li {
@@ -32,18 +34,19 @@
 
       (ref toggle-open-state (=>
         (ref li (get-li @))
+        (ref siblings (li.siblings ".branch"))
         (ref tree-item (li.children "tree-item"))
         (ref button (tree-item.children "button"))
+
         (button.toggleClass "closed")
-        (ref closed (button.hasClass "closed"))
-        (cond closed (do
+        (cond (button.hasClass "closed") (do
           ## show everyone else on the same level
-          ((li.siblings ".branch").removeClass "hidden")
+          (siblings.removeClass "hidden")
         )(else)(do ## opening this branch
           ## hide everyone else on the same level
-          ((li.siblings ".branch").addClass "hidden")
+          (siblings.addClass "hidden")
           ## and make sure all my children can be seen
-          ((li.find "li").removeClass "hidden")
+          ## ((li.find "li").removeClass "hidden")
         ))
         { closed li: (li.get 0) }
       ))
