@@ -366,18 +366,21 @@
   </style>
   <script type=text/lispz>
     (riot-tag (using [message dom]
-      (ref sidebar-resized (lambda
-        (delay 300 ## must be after changes settle
-          (message.send "dom/page-content-wrapper-padding"
-          tag.sidebar.offsetWidth)
-        )
-      ))
+      (ref address (+ "sidebar/" opts.name))
       (ref hamburger (stateful.morph! tag.hamburger))
       (hamburger.update! { onclick: (lambda
-        (tag.sidebar.classList.toggle "toggled") (sidebar-resized)
+        (tag.sidebar.classList.toggle "toggled")
       )})
-      (mount-tag-using [riot] (sidebar-resized))
-      (message.listen (+ "sidebar/" opts.name "/resized") sidebar-resized)
+      (ref close-sidebar (=>
+        (tag.sidebar.classList.remove "toggled")
+      ))
+      (cascade
+        ### ref: sidebar/{{name}}/dom/mouseleave
+                 sent when mouse pointer exits sidebar
+        ###
+        (=> (dom.message address "mouseleave" tag.root))
+        (=> (message.listen @ (=> (close-sidebar))))
+      )
     ))
   </script>
 </sidebar>
@@ -396,7 +399,7 @@
   </style>
   <script type=text/lispz>
     (riot-tag (using [message dom]
-      (message.listen "dom/page-content-wrapper-padding" (lambda [px]
+      (message.listen "dom/resize-contents" (lambda [px]
         (dom.style! tag.page-content-wrapper {paddingLeft: (+ px "px")})
       ))
     ))
