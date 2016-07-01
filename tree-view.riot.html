@@ -90,7 +90,7 @@
     <div>{ title }</div>
   </button>
   <ul if={children}>
-    <li each={ key, child in children }
+    <li each={ key, child in children } name={ key }
     class={ branch: child.children, leaf: !child.children }>
       <tree-item branch={ child }/>
     </li>

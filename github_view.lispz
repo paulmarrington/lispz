@@ -26,7 +26,7 @@
     e.g. (tree-view.path-to-tree ["a/b" "a/c" "d/e" "f"])
   ###
   (ref path-to-tree (lambda [path-list options]
-    (ref paths ((list.sort path-list).map (=> (@.split "/"))))
+    (ref paths (list.sort path-list))
     (ref tree (stateful))
     (list.for-each paths (lambda [path]
       (ref level (lambda [branches depth]
@@ -46,7 +46,8 @@
           { title: (first branches)  style }
         )
       ))
-      (tree.update! (first path) (level path 0))
+      (ref split (path.split "/"))
+      (tree.update! (first split) (level split 0))
     ))
     tree
   ))
