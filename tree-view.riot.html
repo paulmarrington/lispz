@@ -45,8 +45,6 @@
         )(else)(do ## opening this branch
           ## hide everyone else on the same level
           (siblings.addClass "hidden")
-          ## and make sure all my children can be seen
-          ## ((li.find "li").removeClass "hidden")
         ))
         { closed li: (li.get 0) }
       ))
@@ -57,7 +55,7 @@
       ))
 
       (cascade
-        (=> (dom.click address tag.tree))
+        (=> (dom.click tag.tree address))
         (=> (tee @
           (=> (message.filter @ "branch" (=> (is-branch @.srcElement))))
           (=> (message.map    @ "state"  (=> (toggle-open-state @.srcElement))))

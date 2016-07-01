@@ -35,7 +35,7 @@
   ### ref: (tee seed func1, func2, ...)
       Use inside combine/cascade to branch functionality
       (cascade
-        (=> (dom.click address tag.tree))
+        (=> (dom.click tag.tree address))
         (=> (tee @
           (message.filter @ "branches" (=> is-branch @.srcElement))
           ...

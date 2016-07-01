@@ -70,10 +70,10 @@
     (ref send-to-address (lambda [evt] (message.send address evt)))
     (stateful.cache dom-events (=> send-to-address) address)
   ))
-  ### ref: (dom.message event-name message-name element)
-    e.g. (ref address (dom.message "click" "monitor" document.body))
+  ### ref: (dom.message message-name event-name element)
+    e.g. (ref address (dom.message "monitor" "click" document.body))
   ###
-  (ref dom-message (lambda [event-name address-base element]
+  (ref dom-message (lambda [address-base event-name element]
     (ref address (+ address-base "/dom/" event-name))
     (cond (not (get dom-events address)) (do
       (element.addEventListener event-name (post-dom-event> address))
@@ -81,12 +81,12 @@
     address
   ))
 
-  ### ref: (dom.click message-name element)
-    e.g. (dom.click "monitor" document.body)
-    messages sent to returned address (**monitor/dom-click**)
+  ### ref: (dom.click element message-name)
+    e.g. (dom.click document.body "monitor")
+    messages sent to returned address (**monitor/dom/click**)
   ###
-  (ref click (lambda [address-base element]
-    (dom-message "click" address-base element)
+  (ref click (lambda [element address-base]
+    (dom-message address-base "click" element)
   ))
 
   (export {
