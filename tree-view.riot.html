@@ -8,7 +8,7 @@
       margin-top: 10px;
     }
     tree-view > ul {
-      padding-left: 0 !important;
+      padding: 3px 0 0 0 !important;
     }
 
     tree-view li {
@@ -46,30 +46,36 @@
           ## hide everyone else on the same level
           (siblings.addClass "hidden")
         ))
-        { closed li: (li.get 0) }
+        { closed li: (li.get 0) address: (li.attr "branch") }
+      ))
+
+      (ref trigger-actor (lambda [packet context]
+        (ref address (+ context.address "/" packet.address))
+        (message.send address packet)
       ))
 
       (ref process-leaf (=>
         (ref li (get-li @))
-        { li: (li.get 0) }
+        { li: (li.get 0) address: (li.attr "leaf") }
       ))
 
       (cascade
         (=> (dom.click tag.tree address))
         (=> (tee @
           (=> (message.filter @ "branch" (=> (is-branch @.srcElement))))
-          (=> (message.map    @ "state"  (=> (toggle-open-state @.srcElement))))
-          ### ref: tree-view/{{name}}/dom/click/branch/state
-              packet: { closed: boolean button: element }
+          (=> (message.map    @ "toggle" (=> (toggle-open-state @.srcElement))))
+          (=> message.listen  @ trigger-actor)
+          ### ref: tree-view/{{name}}/dom/click/branch/toggle/{{actor}}
+              packet: { closed: boolean button: element address: {{actor}} }
           ###
         ))
         (=> (message.filter @ "leaf"   (=> (is-leaf @.srcElement))))
         ### ref: tree-view/{{name}}/dom/click/leaf
             packet: MouseEvent
         ###
-        (=> (message.map    @ "action" (=> (process-leaf  @.srcElement))))
-        ### ref: tree-view/{{name}}/dom/click/leaf/action
-            packet: { li: element }
+        (=> (message.map    @ "" (=> (process-leaf  @.srcElement))))
+        ### ref: tree-view/{{name}}/dom/click/leaf/{{actor}}
+            packet: { li: element address: {{actor}} }
         ###
       )
       ### ref: tree-view/{{name}}/add-branch
@@ -91,6 +97,7 @@
   </button>
   <ul if={children}>
     <li each={ key, child in children } name={ key }
+    branch={ child.style.branch } leaf={ child.style.leaf }
     class={ branch: child.children, leaf: !child.children }>
       <tree-item branch={ child }/>
     </li>
@@ -136,10 +143,12 @@
     (riot-tag (mount-tag-using [riot]
       (riot.update! tag {
         title:    opts.branch.title
-        color:    (or opts.branch.style.color "default")
-        children: opts.branch.children
-        open:     (or opts.branch.style.open "folder-open")
+        color:    (or opts.branch.style.color  "default")
+        open:     (or opts.branch.style.open   "folder-open")
         closed:   (or opts.branch.style.closed "folder-close")
+        branch:   (or opts.branch.style.branch "branch")
+        leaf:     (or opts.branch.style.leaf   "leaf")
+        children: opts.branch.children
       })
     ))
   </script>

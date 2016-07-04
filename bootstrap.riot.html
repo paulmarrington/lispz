@@ -340,17 +340,23 @@
   <div name=sidebar class="container bg-primary"><yield/></div>
   <style>
 
-    sidebar .well { padding: 0px; }
+    sidebar .well {
+      padding: 0px;
+      margin: 5px 0 0 5px;
+    }
 
     sidebar > a {
       text-decoration: none !important;
       position: absolute !important;
       z-index: 2000;
+      cursor: pointer;
+      left: 4px;
     }
     sidebar > div.container {
       z-index: 1000;
       position: fixed;
       width: 0;
+      min-width: 18px;
       height: 100%;
       overflow-y: auto;
       -webkit-transition: all 0.5s ease;

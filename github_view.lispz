@@ -6,16 +6,21 @@
       (ref branches (path-to-tree paths repo-options))
       (ref tree {
         title: "GitHub" children: branches
-        style: { open: "cloud-download" closed: "cloud-download" color: "default" }
+        style: { open:   "cloud-download"  closed: "cloud-upload" }
       })
       (tree-view.update component "" tree {})
     )
   ))
 
   (ref repo-options [[
-    { open: "user" closed: "user" color: "primary" }
-    { open: "book" closed: "book" color: "success" }
+    { open: "user" closed: "user" color: "primary" branch: "user" }
+    { open: "book" closed: "book" color: "success" branch: "repo" }
   ]])
+  (ref contents-options [[{
+    open:   "folder-open"     closed: "folder-closed"
+    branch: "dir"             leaf:   "file"
+    color:  "default"
+  }]])
 
   (ref load-repo (lambda [name repo paths]
   ))
