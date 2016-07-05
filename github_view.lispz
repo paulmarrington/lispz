@@ -3,10 +3,14 @@
   (ref add-repos (lambda [component owner]
     (when (github.repos> owner) [repos]
       (ref paths ((extract-paths repos).map (=> (+ @ "/"))))
-      (ref branches (path-to-tree paths repo-options))
+      (ref paths (path-to-tree paths repo-options))
       (ref tree {
-        title: "GitHub" children: branches
-        style: { open:   "cloud-download"  closed: "cloud-upload" }
+        title: "GitHub" children: paths
+        style: {
+          open:   "cloud-download"
+          closed: "cloud-upload"
+          branch: "github"
+        }
       })
       (tree-view.update component "" tree {})
     )

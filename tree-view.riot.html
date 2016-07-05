@@ -1,6 +1,10 @@
 <tree-view>
   <ul name=tree>
-    <li class=branch><tree-item if={ tree_root } branch={ tree_root }/></li>
+    <li class=branch branch={ tree_root.style.branch }
+    path={ "/"+tree_root.title } >
+      <tree-item if={ tree_root }
+      branch={ tree_root } base="" />
+    </li>
   </ul>
   <style>
     tree-view {
@@ -39,43 +43,55 @@
         (ref button (tree-item.children "button"))
 
         (button.toggleClass "closed")
-        (cond (button.hasClass "closed") (do
+        (ref state (cond (button.hasClass "closed") (do
           ## show everyone else on the same level
           (siblings.removeClass "hidden")
-        )(else)(do ## opening this branch
+          "closed"
+        ) (else) (do ## opening this branch
           ## hide everyone else on the same level
           (siblings.addClass "hidden")
-        ))
-        { closed li: (li.get 0) address: (li.attr "branch") }
+          "open"
+        )))
+        { state name: (li.attr "branch") path: (li.attr "path") }
       ))
 
-      (ref trigger-actor (lambda [packet context]
-        (ref address (+ context.address "/" packet.address))
+      (ref process-branch (lambda [event context]
+        (ref packet (toggle-open-state event.srcElement))
+        (ref address (+ context.address "/" packet.state "/" packet.name))
         (message.send address packet)
       ))
 
-      (ref process-leaf (=>
-        (ref li (get-li @))
-        { li: (li.get 0) address: (li.attr "leaf") }
+      (ref process-leaf (lambda [event context]
+        (ref li (get-li event.srcElement))
+        (ref address (+ context.address "/" (li.attr "leaf")))
+        (message.send address { path: (li.attr "path") } )
       ))
 
       (cascade
         (=> (dom.click tag.tree address))
+        ### ref:    tree-view/{{name}}/dom/click  {{MouseEvent}}
+            when any item in the tree is clicked
+        ###
         (=> (tee @
           (=> (message.filter @ "branch" (=> (is-branch @.srcElement))))
-          (=> (message.map    @ "toggle" (=> (toggle-open-state @.srcElement))))
-          (=> message.listen  @ trigger-actor)
-          ### ref: tree-view/{{name}}/dom/click/branch/toggle/{{actor}}
-              packet: { closed: boolean button: element address: {{actor}} }
+          ### ref:    tree-view/{{name}}/dom/click/branch  (MouseEvent)
+              when a branch is clicked
+          ###
+          (=> (message.listen  @ process-branch))
+          ### ref: branches can be processed with different actors
+              tree-view/{{name}}/dom/click/branch/{{open|closed}}/{{actor}}
+              packet: { path: "a/path" }
+
           ###
         ))
         (=> (message.filter @ "leaf"   (=> (is-leaf @.srcElement))))
-        ### ref: tree-view/{{name}}/dom/click/leaf
-            packet: MouseEvent
+        ### ref:    tree-view/{{name}}/dom/click/leaf  {{MouseEvent}}
+            when a leaf node is clicked
         ###
         (=> (message.map    @ "" (=> (process-leaf  @.srcElement))))
-        ### ref: tree-view/{{name}}/dom/click/leaf/{{actor}}
-            packet: { li: element address: {{actor}} }
+        ### ref:    tree-view/{{name}}/dom/click/leaf/{{actor}}
+            packet: { path: "a/path" } }
+            leaves can be set with different actors
         ###
       )
       ### ref: tree-view/{{name}}/add-branch
@@ -97,9 +113,10 @@
   </button>
   <ul if={children}>
     <li each={ key, child in children } name={ key }
+    path={ base+"/"+child.title }
     branch={ child.style.branch } leaf={ child.style.leaf }
     class={ branch: child.children, leaf: !child.children }>
-      <tree-item branch={ child }/>
+      <tree-item branch={ child } base={ base }/>
     </li>
   </ul>
   <span if={ !children }>{title}</span>
@@ -148,6 +165,7 @@
         closed:   (or opts.branch.style.closed "folder-close")
         branch:   (or opts.branch.style.branch "branch")
         leaf:     (or opts.branch.style.leaf   "leaf")
+        base:     (+ opts.base "/" opts.branch.title)
         children: opts.branch.children
       })
     ))
