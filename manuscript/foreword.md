@@ -1,3 +1,5 @@
+# Foreword
+
 I was a little sad when in 1996 Microsoft moved from _'cooperative multitasking'_ to '_preemptive multitasking'_ for Windows 95. The reasoning included that it would be more responsive. This was only true for poorly written Windows 3 programs. On the slower hardware of the time, task switching was expensive and could easily bog down a system to the point where it was slower.
 
 It is now 20 years later - and the browser is the new Windows 3. We talk about event driven programming, but in practice it is cooperative. Code running in the browser is on the same thread as display update. This is why a browser application freezes if a program goes rogue. Of course our systems are so much faster that you can do most things without being concerned about blocking the UI.
