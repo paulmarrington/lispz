@@ -94,12 +94,19 @@
             leaves can be set with different actors
         ###
       )
-      ### ref: tree-view/{{name}}/add-branch
-          packet:   { base: path, branch: dict }
-          response: Promise { dom-li of branch }
+      ### ref:    tree-view/{{name}}/replace-branch
+          packet: tree
       ###
-      (message.listen (+ address "/add-branch") (lambda [packet]
-        (riot.update! tag { tree-root: packet.branch })
+      (message.listen (+ address "/replace-tree") (lambda [tree-root]
+        (riot.update! tag { tree-root })
+      ))
+      ### ref:    tree-view/{{name}}/add-branch
+          packet: { base: path, branch: dict }
+      ###
+      (message.listen (+ address "/update-branch") (lambda [packet]
+        (ref branch (follow-path packet.base))
+        (stateful.morph! branch { children: packet.branches })
+        (tag.update)
       ))
     ))
   </script>

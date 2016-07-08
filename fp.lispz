@@ -78,6 +78,7 @@
   (global first  (dot 0))
   (global second (dot 1))
   (global third  (dot 2))
+  (global fourth (dot 3))
   ### spec: Functional Programming >> map
     Works on functors.
   ###

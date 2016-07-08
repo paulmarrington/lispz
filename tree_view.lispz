@@ -1,9 +1,14 @@
 (using [net list message]
 
-  (ref update (lambda [component base branch options]
-    (ref address (+ "tree-view/" component "/add-branch"))
-    (message.send address { base branch options })
+  (ref replace (lambda [component tree]
+    (ref address (+ "tree-view/" component "/replace-tree"))
+    (message.send address tree)
   ))
 
-  (export { update })
+  (ref update (lambda [component base branch]
+    (ref address (+ "tree-view/" component "/update-branch"))
+    (message.send address { base branch })
+  ))
+
+  (export { replace update })
 )

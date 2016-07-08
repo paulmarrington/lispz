@@ -219,11 +219,16 @@
     ))
   ###
   ### ref: (github.branch> <repo> [branch]) ## branch defaults to master
-    e.g. (when (github.branch repo) [branch] ...)
+    e.g. (when (github.branch> repo) [branch] ...)
     https://developer.github.com/v3/repos/#get-branch
   ###
   (ref branch> (lambda [repo branch] (when repo [data]
     (get> (+ "repos/" data.full_name "/branches/" (or branch "master")))
+  )))
+
+  ### ref: (github.branches> repo) ###
+  (ref branches> (lambda [repo] (when repo [data]
+    (get> (+ "repos/" data.full_name "/branches"))
   )))
 
   ### ref: (github.session>)
@@ -320,7 +325,7 @@
   ))
 
   (ref github {
-    repo> repos> cdn-uri contents> tree> branch> blob> read>
+    repo> repos> cdn-uri contents> tree> branch> branches> blob> read>
     create> update> delete> fs
   })
   (export github)

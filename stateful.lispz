@@ -79,27 +79,33 @@
   ))
 ))
 
-(ref #morph! (lambda [obj]
-  (cond
+(ref #morph! (lambda [obj changes]
+  (ref morphed (cond
     obj.update!               obj ## already morphed
     (instance-of Array obj)   (#morph-array!  obj)
     (instance-of Object obj)  (#morph-object! obj)
     (else)                    (#morph-object! { data: obj })
-  )
+  ))
+  (morphed.update! changes)
 ))
 (ref #morph-object! (lambda [obj]
   (Object.defineProperties obj {
 
     update!: {value: (lambda [update value]
       (ref target this)
-      (cond (is arguments.length 1)
+      (cond update (cond (is arguments.length 1)
         (#merge! target update)
       (and (target.hasOwnProperty update) (instance-of Object value))
         (#merge! (get target update) value)
       (else)
         (#set! target update value)
-      )
+      ))
       target
+    )}
+
+    replace!: {value: (lambda [target value]
+      (this.delete! target)
+      (this.update! target value)
     )}
 
     delete!: { value: (lambda [to-delete] (delete (get this to-delete))) }

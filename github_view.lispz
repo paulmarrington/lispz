@@ -1,6 +1,11 @@
 (using [github list tree-view message]
 
   (ref add-repos (lambda [component owner]
+    (monitor-tree-messages component)
+    (fill-tree-view component owner)
+  ))
+
+  (ref fill-tree-view (lambda [component owner]
     (when (github.repos> owner) [repos]
       (ref paths ((extract-paths repos).map (=> (+ @ "/"))))
       (ref paths (path-to-tree paths repo-options))
@@ -12,14 +17,41 @@
           branch: "github"
         }
       })
-      (tree-view.update component "" tree {})
+      (tree-view.replace component tree)
     )
+  ))
+
+  (ref monitor-tree-messages (lambda [component]
+    (ref base    (+ "tree-view/" component "/dom/click"))
+    (ref opening (+ base "branch/open/"))
+    (message.listen (+ opening "repo") (lambda [packet]
+      (ref path (parse-path packet.path))
+      (ref repo (github.repo> path.repo))
+      (when (github.branches> repo) [data]
+        (ref branches (path-to-tree (data.map (=> @.name))) branch-options)
+        (tree-view.update component packet.path branches)
+      )
+    ))
+  ))
+
+  (ref parse-path (=>
+    (ref path (@.split "/"))
+    {
+      store:  (first path)
+      repo:   (+ (second path) "/" (third path))
+      branch: (fourth path)
+      file:   ((slice path 4).join "/")
+    }
   ))
 
   (ref repo-options [[
     { open: "user" closed: "user" color: "primary" branch: "user" }
     { open: "book" closed: "book" color: "success" branch: "repo" }
   ]])
+  (ref branch-options [[{
+    open: "random"    closed: "random"
+    color: "warning"  branch: "branch"
+  }]])
   (ref contents-options [[{
     open:   "folder-open"     closed: "folder-closed"
     branch: "dir"             leaf:   "file"
