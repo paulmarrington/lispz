@@ -3,10 +3,14 @@
     <page-content fluid=true>
       <panels name=editor-panels>
         <code-editor class="riot col-sm-6 draggable" name=code
-          height=46% heading=Lispz>
-          <yield to=buttons><buttons name=code/buttons align=right>
-            <push-button name=code/run type=info size=xs title="<alt><enter>">Run</push-button>
-          </buttons></yield>
+          toolbar=code.toolbar height=46% heading=Lispz>
+          <particle class=riot name=code.toolbar>
+            <buttons name=code.toolbar align=right>
+              <push-button name=code/run type=info size=xs title="<alt><enter>">
+                Run
+              </push-button>
+            </buttons>
+          </particle>
         </code-editor>
         <code-editor  class="riot col-sm-6 draggable" name=compiled
           height=46% heading="Generated Javascript" />
