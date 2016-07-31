@@ -1,41 +1,102 @@
-(using [github list tree-view message]
+(using [github list message]
 
-  (ref add-repos (lambda [component owner]
+  (ref add-repos (lambda [component]
     (monitor-tree-messages component)
-    (fill-tree-view component owner)
-  ))
-
-  (ref fill-tree-view (lambda [component owner]
-    (when (github.repos> owner) [repos]
-      (ref paths ((extract-paths repos).map (=> (+ @ "/"))))
-      (ref paths (path-to-tree paths repo-options))
-      (ref tree {
-        title: "GitHub" children: paths
-        style: {
-          open:   "cloud-download"
-          closed: "cloud-upload"
-          branch: "github"
-        }
-      })
-      (tree-view.replace component tree)
-    )
+    ((show-github-root component))
   ))
 
   (ref monitor-tree-messages (lambda [component]
-    (ref base    (+ "tree-view/" component "/dom/click"))
-    (ref opening (+ base "branch/open/"))
-    (message.listen (+ opening "repo") (lambda [packet]
+    (ref base    (+ "tree-view/" component "/dom/click/"))
+    (message.listen (+ base "close/github")  (show-github-root component))
+    (message.listen (+ base "open/github")   (show-owners      component))
+    (message.listen (+ base "close/owner")   (show-owners      component))
+    (message.listen (+ base "open/owner")    (show-repos       component))
+    (message.listen (+ base "close/repo")    (show-repos       component))
+    (message.listen (+ base "open/repo")     (show-branches    component))
+    (message.listen (+ base "close/branch")  (show-branches    component))
+    (message.listen (+ base "open/branch")   (show-files       component))
+    (message.listen (+ base "close/dir")     (show-files       component))
+    (message.listen (+ base "open/dir")      (show-dir         component))
+    (message.listen (+ base "open/file")     (edit-file        component))
+  ))
+
+  (ref styles {
+    github: { open: "cloud-download" closed: "cloud-upload" color: "default" }
+    user:   { open: "user"           closed: "user"         color: "primary" }
+    repo:   { open: "book"           closed: "book"         color: "success" }
+    branch: { open: "random"         closed: "random"       color: "info" }
+    files:  { open: "folder-open"    closed: "folder-close" color: "warning" }
+  })
+
+  (ref show-github-root (lambda [component] (lambda [packet]
+    (update-tree-view { component styles base: ""
+      groups: [[{ type: "github" children: [["GitHub/"]] }]]
+    })
+  )))
+
+  (ref show-owners (lambda [component] (lambda [packet]
+    (when (github.repos>) [repos]
+      (ref paths  (extract-paths "" repos))
+      (ref owners (paths.map (=> (first (@.split "/")))))
+      (ref unique (owners.filter (lambda [owner idx]
+        (isnt owner (get owners (+ idx 1)))
+      )))
+      (ref children (unique.map (=> (+ @ "/"))))
+      (update-tree-view {
+        component styles base: "/GitHub"
+        groups: [[{ type: "user" children }]]
+      })
+    )
+  )))
+
+  (ref show-repos (lambda [component] (lambda [packet]
+    (when (github.repos>) [repos]
       (ref path (parse-path packet.path))
-      (ref repo (github.repo> path.repo))
-      (when (github.branches> repo) [data]
-        (ref branches (path-to-tree (data.map (=> @.name))) branch-options)
-        (tree-view.update component packet.path branches)
-      )
-    ))
+      (ref children ((extract-paths path.repo repos).map (=> (+ @ "/"))))
+      (update-tree-view {
+        component styles base: packet.path
+        groups: [[{ type: "repo" children }]]
+      })
+    )
+  )))
+
+  (ref show-branches (lambda [component] (lambda [packet]
+    (ref path (parse-path packet.path))
+    (ref repo (github.repo> path.repo))
+    (when (github.branches> repo) [data]
+      (ref children (data.map (=> (+ @.name "/"))))
+      (update-tree-view {
+        component styles base: packet.path
+        groups: [[{ type: "branch" children }]]
+      })
+    )
+  )))
+
+  (ref show-files (lambda [component] (lambda [packet]
+    (ref path (parse-path packet.path))
+    (ref fs (github.fs path.repo path.branch))
+    (when (fs.list>) [files]
+      (ref children (extract-paths path.repo files))
+      (update-tree-view {
+        component styles base: packet.path
+        groups: [[{ type: "files" children }]]
+      })
+    )
+  )))
+
+  (ref show-dir (lambda [component] (lambda [packet]
+  )))
+
+  (ref edit-file (lambda [component] (lambda [packet]
+  )))
+
+  (ref update-tree-view (lambda [packet]
+    (ref address (+ "tree-view/" packet.component "/update-branch"))
+    (message.send address packet)
   ))
 
   (ref parse-path (=>
-    (ref path (@.split "/"))
+    (ref path (rest (@.split "/")))
     {
       store:  (first path)
       repo:   (+ (second path) "/" (third path))
@@ -44,53 +105,10 @@
     }
   ))
 
-  (ref repo-options [[
-    { open: "user" closed: "user" color: "primary" branch: "user" }
-    { open: "book" closed: "book" color: "success" branch: "repo" }
-  ]])
-  (ref branch-options [[{
-    open: "random"    closed: "random"
-    color: "warning"  branch: "branch"
-  }]])
-  (ref contents-options [[{
-    open:   "folder-open"     closed: "folder-closed"
-    branch: "dir"             leaf:   "file"
-    color:  "default"
-  }]])
-
-  (ref load-repo (lambda [name repo paths]
-  ))
-
-  (ref extract-paths (=> (list.sort (@.map (=> @.full-name)))))
-
-  ### ref: (github-view.path-to-tree path-list)
-    e.g. (tree-view.path-to-tree ["a/b" "a/c" "d/e" "f"])
-  ###
-  (ref path-to-tree (lambda [path-list options]
-    (ref paths (list.sort path-list))
-    (ref tree (stateful))
-    (list.for-each paths (lambda [path]
-      (ref level (lambda [branches depth]
-        (ref style (get options
-          (cond (< depth options.length) depth (else) (- options.length 1))
-        ))
-        (cond (> branches.length 1) (do
-          ## we are at a branch, recursive call to add more
-          (ref title 	 (first branches))
-          (ref sub-branch (level (rest branches (+ depth 1))))
-          (ref children  (stateful))
-          (cond sub-branch
-            (children.update! (second branches) sub-branch)
-          )
-          { title children style }
-        ) (first branches) ## at leaf
-          { title: (first branches)  style }
-        )
-      ))
-      (ref split (path.split "/"))
-      (tree.update! (first split) (level split 0))
-    ))
-    tree
+  (ref extract-paths (lambda [base paths]
+    (ref match (new RegExp (+ "^" base)))
+    (ref matched (paths.filter (=> (match.test @.full-name))))
+    (list.sort (matched.map (=> @.full-name)))
   ))
 
   (export { add-repos })
