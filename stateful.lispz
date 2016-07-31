@@ -1,26 +1,4 @@
 ### spec: basic >> state -- Stateful Containers
-  State is the elephant in the room - particularly in the functional programming paradigm.
-  When you have state that can be changed from outside, then any function that reads from it
-  no longer has referential integrity. This means that identical calls may not return identical
-  results.
-
-  But we need state. Without it the system is fully enclosed without input or output.
-  A referentially integrous :) function can be replaced by it's return value,
-  so why ever run it?
-
-  The aim is to be like any machine with the internals always working the same.
-  Think of a clock. The input is someone setting the time.
-  After that the external gearing, etc is meant to work consistently so that the
-  time advances at the correct pace. The current time is state. You can build and
-  test the entire device without the state. It is on the very outside. Once the
-  mechanism is working as expected, add a clock face and hands. Changing the hands
-  is input and displaying the time output. The latter can be considered a
-  side-effect.
-
-  The state container for lispz relies on polite access, not enforced rules. By custom an
-  function that changes ends in an exclamation mark. Use this to highlight review.
-  The default builder return an empty JavaScript dictionary.
-
       (describe "Create a new stateful object -- (ref context (stateful seed))" (lambda []
         (ref options (stateful {name: "undefined" address: "nowhere"}))
         (it "is able to read members directly -- context.member" (lambda []
@@ -37,10 +15,6 @@
         )
           )
       ))
-
-  Javascript lives in the world of objects as well as functions. Sometimes to work in this world
-  objects need to be labelled as stateful. Use this approach as sparingly as possible. Always
-  consider other alternatives first.
 
       (describe "Creating a stateful reference -- (ref context (stateful.morph! this))" (lambda []
         (ref that {a: 1 b: 2})
@@ -88,30 +62,41 @@
   ))
   (morphed.update! changes)
 ))
-(ref #morph-object! (lambda [obj]
+(ref #morph-object! (lambda [obj] (cond (not obj.update!) (do
   (Object.defineProperties obj {
 
     update!: {value: (lambda [update value]
       (ref target this)
-      (cond update (cond (is arguments.length 1)
-        (#merge! target update)
-      (and (target.hasOwnProperty update) (instance-of Object value))
-        (#merge! (get target update) value)
-      (else)
-        (#set! target update value)
+      (cond update (do
+        (cond (is arguments.length 1)
+          (#merge! target update)
+        (and (target.hasOwnProperty update) (instance-of Object value))
+          (#merge! (get target update) value)
+        (else)
+          (#set! target update value)
+        )
+        (target.after-update update value)
       ))
       target
     )}
 
-    replace!: {value: (lambda [target value]
-      (this.delete! target)
-      (this.update! target value)
+    after-update: { value: (=>) configurable: true }
+
+    replace!: {value: (lambda [replacements]
+      (this.delete! replacements)
+      (this.update! replacements)
     )}
 
-    delete!: { value: (lambda [to-delete] (delete (get this to-delete))) }
+    delete!: { value: (lambda [deletions]
+      (ref self this)
+      ((Object.keys deletions).forEach (=>
+        (#join '' ';delete self[' @ ']') @
+      ))
+      self
+    )}
   })
   obj
-))
+))))
 
 (ref #morph-array! (lambda [array]
   (Object.defineProperties array {
@@ -128,6 +113,12 @@
     (instance-of Object seed)   ((#morph-object! {}).update! seed)
     (else)                      (#morph-object! (or seed {}))
   ))
+))
+
+(global stateful.after-updates (lambda [obj action]
+  (Object.defineProperties obj { after-update:
+    {value: action  configurable: true }
+  })
 ))
 
 (global stateful.cache (curry [store update key]
