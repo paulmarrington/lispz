@@ -11,7 +11,7 @@ var lispz = function() {
   tkre = new RegExp('(' + stringRE + '\\' + delims + "|[^\\s" + not_delims + "]+)", 'g'),
   opens = new Set("({["), closes = new Set(")}]"), ast_to_js,
   location = {line:1, name:"boot"}, globals = {}, load_index = 0,
-  synonyms = {and:'&&', or:'||', is:'===', isnt:'!==', "=>": "lambda"},
+  synonyms = {and:'&&',or:'||',is:'===',isnt:'!==',"=>":"lambda"},
   javascript = "",
   slice = function(list, from, to) {
     var line = list.line
@@ -320,7 +320,10 @@ var lispz = function() {
 
     var body, vars = vars_to_js(function(){ body = ast.map(ast_to_js) })
     body.unshift(vars)
-    return append_source_map(body.join(";\n"), name + ".lispz", source)
+    body = body.map(function(seg, idx) {
+      return (seg[0] == ".") ? seg : (";\n" + seg)
+    })
+    return append_source_map(body.join(""), name + ".lispz", source)
   },
   //######################### Script Loader ####################################//
   cache = {}, manifest = [], pending_module = {},
@@ -410,14 +413,13 @@ var lispz = function() {
     el.addEventListener("error", function(evt) { console.log(evt); when_loaded(evt) })
     el.setAttribute("src", lispz_base_path+uri)
   }
-  window.addEventListener("error", window.onerror)
   other_window_onload = window.onload
   window.onload = function() {
     window.onload = null
     if (other_window_onload) other_window_onload()
     var q = lispz_url.split('#')
     script("ext/source-map.js", function() {
-    load(((q.length == 1) ? "core" : "core," + q.pop()),
+      load(((q.length == 1) ? "core" : "core," + q.pop()),
       function() {
         var to_load = [], to_run = []
         slice(document.querySelectorAll('script[type="text/lispz"]')).forEach(
