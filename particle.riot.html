@@ -1,0 +1,23 @@
+<!-- ### ref:    <particle name=test class=riot>html to set <b>test</b> to</particle>
+         inject: <particle name=test class=riot/>
+### -->
+<particle>
+  <yield/>
+
+  <script type="text/lispz">
+    (riot-tag (on-mount (using [dom]
+      (cond tag.root.childNodes.length (do ## source
+        (ref particle (dom.node.cache tag.opts.name { source: tag.root }))
+        (tag.update! {root: (dom.node.empty tag.root)})
+        (cond particle.destination  ## destination found before source
+          (dom.node.replace particle.destination particle.source)
+        )
+      ) (else) (do ## destination
+        (ref particle (dom.node.cache tag.opts.name { destination: tag.root }))
+        (cond (and particle particle.source)
+          (tag.update! {root: (dom.node.replace tag.root particle.source)})
+        )
+      ))
+    )))
+  </script>
+</particle>

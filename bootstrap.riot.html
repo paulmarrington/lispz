@@ -24,9 +24,9 @@
   <div class="panel { context }" name=outer>
     <div class=panel-heading if={ opts.heading } name=heading
          ><bars-menu align=right name={ opts.menu } owner={ opts.owner }/>
-         <yield from=buttons/>
+         <particle class=riot if={ opts.toolbar } name={ opts.toolbar }/>
          <h3 class=panel-title>{ opts.heading }</h3></div>
-    <div class="panel-body" name=body><yield from=body/></div>
+    <div class="panel-body" name=body><yield/></div>
     <div class=panel-footer if={ opts.footer } name=footer
          >{ opts.footer }</div>
   </div>
@@ -58,7 +58,7 @@
   <script type=text/lispz>
     (riot-tag
       (tag.update! {context: (+ "panel-" (or opts.context "default"))})
-      (mount-tag-using [dom]
+      (on-mount (using [dom]
         (cond opts.height (do
           (ref px (cond
             (is "%" (opts.height.slice -1))
@@ -68,7 +68,7 @@
           ))
           (dom.style! tag.outer {height: (+ px "px")})
         ))
-      )
+      ))
     )
   </script>
 </panel>
@@ -81,13 +81,13 @@
     panels .draggable { display: block; }
   </style>
   <script type=text/lispz>
-    (riot-tag (mount-tag-using [sortable]
+    (riot-tag (on-mount (using [sortable]
       (sortable.create tag.root (or opts.name "sortable") {
         draggable:  ".draggable"
         handle:     ".panel-title"
         dataIdAttr: "name"
       })
-    ))
+    )))
   </script>
 </panels>
 
@@ -152,7 +152,7 @@
           ))
         ))
       ))
-      (mount-tag-using [bootstrap message]
+      (on-mount (using [bootstrap message]
         (ref modal-tag ($ tag.modal))
         (ref show (=> (modal-tag.modal "show")))
         (ref hide (=> (modal-tag.modal "hide")))
@@ -167,7 +167,7 @@
         ))
         (transfer-event "hidden")
         (transfer-event "shown")
-      )
+      ))
     ))
   </script>
 </modal>
@@ -215,11 +215,11 @@
   </button>
   <style></style>
   <script type=text/lispz>
-    (riot-tag (mount-tag-using [message]
+    (riot-tag (on-mount (using [message]
       (tag.button.addEventListener "click" (=>
         (message.send opts.name {})
       ))
-    ))
+    )))
   </script>
 </push-button>
 
@@ -307,13 +307,13 @@
     bars-menu a.dropdown-toggle { cursor: pointer }
   </style>
   <script type=text/lispz>
-    (riot-tag (mount-tag-using [message riot]
+    (riot-tag (on-mount (using [message riot]
       (message.listen opts.name (lambda [items]
-        (riot.update! tag {items root: (or items [[]])})
+        (tag.update! {items menu-root: (or items [[]])})
       ))
       (($ tag.dropdown).on "show.bs.dropdown" (lambda
         (message.send (+ opts.name "/open"))
-        (riot.update! tag {items: tag.root})
+        (tag.update! {items: tag.menu-root})
       ))
       (tag.update! {goto: (lambda [ev]
         (cond ev.item.topic (message.send
@@ -325,7 +325,7 @@
           (ev.stopPropagation)
         ))
       )})
-    ))
+    )))
   </script>
 </bars-menu>
 
@@ -335,8 +335,8 @@
     down the left side of the screen. Clicking on the 3-bars icon at
     the top will slide the panel in and out.
   ### -->
-  <a aria-hidden="true" name=hamburger
-    class="glyphicon glyphicon-menu-hamburger text-danger"></a>
+  <a aria-hidden="true" name=handle
+    class="glyphicon glyphicon-th-list text-danger"></a>
   <div name=sidebar class="container bg-primary"><yield/></div>
   <style>
 
@@ -350,7 +350,7 @@
       position: absolute !important;
       z-index: 2000;
       cursor: pointer;
-      left: 4px;
+      left: 1px;
     }
     sidebar > div.container {
       z-index: 1000;
@@ -358,24 +358,30 @@
       width: 0;
       min-width: 18px;
       height: 100%;
-      overflow-y: auto;
+      overflow: hidden;
       -webkit-transition: all 0.5s ease;
       -moz-transition: all 0.5s ease;
       -o-transition: all 0.5s ease;
       transition: all 0.5s ease;
       padding-right: 0;
       padding-top: 10px;
-      overflow: hidden;
     }
-    sidebar > div.toggled { width: auto; padding-right: 15px; }
+    sidebar > div.toggled {
+      width: auto;
+      padding-right: 15px;
+      overflow: auto;
+    }
 
   </style>
   <script type=text/lispz>
     (riot-tag (using [message dom]
       (ref address (+ "sidebar/" opts.name))
-      (ref hamburger (stateful.morph! tag.hamburger))
-      (hamburger.update! { onclick: (lambda
+      (ref handle (stateful.morph! tag.handle))
+      (handle.update! { onclick: (lambda
         (tag.sidebar.classList.toggle "toggled")
+      )})
+      (handle.update! { onmouseover: (lambda
+        (tag.sidebar.classList.add "toggled")
       )})
       (ref close-sidebar (=>
         (tag.sidebar.classList.remove "toggled")
@@ -441,7 +447,7 @@
   </style>
   <script type=text/lispz>
     (riot-tag (using [dom net jquery riot message bootstrap]
-      (dom.append! "head" (dom.element "meta"
+      (dom.append! "head" (dom.node.create "meta"
         {name: "viewport" content: "width=device-width, initial-scale=1"}
       ))
     ))
