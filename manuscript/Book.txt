@@ -13,9 +13,11 @@ promises.md
 events.md
 messages.md
 components.md
+facetz.md
 riot.md
-codemirror.md
-markdown.md
-bootstrap.md
+riot-codemirror.md
+riot-markdown.md
+riot-bootstrap.md
+riot-particle.md
 libraries.md
 examples.md
