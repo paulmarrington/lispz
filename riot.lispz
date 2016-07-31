@@ -116,7 +116,7 @@ https://github.com/riot/riot
         (ref tags (riot.mount name))
         (resolve-promise (first tags))
       ) (else) (do
-        (ref element (dom.element name attributes))
+        (ref element (dom.node.create name attributes))
         (ref parent (or parent-selector "body"))
         (dom.append! parent element)
         (ref tags (riot.mount element name))
@@ -125,32 +125,33 @@ https://github.com/riot/riot
     )
   ))
 
-  ### spec: riot >> Trigger Display Changes
-  ###
-  (ref update! (lambda [tag changes]
-    (tag.update! changes)
-    (tag.update) ## repaint
+  (global #riot-tag (lambda [tag]
+    (cond (not tag.update!) (do
+      (stateful.morph! tag)
+      (stateful.after-updates tag (=> (this.update)))
+    ))
   ))
   (macro riot-tag [*body]
-    (ref tag (stateful.morph! this))
+    (ref tag (#riot-tag this))
+    (ref opts tag.opts)
     *body
   )
-  ## modules must be on mount or mounting will happen before trigger is set
-  (macro mount-tag-using [modules *body]
-    (tag.on "mount" (=> (using modules *body)))
-  )
+  (macro on-mount  [*body] (tag.on "mount"  (=> *body)))
+  (macro on-update [*body] (tag.on "update" (=> *body)))
 
   (ref loaded (net.script "ext/riot.js" (lambda (return window.riot))))
   (promise.failed loaded (export {build}))
   (when loaded (using [compilers]
-    (stateful.morph! riot.parsers.js)
-    (riot.parsers.js.update! {lispz:
+    (stateful.morph! riot.parsers.js { lispz:
       (lambda [source options url]
         (ref opts (or options url {}))
         (ref name (+ (or url opts.url "tags") ".riot"))
         (compilers.lispz.compile source name)
       )
     })
+    (stateful.morph! riot.util.tmpl { errorHandler: (lambda [err]
+        (console.error err.message "in" err.riotData.tagName "(" err ")")
+    )})
     (ref riot-elements (slice (document.getElementsByClassName "riot")))
     (ref load-all (promise.all (riot-elements.map (lambda [element]
       (ref name (element.tagName.toLowerCase))
@@ -158,7 +159,7 @@ https://github.com/riot/riot
     ))))
     (when load-all
       (riot.mount "*")
-      (export {build compile load mount inject update! child-tags tag-by-name})
+      (export {build compile load mount inject child-tags tag-by-name})
     )
   ))
 )

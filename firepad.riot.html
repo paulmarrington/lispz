@@ -24,7 +24,7 @@
     (riot-tag
       (tag.update! {menu: "codemirror/menu"})
       (tag.update! {heading: "Edit"})
-      (mount-tag-using [firebase codemirror firepad message dict]
+      (on-mount (using [firebase codemirror firepad message dict]
         (ref filename-key (+ "codemirror/" opts.name "/filename"))
         (ref cm (codemirror.open tag._riot_id tag.tags.panel.wrapper))
         (tag.update! {pad: (stateful {
@@ -63,7 +63,7 @@
         (tag.pad.on-ready (lambda
           (message.dispatch (+ "firepad/" opts.name) { open })
         ))
-      )
+      ))
     )
   </script>
 </firepad>

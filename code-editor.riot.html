@@ -1,7 +1,7 @@
 <code-editor>
+  <yield/>
   <panel height={ opts.height } heading={ heading }
-      menu={ menu } owner={ _riot_id }>
-      <yield to=buttons><yield from=buttons></yield></yield>
+      menu={ menu } owner={ _riot_id } toolbar={ opts.toolbar }>
   </panel>
   <style>
     code-editor .CodeMirror {
@@ -14,7 +14,7 @@
   <script type=text/lispz>
     (riot-tag
       (tag.update! {menu: "codemirror/menu" heading: (or opts.heading "Edit")})
-      (mount-tag-using [codemirror message message dict events]
+      (on-mount (using [codemirror message message dict events]
         (ref filename-key (+ "code-editor/" opts.name "/filename"))
         (ref cm (codemirror.open tag._riot_id tag.tags.panel.body))
 
@@ -50,7 +50,7 @@
         (message.dispatch (+ "code-editor/" opts.name)
           { open append contents focus }
         )
-      )
+      ))
     )
   </script>
 </code-editor>

@@ -20,7 +20,7 @@
   <style>
   </style>
   <script type=text/lispz>
-    (riot-tag (mount-tag-using [github message dom]
+    (riot-tag (on-mount (using [github message dom]
       (ref login-element (first
         (tag.root.getElementsByClassName "login")
       ))
@@ -31,6 +31,6 @@
         (login-element.setAttribute "value" "true")
         (message.send "modal/github-login/hide")
       ))
-    ))
+    )))
   </script>
 </github-login>
