@@ -1,6 +1,6 @@
 <tree-view>
   <ul name=tree if={ tree_root }>
-    <tree-branches branch={ tree_root }/>
+    <tree-branches branch={ tree_root } source=root/>
   </ul>
 
   <style>
@@ -40,9 +40,10 @@
             packet: { path: "a/path" }
         ###
         (=> (message.listen @ (lambda [event context]
-          (ref li (get-li event.srcElement))
-          (ref type (li.attr "type"))
-          (ref opening (cond (li.attr "next_child") "close" (else) "open"))
+          (ref li       (get-li event.srcElement))
+          (ref type     (li.attr "type"))
+          (ref is-open  (li.hasClass "open"))
+          (ref opening (cond is-open "close" (else) "open"))
           (ref address (+ context.address "/" opening "/" type))
           (message.send address { path: (li.attr "path") })
         )))
@@ -52,7 +53,7 @@
                     groups: {type children: [["dir/" "file"]] }}
       ###
       (message.listen (+ address "/update-branch") (lambda [packet]
-        (ref path (slice (packet.base.split "/") 1))
+        (ref path ((packet.base.split "/").filter (=> @.length)))
         (ref style-names (Object.keys packet.styles))
         (ref dig (lambda [depth steps]
           (cond steps.length (do
@@ -61,7 +62,7 @@
             (ref next-child (dig (+ depth 1) (rest steps)))
             {
               styles: packet.styles
-              base:   ((path.slice 1 (+ depth 1)).join "/")
+              base:   ((path.slice 0 depth).join "/")
               groups: [[{ type children: [[name]] next-child }]]
             }
           ) (else)
@@ -78,9 +79,9 @@
   <span each={ branch.groups } >
     <li each={ child, i in children }
     type={ type } path={ branch.base+"/"+child }
-    class={ branch: is_branch(child) } open={ branch.next_child }>
+    class={ branch: is_branch(child), open: parent.next_child } >
       <tree-item name={ child } type={ parent.type }
-      next_child={ parent.branch.next_child } styles={ parent.branch.styles } />
+      next_child={ parent.next_child } styles={ parent.branch.styles } />
     </li>
   </span>
 
@@ -108,12 +109,12 @@
 </tree-branches>
 
 <tree-item>
-  <button if={ is_branch } class="closed btn btn-{ styles.color }">
+  <button if={ is_branch } class="btn btn-{ styles.color }">
     <span class="open glyphicon glyphicon-{ styles.open }"></span>
     <span class="closed glyphicon glyphicon-{ styles.closed }"></span>
     <div>{ title }</div>
   </button>
-  <ul if={ is_branch }> <tree-branches branch={ next_child } /> </ul>
+  <ul if={ is_branch }> <tree-branches branch={ next_child } source=item/> </ul>
   <span if={ !is_branch }>{ title }</span>
 
   <style>
@@ -135,7 +136,7 @@
   <script type="text/lispz">
     (riot-tag (on-update
       (ref is-branch (is (last opts.name) "/"))
-      ## remove trailing slask from title before displaying it
+      ## remove trailing slash from title before displaying it
       (tag.update! {
         is-branch
         title:  (cond is-branch (opts.name.slice 0 -1) (else) opts.name)
