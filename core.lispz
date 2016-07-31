@@ -28,11 +28,17 @@ To access external modules, wrap your code in 'using'. Data and functions export
 ### Modules must export to continue processing ###
 (macro export [exports] (#join '' '__module_ready__(' exports ')'))
 
-### ref: (try actions error) ## error has error reference set
-    e.g. (try (do *body) (console.log error))
+### ref: (catch-errors actions error) ## error has error reference set
+    e.g. (catch-errors (do *body) (console.log error))
 ###
 (macro catch-errors [actions on-error]
-  (#join '' 'try{' actions '}catch(error){' on-error '}')
+  (do (#join '' 'try{_res_=' actions '}catch(error){_res_=' on-error '}'))
+)
+### ref: (guard actions) ## null if any errors
+    e.g. (ref result (guard data.source.counter)) ## null if source null
+###
+(macro guard [*body]
+  (do (#join '' 'try{_res_=' *body '}catch(error){_res_=undefined}'))
 )
 
 ### spec: developer >> debug
@@ -108,8 +114,6 @@ To access external modules, wrap your code in 'using'. Data and functions export
 (macro not [value] (#join '' '!(' value ')'))
 (macro instance-of [type obj] (#join '' '(' obj ' instanceof ' type ')'))
 
-(macro closure [?params *body] ((lambda *body) ?params))
-
 ### spec: basic >> do
 ###
 (macro do [*body] ((lambda *body) arguments))
@@ -147,20 +151,10 @@ To access external modules, wrap your code in 'using'. Data and functions export
 (macro get [dict *key] (#join '' '(_res_=' dict '[' (#join '][' *key) '])'))
 
 ### spec: conditional processing ###
-(macro empty? [list] (not list.length))
 (macro defined? [field] (!== (typeof field) "undefined"))
 
 
 (macro new [cls *params] (#join '' '(_res_=(new ' cls '(' (#join ',' *params) ')))'))
-###
-# Use contain to contain state changes. Any var inside a contain can be changed
-# no matter how many times the contain is called concurrently. It is also allows
-# the passing in of variables that are effectively copied and cannot be changed
-# from outside.
-###
-(macro contain [contain#args *contain#body]
-  ((lambda contain#args *contain#body) contain#args)
-)
 
 ### ref: (symbol-to-string symbol) ## ==> "symbol" ###
 (macro symbol-to-string [symbol] (#join '' '"' symbol '"'))
