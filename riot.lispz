@@ -6,7 +6,7 @@ https://github.com/riot/riot
 ###
 (using  [jquery net dict dom counters list]
   ## we need to update the tags cache
-  (stateful.morph! lispz.tags)
+  (lispz.update! { tags: (stateful) })
   ### spec: RIOT >> Get Tag Definition by Name
   ###
   (ref tag-by-name (pull lispz.tags))

@@ -465,7 +465,7 @@ var lispz = function() {
   return { compile: compile, parsers: parsers, load: load,
            macros: macros, cache: cache, http_request: http_request,
            clone: clone, manifest: manifest, script: script, css: css,
-           synonyms: synonyms, globals: globals, tags: {}, slice: slice,
+           synonyms: synonyms, globals: globals, slice: slice,
            location: location, path_base: lispz_base_path,
            set_debug_mode: set_debug_mode, log: log, empty_words: empty_words,
            add_reference: add_reference, reload: reload, base64, data_uri
