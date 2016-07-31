@@ -308,9 +308,8 @@
   ###
   (ref fs (lambda [name branch]
     (ref repo  (once (repo> name)))
-    (ref entries> (once (when (tree> (repo) fs.branch) [tree]
-      (dict.from-list tree.tree "path")
-    )))
+    (ref list> (once (when (tree> (repo) fs.branch) [tree] tree.tree)))
+    (ref entries> (once (when (fs.list>) [tree] (dict.from-list tree "path"))))
     (ref read> (lambda [path] (github.read> (repo) fs.branch path)))
     (ref write> (lambda [path contents message]
       (when entries>
@@ -321,7 +320,10 @@
         )
       )
     ))
-    (ref fs { name entries> read> write> branch: (or branch "master")})
+    (ref fs {
+      name branch: (or branch "master")
+      list> entries> read> write>
+    })
   ))
 
   (ref github {
