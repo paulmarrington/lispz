@@ -132,7 +132,7 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
         (ref tags (riot.mount name))
         (resolve-promise (first tags))
       ) (else) (do
-        (ref element (dom.element name attributes))
+        (ref element (dom.node.create name attributes))
         (ref parent (or parent-selector "body"))
         (dom.append! parent element)
         (ref tags (riot.mount element name))

@@ -9,7 +9,7 @@
       (ref markdown-menu (+ "panel/markdown/" opts.name "/menu"))
       (ref markdown-menu-action (+ markdown-menu "/action"))
       (tag.update! {menu: markdown-menu heading: opts.heading})
-      (mount-tag-using [markdown dom net message dict]
+      (on-mount (using [markdown dom net message dict]
         (ref contents-area tag.tags.panel.body)
 
         ## hamburger menu lists a history of pages followed
@@ -74,7 +74,7 @@
               })
         ###
         (message.dispatch (+ "showdown/" opts.name) { open load })
-      )
+      ))
     )
   </script>
 </markdown>

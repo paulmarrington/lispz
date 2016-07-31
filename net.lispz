@@ -9,7 +9,7 @@
   ))))
 
   (ref css (lambda [uri]
-    (ref el (dom.element "link" {
+    (ref el (dom.node.create "link" {
       type: "text/css" rel: "stylesheet" href: uri
     }))
     (dom.append! "head" el)

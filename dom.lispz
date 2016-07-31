@@ -23,11 +23,48 @@
     ))
   )
 
-  (ref element (lambda [tag-name attributes]
-    (ref elem (document.createElement tag-name))
-    (dict.for-each (or attributes {}) (lambda [k v] (elem.setAttribute k v)))
-    (return elem)
-  ))
+  (ref node {
+    ### ref: (dom.node.create type attributes)
+        e.g. (ref node (dom.node.create "div" {class: "hidden"}))
+    ###
+    create: (lambda [tag-name attributes]
+      (ref node (document.createElement tag-name))
+      (dict.for-each (or attributes {}) (lambda [k v] (node.setAttribute k v)))
+      node
+    )
+    ### ref: (dom.node.empty element)
+        e.g. (ref new-node (dom.empty-node tag.root))
+    ###
+    empty: (lambda [node]
+      (ref cleared (node.cloneNode false))
+      (node.parentNode.replaceChild cleared node)
+      cleared
+    )
+    ### ref: (dom.node.cache name node)
+        e.g. (dom.node.cache "test" tag.root)
+             (dom.node.fill tag.root (dom.node.cache "test"))
+    ###
+    cache:  (lambda [name node]
+      (cond node (node-cache.update! name node))
+      (get node-cache name)
+    )
+    ### ref: (dom.node.fill node with-other-node)
+        e.g. (dom.node.fill tag.root (dom.node.cache tag.opts.name))
+    ###
+    fill: (lambda [node from]
+      (ref new-node (from.cloneNode from true))
+      (node.parentNode.replaceChild new-node node)
+      new-node
+    )
+    ### ref: (dom.node.replace old-node new-node)
+        e.g. (dom.node.replace tag.root (dom.node.cache tag.opts.name))
+    ###
+    replace: (lambda [old-node new-node]
+      (old-node.parentNode.replaceChild new-node old-node)
+      new-node
+    )
+  })
+  (ref node-cache (stateful))
 
   (ref event-throttle (lambda [element event action]
     (ref add null)
@@ -90,7 +127,7 @@
   ))
 
   (export {
-    append! element event-throttle style! inner-html!
-    select scrape-form message: dom-message click
+    append! event-throttle style! inner-html!
+    select scrape-form message: dom-message click node
   })
 )
