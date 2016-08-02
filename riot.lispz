@@ -125,14 +125,8 @@ https://github.com/riot/riot
     )
   ))
 
-  (global #riot-tag (lambda [tag]
-    (cond (not tag.update!) (do
-      (stateful.morph! tag)
-      (stateful.after-updates tag (=> (this.update)))
-    ))
-  ))
   (macro riot-tag [*body]
-    (ref tag (#riot-tag this))
+    (ref tag (stateful.morph! this))
     (ref opts tag.opts)
     *body
   )

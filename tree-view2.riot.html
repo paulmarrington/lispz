@@ -1,0 +1,149 @@
+<tree-view>
+  <ul name=tree if={ tree_root }>
+    <tree-branches branch={ tree_root } source=root/>
+  </ul>
+
+  <style>
+    tree-view {
+      color: black;
+      margin-top: 10px;
+    }
+    tree-view > ul {
+      padding: 3px 0 0 0 !important;
+    }
+
+    tree-view li {
+        list-style-type:none;
+        margin:0;
+        padding:5px 5px 0 5px;
+        position:relative;
+        cursor:pointer;
+    }
+
+    tree-view hidden { display: none }
+  </style>
+
+  <script type="text/lispz">
+    (riot-tag (on-mount (using [message dom riot dict]
+      (tag.update! { tree-root: {} })
+      (ref address (+ "tree-view/" opts.name))
+      (ref get-li (=> (($ @).closest "li" ($ tag.tree))))
+
+      (cascade
+        ### ref:    tree-view/{{name}}/dom/click  {{MouseEvent}}
+            when any item in the tree is clicked
+        ###
+        (=> (dom.click tag.tree address))
+
+        ### ref: branches can be processed with different actors
+            tree-view/{{name}}/dom/click/{{open|closed}}/{{actor}}
+            packet: { path: "a/path" }
+        ###
+        (=> (message.listen @ (lambda [event context]
+          (ref li       (get-li event.srcElement))
+          (ref type     (li.attr "type"))
+          (ref is-open  (li.hasClass "open"))
+          (ref opening (cond is-open "close" (else) "open"))
+          (ref address (+ context.address "/" opening "/" type))
+          (message.send address { path: (li.attr "path") })
+        )))
+      )
+      ### ref:    tree-view/{{name}}/update-branch
+          packet: { base: packet.path styles: { type: { open closed color }}
+                    groups: {type children: [["dir/" "file"]] }}
+      ###
+      (message.listen (+ address "/update-branch") (lambda [packet]
+        (ref path ((packet.base.split "/").filter (=> @.length)))
+        (ref style-names (Object.keys packet.styles))
+        (ref dig (lambda [depth steps]
+          (cond steps.length (do
+            (ref name (+ (first steps) "/"))
+            (ref type (get style-names depth))
+            (ref next-child (dig (+ depth 1) (rest steps)))
+            {
+              styles: packet.styles
+              base:   ((path.slice 0 depth).join "/")
+              groups: [[{ type children: [[name]] next-child }]]
+            }
+          ) (else)
+            packet
+          )
+        ))
+        (tag.replace! { tree-root: (dig 0 path) })
+      ))
+    )))
+  </script>
+</tree-view>
+
+<tree-branches>
+  <span each={ branch.groups } >
+    <li each={ child, i in children }
+    type={ type } path={ branch.base+"/"+child }
+    class={ branch: is_branch(child), open: parent.next_child } >
+      <tree-item name={ child } type={ parent.type }
+      next_child={ parent.next_child } styles={ parent.branch.styles } />
+    </li>
+  </span>
+
+  <style>
+    tree-branches li:hover { font-weight: bolder; }
+    tree-branches li.branch:hover { color: darkblue; }
+    tree-branches li.leaf:hover {
+      font-style: italic;
+      color: brown;
+    }
+  </style>
+
+  <script type="text/lispz">
+    (riot-tag (on-update
+      (tag.update! {
+        branch:     (or opts.branch { groups: [[]] })
+        is-branch:  (lambda [child]
+          (cond (and child child.length (is (last child) "/"))
+            "branch" (else) "leaf"
+          )
+        )
+      })
+    ))
+  </script>
+</tree-branches>
+
+<tree-item>
+  <button if={ is_branch } class="btn btn-{ styles.color }">
+    <span class="open glyphicon glyphicon-{ styles.open }"></span>
+    <span class="closed glyphicon glyphicon-{ styles.closed }"></span>
+    <div>{ title }</div>
+  </button>
+  <ul if={ is_branch }> <tree-branches branch={ next_child } source=item/> </ul>
+  <span if={ !is_branch }>{ title }</span>
+
+  <style>
+    tree-item ul { padding-left: 16px; }
+    tree-item > button.btn { padding: 3px 6px; }
+    tree-item > button > span.glyphicon + div {
+      float: right;
+      padding-left: 6px;
+      position: relative;
+    }
+    tree-item > button > span.open { display: inherit; }
+    tree-item > button > span.closed { display: none; }
+    tree-item > button.closed > span.open { display: none; }
+    tree-item > button.closed > span.closed { display: inherit; }
+    tree-item > button.closed + ul { display: none; }
+    tree-item > span:hover { color: darkred; }
+  </style>
+
+  <script type="text/lispz">
+    (riot-tag (on-update
+      (ref is-branch (is (last opts.name) "/"))
+      ## remove trailing slash from title before displaying it
+      (tag.update! {
+        is-branch
+        title:  (cond is-branch (opts.name.slice 0 -1) (else) opts.name)
+        type:   opts.type
+        styles: (get opts.styles opts.type)
+        next-child: opts.next-child
+      })
+    ))
+  </script>
+</tree-item>

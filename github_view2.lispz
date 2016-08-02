@@ -1,0 +1,132 @@
+(using [github list message]
+
+  (ref add-repos (lambda [component]
+    (monitor-tree-messages component)
+    ((show-github-root component))
+  ))
+
+  (ref monitor-tree-messages (lambda [component]
+    (ref base    (+ "tree-view/" component "/dom/click/"))
+    (message.listen (+ base "close/github")  (show-github-root component))
+    (message.listen (+ base "open/github")   (show-owners      component))
+    (message.listen (+ base "close/owner")   (show-owners      component))
+    (message.listen (+ base "open/owner")    (show-repos       component))
+    (message.listen (+ base "close/repo")    (show-repos       component))
+    (message.listen (+ base "open/repo")     (show-branches    component))
+    (message.listen (+ base "close/branch")  (show-branches    component))
+    (message.listen (+ base "open/branch")   (show-files       component))
+    (message.listen (+ base "close/dir")     (show-files       component))
+    (message.listen (+ base "open/dir")      (show-dir         component))
+    (message.listen (+ base "open/file")     (edit-file        component))
+  ))
+
+  (ref styles {
+    github: { open: "cloud-download" closed: "cloud-upload" color: "default" }
+    owner:  { open: "user"           closed: "user"         color: "primary" }
+    repo:   { open: "book"           closed: "book"         color: "success" }
+    branch: { open: "random"         closed: "random"       color: "info" }
+    files:  { open: "folder-open"    closed: "folder-close" color: "warning" }
+  })
+
+  (ref show-github-root (lambda [component] (lambda [packet]
+    (update-tree-view { component styles base: ""
+      groups: [[{ type: "github" children: [["GitHub/"]] }]]
+    })
+  )))
+
+  (ref show-owners (lambda [component] (lambda [packet]
+    (when (github.repos>) [repos]
+      (ref paths  (extract-paths "" repos))
+      (ref owners (paths.map (=> (first (@.split "/")))))
+      (ref unique (owners.filter (lambda [owner idx]
+        (isnt owner (get owners (+ idx 1)))
+      )))
+      (ref children (unique.map (=> (+ @ "/"))))
+      (update-tree-view {
+        component styles base: "GitHub"
+        groups: [[{ type: "owner" children }]]
+      })
+    )
+  )))
+
+  (ref show-repos (lambda [component] (lambda [packet]
+    (when (github.repos>) [repos]
+      (ref path (parse-path packet.path 2))
+      (ref paths (extract-paths path.repo repos))
+      (ref repos (paths.map (=> (second (@.split "/")))))
+      (ref base (repos.filter (=> @.length)))
+      (ref children ((repos.filter (=> @.length)).map (=> (+ @ "/"))))
+      (update-tree-view {
+        component styles base: (normalise-path packet.path 2)
+        groups: [[{ type: "repo" children }]]
+      })
+    )
+  )))
+
+  (ref show-branches (lambda [component] (lambda [packet]
+    (ref path (parse-path packet.path 3))
+    (ref repo (github.repo> path.repo))
+    (when (github.branches> repo) [data]
+      (ref children (data.map (=> (+ @.name "/"))))
+      (update-tree-view {
+        component styles base: (normalise-path packet.path 3)
+        groups: [[{ type: "branch" children }]]
+      })
+    )
+  )))
+
+  (ref show-files (lambda [component] (lambda [packet]
+    (ref path (parse-path packet.path))
+    (ref fs (github.fs path.repo path.branch))
+    (when (fs.list>) [files]
+      (ref children (extract-files "[^/]*$" files))
+      (update-tree-view {
+        component styles base: (normalise-path packet.path)
+        groups: [[{ type: "files" children }]]
+      })
+    )
+  )))
+
+  (ref show-dir (lambda [component] (lambda [packet]
+  )))
+
+  (ref edit-file (lambda [component] (lambda [packet]
+  )))
+
+  (ref update-tree-view (lambda [packet]
+    (ref address (+ "tree-view/" packet.component "/update-branch"))
+    (message.send address packet)
+  ))
+
+  (ref normalise-path (lambda [path depth]
+    (ref all-segments       ((path.split "/").filter (=> path.length)))
+    (ref required-segments  (slice all-segments 0 depth))
+    (required-segments.join "/")
+  ))
+
+  (ref parse-path (lambda [path depth]
+    (ref parts (slice ((path.split "/").filter (=> @.length)) 0 depth))
+    {
+      store:  (first parts)
+      repo:   (+ (second parts) "/" (or (third parts) ""))
+      branch: (fourth parts)
+      file:   ((slice parts 4).join "/")
+    }
+  ))
+
+  (ref extract-paths (lambda [base paths]
+    (ref match (new RegExp (+ "^" base)))
+    (ref matched (paths.filter (=> (match.test @.full-name))))
+    (list.sort (matched.map (=> @.full-name)))
+  ))
+
+  (ref extract-files (lambda [base paths]
+    (ref match (new RegExp (+ "^" base)))
+    (ref matched (paths.filter (=> (match.test @.path))))
+    (list.sort (matched.map (lambda [item]
+      (+ item.path (cond (is item.type "tree") "/" (else) ""))
+    )))
+  ))
+
+  (export { add-repos })
+)

@@ -12,7 +12,7 @@ Imagine a stateless conversation...
 
 ... and so on. Not very productive, is it? So, when a functional programmer next tells you that state is evil, act like Mr. Stateless and drive them crazy!
 
-What your functional programming friend is really saying is that for many reason state needs to be contained. Uncontrolled state and stateful objects make software
+What your functional programming friend is really saying is that for many reason state needs to be contained. Uncontrolled state and stateful objects make software --
 
 * hard to test and debug because it is difficult to tell what state it is in at any given time.
 * more difficult to reason about as time and order must be accounted for.
@@ -43,24 +43,45 @@ A dictionary can created is a way that it can hold stateful data. It can also be
 
 Once a reference to a stateful object has been created it is possible to change data from the root of the dictionary tree.
 
-    (stateful-data.update! { name: "goodbye" })
+    (stateful-data.merge! { name: "goodbye" })
     ## ==> { name: "goodbye" seed: { more: "less" less: "more" }}
 
-    (stateful-data.update! { seed: { more: "more" } })
+    (stateful-data.merge! { seed: { more: "more" } })
     ## ==> { name: "goodbye" seed: { more: "more" less: "more" }}
 
-As you can see, _update!_ merges the new data with the old. To replace a node...
+The problem with merging is the same as the benefit. It walks the tree and replaces leaf items that have changed. It leaves branches and other root items alone. Replacing a node is a lot more efficient and leads to less surprises...
 
     (stateful-data.replace! { seed: { forever: "and again" } })
     ## ==> { name: "goodbye" seed: { forever: "and again" }}
 
-To remove a node, use _delete_:
+Sometimes it is necessary to merge and then _delete!_ to get the result you need:
 
     (stateful-data.delete! stateful-data.seed.forever)
     ## ==> { name: "goodbye" seed: { }}
 
 In a functional language, everything is an expression. In all cases above the expression resolves to _stateful-data_.
 
-document name/value version of stateful
+The examples above only work with static keys. If you need to manipulate an item when you only know the key at runtime, use:
 
-document stateful after-update
+    (ref my-key (cond left "left" (else) "right"))
+    (stateful-data.merge! my-key my-value)
+
+Data changes can be linked to other actions. This is a case of side-effects on side-effects and puts referential integrity completely out of the picture.
+
+    (stateful.after-updates stateful-data (lambda [updates]
+      (console.log "Changes: " updates)
+    ))
+
+One of the more common uses for statefulness in a functional program is caching of static slow-to-retrieve data. It can be used for keeping reference data from a database - or pointers to nodes in the DOM. The cache is a curried function to aid in representations.
+
+    (ref stacks (stateful.cache stateful-data (=> (stateful [])))
+    ((stacks "first").push! 11)
+    ((stacks "first").push! 22)
+    (console.log stacks.first) ## ==> [[11 22]]
+
+It's all very well being able to store state, but Lispz runs in the browser using JavaScript libraries. This means there are times we need to change pr-existing objects or DOM elements. For those we must _morph!_ an object into a stateful one.
+
+    (ref data {})
+    (stateful.morph data)
+    ## ... is the same as
+    (ref data (stateful))
