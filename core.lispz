@@ -63,7 +63,7 @@ To access external modules, wrap your code in 'using'. Data and functions export
 
         (lambda [type rest] (console.log type "=" (*arguments 1)))
 ###
-(macro *arguments [from] (lispz.slice arguments from))
+(macro *arguments [from to] (lispz.slice arguments from to))
 
 ### spec: basic >> References
   @TODO

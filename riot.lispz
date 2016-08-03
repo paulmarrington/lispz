@@ -9,13 +9,13 @@ https://github.com/riot/riot
   (lispz.update! { tags: (stateful) })
   ### spec: RIOT >> Get Tag Definition by Name
   ###
-  (ref tag-by-name (pull lispz.tags))
+  (ref tag-by-name (get-from lispz.tags))
 
   ## has side-effects as riot caches compile results
   (ref compile (=> (riot.compile.apply riot arguments)))
 
   (ref processed-tags (stateful {}))
-  (ref processed-tag  (pull processed-tags))
+  (ref processed-tag  (get-from processed-tags))
 
   (ref child-tags (lambda [html-object]
     (ref html (or html-object.html html-object))

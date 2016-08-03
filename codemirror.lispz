@@ -386,7 +386,7 @@ https://github.com/codemirror/CodeMirror
     (else)
       default-mode-extensions
   ))
-  (ref get-mode-extension (pull mode-extensions))
+  (ref get-mode-extension (get-from mode-extensions))
 
   (ref set-mode (lambda [cm name]
     (ref mode (do
@@ -491,8 +491,8 @@ https://github.com/codemirror/CodeMirror
   ))
 
   (ref lisp-modes {lispz: true clojure: true commonlisp: true scheme: true})
-  (ref lisp-mode  (pull lisp-modes))
-  (ref subpar-command (pull subpar.core))
+  (ref lisp-mode  (get-from lisp-modes))
+  (ref subpar-command (get-from subpar.core))
 
   (ref subpart (lambda [cmd opt]
     (return (lambda [cm]

@@ -45,8 +45,8 @@
 
   ## paredit keys that defer if not in lisp code
   (ref lisp-modes {lispz: true clojure: true commonlisp: true scheme: true})
-  (ref is-lisp-mode (pull lisp-modes))
-  (ref subpar-command (pull subpar.core))
+  (ref is-lisp-mode (get-from lisp-modes))
+  (ref subpar-command (get-from subpar.core))
   (ref subpart (lambda [cmd opt]
     (return (lambda [cm]
       (ref mode (cm.getModeAt (cm.getCursor)))

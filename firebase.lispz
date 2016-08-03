@@ -5,7 +5,7 @@ https://www.firebase.com/
 ###
 (using  [net]
   (ref databases (stateful.morph! (JSON.parse (or (localStorage.getItem "firebases") "{}"))))
-  (ref database-uri (pull databases))
+  (ref database-uri (get-from databases))
 
   (ref register (lambda [key uri]
     (databases.update! key uri)

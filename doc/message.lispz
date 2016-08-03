@@ -45,8 +45,8 @@
 (using [list]
   (ref store (stateful)) (ref expecting   (stateful))
   (ref links (stateful)) (ref dispatchers (stateful))
-  (ref in-store (pull store))
-  (ref get-link (pull links))
+  (ref in-store (get-from store))
+  (ref get-link (get-from links))
 
   (ref exchange (lambda [address]
     (or (in-store address) (do
@@ -167,7 +167,7 @@
       (scratchpad.open {key: "scratchpad.lispz" contents: null})
   ###
   (ref dispatch (lambda [address actions]
-    (ref get-action (pull actions))
+    (ref get-action (get-from actions))
     (dispatchers.update! address actions)
     (listen address (lambda [packet]
       (execution-context {context: "dispatch" address packet}

@@ -70,15 +70,15 @@
     or use _pull_ as a curry
 
         (ref commands {a: 1 b: 2 c: 3})
-        (ref command (pull commands))
+        (ref command (get-from commands))
         (command "b")
   ###
-  (global dot    (curry [index array] (#join '' '(_res_=' array '[' index '])')))
-  (global pull   (flip lispz.globals.dot))
-  (global first  (dot 0))
-  (global second (dot 1))
-  (global third  (dot 2))
-  (global fourth (dot 3))
+  (global dot (curry [index array] (#join '' '(_res_=' array '[' index '])')))
+  (global get-from  (flip lispz.globals.dot))
+  (global first     (dot 0))
+  (global second    (dot 1))
+  (global third     (dot 2))
+  (global fourth    (dot 3))
   ### spec: Functional Programming >> map
     Works on functors.
   ###
@@ -87,10 +87,6 @@
     Works on functors.
   ###
   (global filter (lambda [item action] (item.filter action)))
-  ### spec: Functional Programming >> map and filter
-    (map-and-filter items (=> items.end))
-  ###
-  (global map-and-filter (compose lispz.globals.filter lispz.globals.map))
 
   ### ref: (recurse function)
       e.g. (ref sum (recursion [x y]

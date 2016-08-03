@@ -51,13 +51,13 @@ Scripting can be any language of choice that runs on the browser. JavaScript, Li
   (stateful.morph! lispz.tags)
   ### spec: RIOT >> Get Tag Definition by Name
   ###
-  (ref tag-by-name (pull lispz.tags))
+  (ref tag-by-name (get-from lispz.tags))
 
   ## has side-effects as riot caches compile results
   (ref compile (=> (riot.compile.apply riot ``(*arguments 0))))
 
   (ref processed-tags (stateful {}))
-  (ref processed-tag  (pull processed-tags))
+  (ref processed-tag  (get-from processed-tags))
 
   (add-execution-context-logger "riot.load" (lambda [context error-args]
     (return (+ "tag" context.name " from " context.uri))
