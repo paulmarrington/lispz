@@ -82,16 +82,20 @@
 
     after-update: { value: (=>) configurable: true }
 
-    replace!: {value: (lambda [replacements]
-      (this.delete! replacements)
-      (this.update! replacements)
+    replace!: {value: (lambda [replacements value]
+      (this.delete! replacements value)
+      (this.update! replacements value)
     )}
 
-    delete!: { value: (lambda [deletions]
+    delete!: { value: (lambda [deletions is-name]
       (ref self this)
-      ((Object.keys deletions).forEach (=>
-        (#join '' ';delete self[' @ ']') @
-      ))
+      (cond is-name
+        (#join '' ';delete self[' deletions ']')
+      (else)
+        ((Object.keys deletions).forEach (=>
+          (#join '' ';delete self[' @ ']') @
+        ))
+      )
       self
     )}
   })
@@ -100,7 +104,7 @@
 
 (ref #morph-array! (lambda [array]
   (Object.defineProperties array {
-    update!:  { value: (lambda [index value] (#set! this index value)) }
+    replace!: { value: (lambda [index value] (#set! this index value)) }
     push!:    { value: (=> (Array.prototype.push.apply this (*arguments 0))) }
     pop!:     { value: (=> (Array.prototype.pop.apply this)) }
   })

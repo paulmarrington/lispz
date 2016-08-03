@@ -1,2 +1,69 @@
-(using [dom net]
+(using [list compilers]
+  ## tags need only be loaded once then used from the cache
+  (ref tags (stateful))
+
+  # convert HTML into a DOM fragment
+  (ref html-to-DOM (lambda [html]
+    (ref dom-fragment (stateful.morph! (document.createElement 'div')))
+    (dom-fragment.update! { innerHTML: tag-html })
+  ))
+
+  # Each DOM fragment can contain one or more tags
+  (ref extract-tags (lambda [dom-fragment]
+    (slice (dom-fragment.children))
+  ))
+
+  ## all styles in facetz are global - so inject them into the head
+  (ref inject-styles (lambda [style-elements]
+      (list.for-each style-elements (lambda [style-element]
+        (head-element.appendChild style-element)
+      ))
+  ))
+  (ref head-element (get (document.getElementsByTagName 'head') 0))
+
+  ## compile scripts as functions expecting a tag structure as parameter
+  ## when an instance of the tag is instantiated on the page
+  (ref compile-scripts (lambda [script-elements tag-name]
+    (ref combined-code (map script-elements (lambda [script-element]
+      ## remove from tag template
+      (script-element.parentNode.removeChild script-element)
+      (ref code (script-element.innerHTML))
+      (ref type (or (script-element.getAttribute "type") "javascript"))
+      (ref ext (last (type.split "/")))
+      (ref compiler (get compilers type))
+      (compiler code (+ tag-name ".facetz." ext))
+    )))
+    (new Function "tag" combined-code)
+  ))
+
+  ## If we extract child facetz now, they will be easier to instantiate
+  ## with this node. We recognise a child facetz because either its tag
+  ## name is in the index of known facetz or it has a class of _facetz_
+  (ref find-facetz (lambda [node]
+  ))
+
+  ## for each tag extracted from the template, pull out style and
+  ## scripts so that it is pure view. Drop style into head and
+  ## compile scripts to use for tag logic.
+  (ref extract-html-css-and-scripts (lambda [tag-doms]
+    (tag-doms.map (lambda [node]
+      (inject-styles (node.getElementsByTagName "style"))
+      (ref script-elements (node.getElementsByTagName "script"))
+      (ref script (compile-scripts script-elements node.tagName))
+      (ref child-facetz (find-facetz node))
+      { node scripts name: node.tagName child-facetz }
+    ))
+  ))
+
+  ## split tag into html, css and script - and act on each accordingly
+  (ref compile-tags (lambda [tag-html]
+    (ref dom-fragment (html-to-DOM tag-html)
+    (ref tag-doms (extract-tags dom-fragment))
+    (tag-doms.forEach (=>
+      (ref tag (extract-html-css-and-scripts @))
+      (tags.replace! tag.name tag)
+    ))
+  ))
+  ## a container we clone to hold the DOM for each tag
+  (ref tag-box (document.createElement 'div'))
 )

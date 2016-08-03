@@ -14,11 +14,20 @@
 ###
 (ref run (lambda [js] ((new Function js))))
 
+(ref lispz-compiler { compile: (lambda [source name]
+    (lispz.compile (+ source "\n") name)
+) ext: "js" })
+
+(ref js-compiler { compile: (lambda [source name]
+  (+ source "\n//# sourceURL=" name "\n")
+) ext: "js"})
+
 (ref compilers (stateful {
   run add
 
-  lispz: { compile: (lambda [source name]
-    (lispz.compile (+ source "\n") name)
-  ) ext: "js" }
+  lispz:              lispz-compiler
+  "text/lispz":       lispz-compiler
+  javascript:         js-compiler
+  "text/javascript":  js-compiler
 }))
 (export compilers)
