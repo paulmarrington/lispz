@@ -82,6 +82,11 @@ One of the more common uses for statefulness in a functional program is caching 
 It's all very well being able to store state, but Lispz runs in the browser using JavaScript libraries. This means there are times we need to change pr-existing objects or DOM elements. For those we must _morph!_ an object into a stateful one.
 
     (ref data {})
-    (stateful.morph data)
+    (stateful.morph! data)
+
     ## ... is the same as
     (ref data (stateful))
+
+    ## except you can do it to data structures you don't own
+    (ref dom-fragment (stateful.morph! (document.createElement 'DIV')))
+    (dom-fragment.update! { innerHTML: tag-html })
