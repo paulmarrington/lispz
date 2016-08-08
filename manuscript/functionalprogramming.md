@@ -24,10 +24,10 @@ This doesn't look very useful (probably because it isn't). Here is a simple use 
 
 You will soon recognise code from functional programmers who favour currying. Their functions will be defined with the parameters in an unusual order so that the parameters likely to change are at the end. If you are lucky enough to have a function with two parameters you can reverse the order. Pull is curried, so we can use it to create a new function that knows about a stateful cache and can retrieve items by name.
 
-    (global pull  (flip lispz.globals.dot))
+    (global get-from  (flip lispz.globals.dot))
 
     (ref commands {a: 1 b: 2 c: 3})
-    (ref command (pull commands))
+    (ref command (get-from commands))
     (command "b")
 
 I do not use currying a lot, preferring explicit definitions, but when it is useful it is very useful. The following example keeps a cache of arrays accessed by name. When a new name is used a new array is created.
@@ -47,7 +47,7 @@ Composition is easier to understand. A function is returned that will be called 
 
     ((compose (=> (+ @ 1)) (=> (+ @ 2))) 3) ==> 6
 
-Unlike is some implementations, functions are run left to right. The last parameter is the seed value for the first function in the sequence. This makes _compose_ useful for currying.
+Unlike in some implementations, functions are run left to right. The last parameter is the seed value for the first function in the sequence. This makes _compose_ useful for currying.
 
 In reactive programming the first function in a generator followed by one or more processors. As this is the most common use for _compose_ in lispz, there is a second form called _cascade_ that provides a null seed.
 
@@ -91,7 +91,7 @@ Because it is very common to translate items with _map_ then _filter_ then Lispz
 
 ## Tail-call Recursion
 
-Another trait common to 'real' functional languages is tail-call recursion. They (almost) never have imperative loop syntax such as _for_ and _while_. Instead functions will call themselves to process sequences. This is called recursion.
+Another trait common to 'real' functional languages is tail-call recursion. Functional languages (almost) never have imperative loop syntax such as _for_ and _while_. Instead functions will call themselves to process sequences. This is called recursion.
 
     (ref count-down (lambda [count]
       (ref next (- count 1))
@@ -129,3 +129,23 @@ This is too implicit. Besides it is also theoretical since JavaScript does not (
     (count-down 1000000)
 
 Now the second function will not cause a stack overflow. Explicit is better than implicit.
+
+Oh, and the implementation is quite interesting - but not simple to understand. I will leave understanding as an exercise to the reader - as I can't ...quite... know how to describe it in words. As always in Lispz the bulk of the work is in a function with a macro so that it can be used like any other function definition.
+
+    (global #recursion (lambda [context func]
+      (lambda
+          (ref args (\*arguments))
+          (cond context.queue
+            (context.queue.push args)
+          (else)  (do
+            (context.update! { queue: [[args]]})
+            (#join '' 'while(' (ref next-args (context.queue.shift)) '){'
+              (context.update! { result: (func.apply null next-args)})
+            '}'))
+          )
+          context.result
+        )
+    ))
+    (macro recursion [?params \*body]
+      (#recursion (stateful) (lambda ?params \*body))
+    )

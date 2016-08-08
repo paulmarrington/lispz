@@ -20,7 +20,7 @@ This generates the JavaScript output directly as #join is an immediate function 
 
 # Defining a Macro
 
-A macro is defined by giving it a name, list of parameters and a body. In it's simplest form the parameters are substituted into the body at reference time. It is like a function expanded in-line.
+A macro is defined by giving it a name, list of parameters and a body. In other words it looks and behaves like a function. In it's simplest form the parameters are substituted into the body at reference time. It is like a function expanded in-line - or a C text substitution macro.
 
 Immediate actions are required to modify the JavaScript output during the compile stage (ast to JavaScript).
 
@@ -28,14 +28,60 @@ Immediate actions are required to modify the JavaScript output during the compil
 
 Immediate actions are:
 
-* __#ast__: give a function and an ast, use the function to preprocess. Note that the function must know about the ast structure - being a list of lists.
+* __#ast__: given a function and an ast, use the function to preprocess. Note that the function must know about the ast structure - being a list of lists.
 * **immediate**: takes lispz code text, compiles it then runs it at compile time. It can be used to inject code into the compile stream where the injected code is also lispz.
 * **#join**: is used to join text components to output JavaScript directly.
 * **#pairs**: works on pairs of values in a list. It is used to create cond statements and the like.
 
-Parameters that start with star must be the last in the list and encapsulate all the remaining parameters in the expansion. This is why lambda works:
+Unlike functions, macros need to interpret parameters in different ways that cannot be inferred
 
-    (lambda [a b] (var c (+ a b)) (return c))
+## ?parameters
+
+A parameter list is optional when defining a function. If one is not provided, the function body can use _@_ as a single parameter. In another language (Lispz):
+
+    (lambda [my-data] (console.log my-data))
+    ## is the same as...
+    (lambda (console.log @))
+    ## is the same as...
+    (=> (console.log @))
+
+One of the most common uses for macros it to make higher level operations look like function definitions. If the new type of function does not know how many parameters to expect, the last will be \*wwwwww. If you want the new definition to have an optional
+parameter list, use ?pppppp as the first parameter. The same logic used by (lambda) decides whether the first item is a parameter list or not. Only a parameter list would be a raw list at the start of the generated code.
+
+    (macro recursion [?params \*body]
+      (#recursion (stateful) (lambda ?params \*body))
+    )
+
+
+## \*parameters
+
+Parameters that start with star must be the last in the list and encapsulate all the remaining parameters in the expansion. This is why lambda (as defined above) works:
+
+    (lambda [a b] (+ a b))
+
+Note that the parameters are a raw list. This translates to a comma separated set of symbols to populate the Javascript function parameters.
+
+The _*body_ is an internally created as a raw list that when compiled to JavaScript becomes a list of statements.
+
+## &parameters
+
+Replace \* with & for the rare cases where you want the rest of the parameters
+to fill a JavaScript array rather than a raw list.
+
+    (macro global [name value]
+      (#join '' 'lispz.globals.' name '=' value)
+      (macro name [&params] (#join '' '(_res_=lispz.globals.' name '(' &params '))'))
+    )
+
+## #parameters
+
+With a _normal_ function you can see how many parameters by looking at _arguments.length_. Not so with a macro. For macros add a #parameter before the \*parameter and use it as the count of parameters in the latter list.
+
+    (macro actor [id #body-length \*body]
+      ## creates symbol 'id' as well as builds/retrieves the actor
+      (ref id (#actor (symbol-to-string id) #body-length
+        (lambda [packet context] \*body)))
+    )
 
 # #join
 Many macros translate Lispz directly to JavaScript by mixing pure JavaScript with macro parameters that can convert themselves to JavaScript. _#join_ is an immediate function - being one that runs during the compile phase. The first parameter is the text to be used between the segments. In this context it is usually empty. The first parameter along with the JavaScript are wrapped in single quotes so that they are left as-is in the JavaScript output.
