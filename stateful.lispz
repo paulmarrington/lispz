@@ -60,15 +60,16 @@
     (instance-of Object obj)  (#morph-object! obj)
     (else)                    (#morph-object! { data: obj })
   ))
-  (morphed.update! changes)
+  (cond changes (morphed.replace! changes))
+  morphed
 ))
 (ref #morph-object! (lambda [obj] (cond (not obj.update!) (do
   (Object.defineProperties obj {
 
-    update!: {value: (lambda [update value]
+    merge!: {value: (lambda [update value]
       (ref target this)
       (cond update (do
-        (cond (is arguments.length 1)
+        (cond (not value undefined)
           (#merge! target update)
         (and (target.hasOwnProperty update) (instance-of Object value))
           (#merge! (get target update) value)
@@ -82,9 +83,14 @@
 
     after-update: { value: (=>) configurable: true }
 
+    update!: {value: (lambda [replacements value]
+      (this.delete! replacements value)
+      (this.merge! replacements value)
+    )}
+
     replace!: {value: (lambda [replacements value]
       (this.delete! replacements value)
-      (this.update! replacements value)
+      (this.merge! replacements value)
     )}
 
     delete!: { value: (lambda [deletions is-name]
