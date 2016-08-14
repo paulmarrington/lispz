@@ -33,13 +33,14 @@
       (ref compiler (get compilers type))
       (compiler code (+ tag-name ".facetz." ext))
     )))
-    (new Function "tag" combined-code)
+    (new Function "tag" (combined-code.join "\n"))
   ))
 
-  ## If we extract child facetz now, they will be easier to instantiate
-  ## with this node. We recognise a child facetz because either its tag
+  ## We recognise a child facetz because either its tag
   ## name is in the index of known facetz or it has a class of _facetz_
   (ref find-facetz (lambda [node]
+    (ref explicit (slice (node.querySelectorAll ".facetz,[facetz]"))
+    (ref implicit (slice (node.querySelectorAll "*")))
   ))
 
   ## for each tag extracted from the template, pull out style and
@@ -66,4 +67,6 @@
   ))
   ## a container we clone to hold the DOM for each tag
   (ref tag-box (document.createElement 'div'))
+
+  (export { compile-tags })
 )
