@@ -22,9 +22,15 @@ To access external modules, wrap your code in 'using'. Data and functions export
 
 ...and that is all there is to it.
 ###
-(macro using [modules *on_ready] ';' (lispz.load (#join '' '"' modules '"')
-  (lambda (#requires modules) *on_ready)
-))
+(macro using [modules *on_ready] ';'
+  (lispz.load (symbols-to-strings modules)
+    (lambda (#requires modules) *on_ready)
+  )
+)
+
+### ref: (string-list (symbols-to-strings sym1 sym2 sym3)) ###
+(macro symbols-to-strings [*symbols] ((#join '' '"' *symbols '"').split ","))
+
 ### Modules must export to continue processing ###
 (macro export [exports] (#join '' '__module_ready__(' exports ')'))
 
@@ -154,7 +160,9 @@ To access external modules, wrap your code in 'using'. Data and functions export
 (macro defined? [field] (!== (typeof field) "undefined"))
 
 
-(macro new [cls *params] (#join '' '(_res_=(new ' cls '(' (#join ',' *params) ')))'))
+(macro new [cls *params]
+  (#join '' '(_res_=(new ' cls '(' (#join ',' *params) ')))')
+)
 
 ### ref: (symbol-to-string symbol) ## ==> "symbol" ###
 (macro symbol-to-string [symbol] (#join '' '"' symbol '"'))
@@ -168,9 +176,7 @@ To access external modules, wrap your code in 'using'. Data and functions export
     (primary.update! annotations)
   ))
 
-  ### ref: (once function) ## lazy evaluation
-    e.g. (ref read-it (once (promise ...))) ... (when (read-it) ...)
-  ###
+  ### ref: (once function) ## lazy evaluation ###
   (global #once (lambda [lazy-expression]
     (ref first-time (=>
       (ref evaluated-value (lazy-expression))
@@ -183,5 +189,5 @@ To access external modules, wrap your code in 'using'. Data and functions export
   ))
   (macro once [*body] (lispz.globals.#once (=> *body)))
 
-  (using [promise counters message] (export {}))
+  (using [promise counters message net] (export {}))
 ))
