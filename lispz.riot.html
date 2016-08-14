@@ -31,8 +31,7 @@
         (message.send (+ "code-editor/" topic "/open") {key contents})
       ))
 
-      (ref code-editor-ready (message.ready> "code-editor/code/open"))
-      (when2 [code-editor-ready]
+      (after (message.ready> "code-editor/code/open")
         (open "code" ".lispz" "")
         (message.send "code-editor/code/focus" {})
       )

@@ -252,8 +252,7 @@
   is displayed the menu will not be loaded.
   To fix this, wait for the menu to be ready.
 
-        (ref ready  (message.ready> "specifications-menu"))
-        (when2 [ready]
+        (after (message.ready> "specifications-menu")
           (message.send "specifications-menu" nenu)
         )
   The menu itself is a dictionary with the format:

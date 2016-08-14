@@ -23,8 +23,7 @@ A request will return a promise that when fulfilled with provide an array of res
 
 If it is possible that a client will send an important request before the service has had the opportunity to initialise, wrap 'send' in 'ready>':
 
-    (ref editor-loaded (message.ready> "code-editor/scratch")
-    (when2 [editor-loaded]
+    (after (message.ready> "code-editor/scratch")
       (message.send "code-editor/scratch/open" {
         key:      "scratchpad.lispz"
         contents: null

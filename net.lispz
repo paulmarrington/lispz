@@ -64,9 +64,11 @@
   ### ref: (net.loader "base64" window.base64 { build encode decode })
   ###
   (global #loader (lambda [filename test-for-loaded exporter]
-    (ref loaded     (script (+ "ext/" filename ".js") test-for-loaded))
-    (ref done       (when2 [loaded] (exporter)))
-    (when2-rejected [done] (exporter))
+    (ref loaded (after
+      (script (+ "ext/" filename ".js") test-for-loaded)
+      (exporter)
+    ))
+    (rejected loaded (exporter))
   ))
   (macro net.loader [file test exporting]
     (#loader file (=> test) (=> (export exporting)))

@@ -55,8 +55,7 @@
     (ref show-modal (=> (message.send (+ address "/show"))))
     (cond (get lispz.tags name) (show-modal)
     (else) (do ## modals are singletons, load once
-      (ref injected (riot.inject name-path opts.attributes))
-      (when2 [injected] (show-modal))
+      (after (riot.inject name-path opts.attributes) (show-modal))
     ))
     (ref hidden-address (+ address "/hidden"))
     (message.listen hidden-address (=>
