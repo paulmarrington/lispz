@@ -54,6 +54,8 @@ The problem with merging is the same as the benefit. It walks the tree and repla
     (stateful-data.replace! { seed: { forever: "and again" } })
     ## ==> { name: "goodbye" seed: { forever: "and again" }}
 
+You can use _update!_ instead of _replace!_. It is not as clear and only exists for historical (or hysterical) reasons.
+
 Sometimes it is necessary to merge and then _delete!_ to get the result you need:
 
     (stateful-data.delete! stateful-data.seed.forever)

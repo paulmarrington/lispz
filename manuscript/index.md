@@ -12,7 +12,6 @@
 3. [Asynchronous Programming](async.md)
   3. [Callbacks](callbacks.md)
   3. [Promises](promises.md)
-  3. [Events](events.md)
   3. [Messages](messages.md)
 4. [Components](components.md)
   4. [Action: Web Components with Facetz](facetz.md)

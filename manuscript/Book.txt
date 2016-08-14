@@ -10,7 +10,6 @@ modules.md
 async.md
 callbacks.md
 promises.md
-events.md
 messages.md
 components.md
 facetz.md

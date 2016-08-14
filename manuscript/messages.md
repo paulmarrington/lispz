@@ -1,23 +1,31 @@
 # Messaging
-Lispz includes a complete decoupled communications solution based on messaging. The base version is in-browser, but the API is designed to work across systems with RESTful access or WebSockets. The UI components use messaging to communicate between components that are not linked, so cannot make more direct connections.
 
-Here a code editor will wait on messages to open a new 'file'. The message includes a name unique to each code editor. The dictionary at the end can include any number of named requests. Each associated function takes a packet whose content format is known by clients and services.
+Lispz includes a complete decoupled communications solution based on messaging. The core version is in-browser, but the API is designed to work across systems with RESTful access or WebSockets. The UI components use messaging to communicate between components that are not linked, so cannot make more direct connections.
+
+Here a code editor will wait on messages to open a new 'file'. The message includes a name unique to each editor. The dictionary at the end can include any number of named requests. Each associated function takes a packet whose content format is known by clients and services.
 
     (using [message]
       (ref open (lambda [packet] ...)
       (message.dispatch (+ "code-editor/" opts.name) { open })
 
+For a single action, use _listen_:
+
+    (message.listen "code/editor/flash" (lambda [req] ...))
+
 The client will send a command to open a new file for display. If the editor is called 'scratch':
 
-    (message.send "code-editor/scratch/open" {
+    (message.request> "code-editor/scratch/open" {
       key:      "scratchpad.lispz"
-      contents: null
+      contents: "..."
     })
 
-If it is possible that a client will send an important request before the service has had the opportunity to initialise, wrap 'send' in 'wait-for':
+A request will return a promise that when fulfilled with provide an array of results - one for each listener. You can tell if there are no listeners if the array is empty.
 
-    (when (message.ready> "code-editor/scratch")
-      (message.send "code-editor/scratch/action" {
+If it is possible that a client will send an important request before the service has had the opportunity to initialise, wrap 'send' in 'ready>':
+
+    (ref editor-loaded (message.ready> "code-editor/scratch")
+    (when2 [editor-loaded]
+      (message.send "code-editor/scratch/open" {
         key:      "scratchpad.lispz"
         contents: null
       })
@@ -30,15 +38,28 @@ To react to messages, use _listen_:
       (tag.page-content-wrapper.style.update! { paddingLeft: (+ px "px") })
     ))
 
-Lispz uses exchanges defined as part of the address. The address can include details that will define different exchanges (when implemented).
+Lispz uses exchanges defined as part of the address. The address can include details that will define different exchanges.
 
 It is possible to remove all listeners by name or regular expression. The latter helps for message streams.
 
     (message.clear "my-message")
+    (message.clear '/my-message\/.\*/')
+
+## Address Processing
+
+Mapping and filtering messages are given source and target addresses. If the target address starts with a / it is used alone, otherwise the source and target addresses are concatenated.
+
+    (combine-address "left" "right")  ## left/right
+    (combine-address "left" "/right") ## right
 
 ## Message Streams
-
 Lispz Message Streams provide a base implementation of reactive programming. This allows streams to be prepared for consumption in a readable and organised manner. All stream sources and processors return the address of the resulting message stream. This will often be built on the address of earlier streams.
+
+### Spanning Asynchornous methods
+
+Different modules will add methods to seed a message stream by using _update!_:
+
+    (message.from.update! { source: (lambda [address ...] ...) })
 
 ### Stream Sources
 A source is a generator that creates messages for a stream. You can create your own, but Lispz provides some common ones:
@@ -68,6 +89,34 @@ Cascade calls a list of functions using the output of one as the input of the ne
       (=> (message.throttle @ 2000))
       (=> (message.listen   @ (=> (console.log @.x @.y))))
     )
+
+## Actors
+
+Actors are implemented as messages. Wikipedia provides a reasonable explanation [here](https://en.wikipedia.org/wiki/Actor_model). In short an Actor:
+
+* Listens for messages
+* Can create new actors
+* Can send messages to other actors
+* Can save local state that effects what happens on the next message received
+
+The last point above means that actors may not be referentially transparent. I have in fact read an article on Elixir that uses actors to contain state.
+
+Note that in the pure model we can send messages to an actor but cannot expect a response. This is very similar to callbacks. Some actor systems, such as that implemented for Scala can return a value. Because Lispz actors are based on messages, they return a promise that when fulfilled has an array of responses from listeners.
+
+Actors are global and referenced by symbol. The work and look like _ref_ except that they create a reference to a function that may have been defined elsewhere.
+
+    ## Module 1
+    (actor log (console.log packet)))
+    (log "message") ## will send a string to the actor for processing
+    ## Module 2
+    (actor log) ## send messages to a actor called _log_ defined elsewhere
+    (log "another message")
+
+Actors provide the same list of streaming functions as messages:
+
+    (log.map       lower-case  (=> (@.toLowerCase)))
+    (log.filter    odd         (=> (/ @ 2)))
+    (log.throttle  1000)
 
 ## Tracing Messages
 
