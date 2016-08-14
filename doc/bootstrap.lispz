@@ -57,11 +57,10 @@ https://github.com/twbs/bootstrap
     (ref address (+ "modal/" name))
     (ref show-modal (=> (message.send (+ address "/show"))))
     (cond (get lispz.tags name) (show-modal)
-    (else) ## modals are singletons, load once
-      (when (riot.inject name-path opts.attributes)
-        (show-modal)
-      )
-    )
+    (else) (do ## modals are singletons, load once
+      (ref injected (riot.inject name-path opts.attributes)
+      (when2 [injected] (show-modal))
+    ))
     (ref hidden-address (+ address "/hidden"))
     (message.listen hidden-address (=>
       (message.clear hidden-address)
@@ -80,10 +79,9 @@ https://github.com/twbs/bootstrap
     when we see _modal_ added to the list of
     JQuery functions.
   ###
-  (when (net.script "ext/bootstrap.js" (=> (($).modal)))
-    (export { build themes modal> path-to-tree })
-  )
-  (when-rejected (export { build }))
+  (net.loader "bootstrap" (($).modal) {
+    build themes modal> path-to-tree
+  })
 )
 
 ### spec: Bootstrap >> Bootstrap/RIOT/Lispz Combo

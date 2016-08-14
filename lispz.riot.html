@@ -31,7 +31,8 @@
         (message.send (+ "code-editor/" topic "/open") {key contents})
       ))
 
-      (when (message.ready> "code-editor/code/open")
+      (ref code-editor-ready (message.ready> "code-editor/code/open"))
+      (when2 [code-editor-ready]
         (open "code" ".lispz" "")
         (message.send "code-editor/code/focus" {})
       )
@@ -64,8 +65,8 @@
           (compile-and-show @.contents))
         )
         (message.listen "code/run" (=>
-          (ref sources> (message.request> "code-editor/code/contents" @))
-          (when sources> [sources]
+          (ref sources (message.request> "code-editor/code/contents" @))
+          (when2 [sources]
             (compilers.run [[(compile-and-show (first sources))]])
           )
         ))

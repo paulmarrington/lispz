@@ -27,6 +27,6 @@ https://www.firebase.com/
   (ref loaded (net.script "https://cdn.firebase.com/js/client/2.2.9/firebase.js"
     (lambda (return window.Firebase))
   ))
-  (when  loaded (export {register attach databases}))
-  ## (promise.failed loaded (export {}))
+  (ref done (when2 [loaded] (export {register attach databases})))
+  (when2-rejected [done] (export {}))
 )

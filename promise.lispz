@@ -40,6 +40,21 @@
   )
 )
 
+### ref: (ref p3 (when [p1 p2] (actions-with-values p1 p2)))
+    Waits for all promises to resolve then runs supplied code
+    Returns a promise holding the result of the supplied code
+###
+(macro when2 [promises *on-ready]
+  ((promise.all promises).then (lambda [resolutions]
+    ((lambda promises *on-ready).apply null resolutions)
+  ))
+)
+(macro when2-rejected [promises *on-error]
+  ((promise.all promises).catch (lambda [error]
+    ((lambda [error] *on-error) error)
+  ))
+)
+
 (macro when-rejected [?params *body]
   (#last-promise#.catch (lambda ?params *body))
 )

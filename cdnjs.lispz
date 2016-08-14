@@ -3,7 +3,8 @@
   (ref cdnjs-actors {
     list-all: (promise [repo path]
       (ref base "http://api.cdnjs.com/libraries?fields=assets&search=")
-      (when (net.json-request (+ base repo.name)) [json]
+      (ref json (net.json-request (+ base repo.name)))
+      (when2 [json]
         ## select the correct repo for the name
         (ref filtered (json.results.filter (lambda [it]
           (return (=== it.name repo.name))
@@ -26,13 +27,12 @@
         )
       )
     )
-    read: (promise [repo path]
+    read: (lambda [repo path]
       (ref uri (+ repo.base path))
-      (when (net.http-get uri) [response] (resolve-promise response))
+      (net.http-get uri)
     )
-    repo: (lambda [target-repo name] (return (stateful {})))
+    repo: (lambda [target-repo name] (stateful {}))
   })
 
-  (export {
-  })
+  (export {})
 )
