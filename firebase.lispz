@@ -27,6 +27,5 @@ https://www.firebase.com/
   (ref loaded (net.script "https://cdn.firebase.com/js/client/2.2.9/firebase.js"
     (lambda (return window.Firebase))
   ))
-  (after loaded (export {register attach databases}))
-  (when2-rejected [loaded] (export {}))
+  ((after loaded (export {register attach databases})).catch (=> (export {}))
 )

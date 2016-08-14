@@ -29,7 +29,7 @@
     ))
     (ref load-module (lambda [name]
       (ref text (repo.read> (+ name ".lispz")))
-      (when2 [text]
+      (when [text]
         [["\nlispz_modules['" name "']=\"" (stringify text) "\"\n"]]
       )
     ))
@@ -39,7 +39,7 @@
 
     (ref load-riot (lambda [name]
       (ref text (repo.read> (+ name ".riot.html")))
-      (when2 [text]
+      (when [text]
         [["\n\n/*" name "*/\n\nlispz.tags['" name "']=\""
           (stringify text) "\"\n"]]
       )

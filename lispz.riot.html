@@ -65,7 +65,7 @@
         )
         (message.listen "code/run" (=>
           (ref sources (message.request> "code-editor/code/contents" @))
-          (when2 [sources]
+          (when [sources]
             (compilers.run [[(compile-and-show (first sources))]])
           )
         ))

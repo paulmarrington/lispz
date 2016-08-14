@@ -49,7 +49,7 @@
   (ref read-file> (lambda [path repo]
     (ref file-tree (repo.list>))
     (ref code      (repo-read> path))
-    (when2 [file-tree code]
+    (when [file-tree code]
       (ref meta (get file-tree path))
       (cond
         meta.copy-to (copy meta.copy-to path code)
@@ -61,7 +61,7 @@
   (ref process-entry> (lambda [entry repo]
     (ref base (or entry.base ""))
     (ref file-tree (repo.list>))
-    (when2 [file-tree]
+    (when [file-tree]
       (ref files (dict.map file-tree.map (=> @)))
       (ref filtered (filter file-list entry.include entry.exclude))
       (promise.all (filtered.map (=> (read-file> @ repo))))
@@ -115,7 +115,7 @@
   ###
   (ref builder (lambda [target-repo name sources]
     (ref store (retriever sources))
-    (when2 [store]
+    (when [store]
       (ref target { repo: target-repo  name })
       (ref comment (store.from.join " "))
       (promise.all

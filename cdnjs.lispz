@@ -4,7 +4,7 @@
     list-all: (promise [repo path]
       (ref base "http://api.cdnjs.com/libraries?fields=assets&search=")
       (ref json (net.json-request (+ base repo.name)))
-      (when2 [json]
+      (when [json]
         ## select the correct repo for the name
         (ref filtered (json.results.filter (lambda [it]
           (return (=== it.name repo.name))

@@ -586,7 +586,7 @@ https://github.com/codemirror/CodeMirror
   ))
 
   (lispz.css "ext/codemirror.css")
-  (ref loaded (after (net.script "ext/codemirror.js" (=> window.CodeMirror))
+  ((after (net.script "ext/codemirror.js" (=> window.CodeMirror))
     (ref modes-loaded (net.script "ext/codemirror-modes.js"
       (=> CodeMirror.modes.z80)
     ))
@@ -596,7 +596,6 @@ https://github.com/codemirror/CodeMirror
       (init-lispz-mode)
       (export { options open close set-mode build })
     )
-  ))
-  (rejected loaded (export { build }))
+  ).catch (=> (export { build })))
   (delay 100 (lispz.css "ext/codemirror-themes.css"))
 )

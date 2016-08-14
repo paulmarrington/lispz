@@ -41,8 +41,7 @@
       (data.update! username password project-name)
       (return (db.projects.put data))
     ))
-    (when2  [project] (update! project))
-    (when2.rejected [project] (update! {name}))
+    ((when  [project] (update! project)).catch (=> (update {name}))
   ))
 
   ### spec: Projects >> List Known Projects

@@ -97,7 +97,7 @@ So far this adds very little at the cost of a relatively large supporting librar
   1. **callback** is a function reference to use where callbacks would normally be defined
 3. **(promise.resolved results)** Will return a promise that will always provide the results supplied to when. Use it to turn a synchronous function into a promise to use in sequences.
 4. **(when [promises] ...)** is a macro that works like a lambda where the function body is executed with the results supplied once (and if) the promise is resolved. If a **when** statement returns a promise it can be used for chaining.
-4. **(when-rejected [promises] ...)** Will evaluate for all rejections.
+4. **((when...).catch (=>...))** Will evaluate for all rejections.
 6. **(promise.all promise-1 promise-2 [[promises]])** will return a promise that is fulfilled when all the promises specified are resolved or rejected. It will flatten arrays of promises.
 
 ### Benefits

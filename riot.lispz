@@ -131,30 +131,27 @@ https://github.com/riot/riot
   (macro on-mount  [*body] (tag.on "mount"  (=> *body)))
   (macro on-update [*body] (tag.on "update" (=> *body)))
 
-  (ref loading
-    (after (net.script "ext/riot.js" (lambda (return window.riot)))
-      (using [compilers]
-        (stateful.morph! riot.parsers.js { lispz:
-          (lambda [source options url]
-            (ref opts (or options url {}))
-            (ref name (+ (or url opts.url "tags") ".riot"))
-            (compilers.lispz.compile source name)
-          )
-        })
-        (stateful.morph! riot.util.tmpl { errorHandler: (lambda [err]
-            (console.error err.message "in" err.riotData.tagName "(" err ")")
-        )})
-        (ref riot-elements (slice (document.getElementsByClassName "riot")))
-        (ref load-all (promise.all (riot-elements.map (lambda [element]
-          (ref name (element.tagName.toLowerCase))
-          (return (load name (element.getAttribute "uri")))
-        ))))
-        (after load-all
-          (riot.mount "*")
-          (export {build compile load mount inject child-tags tag-by-name})
+  ((after (net.script "ext/riot.js" (lambda (return window.riot)))
+    (using [compilers]
+      (stateful.morph! riot.parsers.js { lispz:
+        (lambda [source options url]
+          (ref opts (or options url {}))
+          (ref name (+ (or url opts.url "tags") ".riot"))
+          (compilers.lispz.compile source name)
         )
+      })
+      (stateful.morph! riot.util.tmpl { errorHandler: (lambda [err]
+          (console.error err.message "in" err.riotData.tagName "(" err ")")
+      )})
+      (ref riot-elements (slice (document.getElementsByClassName "riot")))
+      (ref load-all (promise.all (riot-elements.map (lambda [element]
+        (ref name (element.tagName.toLowerCase))
+        (return (load name (element.getAttribute "uri")))
+      ))))
+      (after load-all
+        (riot.mount "*")
+        (export {build compile load mount inject child-tags tag-by-name})
       )
     )
-  )
-  (rejected loading (export {build}))
+  ).catch (=> (export { build })))
 )

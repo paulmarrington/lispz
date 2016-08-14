@@ -40,7 +40,7 @@
 
       (after (message.ready> "tree-view/git-tree")
         (ref repos github.repos>)
-        (when2 [repos]
+        (when [repos]
           (ref repo-paths (repos.map (=> @.full_name)))
           (ref repo-tree (guthub-view.path-to-tree repo-paths))
           (update-sidebar repo-tree)
@@ -85,7 +85,7 @@
         )
         (message.listen "code/run" (=>
           (ref sources (message.request> "code-editor/code/contents" @))
-          (when2 [sources]
+          (when [sources]
             (compilers.run [[(compile-and-show (first sources))]])
           )
         ))

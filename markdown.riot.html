@@ -41,8 +41,9 @@
           )))
           (message.send markdown-menu (menu.reverse))
           ## then continue loading and displaying
-          (ref loaded (after (net.http-get href) (open @ (net.url-path href))))
-          (rejected loaded (debug markdown))
+          ((after (net.http-get href)
+            (open @ (net.url-path href)))
+          .catch (=> (debug markdown)))
         ))
         (cond opts.href (load opts.href))
 

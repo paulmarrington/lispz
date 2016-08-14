@@ -71,7 +71,7 @@
     https://developer.github.com/v3/repos/contents/#get-contents
   ###
   (ref contents> (lambda [repo branch path]
-    (when2 [repo]
+    (when [repo]
       (get> (+ "repos/" repo.full_name "/contents/" path) { ref: branch })
     )
   ))
@@ -92,7 +92,7 @@
     https://developer.github.com/v3/git/blobs/#get-a-blob
   ###
   (ref blob> (lambda [repo sha]
-    (when2 [repo] (get> (+ "repos/" repo.full_name "/git/blobs/" sha)))
+    (when [repo] (get> (+ "repos/" repo.full_name "/git/blobs/" sha)))
   ))
 
   ### spec: Download a file from the repository
@@ -109,7 +109,7 @@
   ### ref: (github.read> <repo> branch path)
     e.g. (after (github.read> repo "master" "README.md") ...)
   ###
-  (ref read> (lambda [repo branch path] (when2 [repo]
+  (ref read> (lambda [repo branch path] (when [repo]
     (ref base "https://raw.githubusercontent.com")
     (ref url (+ base "/" repo.full_name "/" branch "/" path))
     (net.http-get url)
@@ -119,11 +119,10 @@
     (it "can create a new entry" (lambda [done]
       (using [github]
         (ref repo (github.repo> "paulmarrington/lispz"))
-        (after (github.create> repo "master" "test/tmp.txt" "Hi" "msg")
+        ((after (github.create> repo "master" "test/tmp.txt" "Hi" "msg")
         	((expect @.message).toEqual "msg")
           (done)
-        )
-        (when2-rejected [repo] (fail "Can't create -" repo) (done))
+        ).catch (=> (fail "Can't create -" repo) (done)))
       )
     ))
   ###
@@ -131,7 +130,7 @@
     (after (github.create> repo "master" "test/tmp.txt" "Hi" "msg") ...)
     https://developer.github.com/v3/repos/contents/#create-a-file
   ###
-  (ref create> (lambda [repo branch path contents message] (when2 [repo]
+  (ref create> (lambda [repo branch path contents message] (when [repo]
     (ref url (+ "repos/" repo.full_name "/contents/" path))
     (ref options { branch message content: (net.base64 contents) })
     (request> "PUT" url options)
@@ -143,12 +142,11 @@
         (ref create (create-file> "test/tmp.txt" "created"))
         (ref sha (get-sha> "test/tmp.txt"))
         (ref repo (github.repo> "paulmarrington/lispz")
-        (ref complete (when2 [create sha repo]
+        ((when [create sha repo]
           (after (github.update> repo "master" "test/tmp.txt" sha "2nd" "changed")
             ((expect @.message).toEqual "changed")
           )
-        )
-        (when2-rejected [complete] (fail "Can't update -" complete) (done))
+        ).catch (=> (fail "Can't update -" @) (done)))
       )
     ))
   ###
@@ -156,7 +154,7 @@
     (after (github.update> repo "master" "test/tmp.txt" sha "Hi" "msg") ...)
     https://developer.github.com/v3/repos/contents/#update-a-file
   ###
-  (ref update> (lambda [repo branch path sha contents message] (when2 [repo]
+  (ref update> (lambda [repo branch path sha contents message] (when [repo]
     (ref url (+ "repos/" repo.full_name "/contents/" path))
     (ref options { branch message sha content: (net.base64 contents) })
     (request> "PUT" url options)
@@ -168,12 +166,11 @@
         (ref create (create-file> "test/tmp.txt" "created"))
         (ref sha (get-sha> "test/tmp.txt"))
         (ref repo (github.repo> "paulmarrington/lispz")
-        (ref complete (when2 [create sha repo]
+        ((when [create sha repo]
           (after (github.delete> repo "master" "test/tmp.txt" sha "no more")
             ((expect @.commit.message).toEqual "no more")
           )
-        )
-        (when2-rejected [complete] (fail "Can't update -" complete) (done))
+        ).catch (=> (fail "Can't update -" @) (done)))
       )
     ))
   ###
@@ -181,7 +178,7 @@
     (after (github.delete> repo "master" "test/tmp.txt" sha "msg") ...)
     https://developer.github.com/v3/repos/contents/#delete-a-file
   ###
-  (ref delete> (lambda [repo branch path sha message] (when2 [repo]
+  (ref delete> (lambda [repo branch path sha message] (when [repo]
     (ref url (+ "repos/" repofull_name "/contents/" path))
     (ref options { branch message sha })
     (request> "DELETE" url options)
@@ -202,7 +199,7 @@
     e.g. (after (github.tree> repo "master"))
     https://developer.github.com/v3/git/trees/#get-a-tree-recursively
   ###
-  (ref tree> (lambda [repo branch] (when2 [repo]
+  (ref tree> (lambda [repo branch] (when [repo]
     (after (branch> repo branch)
     (get>
       (+ "repos/" repo.full_name "/git/trees/" @.commit.sha)
@@ -225,12 +222,12 @@
     e.g. (after (github.branch> repo) ...)
     https://developer.github.com/v3/repos/#get-branch
   ###
-  (ref branch> (lambda [repo branch] (when2 [repo]
+  (ref branch> (lambda [repo branch] (when [repo]
     (get> (+ "repos/" repo.full_name "/branches/" (or branch "master")))
   )))
 
   ### ref: (github.branches> repo) ###
-  (ref branches> (lambda [repo] (when2 [repo]
+  (ref branches> (lambda [repo] (when [repo]
     (get> (+ "repos/" repo.full_name "/branches"))
   )))
 
@@ -255,7 +252,7 @@
 
   (ref ask-user-to-login> (promise (using [bootstrap]
     (ref modal (bootstrap.modal> "github/github-login" {}))
-    (when2 [modal]
+    (when [modal]
       (cond (is modal.login.value "true") (do
         (ref joined (+ modal.username.value ":" modal.password.value))
         (ref auth-header (+ "Basic " (btoa joined)))

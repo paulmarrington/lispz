@@ -1,8 +1,8 @@
 (using [list dom regex dict]
   (ref script (promise.callback [uri check max-ms] (lispz.script uri (lambda []
     (cond check (do
-      (ref initialised (after (wait-for check max-ms) (callback)))
-      (rejected initialised (debug (+ uri " didn't load")) (callback))
+      ((after (wait-for check max-ms) (callback))
+      .catch (=> (debug (+ uri " didn't load")) (callback)))
     ) (else) (callback))
   ))))
 
@@ -60,11 +60,10 @@
   ### ref: (net.loader "base64" window.base64 { build encode decode })
   ###
   (global #loader (lambda [filename test-for-loaded exporter]
-    (ref loaded (after
+    ((after
       (script (+ "ext/" filename ".js") test-for-loaded)
       (exporter)
-    ))
-    (rejected loaded (exporter))
+    ).catch exporter)
   ))
   (macro net.loader [file test exporting]
     (#loader file (=> test) (=> (export exporting)))

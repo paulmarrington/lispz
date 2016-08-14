@@ -7,7 +7,7 @@
 
   (ref fill-tree-view (lambda [component owner]
     (ref repos (github.repos> owner))
-    (when2 [repos]
+    (when [repos]
       (ref paths ((extract-paths repos).map (=> (+ @ "/"))))
       (ref paths (path-to-tree paths repo-options))
       (ref tree {
@@ -29,7 +29,7 @@
       (ref path (parse-path packet.path))
       (ref repo (github.repo> path.repo))
       (ref data (github.branches> repo))
-      (when2 [data]
+      (when [data]
         (ref branches (path-to-tree (data.map (=> @.name))) branch-options)
         (tree-view.update component packet.path branches)
       )

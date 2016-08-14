@@ -34,37 +34,20 @@
 ))
 (global promised promised)
 
-(macro when [pledge ?params *body]
-  (ref #last-promise#
-    ((promised pledge).then (lambda ?params *body))
-  )
-)
-
-### ref: (ref p3 (when [p1 p2] (actions-with-values p1 p2)))
+### ref: (ref p3 ((when [p1 p2] (actions-with-values p1 p2)).catch (=> ...))
     Waits for all promises to resolve then runs supplied code
     Returns a promise holding the result of the supplied code
 ###
-(macro when2 [promises *on-ready]
+(macro when [promises *on-ready]
   ((promise.all promises).then (lambda [resolutions]
     ((lambda promises *on-ready).apply null resolutions)
   ))
 )
-(macro when2-rejected [promises *on-error]
-  ((promise.all promises).catch (lambda [error]
-    ((lambda [error] *on-error) error)
-  ))
-)
 
+### ref: ((after a-promise ...).catch (=> ...))
+    use @ to refer to a single promise result if needed
+###
 (macro after    [a-promise *body] (a-promise .then  (=> *body)))
-(macro rejected [a-promise *body] (a-promise .catch (=> *body)))
-
-(macro when-rejected [?params *body]
-  (#last-promise#.catch (lambda ?params *body))
-)
-
-(macro promise.failed [pledge ?errors *body]
-  ((promised pledge).catch (lambda ?errors *body))
-)
 
 (using [list]
   ### Promises >> promise.all
