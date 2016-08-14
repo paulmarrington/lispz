@@ -55,6 +55,8 @@
   ))
 )
 
+(macro after [a-promise *body] (a-promise.then (=> *body)))
+
 (macro when-rejected [?params *body]
   (#last-promise#.catch (lambda ?params *body))
 )
