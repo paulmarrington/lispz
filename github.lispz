@@ -3,17 +3,17 @@
   (using [github]
     (ref delete-file> (lambda [path]
       (ref repo (github.repo> "paulmarrington/lispz"))
-      (when (github.contents> repo "master" "README.md") [contents]
-        (github.delete> repo "master" contents.sha "deleted")
+      (after (github.contents> repo "master" "README.md")
+        (github.delete> repo "master" @.sha "deleted")
       )
     ))
     (ref get-sha> (lambda [path]
       (ref repo (github.repo> "paulmarrington/lispz"))
-      (when (github.contents> repo "master" path) @.sha)
+      (after (github.contents> repo "master" path) @.sha)
     ))
     (ref create-file> (lambda [path]
       (ref repo (github.repo> "paulmarrington/lispz"))
-      (when (github.create> repo "master" path "Hi" "created") @ ))
+      (after (github.create> repo "master" path "Hi" "created") @ ))
     ))
   )
 ###
@@ -22,15 +22,15 @@
   ### spec: Retrieve repository details
     (it "will include the full name of the repo" (lambda [done]
       (using [github]
-        (when (github.repo> "paulmarrington/lispz") [repo]
-        	((expect repo.full_name).toEqual "paulmarrington/lispz")
+        (after (github.repo> "paulmarrington/lispz")
+        	((expect @.full_name).toEqual "paulmarrington/lispz")
           (done)
         )
       )
     ))
   ###
   ### ref: (github.repo> project) ## log in form displayed if necessary
-    e.g. (when (github.repo> "paulmarrington/lispz") [repo] ...)
+    e.g. (after (github.repo> "paulmarrington/lispz") ...)
     https://developer.github.com/v3/repos/contents/#get-contents
   ###
   (ref repo> (lambda [name] (get> (+ "repos/" name) {})))
@@ -38,15 +38,15 @@
   ### spec: List repositories for a user
     (it "will include the full name of the repo" (lambda [done]
       (using [github]
-        (when (github.repos> "paulmarrington") [repos]
-        	((expect repos.length).toBeGreaterThan 7)
+        (after (github.repos> "paulmarrington")
+        	((expect @.length).toBeGreaterThan 7)
           (done)
         )
       )
     ))
   ###
   ### ref: (github.repos> organisation)
-    e.g. (when (github.repos> "paulmarrington") [repos] ...)
+    e.g. (after (github.repos> "paulmarrington") ...)
     https://developer.github.com/v3/repos/#list-user-repositories
   ###
   (ref repos> (lambda [owner]
@@ -59,20 +59,20 @@
     (it "can be read as base64" (lambda [done]
       (using [github]
         (ref (github.repo> "paulmarrington/lispz"))
-        (when (github.contents> repo "master" "README.md") [contents]
-        	((expect contents.encoding).toEqual "base64")
+        (after (github.contents> repo "master" "README.md")
+        	((expect @.encoding).toEqual "base64")
           (done)
         )
       )
     ))
   ###
   ### ref: (github.contents> <repo> branch path) ## info on dir or file
-    e.g. (when (github.contents> repo "master" "/lib" }))
+    e.g. (after (github.contents> repo "master" "/lib" }))
     https://developer.github.com/v3/repos/contents/#get-contents
   ###
   (ref contents> (lambda [repo branch path]
-    (when repo
-      (get> (+ "repos/" @.full_name "/contents/" path) { ref: branch })
+    (when2 [repo]
+      (get> (+ "repos/" repo.full_name "/contents/" path) { ref: branch })
     )
   ))
 
@@ -80,38 +80,38 @@
     (it "can be read as base64" (lambda [done]
       (using [github]
         (ref repo (github.repo> "paulmarrington/lispz"))
-        (when (github.blob> repo "master" "README.md") [blob]
-        	((expect blob.encoding).toEqual "base64")
+        (after (github.blob> repo "master" "README.md")
+        	((expect @.encoding).toEqual "base64")
           (done)
         )
       )
     ))
   ###
   ### ref: (github.blob> <repo> sha)
-    e.g. (when (github.blob> repo tree[path].sha) [blob] blob.contents)
+    e.g. (after (github.blob> repo tree[path].sha) @.contents)
     https://developer.github.com/v3/git/blobs/#get-a-blob
   ###
   (ref blob> (lambda [repo sha]
-    (when repo (get> (+ "repos/" @.full_name "/git/blobs/" sha)))
+    (when2 [repo] (get> (+ "repos/" repo.full_name "/git/blobs/" sha)))
   ))
 
   ### spec: Download a file from the repository
     (it "can be read in text form" (lambda [done]
       (using [github]
         (ref repo (github.repo> "paulmarrington/lispz"))
-        (when (github.read> repo "master" "README.md") [contents]
-        	((expect contents).toEqual "base64")
+        (after (github.read> repo "master" "README.md")
+        	((expect @).toEqual "base64")
           (done)
         )
       )
     ))
   ###
   ### ref: (github.read> <repo> branch path)
-    e.g. (when (github.read> repo "master" "README.md") [contents] ...)
+    e.g. (after (github.read> repo "master" "README.md") ...)
   ###
-  (ref read> (lambda [repo branch path] (when repo
+  (ref read> (lambda [repo branch path] (when2 [repo]
     (ref base "https://raw.githubusercontent.com")
-    (ref url (+ base "/" @.full_name "/" branch "/" path))
+    (ref url (+ base "/" repo.full_name "/" branch "/" path))
     (net.http-get url)
   )))
 
@@ -119,20 +119,20 @@
     (it "can create a new entry" (lambda [done]
       (using [github]
         (ref repo (github.repo> "paulmarrington/lispz"))
-        (when (github.create> repo "master" "test/tmp.txt" "Hi" "msg") [result]
-        	((expect result.message).toEqual "msg")
+        (after (github.create> repo "master" "test/tmp.txt" "Hi" "msg")
+        	((expect @.message).toEqual "msg")
           (done)
         )
-        (when-rejected [err] (fail "Can't create -" err) (done))
+        (when2-rejected [repo] (fail "Can't create -" repo) (done))
       )
     ))
   ###
   ### ref: (github.create> <repo> branch path contents commit-message)
-    (when (github.create> repo "master" "test/tmp.txt" "Hi" "msg") [result] ...)
+    (after (github.create> repo "master" "test/tmp.txt" "Hi" "msg") ...)
     https://developer.github.com/v3/repos/contents/#create-a-file
   ###
-  (ref create> (lambda [repo branch path contents message] (when repo
-    (ref url (+ "repos/" @.full_name "/contents/" path))
+  (ref create> (lambda [repo branch path contents message] (when2 [repo]
+    (ref url (+ "repos/" repo.full_name "/contents/" path))
     (ref options { branch message content: (net.base64 contents) })
     (request> "PUT" url options)
   )))
@@ -140,23 +140,24 @@
   ### spec: Update an entry
     (it "can update an entry" (lambda [done]
       (using [github]
-        (when (create-file> "test/tmp.txt" "created")
-        (when (get-sha> "test/tmp.txt") [sha]
+        (ref create (create-file> "test/tmp.txt" "created"))
+        (ref sha (get-sha> "test/tmp.txt"))
         (ref repo (github.repo> "paulmarrington/lispz")
-        (when (github.update> repo "master"
-        "test/tmp.txt" sha "2nd" "changed") [results]
-          ((expect results.message).toEqual "changed")
-        ))))
-        (when-rejected [err] (fail "Can't update -" err) (done))
+        (ref complete (when2 [create sha repo]
+          (after (github.update> repo "master" "test/tmp.txt" sha "2nd" "changed")
+            ((expect @.message).toEqual "changed")
+          )
+        )
+        (when2-rejected [complete] (fail "Can't update -" complete) (done))
       )
     ))
   ###
   ### ref: (github.update> <repo> branch path sha contents commit-message)
-    (when (github.update> repo "master" "test/tmp.txt" sha "Hi" "msg") [result] ...)
+    (after (github.update> repo "master" "test/tmp.txt" sha "Hi" "msg") ...)
     https://developer.github.com/v3/repos/contents/#update-a-file
   ###
-  (ref update> (lambda [repo branch path sha contents message] (when repo
-    (ref url (+ "repos/" @.full_name "/contents/" path))
+  (ref update> (lambda [repo branch path sha contents message] (when2 [repo]
+    (ref url (+ "repos/" repo.full_name "/contents/" path))
     (ref options { branch message sha content: (net.base64 contents) })
     (request> "PUT" url options)
   )))
@@ -164,22 +165,24 @@
   ### spec: Delete an entry
     (it "can delete an entry" (lambda [done]
       (using [github]
-        (when (create-file> "test/tmp.txt" "created")
-        (when (get-sha> "test/tmp.txt") [sha]
+        (ref create (create-file> "test/tmp.txt" "created"))
+        (ref sha (get-sha> "test/tmp.txt"))
         (ref repo (github.repo> "paulmarrington/lispz")
-        (when (github.delete> repo "master" "test/tmp.txt" sha "no more")
-          ((expect results.commit.message).toEqual "no more")
-        ))))
-        (when-rejected [err] (fail "Can't delete -" err) (done))
+        (ref complete (when2 [create sha repo]
+          (after (github.delete> repo "master" "test/tmp.txt" sha "no more")
+            ((expect @.commit.message).toEqual "no more")
+          )
+        )
+        (when2-rejected [complete] (fail "Can't update -" complete) (done))
       )
     ))
   ###
   ### ref: (github.delete> <repo> branch path sha commit-message)
-    (when (github.delete> repo "master" "test/tmp.txt" sha "msg") [result] ...)
+    (after (github.delete> repo "master" "test/tmp.txt" sha "msg") ...)
     https://developer.github.com/v3/repos/contents/#delete-a-file
   ###
-  (ref delete> (lambda [repo branch path sha message] (when repo
-    (ref url (+ "repos/" @.full_name "/contents/" path))
+  (ref delete> (lambda [repo branch path sha message] (when2 [repo]
+    (ref url (+ "repos/" repofull_name "/contents/" path))
     (ref options { branch message sha })
     (request> "DELETE" url options)
   )))
@@ -188,21 +191,21 @@
     (it "can retrieve a tree object" (lambda [done]
       (using [github]
         (ref repo (github.repo> "paulmarrington/lispz")
-        (when (github.tree> repo "master") [tree]
-        	((expect tree.tree.length).toBeGreaterThan 100)
+        (after (github.tree> repo "master")
+        	((expect @.tree.length).toBeGreaterThan 100)
           (done)
         ))
       )
     ))
   ###
   ### ref: (github.tree> <repo> branch) ## recursive info tree
-    e.g. (when (github.tree> repo "master" }))
+    e.g. (after (github.tree> repo "master"))
     https://developer.github.com/v3/git/trees/#get-a-tree-recursively
   ###
-  (ref tree> (lambda [repo branch] (when repo [repo]
-    (when (branch> repo branch) [branch]
+  (ref tree> (lambda [repo branch] (when2 [repo]
+    (after (branch> repo branch)
     (get>
-      (+ "repos/" repo.full_name "/git/trees/" branch.commit.sha)
+      (+ "repos/" repo.full_name "/git/trees/" @.commit.sha)
       { recursive: 1 }
     ))
   )))
@@ -211,24 +214,24 @@
     (it "can retrieve branch details" (lambda [done]
       (using [github]
         (ref repo (github.repo> "paulmarrington/lispz")
-        (when (github.branch> repo "master") [branch]
-        	((expect branch.name).toequal "master")
+        (after (github.branch> repo "master")
+        	((expect @.name).toequal "master")
           (done)
         ))
       )
     ))
   ###
   ### ref: (github.branch> <repo> [branch]) ## branch defaults to master
-    e.g. (when (github.branch> repo) [branch] ...)
+    e.g. (after (github.branch> repo) ...)
     https://developer.github.com/v3/repos/#get-branch
   ###
-  (ref branch> (lambda [repo branch] (when repo [data]
-    (get> (+ "repos/" data.full_name "/branches/" (or branch "master")))
+  (ref branch> (lambda [repo branch] (when2 [repo]
+    (get> (+ "repos/" repo.full_name "/branches/" (or branch "master")))
   )))
 
   ### ref: (github.branches> repo) ###
-  (ref branches> (lambda [repo] (when repo [data]
-    (get> (+ "repos/" data.full_name "/branches"))
+  (ref branches> (lambda [repo] (when2 [repo]
+    (get> (+ "repos/" repo.full_name "/branches"))
   )))
 
   ### ref: (github.session>)
@@ -251,12 +254,13 @@
   ))
 
   (ref ask-user-to-login> (promise (using [bootstrap]
-    (when (bootstrap.modal> "github/github-login" {}) [r]
-      (cond (is r.login.value "true") (do
-        (ref joined (+ r.username.value ":" r.password.value))
+    (ref modal (bootstrap.modal> "github/github-login" {}))
+    (when2 [modal]
+      (cond (is modal.login.value "true") (do
+        (ref joined (+ modal.username.value ":" modal.password.value))
         (ref auth-header (+ "Basic " (btoa joined)))
-        (save-user r.username.value auth-header r.remember.checked)
-        (resolve-promise { auth-header user: r.username.value })
+        (save-user modal.username.value auth-header modal.remember.checked)
+        (resolve-promise { auth-header user: modal.username.value })
       ) (else)
         (reject-promise { error: true reason: "User abort" })
       )
@@ -287,9 +291,7 @@
       )
     ))
 
-    (when session> (when (send-request @) [response]
-      (JSON.parse response)
-    ))
+    (after session> (after (send-request @) (JSON.parse @)))
   ))
 
   (ref get> (lambda [url options]
@@ -304,15 +306,15 @@
   ))
 
   ### ref: (ref fs (once github.fs repo branch)) ## entries> read> write>
-    e.g. (when fs (when (@.read> "README.md") [md] ...))
+    e.g. (after fs (after (@.read> "README.md") ...))
   ###
   (ref fs (lambda [name branch]
     (ref repo  (once (repo> name)))
-    (ref list> (once (when (tree> (repo) fs.branch) [tree] tree.tree)))
-    (ref entries> (once (when (fs.list>) [tree] (dict.from-list tree "path"))))
+    (ref list> (once (after (tree> (repo) fs.branch) @.tree)))
+    (ref entries> (once (after (fs.list>) (dict.from-list @ "path"))))
     (ref read> (lambda [path] (github.read> (repo) fs.branch path)))
     (ref write> (lambda [path contents message]
-      (when entries>
+      (after entries>
         (cond (ref meta (get @ path))
           (github.update> (repo) fs.branch path meta.sha contents message)
         (else)

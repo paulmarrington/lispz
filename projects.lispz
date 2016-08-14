@@ -23,10 +23,10 @@
       ))
   ###
   (ref open (lambda [name]
-    (return (when (db.projects.get name) [data]
-      (ref repo (github.repo data.username data.password data.project-name))
-      (return {meta-data: data repo})
-    ))
+    (after (db.projects.get name)
+      (ref repo (github.repo @.username @.password @.project-name))
+      {meta-data: @ repo}
+    )
   ))
 
   ### spec: Projects >> Add or Update a Project
@@ -41,8 +41,8 @@
       (data.update! username password project-name)
       (return (db.projects.put data))
     ))
-    (when  project [data] (update! data))
-    (promise.failed project [err] (update! {name}))
+    (when2  [project] (update! project))
+    (when2.rejected [project] (update! {name}))
   ))
 
   ### spec: Projects >> List Known Projects
@@ -51,13 +51,13 @@
 
         (describe "List Projects" (lambda []
           (it "will return a list of known projects" (lambda []
-            (when (projects.list) [list] (lambda []
-              ((expect list.length).toBeGreaterThan 0)
-            ))
+            (after (projects.list)
+              ((expect @.length).toBeGreaterThan 0)
+            )
           ))
         ))
   ###
-  (ref list (lambda [] (return (db.projects.toArray))))
+  (ref list (lambda [] (db.projects.toArray)))
 
   (export open)
 )

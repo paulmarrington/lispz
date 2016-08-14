@@ -29,7 +29,7 @@
         (ref requested (message.request> "examples/my-address"
           { msg: "whatsit" read-now: true }
         ))
-        (when requested [results context] ...)
+        (when [requested] ...)
 
     For in-process addresses, the observers are expected to be well behaved.
     They should (yield) the CPU rather that take too much time.
@@ -112,7 +112,7 @@
   ###
   (ref from (stateful {
     promise: (lambda [address a-promise]
-      (when a-promise [packet] (message.send (*arguments 0)))
+      (after a-promise (message.send (*arguments 0)))
     )
   }))
 

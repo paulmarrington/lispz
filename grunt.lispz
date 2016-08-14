@@ -1,30 +1,28 @@
 (using  [github compilers]
 
-  (ref grunt-build (promise [meta]
+  (ref grunt-build (lambda [meta]
     (ref js (stateful [(or meta.pre "")]))
     (ref read-all (promise.all (meta.files.map (promise
-      (when (github.fs.read source-repo path) [data]
-        (js.push! data) (resolve-promise)
+      (after (github.fs.read source-repo path)
+        (js.push! @) (resolve-promise)
       )
     ))))
-    (when read-all
+    (after read-all
       (js.push! (or meta.post ""))
       (ref contents (js.join "\n"))
-      (when (write target-repo (+ "ext/" meta.target) contents comment)
-        (resolve-promise)
-      )
+      (write target-repo (+ "ext/" meta.target) contents comment)
     )
   ))
-  (ref grunt-copy (promise [files]
+  (ref grunt-copy (lambda [files]
     (ref copy-all (promise.all (files.map (promise [item]
       (ref path (or item.src item))
-      (when (github.fs.read source-repo path) [contents]
+      (after (github.fs.read source-repo path)
         (ref path (+ "ext/" (last (path.split "/"))))
-        (when (write target-repo path contents comment)  (resolve-promise))
+        (write target-repo path contents comment)
       )
     ))))
   ))
-  (ref grunt (promise [target-repo source-project]
+  (ref grunt (lambda [target-repo source-project]
     (ref source-repo (github.fs.repo target-repo source-project))
     (ref comment (+ "from " source-project))
     (ref sources [[
@@ -32,17 +30,17 @@
         {include: '/^Gruntfile.js$/' single-level: true}
       ]]}
     ]])
-    (when (retriever target-repo sources github.fs) [store]
+    (after (retriever target-repo sources github.fs)
       (ref grunt-config ((Function
-        (+ "var module={};" (last store.js) "return module.exports"))))
+        (+ "var module={};" (last @.js) "return module.exports"))))
       (grunt-config {
         loadNpmTasks: (lambda) registerTask: (lambda)
-        initConfig: (lambda [config-data]
+        initConfig: (promise [config-data]
           (ref grunt-processor {
             build: grunt-build
             copy:  grunt-copy
           })
-          (when (update target-repo)
+          (after (update target-repo)
             (resolve-promise grunt-processor config-data)
           )
         )

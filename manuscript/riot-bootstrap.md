@@ -79,8 +79,8 @@ This example has a flat single-level list. All menus send a message when display
 
 If an external controller knows when the menu changes, or if the menu is static, then send the contents to a named message address so that the specified menu can be reloaded. If this happens before the menu is displayed the menu will not be loaded. To fix this, wait for the menu to be ready.
 
-      (when (message.ready "specifications-menu") []
-        (message.send "specifications-menu" nenu)
+      (after (message.ready> "specifications-menu")
+        (message.send "specifications-menu" menu)
       )        
 The menu itself is a dictionary with the format:
 

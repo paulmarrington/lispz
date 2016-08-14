@@ -24,7 +24,7 @@
     (ref ext (last (path.split ".")))
     (ref preprocessor  (get compilers ext))
     (cond preprocessor
-      (when (preprocessor.compile code path) [code] { path ext code })
+      (after (preprocessor.compile code path) [code] { path ext @ })
     (else)
       { path ext code }
     )
@@ -46,20 +46,22 @@
     (return {path code copy: (+ copy-to "/" filename)})
   ))
 
-  (ref read-file> (lambda [file repo]
-    (when (repo.list>) [file-tree]
-    (when (repo.read> path) [code]
+  (ref read-file> (lambda [path repo]
+    (ref file-tree (repo.list>))
+    (ref code      (repo-read> path))
+    (when2 [file-tree code]
       (ref meta (get file-tree path))
       (cond
         meta.copy-to (copy meta.copy-to path code)
         (else)       (preprocess> path code)
       )
-    ))
+    )
   ))
 
   (ref process-entry> (lambda [entry repo]
     (ref base (or entry.base ""))
-    (when (repo.list>) [file-tree]
+    (ref file-tree (repo.list>))
+    (when2 [file-tree]
       (ref files (dict.map file-tree.map (=> @)))
       (ref filtered (filter file-list entry.include entry.exclude))
       (promise.all (filtered.map (=> (read-file> @ repo))))
@@ -79,8 +81,8 @@
   ))
   ## Retrieve file contents based of filtering meta-data
   (ref retriever> (lambda [sources]
-    (when (process-repos sources) [entry-tree]
-      (ref entries  (list.flatten entry-tree))
+    (after (process-repos sources)
+      (ref entries  (list.flatten @))
       (ref filter   (lambda [ext] (entries.filter (=> (= @.ext ext)))))
       (ref for-unknown (=> (not (list.contains(@ [["js" "css"]])))))
       (ref format   (=> "\n\n/* " @.path " */\n" @.code))
@@ -112,7 +114,8 @@
       repo: (github.fs "paulmarrington/lispz" "master")})
   ###
   (ref builder (lambda [target-repo name sources]
-    (when (retriever sources) [store]
+    (ref store (retriever sources))
+    (when2 [store]
       (ref target { repo: target-repo  name })
       (ref comment (store.from.join " "))
       (promise.all

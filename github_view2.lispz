@@ -35,8 +35,8 @@
   )))
 
   (ref show-owners (lambda [component] (lambda [packet]
-    (when (github.repos>) [repos]
-      (ref paths  (extract-paths "" repos))
+    (after (github.repos>)
+      (ref paths  (extract-paths "" @))
       (ref owners (paths.map (=> (first (@.split "/")))))
       (ref unique (owners.filter (lambda [owner idx]
         (isnt owner (get owners (+ idx 1)))
@@ -50,9 +50,9 @@
   )))
 
   (ref show-repos (lambda [component] (lambda [packet]
-    (when (github.repos>) [repos]
+    (after (github.repos>)
       (ref path (parse-path packet.path 2))
-      (ref paths (extract-paths path.repo repos))
+      (ref paths (extract-paths path.repo @))
       (ref repos (paths.map (=> (second (@.split "/")))))
       (ref base (repos.filter (=> @.length)))
       (ref children ((repos.filter (=> @.length)).map (=> (+ @ "/"))))
@@ -65,9 +65,9 @@
 
   (ref show-branches (lambda [component] (lambda [packet]
     (ref path (parse-path packet.path 3))
-    (ref repo (github.repo> path.repo))
-    (when (github.branches> repo) [data]
-      (ref children (data.map (=> (+ @.name "/"))))
+    (ref branches (github.branches> (github.repo> path.repo)))
+    (when2 [branches]
+      (ref children (branches.map (=> (+ @.name "/"))))
       (update-tree-view {
         component styles base: (normalise-path packet.path 3)
         groups: [[{ type: "branch" children }]]
@@ -77,8 +77,8 @@
 
   (ref show-files (lambda [component] (lambda [packet]
     (ref path (parse-path packet.path))
-    (ref fs (github.fs path.repo path.branch))
-    (when (fs.list>) [files]
+    (ref files (fs.list> (github.fs path.repo path.branch)))
+    (when2 [files]
       (ref children (extract-files "[^/]*$" files))
       (update-tree-view {
         component styles base: (normalise-path packet.path)

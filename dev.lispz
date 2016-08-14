@@ -28,8 +28,8 @@
       (return ((@.replace '/[\\"]/g' "\\$&").replace '/\n/g' "\\n"))
     ))
     (ref load-module (lambda [name]
-      (ref uri (+ name ".lispz"))
-      (when (repo.read> uri) [text]
+      (ref text (repo.read> (+ name ".lispz")))
+      (when2 [text]
         [["\nlispz_modules['" name "']=\"" (stringify text) "\"\n"]]
       )
     ))
@@ -38,7 +38,8 @@
     ))
 
     (ref load-riot (lambda [name]
-      (when (repo.read> (+ name ".riot.html")) [text]
+      (ref text (repo.read> (+ name ".riot.html")))
+      (when2 [text]
         [["\n\n/*" name "*/\n\nlispz.tags['" name "']=\""
           (stringify text) "\"\n"]]
       )
@@ -48,12 +49,12 @@
     ))
 
     (ref lispz-js    (repo.read> "lispz.js"))
-    (ref groups      (when repo.entries> (group @)))
-    (ref modules     (when groups  (build-modules @.modules)))
-    (ref riots       (when groups  (build-riots @.riots)))
+    (ref groups      (after repo.entries> (group @)))
+    (ref modules     (after groups  (build-modules @.modules)))
+    (ref riots       (after groups  (build-riots @.riots)))
 
-    (when (promise.all modules lispz-js riots) [sources]
-      (ref  code  (list.flatten [["window.lispz_modules={}\n" sources]]))
+    (after (promise.all modules lispz-js riots) [sources]
+      (ref code (list.flatten [["window.lispz_modules={}\n" @]]))
       (return (repo.write> "ext/lispz.js" (code.join "") "lispz release code")
       )
     )

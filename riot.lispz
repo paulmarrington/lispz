@@ -51,7 +51,7 @@ https://github.com/riot/riot
       (ref loaded (promise.all (new-tags.map (=>
         (return (load @))
       ))))
-      (when loaded (resolve-promise))
+      (after loaded (resolve-promise))
     ))
 
     (ref compile-and-process (lambda [tag-html]
@@ -75,12 +75,10 @@ https://github.com/riot/riot
     ))
 
     (ref retrieve-and-compile (lambda
-      (ref url
-        (or uri (+ (name.toLowerCase) ".riot.html"))
-      )
-      (when (net.http-get url) [tag-html]
-        (lispz.tags.update! name tag-html)
-        (compile-and-process tag-html)
+      (ref url (or uri (+ (name.toLowerCase) ".riot.html")))
+      (after (net.http-get url)
+        (lispz.tags.update! name @)
+        (compile-and-process @)
       )
     ))
 
@@ -111,7 +109,7 @@ https://github.com/riot/riot
     (ref name  (last parts))
     (ref file (first parts))
     (ref exists (tag-by-name name))
-    (when (load name (+ file ".riot.html"))
+    (after (load name (+ file ".riot.html"))
       (cond exists (do
         (ref tags (riot.mount name))
         (resolve-promise (first tags))
@@ -133,27 +131,30 @@ https://github.com/riot/riot
   (macro on-mount  [*body] (tag.on "mount"  (=> *body)))
   (macro on-update [*body] (tag.on "update" (=> *body)))
 
-  (ref loaded (net.script "ext/riot.js" (lambda (return window.riot))))
-  (promise.failed loaded (export {build}))
-  (when loaded (using [compilers]
-    (stateful.morph! riot.parsers.js { lispz:
-      (lambda [source options url]
-        (ref opts (or options url {}))
-        (ref name (+ (or url opts.url "tags") ".riot"))
-        (compilers.lispz.compile source name)
+  (ref loading
+    (after (net.script "ext/riot.js" (lambda (return window.riot)))
+      (using [compilers]
+        (stateful.morph! riot.parsers.js { lispz:
+          (lambda [source options url]
+            (ref opts (or options url {}))
+            (ref name (+ (or url opts.url "tags") ".riot"))
+            (compilers.lispz.compile source name)
+          )
+        })
+        (stateful.morph! riot.util.tmpl { errorHandler: (lambda [err]
+            (console.error err.message "in" err.riotData.tagName "(" err ")")
+        )})
+        (ref riot-elements (slice (document.getElementsByClassName "riot")))
+        (ref load-all (promise.all (riot-elements.map (lambda [element]
+          (ref name (element.tagName.toLowerCase))
+          (return (load name (element.getAttribute "uri")))
+        ))))
+        (after load-all
+          (riot.mount "*")
+          (export {build compile load mount inject child-tags tag-by-name})
+        )
       )
-    })
-    (stateful.morph! riot.util.tmpl { errorHandler: (lambda [err]
-        (console.error err.message "in" err.riotData.tagName "(" err ")")
-    )})
-    (ref riot-elements (slice (document.getElementsByClassName "riot")))
-    (ref load-all (promise.all (riot-elements.map (lambda [element]
-      (ref name (element.tagName.toLowerCase))
-      (return (load name (element.getAttribute "uri")))
-    ))))
-    (when load-all
-      (riot.mount "*")
-      (export {build compile load mount inject child-tags tag-by-name})
     )
-  ))
+  )
+  (rejected loading (export {build}))
 )

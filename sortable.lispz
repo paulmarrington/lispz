@@ -30,7 +30,6 @@ https://github.com/RubaXa/Sortable
       {repo: "sortable" files: [[{include '/Sortable.js/'}]]}
     ]]))
   ))
-  (ref loaded (net.script "ext/sortable.js" (lambda [] (return window.Sortable))))
-  (when  loaded [] (export {build create}))
-  (promise.failed loaded [] (export {build}))
+  
+  (net.loader "sortable" window.Sortable { build create })
 )

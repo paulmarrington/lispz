@@ -1,11 +1,9 @@
 (using [list dom regex dict]
   (ref script (promise.callback [uri check max-ms] (lispz.script uri (lambda []
     (cond check (do
-      (ref initialised (wait-for check max-ms))
-      (when  initialised [] (callback))
-      (promise.failed initialised [] (debug (+ uri " didn't load")))
-    ) (else) (return (callback))
-    )
+      (ref initialised (after (wait-for check max-ms) (callback)))
+      (rejected initialised (debug (+ uri " didn't load")) (callback))
+    ) (else) (callback))
   ))))
 
   (ref css (lambda [uri]
@@ -23,10 +21,8 @@
     (lispz.http_request uri "GET" callback headers)
   ))
 
-  (ref json-request (promise [uri headers]
-    (when (http-get uri headers) [response]
-      (resolve-promise (JSON.parse response))
-    )
+  (ref json-request (lambda [uri headers]
+    (after (http-get uri headers) (JSON.parse @))
   ))
 
   ### spec: Network >> Is URL external

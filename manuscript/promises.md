@@ -18,8 +18,8 @@ have a promise that only runs when it is first needed. This is where lazy evalua
 
     (ref fs (lambda [name]
       (ref repo  _(once (repo> name)_))
-      (ref entries> _(once (when (tree> (repo))_ [tree]
-        (dict.from-list tree.tree "path")
+      (ref entries> _(once (after (tree> (repo))_
+        (dict.from-list @.tree "path")
       )))
       (ref read> (lambda [path] (github.read> _(repo)_ path)))
       (ref fs { name entries> read> })
@@ -27,9 +27,9 @@ have a promise that only runs when it is first needed. This is where lazy evalua
     ...
     (ref fs (github.fs "paulmarrington/lispz"))
 
-    (when (fs.entries>) (@.forEach (lambda [entry]
-      (when (fs.read> entry.path) [contents]
-        (register entry.path contents)
+    (after (fs.entries>) (@.forEach (lambda [entry]
+      (after (fs.read> entry.path)
+        (register entry.path @)
       )
     )))
 
@@ -55,8 +55,8 @@ Even without further knowledge, promises clean up errors and exceptions. If you 
 
 The power of promises starts to become clearer with the understanding that 'when' can return a promise.
 
-    (ref processed (when reading (lambda [result] (process result))))
-    (when processed (console.log "All done"))
+    (ref processed (when [reading] (process reading)))
+    (when [processed] (console.log "All done"))
 
 So far this adds very little at the cost of a relatively large supporting library. If we start thinking functionally instead of sequentially, promises provides a way to clarify our code (a little).
 
@@ -64,28 +64,28 @@ So far this adds very little at the cost of a relatively large supporting librar
     (ref update-mode (github.update lispz-repo))
     ## Once in update mode we can retrieve lispz.js and ask
     ## for a list of other file in parallel
-    (ref lispz-js    (when update-mode [] (read-file "lispz.js")))
-    (ref listing     (when update-mode [] (github.list-dir lispz-repo "")))
+    (ref lispz-js    (when [update-mode] (read-file "lispz.js")))
+    (ref listing     (when [update-mode (github.list-dir lispz-repo "")))
     ## We can only sort files once we have a listing from the server
-    (ref groups      (when listing [files] (group files)))
+    (ref groups      (when [listing] (group listing)))
     ## but then we can process the different groups in parallel
     ## (retrieving source as needed)
-    (ref modules     (when groups [files] (build-modules files.modules)))
-    (ref riots       (when groups [files] (build-riots files.riots)))
+    (ref modules     (when [groups] (build-modules groups.modules)))
+    (ref riots       (when [groups] (build-riots   groups.riots)))
 
     ## Now to pull it all together into a single file
     (ref  source     (stateful ["window.lispz_modules={}"]))
     ## promise.sequence forces the order.
     (ref all-loaded  (promise.sequence
-      (when modules  [sources] (source.concat sources) (promise.resolved)
+      (when [modules] (source.concat modules) (promise.resolved)
       ## lisp.js is added after modules and lisp-js are resolved
-      (when lispz-js [code]    (source.push! code) (promise.resolved)
+      (when [lispz-js]    (source.push! lispz-js) (promise.resolved)
       ## riot tags are added after lisp.js and lisp-js is added
       ## and riots promise is resolved
-      (when riots    [sources] (source.concat sources) (promise.resolved)
+      (when [riots] (source.concat riots) (promise.resolved)
     ))
     ## Only write the result when the sequence above is complete
-    (when all-loaded [] (write-lispz))
+    (when [all-loaded] (write-lispz))
     ## returns a promise that is complete once the results are written
 
 ### Summary
@@ -96,9 +96,8 @@ So far this adds very little at the cost of a relatively large supporting librar
 2. **(promise.callback [params...] ...)** is a macro to creates promises from traditional callbacks
   1. **callback** is a function reference to use where callbacks would normally be defined
 3. **(promise.resolved results)** Will return a promise that will always provide the results supplied to when. Use it to turn a synchronous function into a promise to use in sequences.
-4. **(when a-promise [results...] ...)** is a macro that works like a lambda where the function body is executed with the results supplied once (and if) the promise is resolved. If a **when** statement returns a promise it can be used for chaining.
-4. **(when-rejected [err] ...)** Will evaluate for all rejections in the closest when-stack above.
-5. **(promise-failed a-promise [err] ...)** is a macro that works like a lambda where the function body is executed if any of a set of chained promises uses **reject-promise** to indicate an error.
+4. **(when [promises] ...)** is a macro that works like a lambda where the function body is executed with the results supplied once (and if) the promise is resolved. If a **when** statement returns a promise it can be used for chaining.
+4. **(when-rejected [promises] ...)** Will evaluate for all rejections.
 6. **(promise.all promise-1 promise-2 [[promises]])** will return a promise that is fulfilled when all the promises specified are resolved or rejected. It will flatten arrays of promises.
 
 ### Benefits
