@@ -11,6 +11,5 @@ https://github.com/babel/babel
       ]]}
     ]]))
   ))
-  (when (net.script "ext/jquery.js" (=> window.Babel)) (export { build }))
-  (when-rejected (export { build }))
+  (net.loader "babel" window.Babel { build })
 )

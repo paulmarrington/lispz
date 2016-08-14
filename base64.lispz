@@ -12,7 +12,7 @@ https://github.com/mathiasbynens/base64
     ]]))
   )))
 
-  (when (net.script "ext/base64.js" (=> window.base64)) (export {
+  (net.loader "base64" window.base64 {
     build  encode: base64.encode  decode: base64.decode
-  }))
+  })
 )

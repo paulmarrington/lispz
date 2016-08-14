@@ -3,7 +3,7 @@
     (cond check (do
       (ref initialised (wait-for check max-ms))
       (when  initialised [] (callback))
-      (promise.failed initialised [] (debug (+ uri "didn't load")))
+      (promise.failed initialised [] (debug (+ uri " didn't load")))
     ) (else) (return (callback))
     )
   ))))
@@ -55,11 +55,22 @@
     (+ "?" (kvp.join "&"))
   ))
 
-  ### ref: (ref encoded (base64 contents)) ## replaces >0xFF with space ###
+  ### ref: (ref encoded (net.base64 contents)) ## replaces >0xFF with space ###
   (ref base64 lispz.base64)
 
-  ### ref: (ref uri (data-uri (base64 contents))) ###
+  ### ref: (ref uri (net.data-uri (base64 contents))) ###
   (ref data-uri lispz.data_uri)
+
+  ### ref: (net.loader "base64" window.base64 { build encode decode })
+  ###
+  (global #loader (lambda [filename test-for-loaded exporter]
+    (ref loaded     (script (+ "ext/" filename ".js") test-for-loaded))
+    (ref done       (when2 [loaded] (exporter)))
+    (when2-rejected [done] (exporter))
+  ))
+  (macro net.loader [file test exporting]
+    (#loader file (=> test) (=> (export exporting)))
+  )
 
   (export {
     script css http-get json-request external? url-actor url-path

@@ -10,6 +10,5 @@ https://github.com/jashkenas/underscore
       [[{include: '/underscore.js$/'}]]}]])
     (return (build target-repo "underscore" sources))
   ))
-  (ref loaded (net.script "ext/underscore.js" (lambda (return window._))))
-  (when loaded (export { build }))
+  (net.loader "underscore" window._ { build })
 )

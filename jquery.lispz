@@ -11,7 +11,5 @@ https://github.com/jquery/jquery
       ]]}
     ]]))
   ))
-  (ref loaded (net.script "ext/jquery.js" (lambda (return window.jQuery))))
-  (when  loaded (export {build}))
-  (promise.failed loaded (export {build}))
+  (net.loader "jquery" window.jQuery { build })
 )

@@ -18,6 +18,5 @@ https://github.com/firebase/firepad
   ))
 
   (lispz.css "ext/firepad.css")
-  (ref loaded (net.script "ext/firepad.js" (lambda [] (return window.FirePad))))
-  (when loaded (export {build}))
+  (net.loader "firepad" window.FirePad { build })
 )

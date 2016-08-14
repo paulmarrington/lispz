@@ -48,8 +48,5 @@ https://github.com/showdownjs/showdown
     (return html)
   ))
 
-  (ref loaded (net.script "ext/showdown.js" (lambda (return window.showdown))))
-
-  (when  loaded (export {build compile}))
-  (promise.failed loaded (export {build}))
+  (net.loader "showdown" window.showdown { build compile })
 )
