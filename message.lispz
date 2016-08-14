@@ -64,7 +64,7 @@
     ))
   ))
 
-  ### spec: async >> Messaging >> Sources >> (observe)
+  ### spec: async >> Messaging >> Sources >> (listen)
     Observe the passage of a message. An action is called with the packet
     and a reference to the observer object as stateful local context.
     The action can return a promise and preferably not do anything too

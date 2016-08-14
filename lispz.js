@@ -274,7 +274,7 @@ var lispz = function() {
       }
     }
     if (env.stack.length != 0) {
-      throw "missing close brace"
+      throw "missing close brace in " + source
     }
     return env.ast
   },
@@ -348,7 +348,7 @@ var lispz = function() {
   },
   module_init = function(uri) {
     var js = compile(lispz_modules[uri], uri)
-    init_func = eval('(function(__module_ready__){\n' + js + '\n})')
+    var init_func = eval('(function(__module_ready__){\n' + js + '\n})')
     init_func(function(exports) {
       cache[uri.split('/').pop()] = cache[uri] = exports
       var dashed = uri.replace("_", "-")
@@ -384,7 +384,6 @@ var lispz = function() {
     }) + ';'
   },
   load = function(uris, on_all_ready) {
-    uris = uris.split(",")
     var next_uri = function() {
       if (uris.length) load_one(uris.shift().trim(), next_uri)
       else if (on_all_ready) on_all_ready()
@@ -419,7 +418,7 @@ var lispz = function() {
     if (other_window_onload) other_window_onload()
     var q = lispz_url.split('#')
     script("ext/source-map.js", function() {
-      load(((q.length == 1) ? "core" : "core," + q.pop()),
+      load(((q.length == 1) ? ["core"] : ["core", q.pop()]),
       function() {
         var to_load = [], to_run = []
         slice(document.querySelectorAll('script[type="text/lispz"]')).forEach(
@@ -441,7 +440,7 @@ var lispz = function() {
           }
           if (window.onload) window.onload() // someome else set it
         }
-        if (to_load.length) load(to_load.join(","), end_run)
+        if (to_load.length) load(to_load, end_run)
         else                end_run()
     })})
   }
