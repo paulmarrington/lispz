@@ -46,17 +46,33 @@ Because it is common to turn a callback into a promise, lispz provides a helper 
 Now that we have a promise, we can use it just like a callback if we want:
 
     (ref reading (read "http://blat.com/blah" 1 2))
-    (**when** reading (lambda [result] (process result)))
-    (**promise-failed** reading (lambda [err] (console.log "ERROR: "+err)))
+    (**after** reading (process @))
+
+or we can keep the promise and deal with it later. Better still we can collect a set of promises that do not rely on each other and process them when all are ready.
+
+    (ref read-another (read "htp://blat.com/moo" 3 4))
+    (**when** [reading read-another] (process (+ reading read-another)))
 
 Even without further knowledge, promises clean up errors and exceptions. If you do not catch errors, exceptions thrown in the asynchronous function can be caught in the code containing the promise.
+
+    (reading.**catch**  (=> (console.log "ERROR: "+@)))
+
+Unlike **after** and **when**, **catch** takes a single parameter - being a function definition. Sorry for the inconsistency - but the JavaScript promise catch method works and looks the best here.
+
+All 3 are expressions that themselves return a promise. For **after** and **when** this will resolve to the return value of the code executed. For **catch** it is the promise extended with _.catch_.
+
+There is a problem with the expression above. The **catch** will only trigger for errors that happen when reading. If you want to also catch errors caused by process, use
+
+    ((**after** reading (process @)).**catch**  (=> (console.log "ERROR: "+@)))
+
+Catching errors will only work for promises up to the one with the method. On the other hand, if you don't need to process interim values, you only need to catch on the last promise in your logic chain.
 
 ### Chaining Promises
 
 The power of promises starts to become clearer with the understanding that 'when' can return a promise.
 
     (ref processed (when [reading] (process reading)))
-    (when [processed] (console.log "All done"))
+    (after (console.log "All done"))
 
 So far this adds very little at the cost of a relatively large supporting library. If we start thinking functionally instead of sequentially, promises provides a way to clarify our code (a little).
 
@@ -74,19 +90,21 @@ So far this adds very little at the cost of a relatively large supporting librar
     (ref riots       (when [groups] (build-riots   groups.riots)))
 
     ## Now to pull it all together into a single file
-    (ref  source     (stateful ["window.lispz_modules={}"]))
-    ## promise.sequence forces the order.
-    (ref all-loaded  (promise.sequence
-      (when [modules] (source.concat modules) (promise.resolved)
-      ## lisp.js is added after modules and lisp-js are resolved
-      (when [lispz-js]    (source.push! lispz-js) (promise.resolved)
-      ## riot tags are added after lisp.js and lisp-js is added
-      ## and riots promise is resolved
-      (when [riots] (source.concat riots) (promise.resolved)
-    ))
-    ## Only write the result when the sequence above is complete
-    (when [all-loaded] (write-lispz))
+    (when [modules lispz-js riots]
+      (ref code (list.flatten [["window.lispz_modules={}\n" modules listz-js riots]]))
+      (return (repo.write> "ext/lispz.js" (code.join "") "lispz release code")
+      )
+    )
     ## returns a promise that is complete once the results are written
+
+### Promising an Unpromise
+
+Most, but not all, asynchronous functions have some sort of semaphore mechanism so that you know they are done. For the rare event that this is not the case, we have _wait-for_. One of the examples is in loading scripts into the DOM. We are told when the script loads, but not when it's initialisation has finished running.
+
+    ((after
+      (load-script "jquery.js", (=> (wait-for (=> window.$) 10000)))
+      (do (more))
+    ).catch (=> (console.error "load failure")))
 
 ### Summary
 
@@ -97,6 +115,7 @@ So far this adds very little at the cost of a relatively large supporting librar
   1. **callback** is a function reference to use where callbacks would normally be defined
 3. **(promise.resolved results)** Will return a promise that will always provide the results supplied to when. Use it to turn a synchronous function into a promise to use in sequences.
 4. **(when [promises] ...)** is a macro that works like a lambda where the function body is executed with the results supplied once (and if) the promise is resolved. If a **when** statement returns a promise it can be used for chaining.
+4. **(after a-promise ...)** for a single promise. The result can be accessed with @.
 4. **((when...).catch (=>...))** Will evaluate for all rejections.
 6. **(promise.all promise-1 promise-2 [[promises]])** will return a promise that is fulfilled when all the promises specified are resolved or rejected. It will flatten arrays of promises.
 

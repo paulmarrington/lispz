@@ -92,3 +92,50 @@ It's all very well being able to store state, but Lispz runs in the browser usin
     ## except you can do it to data structures you don't own
     (ref dom-fragment (stateful.morph! (document.createElement 'DIV')))
     (dom-fragment.update! { innerHTML: tag-html })
+
+## Uniqueness in a Random World
+
+JavaScript supplies a pseudo-random number generator that Lispz exposes with _(random range)_. The number returned will be between 0 and one less than the range given.
+
+    (ref next-number (random 10)) ## ==> returns a number between 0 and 9
+
+Many modern systems require a unique identifier, often called a uuid. While it would be difficult to generate a true uuid in JavaScript, we can emulate one to the uniqueess of the _random_ function.
+
+    (ref id (uuid)) ## ==> returns xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+
+## Odds and Sods
+
+In functional languages a common way to contain state is with a higher level function. Such are the implementations of _(counter!)_ for numbers and _(unique! "base")_ for strings. They both return a function that when repeatedly called always returns a different value. For fun, and to show how higher level functions can encapsulate state I have provided the implementations...
+
+    (global counter! (lambda
+      (ref count (stateful {to: 0}))
+      (lambda
+        (count.update! "to" (+ count.to 1))
+        (return count.to)
+      )
+    ))
+
+    (global unique! (lambda [base]
+      (ref counter (counter!))
+      (lambda
+        (ref uid (counter))
+        (cond
+          (is uid 1)  base
+          (< uid 10)  (+ base "-0" uid)
+          (else)      (+ base "-" uid)
+        )
+      )
+    ))
+
+An inverse of _counter_ is countdown that returns true after a specified number of calls. It accepts a starting value and an increment, and is useful with (delay).
+
+    (global wait-for (promise [test max-ms]
+      (ref timed-out (*countdown!* (or max-ms 5000) 10))
+      (ref waiter (lambda []
+        (cond
+          (test)      (resolve-promise)
+          (timed-out) (reject-promise)
+          (else)      (delay 10 (waiter))
+        )
+      )) (waiter)
+    ))

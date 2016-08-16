@@ -13,6 +13,7 @@
   3. [Callbacks](callbacks.md)
   3. [Promises](promises.md)
   3. [Messages](messages.md)
+3. [Network Support][network.md]
 4. [Components](components.md)
   4. [Action: Web Components with Facetz](facetz.md)
   4. [Action: Web Components with RIOT](riot.md)

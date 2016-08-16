@@ -11,6 +11,7 @@ async.md
 callbacks.md
 promises.md
 messages.md
+network.md
 components.md
 facetz.md
 riot.md

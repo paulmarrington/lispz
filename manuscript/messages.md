@@ -19,9 +19,9 @@ The client will send a command to open a new file for display. If the editor is 
       contents: "..."
     })
 
-A request will return a promise that when fulfilled with provide an array of results - one for each listener. You can tell if there are no listeners if the array is empty.
+A request will return a promise that when fulfilled with provide an array of results - one for each listener. You can tell if there are no listeners if the array is empty. Use _send_ instead if you are not expecting a response.
 
-If it is possible that a client will send an important request before the service has had the opportunity to initialise, wrap 'send' in 'ready>':
+If it is possible that a client will send an important request before the service has had the opportunity to initialise, wrap 'request> or send' in 'ready>':
 
     (after (message.ready> "code-editor/scratch")
       (message.send "code-editor/scratch/open" {
@@ -68,11 +68,11 @@ A source is a generator that creates messages for a stream. You can create your 
     (message.from.promise "my-promise" a-promise)
 
 ### Stream Processors
-Stream processors will typically modify messages or filter them. Both cases provide both the message packet and a stream specific stateful context object. In the examples below, @pre is the message from the previous stage in the stream.
+Stream processors will typically modify messages or filter them. Both cases provide both the message packet and a stream specific stateful context object.
 
-    (message.map      @pre "title" (lambda [packet context]))
-    (message.filter   @pre "title" (lambda [packet context]))
-    (message.throttle @pre 1000)
+    (message.map      "my-address" "mouse" (lambda [packet context]...))
+    (message.filter   "my-address/mouse" "top-left" (lambda [packet context]...))
+    (message.throttle "my-address/mouse/top-left" 1000)
 
 ### Stream Consumers
 The _listen_ function acts as a consumer and the end of the line for a stream. A consumer may be part of the stream cascade or uncoupled in another component.
