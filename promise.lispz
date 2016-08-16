@@ -47,7 +47,7 @@
 ### ref: ((after a-promise ...).catch (=> ...))
     use @ to refer to a single promise result if needed
 ###
-(macro after    [a-promise *body] (a-promise .then  (=> *body)))
+(macro after [a-promise *body] (a-promise .then  (=> *body)))
 
 (using [list]
   ### Promises >> promise.all

@@ -28,7 +28,7 @@
 
 (global countdown! (lambda [from by]
   (ref count (stateful {from}))
-  (return (lambda []
+  (return (lambda
     (from.update! "from" (- count.from by))
     (return (<= count.from 0))
   ))
@@ -54,9 +54,9 @@
 # Generate a fairly unique ID - at least as unique as Math.random can make it.
 ###
 (global uuid (=>
-  ("xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace '/[xy]/g' (=>
+  ("xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace '/[xy]/g' (lambda [place]
     (ref r = (Math.floor (* (Math.random) 16)))
-    ((cond (is @ "x") r (else) (| (& r 0x3) 0x8)).toString 16)
+    ((cond (is place "x") r (else) (| (& r 0x3) 0x8)).toString 16)
   ))
 ))
 (export {})

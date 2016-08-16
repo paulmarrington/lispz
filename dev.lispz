@@ -53,8 +53,8 @@
     (ref modules     (after groups  (build-modules @.modules)))
     (ref riots       (after groups  (build-riots @.riots)))
 
-    (after (promise.all modules lispz-js riots) [sources]
-      (ref code (list.flatten [["window.lispz_modules={}\n" @]]))
+    (when [modules lispz-js riots]
+      (ref code (list.flatten [["window.lispz_modules={}\n" modules listz-js riots]]))
       (return (repo.write> "ext/lispz.js" (code.join "") "lispz release code")
       )
     )
