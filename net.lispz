@@ -27,18 +27,18 @@
 
   ### spec: Network >> Is URL external
   ###
-  (ref external? (lambda [url] (return (list.contains "://" url))))
+  (ref external? (lambda [url] (list.contains "://" url)))
 
   ### spec: Network >> Retrieve the last element in a URL path
   ###
   (ref url-path (lambda [href]
-    (return (regex.substring href '/(.*\/)[^\/]*$/'))
+    (regex.substring href '/(.*\/)[^\/]*$/')
   ))
 
   ### spec: Network >> Retrieve the last element in a URL path
   ###
   (ref url-actor (lambda [href]
-    (return (regex.substring href '/.*\/([^\/]*)(?:\?.*)?$/'))
+    (regex.substring href '/.*\/([^\/]*)(?:\?.*)?$/')
   ))
 
   ### ref: (net.dict-to-query data)
@@ -60,10 +60,14 @@
   ### ref: (net.loader "base64" window.base64 { build encode decode })
   ###
   (global #loader (lambda [filename test-for-loaded exporter]
+    (ref export-once (once (exporter)))
     ((after
       (script (+ "ext/" filename ".js") test-for-loaded)
-      (exporter)
-    ).catch exporter)
+      (export-once)
+    ).catch (=>
+      (console.debug filename ":" @)
+      (export-once)
+    ))
   ))
   (macro net.loader [file test exporting]
     (#loader file (=> test) (=> (export exporting)))
