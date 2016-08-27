@@ -1,5 +1,5 @@
 ### Load packages from CDN and other web sources - listing them when possible ###
-(using [net github list]
+(using [net list]
   (ref cdnjs-actors {
     list-all: (promise [repo path]
       (ref base "http://api.cdnjs.com/libraries?fields=assets&search=")
