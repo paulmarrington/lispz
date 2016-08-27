@@ -179,6 +179,7 @@ To access external modules, wrap your code in 'using'. Data and functions export
   ### ref: (once function) ## lazy evaluation ###
   (global #once (lambda [lazy-expression]
     (ref first-time (=>
+      (action.update! { func: (=>) }) ## in case of exception
       (ref evaluated-value (lazy-expression))
       (action.update! { func: (=> evaluated-value) })
       evaluated-value
