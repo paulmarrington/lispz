@@ -63,6 +63,11 @@
       (old-node.parentNode.replaceChild new-node old-node)
       new-node
     )
+    ### ref: (ref node-ref-2 (dom.node.remove node)) ###
+    remove: (lambda [node]
+      (node.parentNode.removeChild node)
+      node
+    )
   })
   (ref node-cache (stateful))
 
