@@ -232,11 +232,19 @@
     })
   ))
 
-  (ref message (stateful {
+  (ref message-builder (lambda [address] {
+    send:     (=> (send     address @))
+    request>: (=> (request> address @))
+    listen:   (=> (listen   address @))
+    dispatch: (=> (dispatch address @))
+    ready>:   (=> (ready>   address))
+  }))
+
+  (ref message (annotate message-builder {
     send listen dispatch request> clear trace from ready>
     map: message-map filter: message-filter combine-address
     exchange throttle
   }))
-  (lispz.update! {message})
+  (lispz.update! { message })
   (export message)
 )
