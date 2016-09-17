@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html manifest=index.cache-manifest>
+  <head>
+    <link rel='icon' type='image/x-icon' href='https://cdn.rawgit.com/paulmarrington/lispz/master/favicon.ico' />
+    <meta charset="utf-8">
+    <title>Facetz Scratchpad</title>
+  </head>
+  <body>
+    <bootstrap facetz>
+      <page-content fluid=true>
+        <panels name=editor-panels>
+          <lispz-panel class="col-sm-6 draggable" height=46%/>
+          <js-panel class="col-sm-6 draggable" height=46%/>
+          <console-panel class="col-sm-6 draggable" height=46%/>
+          <doc-panel class="col-sm-6 draggable" height=46%/>
+        </panels>
+      </page-content>
+    </bootstrap>
+
+    <template>
+      <lispz-panel>
+        <code-editor name=lispz
+          toolbar=code.toolbar heading=Lispz>
+            <buttons target=code.toolbar>
+              <push-button name=code/run type=info size=xs
+                title="<alt><enter>">
+                  Run
+              </push-button>
+            </buttons>
+        </code-editor>
+        <style></style>
+        <script type="text/lispz">
+          (using [message]
+            (lispz.set-debug-mode true)
+            (ref msg message)
+            (ref sender (lambda [address key]
+              (=> (message.send address { key contents: @ }))
+            ))
+            (ref lispz-editor {
+              open: sender("code-editor/lispz/open" ".lispz")
+              ready>:   (msg "code-editor/lispz/open").ready>
+              focus:    (msg "code-editor/lispz/focus").send
+              prepare:  (msg "code-editor/run/prepare").listen
+              compiled: (msg "code-editor/run/compiled").listen
+              changed:  (msg "code-editor/lispz/change").listen
+              run:      (msg "code/run").listen
+              contents: (msg "code-editor/lispz/contents").request>
+            })
+            (ref js-viewer {
+              open: sender("code-editor/js/open" ".js")
+            })
+            (ref log-viewer {
+              open:   sender("code-editor/output/open" ".text")
+              append: sender("code-editor/output/append" ".text")
+            })
+
+            (ref clear-result-panels (=>
+              (js-viewer.open   "")
+              (log-viewer.open  "")
+            ))
+
+            (ref log (=> (log-viewer.append (+ @ "\n"))))
+
+            (after (lispz-editor.ready>)
+              (lispz-editor.open "")
+              (lispz-editor.focus)
+            )
+            (lispz-editor.prepare clear-results-panel)
+
+            (using [js_beautify compilers]
+              (ref compiler (get compilers "lispz"))
+              (lispz-editor.compiled (lambda
+                (js-viewer.open ".js" (js_beautify @.js))
+              ))
+              (ref compile-and-show (lambda [source]
+                (clear_result_panels)
+                (ref js (compiler.compile source "Scratchpad"))
+                (js-viewer.open (js_beautify js))
+                js
+              ))
+              (lispz-editor.changed (=>
+                (compile-and-show @.contents))
+              )
+              (lispz-editor.run (=>
+                (after (lispz-editor.contents)
+                  (compilers.run [[(compile-and-show (first @))]])
+                )
+              ))
+            )
+
+            (stateful.morph! console)
+            (console.update! {
+              log: (=> (log (+ ((*arguments 0).join " "))) null)
+            })
+            (message.listen "code-editor/run/output" (=>
+              (log @.output)
+            ))
+          )
+        </script>
+      </lispz-panel>
+
+      <js-panel>
+        <code-editor name=js heading="Generated Javascript" />
+      </js-panel>
+
+      <console-panel>
+        <code-editor name=output heading="Console" />
+      </console-panel>
+
+      <doc-panel>
+        <mark-down name=manual href="README.md" heading="Manual" />
+      </doc-panel>
+    </template>
+
+    <script src=ext/lispz.js#facetz></script>
+  </body>
+</html>

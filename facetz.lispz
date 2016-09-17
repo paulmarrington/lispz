@@ -1,15 +1,15 @@
-(using [list compilers]
-  ## tags need only be loaded once then used from the cache
-  (ref tags (stateful))
+(using [list compilers dict net dom]
+  ## tag-defs need only be loaded once then used from the cache - all promises
+  (ref tag-defs (stateful))
 
-  # convert HTML into a DOM fragment
+  ## convert HTML into a DOM fragment
   (ref html-to-DOM (lambda [html]
-    (ref dom-fragment (stateful.morph! (document.createElement 'div')))
-    (dom-fragment.update! { innerHTML: tag-html })
+    (ref dom-fragment (document.createElement 'div'))
+    (stateful.morph! dom-fragment { innerHTML: tag-html })
   ))
 
-  # Each DOM fragment can contain one or more tags
-  (ref extract-tags (lambda [dom-fragment]
+  ## Each DOM fragment can contain one or more tag-defs
+  (ref extract-tag-defs (lambda [dom-fragment]
     (slice (dom-fragment.children))
   ))
 
@@ -19,28 +19,31 @@
         (head-element.appendChild style-element)
       ))
   ))
-  (ref head-element (get (document.getElementsByTagName 'head') 0))
+  (ref head-element
+    (first (document.getElementsByTagName 'head'))
+  )
 
-  ## compile scripts as functions expecting a tag structure as parameter
-  ## when an instance of the tag is instantiated on the page
+  ## compile scripts as functions expecting a tag structure
+  ## as parameter when an instance of the tag is instantiated
+  ## on the page
   (ref compile-scripts (lambda [script-elements tag-name]
     (ref combined-code (map script-elements (lambda [script-element]
       ## remove from tag template
       (script-element.parentNode.removeChild script-element)
       (ref code (script-element.innerHTML))
-      (ref type (or (script-element.getAttribute "type") "javascript"))
+      (ref explicit-type (script-element.getAttribute "type"))
+      (ref type (or explicit-type "javascript"))
       (ref ext (last (type.split "/")))
       (ref compiler (get compilers type))
       (compiler code (+ tag-name ".facetz." ext))
     )))
-    (new Function "tag" (combined-code.join "\n"))
+    (new Function tag (combined-code.join "\n"))
   ))
 
-  ## We recognise a child facetz because either its tag
-  ## name is in the index of known facetz or it has a class of _facetz_
-  (ref find-facetz (lambda [node]
-    (ref explicit (slice (node.querySelectorAll ".facetz,[facetz]"))
-    (ref implicit (slice (node.querySelectorAll "*")))
+  ## we don't know this tag - load it from the server...
+  (ref load-tag (lambda [tag-name]
+    (ref url (+ tag-name ".facetz.html"))
+    (after (net.http-get url) (compile-tag-defs @))
   ))
 
   ## for each tag extracted from the template, pull out style and
@@ -51,22 +54,82 @@
       (inject-styles (node.getElementsByTagName "style"))
       (ref script-elements (node.getElementsByTagName "script"))
       (ref script (compile-scripts script-elements node.tagName))
-      (ref child-facetz (find-facetz node))
-      { node scripts name: node.tagName child-facetz }
+      { node script name: node.tagName }
     ))
   ))
 
-  ## split tag into html, css and script - and act on each accordingly
-  (ref compile-tags (lambda [tag-html]
-    (ref dom-fragment (html-to-DOM tag-html)
-    (ref tag-doms (extract-tags dom-fragment))
-    (tag-doms.forEach (=>
-      (ref tag (extract-html-css-and-scripts @))
-      (tags.replace! tag.name tag)
-    ))
-  ))
   ## a container we clone to hold the DOM for each tag
   (ref tag-box (document.createElement 'div'))
 
-  (export { compile-tags })
+  ## split tag into html, css and script
+  ## and act on each accordingly
+  (ref compile-tag-defs-in-DOM (lambda [dom-fragment]
+    (ref tag-doms (extract-tag-defs dom-fragment))
+    (tag-doms.forEach (=>
+      (ref tag (extract-html-css-and-scripts @))
+      (tag-defs.replace! tag.name tag)
+    ))
+  ))
+  (ref compile-tag-defs (lambda [tag-html]
+    (compile-tag-defs-in-DOM (html-to-DOM tag-html))
+
+  ## fetch a tag definition - cached locally or from the server
+  (ref retrieve-tag-def (lambda (ref tag-name (@.toLowerCase))
+    (cond
+      (ref tag-def (get tag-defs tag-name))
+        tag-def
+      (ref tag-src (get lispz.facetz tag-name))
+        (compile-tag-defs tag-src)
+      (else)
+        (load-tag tag-name)
+    )
+  ))
+
+  ## a facetz tag is either pre-defined, has a facetz attribute
+  ## or has a dash in the name: <my-node> or <mynode facetz>
+  ## if not loaded
+  (ref is-facetz-tag (lambda [node]
+    (or
+      (get tag-defs (node.nodeName.toLowerCase))
+      (isnt (node.nodeName.indexOf "-") -1)
+      (node.hasAttribute "facetz")
+    )
+  ))
+
+  ## find all facetz references that are children of a node
+  (ref find-facetz-tags (lambda [node]
+    (ref all-nodes (slice (node.querySelectorAll "*")))
+    (list.filter all-nodes is-facetz-tag)
+  ))
+
+  ## given a tag definition, create an instance to insert
+  ## into the DOM. Requires recursive pass to instantiate
+  ## child tags
+  (ref mount-tag (lambda [placeholder]
+    (ref tag-def (retrieve-tag-def placeholder.nodeName))
+    (when [tag-def]
+      (ref instance (dom.node.fill placeholder tag-def.node))
+      (stateful.morph! instance { tag-def placeholder })
+      (dom.node.merge-attributes instance tag-def.node)
+      (mount-tags instance) ## recurse through inner facetz
+      (tag-def.script instance)
+    )
+  ))
+
+  ## look for tags in the node and mount them
+  (ref mount-tags (lambda [node]
+    (list.map (find-facetz-tags node) mount-tag)
+  ))
+
+  ## index.html can have <template> holding tag defs
+  (ref templates (document.getElementsByTagName "template"))
+  ((slice templates).forEach (lambda [template]
+    ## remove template so it is not processed as a facetz instance
+    (compile-tag-defs-in-DOM (dom.node.remove template))
+  ))
+
+  ## last thing is to mount any tags in index.html
+  (mount-tags document.body)
+
+  (export { compile-tag-defs mount-tags })
 )
