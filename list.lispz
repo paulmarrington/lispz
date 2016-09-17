@@ -29,7 +29,7 @@
 
 ### spec: lists >> contains
 ###
-(ref contains (lambda [substr str] (return (isnt -1 (str .indexOf substr)))))
+(ref contains (lambda [substr str] (isnt -1 (str .indexOf substr))))
 
 ### ref: (list.sort my-list) ## return a new list with items sorted
 ###
@@ -39,4 +39,8 @@
 ###
 (ref reverse (lambda [list] ((slice list).reverse)))
 
-(export { flatten for-each contains reverse sort })
+(ref map (lambda [list actor] (list.map actor)))
+
+(ref filter (lambda [list actor] (list.filter actor)))
+
+(export { flatten for-each contains reverse sort filter map })
