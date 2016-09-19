@@ -57,11 +57,16 @@ There is often need to merge multiple dictionaries together to create a new comb
 ### spec: lists >> dict >> Create a Dictionary from a List
     (ref list [[{key: 1 value: 2} {key: 3 value: 4}]]
     (dict.from-list list "key")    # {1: {key: 1 value: 2} 3: {key: 3 value: 4})
+    key can also be a function that retrieve a key from the item.
 ###
 (ref from-list (lambda [list key]
   (ref dictionary (stateful))
+  (ref get-key (cond
+    (instance-of "Function" key) key
+    (else) (lambda [item] (get item key))
+  ))
   (cond list (list.forEach (lambda [item]
-    (dictionary.update! (get item key) item)
+    (dictionary.update! (get-key item) item)
   )))
   (return (merge dictionary))
 ))
@@ -94,10 +99,10 @@ There is often need to merge multiple dictionaries together to create a new comb
   (return ((Object.keys dict).filter (lambda [k] (return (action=> k (get dict k))))))
 ))
 
-### spec: lists >> dict >> Check a Dictionary for an Entry
+### (dict.contains dict key)
 ###
-(ref contains (lambda [test against]
-  (return (#join '' '(' test ' in ' against ')'))
+(ref contains (lambda [dict key]
+  (#join '' '(' key ' in ' dict ')')
 ))
 
 (export { merge from-list insert! for-each map filter contains set })
