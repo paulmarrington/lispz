@@ -1,4 +1,4 @@
-(using [dict message]
+(using [dict message list]
   (ref append! (lambda [parent element]
     (ref selector (document.querySelector parent))
     (selector.appendChild element)
@@ -25,6 +25,7 @@
 
   (ref node {
     ### ref: (dom.node.create type attributes)
+        raw create of a DOM node
         e.g. (ref node (dom.node.create "div" {class: "hidden"}))
     ###
     create: (lambda [tag-name attributes]
@@ -33,6 +34,7 @@
       node
     )
     ### ref: (dom.node.empty element)
+        remove all inner elements from a node
         e.g. (ref new-node (dom.empty-node tag.root))
     ###
     empty: (lambda [node]
@@ -41,32 +43,54 @@
       cleared
     )
     ### ref: (dom.node.cache name node)
+        keep a reference to a node for later retrieval
         e.g. (dom.node.cache "test" tag.root)
-             (dom.node.fill tag.root (dom.node.cache "test"))
+             (dom.node.copy tag.root (dom.node.cache "test"))
     ###
     cache:  (lambda [name node]
       (cond node (node-cache.update! name node))
       (get node-cache name)
     )
-    ### ref: (dom.node.fill node with-other-node)
-        e.g. (dom.node.fill tag.root (dom.node.cache tag.opts.name))
+    ### ref: (dom.node.copy placeholder-node with-other-node)
+        replace placeholder with a clone of another node
+        e.g. (dom.node.copy tag.root (dom.node.cache tag.opts.name))
     ###
-    fill: (lambda [node from]
+    copy: (lambda [node from]
       (ref new-node (from.cloneNode from true))
       (node.parentNode.replaceChild new-node node)
       new-node
     )
     ### ref: (dom.node.replace old-node new-node)
+        replace one node with another in the DOM
         e.g. (dom.node.replace tag.root (dom.node.cache tag.opts.name))
     ###
     replace: (lambda [old-node new-node]
       (old-node.parentNode.replaceChild new-node old-node)
       new-node
     )
-    ### ref: (ref node-ref-2 (dom.node.remove node)) ###
+    ### ref: (ref node-ref-2 (dom.node.remove node))
+        remove a node from the DOM and return a reference
+    ###
     remove: (lambda [node]
       (node.parentNode.removeChild node)
       node
+    )
+    ### ref: (dom.node.merge-attributes to from)
+        merge all the attributes from one node to another
+        e.g. (dom.node.merge-attributes child parent)
+    ###
+    merge-attributes: (lambda [to from]
+      (list.for-each (list.slice from.attributes) (lambda [attr]
+        (cond (not (to.getAttribute attr.name))
+          (to.setAttribute attr.name attr.value)
+        )
+      ))
+    )
+    ### ref: (dom.node.children-with-class parent class-name)
+        e.g. ((dom.node.children-with-class me "fill").map ...)
+    ###
+    children-with-class: (lambda [parent class-name]
+      (slice (parent.getElementsByClassName class-name))
     )
   })
   (ref node-cache (stateful))
