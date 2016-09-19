@@ -1,0 +1,455 @@
+<panel>
+  <!-- ### spec: bootstrap >> Panels
+
+    A panel is a UI component that provides decorations around your content.
+    The header includes a title and a button bar.
+    An optional footer can include more text.
+
+        <panel [context=default|primary|success|info|warning|danger]
+                  [heading=heading-text] [footer=footer-text]
+                  [menu=menu-id] height=[nn%,nn]>
+          panel-body-content-html
+        </panel>
+
+    The context defines the colours use for the decoration.
+    The _menu-id_ is used to listen on a messaging channel that
+    can publish menu contents.
+
+        <panel [context=default|primary|success|info|warning|danger]
+                [heading=heading-text] [footer=footer-text]
+                [menu=menu-id] height=[nn%,nn]>
+         panel-body-content-html
+         </panel>
+    ### -->
+  <div class="panel" name=outer>
+    <div class="panel-heading template" name=heading>
+      <bars-menu align=right/>
+       <tool-bar class=template/>
+       <h3 class="panel-title fill"></h3>
+     </div>
+    <div class="panel-body fill" name=body></div>
+    <div class="panel-footer template fill" name=footer></div>
+  </div>
+
+  <style>
+    panel .panel {
+      position: relative;
+    }
+    panel .panel-title {
+      cursor: default;
+    }
+    panel buttons .btn-toolbar {
+      margin-top: -2px;
+    }
+    panel .panel-body {
+      position: absolute;
+      top: 40px;
+      bottom: 2px;
+      left: 0;
+      right: 2px;
+      overflow: auto;
+    }
+    panel > .panel {
+      margin-top: 10px;
+      margin-bottom: 10px;
+    }
+  </style>
+
+  <script type=text/lispz>
+    (riot-tag
+      (tag.update! {context: (+ "panel-" (or opts.context "default"))})
+      (on-mount (using [dom]
+        (cond opts.height (do
+          (ref px (cond
+            (is "%" (opts.height.slice -1))
+              (/ (* window.innerHeight (opts.height.slice 0 -1)) 100)
+            (else)
+              opts.height
+          ))
+          (dom.style! tag.outer {height: (+ px "px")})
+        ))
+      ))
+    )
+  </script>
+</panel>
+
+<panels>
+  <yield/>
+  <style>
+    /* show the move cursor as the user moves the mouse over the panel header.*/
+    panels .panel-title { cursor: move; }
+    panels .draggable { display: block; }
+  </style>
+  <script type=text/lispz>
+    (riot-tag (on-mount (using [sortable]
+      (sortable.create tag.root (or opts.name "sortable") {
+        draggable:  ".draggable"
+        handle:     ".panel-title"
+        dataIdAttr: "name"
+      })
+    )))
+  </script>
+</panels>
+
+<modal>
+  <!-- ### spec: bootstrap >> Modals
+
+  Modals pop up and deny access to the rest of the page until they are dismissed.
+
+      <modal name=n [title=heading-text] [buttons=a,*b]
+        [context=default|primary|success|info|warning|danger]>
+          modal-body-content-html
+      </modal>
+
+  Buttons are added to a footer, with the one starting with a star being the default.
+  When a modal button is pressed it will send a message with a topic of
+  _modal-name/button-name/button_.
+
+      <modal name=login-dialog title="..." buttons="Log in,Cancel">...</modal>
+      ....
+      (message.listen "login-dialog/Log in/button" (lambda ...)
+  ### -->
+  <div class="modal fade" role="dialog" aria-labelledby={ opts.name }
+  name=modal style="display:none;">
+    <div class="modal-dialog { modal-lg: opts.size=='large' }
+    { modal-sm: opts.size=='small' }" role="document">
+      <div class="modal-content">
+        <div class="modal-header" if={ opts.title }>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+          <h4 class="modal-title" id={ opts.name }>{ opts.title }</h4>
+        </div>
+        <div class="modal-body"><yield/></div>
+        <div class="modal-footer">
+          <push-button each={ buttons }
+          type={ type } name={ name }>
+            { title }
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <style>
+  </style>
+  <script type=text/lispz>
+    (riot-tag (using [dom]
+      (cond opts.buttons (do
+        (ref buttons (stateful []))
+        (tag.update! {buttons: buttons})
+        ((opts.buttons.split ",").forEach (lambda [title]
+          (buttons.push! (cond
+            (ref primary (is "*" (first title))) (do
+              (ref fixed-title (title.slice 1))
+              (ref name
+                (+ "modal/" opts.name "/" fixed-title)
+              )
+              {name title: fixed-title type: "primary"}
+            ) (else) (do
+              (ref name (+ "modal/" opts.name "/" title))
+              {name title type: "default"}
+            )
+          ))
+        ))
+      ))
+      (on-mount (using [bootstrap message]
+        (ref modal-tag ($ tag.modal))
+        (ref show (=> (modal-tag.modal "show")))
+        (ref hide (=> (modal-tag.modal "hide")))
+        (message.dispatch
+          (+ "modal/" opts.name) { show hide }
+        )
+        (ref transfer-event (=>
+          (ref address (+ "modal/" opts.name "/" @))
+          (modal-tag.on (+ @ ".bs.modal") (=>
+            (message.send address { element: tag.root })
+          ))
+        ))
+        (transfer-event "hidden")
+        (transfer-event "shown")
+      ))
+    ))
+  </script>
+</modal>
+
+<buttons>
+  <!-- ### spec: bootstrap >> Buttons >> Button Bar
+  A simplistic component to group buttons into a tool-bar.
+  ### -->
+  <div class="btn-toolbar { right: opts.align === 'right' }" role="toolbar">
+    <yield/>
+  </div>
+  <style>
+    buttons > div.right { float: right; margin-right: 1em }
+  </style>
+  <script type=text/lispz> </script>
+</buttons>
+
+<button-group>
+  <!-- ### spec: bootstrap >> Buttons >> Button Groups
+  Buttons in a group are pushed together without separating space.
+  It is a good visual effect for radio buttons.
+  ### -->
+  <div class="btn-group" role="group"> <yield/> </div>
+  <style> </style>
+  <script type=text/lispz> </script>
+</button-group>
+
+<push-button>
+  <!-- ### spec: bootstrap >> Buttons >> Push Button
+  Standard button representation - a button you push to take an action.
+
+  When a button is pressed it will send a message with a topic of
+  _button-name/on_ and _button-name/off_.
+
+  Attributes are
+
+  * **name**: Name of button - used to send the push messages
+  * **type**: [*default|primary|success|info|warning|danger]
+  * **size**: [*default|lg|sm|xs]
+  ### -->
+  <button class=
+    "btn btn-{ opts.type || 'default' } btn-{ opts.size || 'default' }"
+    name=button>
+    <yield/>
+  </button>
+  <style></style>
+  <script type=text/lispz>
+    (riot-tag (on-mount (using [message]
+      (tag.button.addEventListener "click" (=>
+        (message.send opts.name {})
+      ))
+    )))
+  </script>
+</push-button>
+
+<bars-menu>
+  <!-- ### spec: bootstrap >> Menus
+
+  A menu is a multi-level option selection.
+  Both menu contents and results selected communicate by messages.
+
+  Menu contents loading can be driven by the menu component or an external provider.
+  For the former, the menu component sends out a message when a user asks to open the menu.
+  It is up to a listener to provide the data requested.
+  Use this if the menu contents change between uses.
+
+        (message.listen "specifications-menu/open" (lambda
+          (ref menu (dict.map lispz_modules (lambda [title source]
+            (return {topic: "specifications" title source})
+          )))
+          (message.send "specifications-menu" (menu.sort))
+        ))
+
+  This example has a flat single-level list. All menus send a message when
+  displayed with the name of the menu concatenated to _.open_.
+  They also listen on the menu name as an address,
+  so you can pass the resulting menu back.
+
+  If an external controller knows when the menu changes,
+  or if the menu is static, then send the contents to a named message address
+  so that the specified menu can be reloaded. If this happens before the menu
+  is displayed the menu will not be loaded.
+  To fix this, wait for the menu to be ready.
+
+        (after (message.ready> "specifications-menu")
+          (message.send "specifications-menu" nenu)
+        )
+  The menu itself is a dictionary with the format:
+
+       (ref test-menu
+          [[
+            { header: true title: "Heading 1" }
+            { title: "Item 1" topic: "Test menu item 1" }
+            { title: "Item 2" children: [[{ title: "Item 2a" }]] }
+            { divider: true }
+            { title: "item 2" disabled: true }
+          ]]
+        )
+      (message.send "test-menu" test-menu)
+
+  where _header_ and _divider_ are list separates that cannot be selected.
+  For the rest, _title_ is the text displayed, _topic_ is part of the the address
+  for the message sent, _children_ defines sub-menus and _disabled_ is for items
+  that cannot be selected.
+
+  If a menu item has a topic entry, a message will be sent to that an address
+  made up of the component owner, dash, topic.
+
+      (message.listen "Test Panel 2 - Test menu item 1" (lambda [data] (debug data)))
+
+  ###
+  ### spec: bootstrap >> Menus >> bars-menu
+
+  This menu type displays three horizontal bars - sometime call a _hamburger_.
+  Click it opens up a drop-down menu.
+
+      <bars-menu align=left|center|right name=name owner=owning-component />
+
+  The owner is prepended to the response to a menu selection so that the correct
+  component can respond.
+  ### -->
+  <div name=dropdown class="dropdown { right: opts.align === 'right' }">
+    <a style="text-decoration: none" data-toggle="dropdown" name=bars
+    class="glyphicon glyphicon-menu-hamburger dropdown-toggle" aria-hidden="true"
+    ></a>
+    <ul class="dropdown-menu { dropdown-menu-right: opts.align === 'right' }">
+      <li each={ items } class={ dropdown-header: header && title,
+          divider: divider, disabled: disabled }><a onclick={ goto } href="#">
+          <span class="pointer right float-right" if={ children }></span>
+          { title }&nbsp;&nbsp;&nbsp;
+      </a></li>
+    </ul>
+  </div>
+  <style>
+    bars-menu > div.right { float: right }
+    bars-menu span.caret { margin-left: -11px }
+    bars-menu a.dropdown-toggle { cursor: pointer }
+  </style>
+  <script type=text/lispz>
+    (riot-tag (on-mount (using [message riot]
+      (message.listen opts.name (lambda [items]
+        (tag.update! {items menu-root: (or items [[]])})
+      ))
+      (($ tag.dropdown).on "show.bs.dropdown" (lambda
+        (message.send (+ opts.name "/open"))
+        (tag.update! {items: tag.menu-root})
+      ))
+      (tag.update! {goto: (lambda [ev]
+        (cond ev.item.topic (message.send
+          (+ opts.owner "/" ev.item.topic)
+          {item: ev.item owner: opts.owner action: "select"}))
+        (cond ev.item.children (do
+          (tag.update! {items: ev.item.children})
+          (ev.currentTarget.blur)
+          (ev.stopPropagation)
+        ))
+      )})
+    )))
+  </script>
+</bars-menu>
+
+<sidebar>
+  <!-- ### spec: bootstrap >> Side-bars
+    A side-bar is a slide-in draw. When hidden it displays a string
+    down the left side of the screen. Clicking on the 3-bars icon at
+    the top will slide the panel in and out.
+  ### -->
+  <a aria-hidden="true" name=handle
+    class="glyphicon glyphicon-th-list text-danger"></a>
+  <div name=sidebar class="container bg-primary"><yield/></div>
+  <style>
+
+    sidebar .well {
+      padding: 0px;
+      margin: 5px 0 0 5px;
+    }
+
+    sidebar > a {
+      text-decoration: none !important;
+      position: absolute !important;
+      z-index: 2000;
+      cursor: pointer;
+      left: 1px;
+    }
+    sidebar > div.container {
+      z-index: 1000;
+      position: fixed;
+      width: 0;
+      min-width: 18px;
+      height: 100%;
+      overflow: hidden;
+      -webkit-transition: all 0.5s ease;
+      -moz-transition: all 0.5s ease;
+      -o-transition: all 0.5s ease;
+      transition: all 0.5s ease;
+      padding-right: 0;
+      padding-top: 10px;
+    }
+    sidebar > div.toggled {
+      width: auto;
+      padding-right: 15px;
+      overflow: auto;
+    }
+
+  </style>
+  <script type=text/lispz>
+    (riot-tag (using [message dom]
+      (ref address (+ "sidebar/" opts.name))
+      (ref handle (stateful.morph! tag.handle))
+      (handle.update! { onclick: (lambda
+        (tag.sidebar.classList.toggle "toggled")
+      )})
+      (handle.update! { onmouseover: (lambda
+        (tag.sidebar.classList.add "toggled")
+      )})
+      (ref close-sidebar (=>
+        (tag.sidebar.classList.remove "toggled")
+      ))
+      (cascade
+        ### ref: sidebar/{{name}}/dom/mouseleave
+                 sent when mouse pointer exits sidebar
+        ###
+        (=> (dom.message address "mouseleave" tag.root))
+        (=> (message.listen @ (=> (close-sidebar))))
+      )
+    ))
+  </script>
+</sidebar>
+
+<page-content>
+  <div id=page_content_wrapper>
+    <div class={ container-fluid: opts.fluid, container: !opts.fluid }>
+      <yield/>
+    </div>
+  </div>
+  <style>
+    #page_content_wrapper {
+      width: 100%;
+      position: absolute;
+    }
+  </style>
+  <script type=text/lispz>
+    (riot-tag (using [message dom]
+      (message.listen "dom/resize-contents" (lambda [px]
+        (dom.style! tag.page-content-wrapper {paddingLeft: (+ px "px")})
+      ))
+    ))
+  </script>
+</page-content>
+
+<bootstrap>
+  <div id=page-wrapper><yield/></div>
+  <style>
+    .pointer {
+      border: 5px solid transparent;
+      display: inline-block;
+      width: 0;
+      height: 0;
+      vertical-align: middle;
+    }
+    .pointer.float-right {
+      float: right;
+      margin-top: 5px;
+    }
+    .pointer.up {
+        border-bottom: 5px solid;
+    }
+    .pointer.right {
+        border-left: 5px solid;
+    }
+    .pointer.down {
+        border-top: 5px solid;
+    }
+    .pointer.left {
+        border-right: 5px solid;
+    }
+  </style>
+  <script type=text/lispz>
+    (riot-tag (using [dom net jquery riot message bootstrap]
+      (dom.append! "head" (dom.node.create "meta"
+        {name: "viewport" content: "width=device-width, initial-scale=1"}
+      ))
+    ))
+  </script>
+</bootstrap>

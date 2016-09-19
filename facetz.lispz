@@ -108,8 +108,11 @@
   (ref mount-tag (lambda [placeholder]
     (ref tag-def (retrieve-tag-def placeholder.nodeName))
     (when [tag-def]
-      (ref instance (dom.node.fill placeholder tag-def.node))
-      (stateful.morph! instance { tag-def placeholder })
+      (ref instance (dom.node.copy placeholder tag-def.node))
+      (ref refs (dict.from-list
+        (dom.select "[name]") (=> (@.getAttribute "name"))
+      ))
+      (stateful.morph! instance { tag-def placeholder refs })
       (dom.node.merge-attributes instance tag-def.node)
       (mount-tags instance) ## recurse through inner facetz
       (tag-def.script instance)
@@ -119,6 +122,15 @@
   ## look for tags in the node and mount them
   (ref mount-tags (lambda [node]
     (list.map (find-facetz-tags node) mount-tag)
+  ))
+
+  ### ref: (facetz.update! tag nvp)
+  ###
+  (ref update! (lambda [tag data]
+    (dict.for-each data (lambda [key value]
+      (cond (ref node (get tag.refs key)) (do
+      ))
+    ))
   ))
 
   ## index.html can have <template> holding tag defs
@@ -131,5 +143,5 @@
   ## last thing is to mount any tags in index.html
   (mount-tags document.body)
 
-  (export { compile-tag-defs mount-tags })
+  (export { compile-tag-defs mount-tags update! })
 )
