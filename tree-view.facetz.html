@@ -1,0 +1,104 @@
+<tree-view>
+  <style>
+    tree-view {
+      color: black;
+      margin-top: 10px;
+    }
+    tree-view > ul {
+      padding: 3px 0 0 0 !important;
+    }
+
+    tree-view li {
+        list-style-type:none;
+        margin:0;
+        padding:5px 5px 0 5px;
+        position:relative;
+        cursor:pointer;
+    }
+
+    tree-view hidden { display: none }
+  </style>
+
+  <script type="text/lispz">
+    (using [message dom riot]
+      (ref address (+ "tree-view/" tag.attributes.name))
+
+      (ref get-li    (=> (($ @).closest "li")))
+      (ref is-leaf   (=> ((get-li @.srcElement).hasClass "leaf")))
+      (ref is-branch (=>
+        ((get-li @.srcElement).hasClass "branch")
+      ))
+
+      ## given a branch node toggle it open or closed
+      (ref toggle-open-state (lambda [node]
+        (ref li (get-li node))
+        (ref siblings (li.siblings ".branch"))
+        (ref tree-item (li.children "tree-item"))
+        (ref button (tree-item.children "button"))
+
+        (button.toggleClass "closed")
+        (ref state (cond (button.hasClass "closed") (do
+          ## show everyone else on the same level
+          (siblings.removeClass "hidden")
+          "closed"
+        ) (else) (do ## opening this branch
+          ## hide everyone else on the same level
+          (siblings.addClass "hidden")
+          "open"
+        )))
+        { state name: (li.attr "branch") path: (li.attr "path") }
+      ))
+
+      ## called by a click event on a branch
+      (ref process-branch (lambda [event context]
+        (ref packet (toggle-open-state event.srcElement))
+        (ref address
+          (+ context.address "/" packet.state "/" packet.name)
+        )
+        (message.send address packet)
+      ))
+
+      ## called by a click event on a leaf node
+      (ref process-leaf (lambda [event context]
+        (ref li (get-li event.srcElement))
+        (ref address (+ context.address "/" (li.attr "leaf")))
+        (message.send address { path: (li.attr "path") } )
+      ))
+
+      ## generate messages when a branch or leaf node is clicked
+      (cascade
+        (=> (dom.click tag.tree address))
+        ### ref:    tree-view/{{name}}/dom/click  {{MouseEvent}}
+            when any item in the tree is clicked
+        ###
+        (=> (tee @
+          (=> (message.filter @ "branch" (=> (is-branch @))))
+          ### ref:    tree-view/{{name}}/dom/click/branch
+             (MouseEvent) when a branch is clicked
+          ###
+          (=> (message.listen  @ process-branch))
+          ### ref: branches can be processed with different actors
+              tree-view/{{name}}/dom/click/branch/{{open|closed}}/{{actor}}
+              packet: { path: "a/path" }
+          ###
+        ))
+        (=> (message.filter @ "leaf"   (=> (is-leaf @))))
+        ### ref:    tree-view/{{name}}/dom/click/leaf
+            {{MouseEvent}} when a leaf node is clicked
+        ###
+        (=> (message.map    @ "" (=> (process-leaf  @))))
+        ### ref:    tree-view/{{name}}/dom/click/leaf/{{actor}}
+            packet: { path: "a/path" } }
+            leaves can be set with different actors
+        ###
+      )
+      ### ref: tree-view/{{name}}/add-branch
+          packet:   { base: path, branch: dict }
+          response: Promise { dom-li of branch }
+      ###
+      (message.listen (+ address "/load") (lambda [packet]
+        (dom.inner-html! tag packet.html)
+      ))
+    ))
+  </script>
+</tree-view>

@@ -18,17 +18,18 @@
         <panel [context=default|primary|success|info|warning|danger]
                 [heading=heading-text] [footer=footer-text]
                 [menu=menu-id] height=[nn%,nn]>
-         panel-body-content-html
+          <div name=body>panel-body-content-html</div>
+          <div name=tool-bar>buttons-for-toolbar</div>
          </panel>
     ### -->
-  <div class="panel" name=outer>
-    <div class="panel-heading template" name=heading>
-      <bars-menu align=right/>
-       <tool-bar class=template/>
-       <h3 class="panel-title fill"></h3>
+  <div class="panel" actor=set-context,set-height>
+    <div class="panel-heading" actor=display-heading>
+      <bars-menu align=right actor=set-menu/>
+       <tool-bar actor=tool-bar/>
+       <h3 name=heading class="panel-title" actor=set-heading></h3>
      </div>
-    <div class="panel-body fill" name=body></div>
-    <div class="panel-footer template fill" name=footer></div>
+    <div name=body class="panel-body" actor=fill-body></div>
+    <div class="panel-footer" actor=set-footer></div>
   </div>
 
   <style>
@@ -56,38 +57,44 @@
   </style>
 
   <script type=text/lispz>
-    (riot-tag
-      (tag.update! {context: (+ "panel-" (or opts.context "default"))})
-      (on-mount (using [dom]
-        (cond opts.height (do
-          (ref px (cond
-            (is "%" (opts.height.slice -1))
-              (/ (* window.innerHeight (opts.height.slice 0 -1)) 100)
-            (else)
-              opts.height
-          ))
-          (dom.style! tag.outer {height: (+ px "px")})
-        ))
-      ))
+    (using [dom]
+      (tag.activate {
+        set-context:      (lambda [node]
+          (node.classList.add
+            (+ "panel-" (or tag.attributes.context "default"))
+          )
+        )
+        set-height:       (lambda [node]
+          (ref height (dom.get-height tag.attributes.height))
+          (dom.style! node { height })
+        )
+        tool-bar:         (tag.fill "tool-bar")
+        set-heading:      (tag.html tag.attributes.heading)
+        fill-body:        (tag.fill "body")
+        display-heading:  (tag.transfer-attribute "heading")
+        set-menu:         (tag.transfer-attribute "menu")
+        set-footer:       (tag.transfer-attribute "footer")
+      })
     )
   </script>
 </panel>
 
 <panels>
-  <yield/>
+  <div actor=body></div>
   <style>
     /* show the move cursor as the user moves the mouse over the panel header.*/
     panels .panel-title { cursor: move; }
     panels .draggable { display: block; }
   </style>
   <script type=text/lispz>
-    (riot-tag (on-mount (using [sortable]
-      (sortable.create tag.root (or opts.name "sortable") {
+    (tag.activate { fill: tag.fill })
+    (using [sortable]
+      (sortable.create tag (or tag.attributes.name "sortable") {
         draggable:  ".draggable"
         handle:     ".panel-title"
         dataIdAttr: "name"
       })
-    )))
+    )
   </script>
 </panels>
 
@@ -109,66 +116,58 @@
       ....
       (message.listen "login-dialog/Log in/button" (lambda ...)
   ### -->
-  <div class="modal fade" role="dialog" aria-labelledby={ opts.name }
+  <div class="modal fade" role="dialog" actor=aria-labelledby
   name=modal style="display:none;">
-    <div class="modal-dialog { modal-lg: opts.size=='large' }
-    { modal-sm: opts.size=='small' }" role="document">
+    <div class="modal-dialog" actor=modal-size role="document">
       <div class="modal-content">
-        <div class="modal-header" if={ opts.title }>
+        <div class="modal-header" actor=display-title>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
-          <h4 class="modal-title" id={ opts.name }>{ opts.title }</h4>
+          <h4 class="modal-title" actor=title></h4>
         </div>
-        <div class="modal-body"><yield/></div>
+        <div class="modal-body" actor=body></div>
         <div class="modal-footer">
-          <push-button each={ buttons }
-          type={ type } name={ name }>
-            { title }
-          </button>
+          <tool-bar actor=tool-bar/>
         </div>
       </div>
     </div>
   </div>
-  <style>
-  </style>
   <script type=text/lispz>
-    (riot-tag (using [dom]
-      (cond opts.buttons (do
-        (ref buttons (stateful []))
-        (tag.update! {buttons: buttons})
-        ((opts.buttons.split ",").forEach (lambda [title]
-          (buttons.push! (cond
-            (ref primary (is "*" (first title))) (do
-              (ref fixed-title (title.slice 1))
-              (ref name
-                (+ "modal/" opts.name "/" fixed-title)
-              )
-              {name title: fixed-title type: "primary"}
-            ) (else) (do
-              (ref name (+ "modal/" opts.name "/" title))
-              {name title type: "default"}
-            )
-          ))
-        ))
-      ))
-      (on-mount (using [bootstrap message]
-        (ref modal-tag ($ tag.modal))
-        (ref show (=> (modal-tag.modal "show")))
-        (ref hide (=> (modal-tag.modal "hide")))
-        (message.dispatch
-          (+ "modal/" opts.name) { show hide }
+    (using [dom]
+      (tag activate {
+        aria-labelledby:  (lambda [node]
+          (node.setAttribute "aria-labelledby" tag.attributes.name)
         )
-        (ref transfer-event (=>
-          (ref address (+ "modal/" opts.name "/" @))
-          (modal-tag.on (+ @ ".bs.modal") (=>
-            (message.send address { element: tag.root })
-          ))
+        modal-size:       (lambda [node]
+          (node.classList.remove "modal-lg modal-sm")
+          (cond
+            (is tag.attributes.size "large")
+              (node.classList.add "modal-lg")
+            (is tag.attributes.size "small")
+              (node.classList.add "modal-sm")
+          )
+        )
+        display-title:    (tag.transfer-attribute "title")
+        title:            (tag.html "title")
+        body:             (tag.fill "body")
+        tool-bar:         (tag.fill "tool-bar")
+      })
+      (ref modal-tag ($ tag.modal))
+      (ref show (=> (modal-tag.modal "show")))
+      (ref hide (=> (modal-tag.modal "hide")))
+      (message.dispatch
+        (+ "modal/" tag.attributes.name) { show hide }
+      )
+      (ref transfer-event (=>
+        (ref address (+ "modal/" tag.attributes.name "/" @))
+        (modal-tag.on (+ @ ".bs.modal") (=>
+          (message.send address { element: tag.root })
         ))
-        (transfer-event "hidden")
-        (transfer-event "shown")
       ))
-    ))
+      (transfer-event "hidden")
+      (transfer-event "shown")
+    )
   </script>
 </modal>
 
@@ -176,13 +175,13 @@
   <!-- ### spec: bootstrap >> Buttons >> Button Bar
   A simplistic component to group buttons into a tool-bar.
   ### -->
-  <div class="btn-toolbar { right: opts.align === 'right' }" role="toolbar">
-    <yield/>
-  </div>
+  <div class="btn-toolbar" role="toolbar" actor=body></div>
   <style>
     buttons > div.right { float: right; margin-right: 1em }
   </style>
-  <script type=text/lispz> </script>
+  <script type=text/lispz>
+    (tag.activate { body: (tag.fill) })
+  </script>
 </buttons>
 
 <button-group>
@@ -190,9 +189,10 @@
   Buttons in a group are pushed together without separating space.
   It is a good visual effect for radio buttons.
   ### -->
-  <div class="btn-group" role="group"> <yield/> </div>
-  <style> </style>
-  <script type=text/lispz> </script>
+  <div class="btn-group" role="group" actor=body></div>
+  <script type=text/lispz>
+    (tag.activate { body: (tag.fill) })
+  </script>
 </button-group>
 
 <push-button>
@@ -208,18 +208,18 @@
   * **type**: [*default|primary|success|info|warning|danger]
   * **size**: [*default|lg|sm|xs]
   ### -->
-  <button class=
-    "btn btn-{ opts.type || 'default' } btn-{ opts.size || 'default' }"
-    name=button>
-    <yield/>
-  </button>
-  <style></style>
+  <button class= "btn" actor=body,add-click-event></button>
   <script type=text/lispz>
-    (riot-tag (on-mount (using [message]
-      (tag.button.addEventListener "click" (=>
-        (message.send opts.name {})
-      ))
-    )))
+    (using [message]
+      (tag.activate {
+        body:             (tag.fill)
+        add-click-event:  (lambda [node]
+          (node.addEventListener "click" (=>
+            (message.send tag.attributes.name { node: tag })
+          ))
+        )
+      })
+    )
   </script>
 </push-button>
 
@@ -289,16 +289,18 @@
   The owner is prepended to the response to a menu selection so that the correct
   component can respond.
   ### -->
-  <div name=dropdown class="dropdown { right: opts.align === 'right' }">
-    <a style="text-decoration: none" data-toggle="dropdown" name=bars
-    class="glyphicon glyphicon-menu-hamburger dropdown-toggle" aria-hidden="true"
-    ></a>
-    <ul class="dropdown-menu { dropdown-menu-right: opts.align === 'right' }">
-      <li each={ items } class={ dropdown-header: header && title,
-          divider: divider, disabled: disabled }><a onclick={ goto } href="#">
-          <span class="pointer right float-right" if={ children }></span>
-          { title }&nbsp;&nbsp;&nbsp;
-      </a></li>
+  <div name=dropdown class="dropdown" actor=align-bars>
+    <a style="text-decoration: none" data-toggle="dropdown"
+    class="glyphicon glyphicon-menu-hamburger dropdown-toggle"
+    aria-hidden="true"></a>
+    <ul class="dropdown-menu" actor=align-menu>
+      <li class=template actor=each-item>
+        <a href="#" actor=on-click>
+          <span class="pointer right float-right" actor=branch>
+          </span>
+          <span actor=title></span>
+        </a>
+      </li>
     </ul>
   </div>
   <style>
@@ -307,25 +309,26 @@
     bars-menu a.dropdown-toggle { cursor: pointer }
   </style>
   <script type=text/lispz>
-    (riot-tag (on-mount (using [message riot]
-      (message.listen opts.name (lambda [items]
-        (tag.update! {items menu-root: (or items [[]])})
-      ))
-      (($ tag.dropdown).on "show.bs.dropdown" (lambda
-        (message.send (+ opts.name "/open"))
-        (tag.update! {items: tag.menu-root})
-      ))
-      (tag.update! {goto: (lambda [ev]
-        (cond ev.item.topic (message.send
-          (+ opts.owner "/" ev.item.topic)
-          {item: ev.item owner: opts.owner action: "select"}))
-        (cond ev.item.children (do
-          (tag.update! {items: ev.item.children})
-          (ev.currentTarget.blur)
-          (ev.stopPropagation)
-        ))
-      )})
-    )))
+    (using [message dom]
+      (tag.activate {
+        each-item:  (lambda [template]
+          (message.listen tag.attributes.name (lambda [items]
+            (dom.node.empty ul)
+            (tag.activate-template template items)
+          ))
+        )
+        align-bars: (add-right-align-class "right")
+        align-menu: (add-right-align-class "dropdown-menu-right")
+        )
+      })
+    )
+    (ref add-right-align-class (lambda [class-name]
+      (lambda [node]
+        (cond (is tag.attributes.align "right")
+          (node.classList.add class-name)
+        )
+      )
+    ))
   </script>
 </bars-menu>
 
@@ -335,9 +338,9 @@
     down the left side of the screen. Clicking on the 3-bars icon at
     the top will slide the panel in and out.
   ### -->
-  <a aria-hidden="true" name=handle
+  <a aria-hidden="true" actor=handle
     class="glyphicon glyphicon-th-list text-danger"></a>
-  <div name=sidebar class="container bg-primary"><yield/></div>
+  <div name=sidebar class="container bg-primary" actor=sidebar></div>
   <style>
 
     sidebar .well {
@@ -374,34 +377,26 @@
 
   </style>
   <script type=text/lispz>
-    (riot-tag (using [message dom]
-      (ref address (+ "sidebar/" opts.name))
-      (ref handle (stateful.morph! tag.handle))
-      (handle.update! { onclick: (lambda
-        (tag.sidebar.classList.toggle "toggled")
-      )})
-      (handle.update! { onmouseover: (lambda
-        (tag.sidebar.classList.add "toggled")
-      )})
-      (ref close-sidebar (=>
-        (tag.sidebar.classList.remove "toggled")
-      ))
-      (cascade
-        ### ref: sidebar/{{name}}/dom/mouseleave
-                 sent when mouse pointer exits sidebar
-        ###
-        (=> (dom.message address "mouseleave" tag.root))
-        (=> (message.listen @ (=> (close-sidebar))))
-      )
-    ))
+    (using [message dom]
+      (ref address (+ "sidebar/" tag.attributes.name))
+      (ref sidebar (tag.sidebar))
+      (tag.activate {
+        handle:  (lambda [node]
+          (stateful.morph! node {
+            onclick:      (=> (sidebar.classList.toggle "toggled"))
+            onmouseover:  (=> (sidebar.classList.add    "toggled"))
+            onmouseleave: (=> (sidebar.classList.remove "toggled"))
+          })
+        )
+        sidebar: (tag.fill)
+      })
+    )
   </script>
 </sidebar>
 
 <page-content>
-  <div id=page_content_wrapper>
-    <div class={ container-fluid: opts.fluid, container: !opts.fluid }>
-      <yield/>
-    </div>
+  <div actor=wrapper>
+    <div actor=container></div>
   </div>
   <style>
     #page_content_wrapper {
@@ -410,16 +405,25 @@
     }
   </style>
   <script type=text/lispz>
-    (riot-tag (using [message dom]
-      (message.listen "dom/resize-contents" (lambda [px]
-        (dom.style! tag.page-content-wrapper {paddingLeft: (+ px "px")})
-      ))
-    ))
+    (using [message dom]
+      (tag.activate {
+        wrapper:    (lambda [node]
+          (message.listen "dom/resize-contents" (lambda [px]
+            (dom.style! node {paddingLeft: (+ px "px")})
+          ))
+        )
+        container:  (lambda [node]
+          (node.classList.add (cond tag.attributes.fluid
+            "container-fluid" (else) "container"
+          ))
+        )
+      })
+    )
   </script>
 </page-content>
 
 <bootstrap>
-  <div id=page-wrapper><yield/></div>
+  <div id=page-wrapper></div>
   <style>
     .pointer {
       border: 5px solid transparent;
@@ -446,10 +450,10 @@
     }
   </style>
   <script type=text/lispz>
-    (riot-tag (using [dom net jquery riot message bootstrap]
+    (using [dom]
       (dom.append! "head" (dom.node.create "meta"
         {name: "viewport" content: "width=device-width, initial-scale=1"}
       ))
-    ))
+    )
   </script>
 </bootstrap>

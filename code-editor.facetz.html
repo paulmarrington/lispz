@@ -1,0 +1,56 @@
+<code-editor>
+  <panel name=panel actor=height,toolbar,heading menu=codemirror/menu></panel>
+  <style>
+    code-editor .CodeMirror {
+      position: absolute;
+      top: 0; bottom: 0;
+      left: 5px; right: 0;
+      height: initial;
+    }
+  </style>
+  <script type=text/lispz>
+    (using [codemirror message message dict events]
+      (tag.activate {
+        height:   (tag.transfer-attribute "height")
+        toolbar:  (tag.transfer-attribute "toolbar")
+        heading:  (tag.transfer-attribute "heading")
+      })
+      (ref filename-key (+ "code-editor/" tag.attributes.name "/filename"))
+      (ref cm (codemirror.open tag.attributes.name tag.panel.body))
+
+      (ref open (lambda [packet]
+        (codemirror.set-mode cm packet.key)
+        (cond (isnt (get packet.key 0) ".") (do
+          (ref heading (last (packet.key.split "/")))
+          (tag.panel.heading.setAttribute "heading" heading)
+        ))
+        (localStorage.setItem filename-key packet.key)
+        (cm.setValue packet.contents)
+      ))
+
+      (ref contents-key (+ "code-editor/" tag.attributes.name "/contents"))
+      (ref filename (localStorage.getItem filename-key))
+      (cond filename (delay 100
+        (open {key: filename contents: (localStorage.getItem contents-key)})
+      ))
+      (cm.on "change" (events.delay 1000 (lambda
+        (ref name tag.attributes.name)
+        (ref contents (cm.getValue))
+        (localStorage.setItem contents-key contents)
+        (message.send (+ "code-editor/" name "/change") { contents name })
+      )))
+
+      (ref append (lambda [packet]
+        (cm.replaceRange packet.contents (CodeMirror.Pos (cm.lastLine)))
+      ))
+
+      (ref contents (=> (cm.getValue)))
+
+      (ref focus (=> (cm.focus)))
+
+      (message.dispatch (+ "code-editor/" tag.attributes.name)
+        { open append contents focus }
+      )
+    )
+  </script>
+</code-editor>

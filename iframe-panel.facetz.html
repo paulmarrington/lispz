@@ -1,0 +1,45 @@
+<iframe-panel>
+  <panel actor=height,heading,menu>
+    <iframe name=iframe class=iframe actor=src></iframe>
+  </panel>
+  <style>
+    iframe-panel .panel-body {
+      bottom: 0;
+      left: 1px;
+      right: 1px;
+      padding: 0;
+      padding-bottom: 1px;
+    }
+    iframe-panel .iframe {
+      position: absolute;
+      height: 100%;
+      width: 100%;
+    }
+  </style>
+  <script type=text/lispz>
+    (using [message]
+      (tag.activate {
+        height:   (tag.transfer-attribute "height")
+        heading:  (tag.transfer-attribute "heading")
+        menu:     (tag.transfer-attribute "menu")
+        src:      (tag.transfer-attribute "src")
+      })
+        (ref iframe-doc
+          (or tag.iframe.contentDocument tag.iframe.contentWindow.document)
+        )
+        (tag.update! {
+          open: (lambda [packet]
+            (cond packet.heading (tag.html packet.heading))
+            (cond packet.menu (tag.setAttribute "menu" packet.menu))
+            (iframe-doc.open)
+            (iframe-doc.write (+
+              "<!DOCTYPE html><html><head><meta charset='utf-8'>"
+              (or packet.head "")"</head><body>" (or packet.body "")
+              "</body></html>"
+            ))
+            (iframe-doc.close)
+          )
+        })
+      ))
+  </script>
+</iframe-panel>
