@@ -2,18 +2,21 @@
   ### spec: Functional Programming >> curry
   ###
   (global curry (lambda [func]
+    (ref self this)
     (ref curried (=>
-      (ref args (*arguments 0))
+      (ref args (*arguments))
       (cond (>= args.length func.length)
-        (func.apply func args)  ## all done, run it
+        (func.apply self args)  ## all done, run it
       (else)
         (=> ## otherwise return a partial function
-          (curried.apply this (args.concat (*arguments 0)))
+          (curried.apply self (args.concat (*arguments 0)))
         )
       )
     ))
   ))
-  (macro curry [params *body] (lispz.globals.curry (lambda params *body)))
+  (macro curry [params *body]
+    (lispz.globals.curry.call this (lambda params *body))
+  )
 
   ### ref: ((compose func1, func2 ...) seed) -- runs left to right
     e.g. ((compose (=> (+ @ 1)) (=> (+ @ 2))) 3) ==> 6
