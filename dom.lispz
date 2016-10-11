@@ -7,14 +7,19 @@
   ### spec: DOM >> Replace inner html
   Given an element, replace the contents with the html provided as a string.
   ###
- (ref inner-html! (lambda [el html] (#set! el "innerHTML" html)))
+  (ref inner-html! (lambda [el html] (#set! el "innerHTML" html)))
 
+  (ref global-styles (lambda [css]
+    (ref el (dom.node.create "style" { type: "text/css" }))
+    (el.appendChild (document.createTextNode css))
+    (dom.append! "head" el)
+  ))
   ### spec: DOM >> Select Elements
   This is a shortcut for element.querySelectorAll. It copies the
   results into an Array of elements for further processing.
   ###
   (ref select (lambda [el selector]
-    (return (slice (el.querySelectorAll selector)))
+    (slice (el.querySelectorAll selector))
   ))
 
   (ref style! (lambda [el styles]
@@ -23,24 +28,41 @@
     ))
   )
 
+  ### ref: (dom.get-height height-text)
+      passes px,em, make % height of window
+  ###
+  (ref get-height (lambda [from]
+    (cond from
+      (cond (is "%" (from.slice -1)) (do
+        (ref percent (from.slice 0 -1))
+        (ref pixels (/ (* window.innerHeight percent) 100))
+        (+ pixels "px")
+      ) (else)
+        from
+      )
+    (else)
+      "auto"
+    )
+  ))
+
   (ref node {
     ### ref: (dom.node.create type attributes)
         raw create of a DOM node
         e.g. (ref node (dom.node.create "div" {class: "hidden"}))
     ###
     create: (lambda [tag-name attributes]
-      (ref node (document.createElement tag-name))
-      (dict.for-each (or attributes {}) (lambda [k v] (node.setAttribute k v)))
-      node
+      (ref element (document.createElement tag-name))
+      (dict.for-each (or attributes {}) (lambda [k v]
+        (element.setAttribute k v)
+      ))
+      element
     )
     ### ref: (dom.node.empty element)
         remove all inner elements from a node
         e.g. (ref new-node (dom.empty-node tag.root))
     ###
     empty: (lambda [node]
-      (ref cleared (node.cloneNode false))
-      (node.parentNode.replaceChild cleared node)
-      cleared
+      (inner-html! node "")
     )
     ### ref: (dom.node.cache name node)
         keep a reference to a node for later retrieval
@@ -56,9 +78,18 @@
         e.g. (dom.node.copy tag.root (dom.node.cache tag.opts.name))
     ###
     copy: (lambda [node from]
-      (ref new-node (from.cloneNode from true))
+      (ref new-node (from.cloneNode true))
       (node.parentNode.replaceChild new-node node)
       new-node
+    )
+    ### ref: (dom.node.fill target source)
+        clear target node and clone source nodes into it
+    ###
+    fill: (lambda [target from]
+      (inner-html! target "")
+      (from.childNodes.forEach (=>
+        (target.appendChild (@.cloneNode true))
+      ))
     )
     ### ref: (dom.node.replace old-node new-node)
         replace one node with another in the DOM
@@ -75,6 +106,12 @@
       (node.parentNode.removeChild node)
       node
     )
+    ### ref: (ref children (dom.node.children node))
+        converts a DOM list into a Javascript Array
+    ###
+    (ref children (lambda [dom-fragment]
+      (slice (dom-fragment.children))
+    ))
     ### ref: (dom.node.merge-attributes to from)
         merge all the attributes from one node to another
         e.g. (dom.node.merge-attributes child parent)
@@ -91,6 +128,15 @@
     ###
     children-with-class: (lambda [parent class-name]
       (slice (parent.getElementsByClassName class-name))
+    )
+    ### ref: (dom.node.has-parent-with-class node class-name)
+    ###
+    has-parent-with-class: (lambda [start class-name]
+      (ref check (lambda [node]
+        (cond (node.classList.contains class-name) (do
+          (cond node.parentNode (check node.parentNode))
+        ))
+      )) (check start)
     )
   })
   (ref node-cache (stateful))
@@ -156,7 +202,8 @@
   ))
 
   (export {
-    append! event-throttle style! inner-html!
+    append! event-throttle style! inner-html! global-styles
     select scrape-form message: dom-message click node
+    get-height
   })
 )
