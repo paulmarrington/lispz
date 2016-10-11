@@ -34,7 +34,7 @@
     For in-process addresses, the observers are expected to be well behaved.
     They should (yield) the CPU rather that take too much time.
   ###
-  (ref request> (lambda [address packet]
+  (ref request> (curry [address packet]
     (ref postman (lambda [obs] (promised (obs.action> packet obs))))
     (promise.all ((observers address).map postman))
   ))
@@ -44,7 +44,7 @@
     all observers. Unlike _request>_, _send_
     does not expect the receivers to respond.
   ###
-  (ref send (lambda [address packet]
+  (ref send (curry [address packet]
     (ref postman (lambda [obs] (yield (obs.action> packet obs))))
     ((observers address).map postman)
   ))
@@ -70,7 +70,7 @@
     The action can return a promise and preferably not do anything too
     time-costly in-process.
   ###
-  (ref listen (lambda [address action>]
+  (ref listen (curry [address action>]
     ((observers address).push! (stateful { address action> }))
   ))
 
@@ -85,7 +85,7 @@
     Each action creates a separate message-box using the given address followed
     by the action name. In this example, _my-component/open_ and _my-component/close_.
   ###
-  (ref dispatch (lambda [address actions]
+  (ref dispatch (curry [address actions]
     (dict.for-each actions (lambda [name action>]
       (message.listen (+ address "/" name) action>)
     ))
