@@ -103,6 +103,8 @@ Lispz provides some more functional referentially transparent functions.
 
     (ref list [[{key: 1 value: 2} {key: 3 value: 4}]]
     (dict.from-list list "key")    # {1: {key: 1 value: 2} 3: {key: 3 value: 4})
+    ## key can also be a function that retrieves a key from the item.
+    (dict.from-list list (=> @.key))
 
     (dict.for-each dict-1 (lambda [key value] ...))
 

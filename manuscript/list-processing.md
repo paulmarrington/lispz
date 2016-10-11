@@ -38,9 +38,9 @@ They are not only more 'functional', they can also handle nulls more gracefully.
 
     (for-each l1 (=> proc(@)))  ## handles null and non-array items as well
     (length l1)                 ## same as l1.length - works for strings also
-    (filter l1 (lambda [item idx lst] (% idx 2)))  ## [[1 3]]
+    (list.filter l1 (lambda [item idx lst] (% idx 2)))  ## [[1 3]]
     (get l1 1)                  ## 2
-    (map l1 (=> (* @ 2)))       ## [[2 4 6]]
+    (list.map l1 (=> (* @ 2)))  ## [[2 4 6]]
     (slice l1 1 2)              ## [[2]] -- extracts a sub-list (can be -ve end)
 
 And for more functional processing

@@ -44,6 +44,24 @@ It is possible to remove all listeners by name or regular expression. The latter
     (message.clear "my-message")
     (message.clear '/my-message\/.\*/')
 
+## Message Builder
+
+When using a message address in more than one place, it is
+sometimes better to reference a higher level function that
+contains the address. Also, use it for a more declarative
+code-base.
+
+    (ref station-1 (message "/arctic/station-1"))
+    ...
+    (station-1.send { header: "Cold" body: "I'll bet it is"}
+
+Functions with parameters [address packet] are also curried.
+This is another way to provide declarative programs.
+
+    (ref send-all (message.send "/arctic/station/all"))
+    ...
+    (send-all { header: "Urgent" body: "Check in please" })
+
 ## Address Processing
 
 Mapping and filtering messages are given source and target addresses. If the target address starts with a / it is used alone, otherwise the source and target addresses are concatenated.
@@ -54,7 +72,7 @@ Mapping and filtering messages are given source and target addresses. If the tar
 ## Message Streams
 Lispz Message Streams provide a base implementation of reactive programming. This allows streams to be prepared for consumption in a readable and organised manner. All stream sources and processors return the address of the resulting message stream. This will often be built on the address of earlier streams.
 
-### Spanning Asynchornous methods
+### Spanning Asynchronous methods
 
 Different modules will add methods to seed a message stream by using _update!_:
 
