@@ -326,8 +326,8 @@
   ))
 
   (ref github {
-    repo> repos> cdn-uri contents> tree> branch> branches> blob> read>
-    create> update> delete> fs
+    repo> repos> cdn-uri contents> tree> branch> branches>
+    blob> read> create> update> delete> fs
   })
   (export github)
 )
