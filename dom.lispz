@@ -109,9 +109,7 @@
     ### ref: (ref children (dom.node.children node))
         converts a DOM list into a Javascript Array
     ###
-    (ref children (lambda [dom-fragment]
-      (slice (dom-fragment.children))
-    ))
+    children: (lambda [node] (slice node.children))
     ### ref: (dom.node.merge-attributes to from)
         merge all the attributes from one node to another
         e.g. (dom.node.merge-attributes child parent)
