@@ -2,10 +2,13 @@
   ## tag-defs need only be loaded once then used from the cache - all promises
   (ref tag-defs (stateful))
 
+  ## pre-loaded facetz templates may not exist in dev
+  (lispz.merge! { facetz: {} })
+
   ## convert HTML into a DOM fragment
   (ref html-to-DOM (lambda [html]
     (ref dom-fragment (document.createElement "div"))
-    (stateful.morph! dom-fragment { innerHTML: tag-html })
+    (stateful.morph! dom-fragment { innerHTML: html })
   ))
 
   ## all styles in facetz are global - so inject them into the head
@@ -200,11 +203,6 @@
   ))
   (ref html (curry [text node] (dom.inner-html! node text)))
 
-  ## must add facetz to lisp before mounting anything
-  (lispz.update! {
-    facetz: { compile-tag-defs mount-tags activate }
-  })
-
   ## index.html can have <template> holding tag defs
   (ref templates (document.getElementsByTagName "template"))
   ((slice templates).forEach (lambda [template]
@@ -218,5 +216,5 @@
   ## last thing is to mount any tags in index.html
   (mount-tags document.body)
 
-  (export lispz.facetz)
+  (export { compile-tag-defs mount-tags activate })
 )
