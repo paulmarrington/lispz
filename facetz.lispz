@@ -200,6 +200,11 @@
   ))
   (ref html (curry [text node] (dom.inner-html! node text)))
 
+  ## must add facetz to lisp before mounting anything
+  (lispz.update! {
+    facetz: { compile-tag-defs mount-tags activate }
+  })
+
   ## index.html can have <template> holding tag defs
   (ref templates (document.getElementsByTagName "template"))
   ((slice templates).forEach (lambda [template]
@@ -213,5 +218,5 @@
   ## last thing is to mount any tags in index.html
   (mount-tags document.body)
 
-  (export { compile-tag-defs mount-tags activate })
+  (export lispz.facetz)
 )
