@@ -10,9 +10,9 @@
   (ref inner-html! (lambda [el html] (#set! el "innerHTML" html)))
 
   (ref global-styles (lambda [css]
-    (ref el (dom.node.create "style" { type: "text/css" }))
+    (ref el (node.create "style" { type: "text/css" }))
     (el.appendChild (document.createTextNode css))
-    (dom.append! "head" el)
+    (append! "head" el)
   ))
   ### spec: DOM >> Select Elements
   This is a shortcut for element.querySelectorAll. It copies the
