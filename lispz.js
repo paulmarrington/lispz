@@ -76,8 +76,11 @@ var lispz = function() {
     }
     function_body_to_js = function() {
       if (body.length === 0) return ""
-      var fb = (body.length === 1 && body[0] instanceof Array) ? body[0] : body
-      if (!is_array(fb) && !is_attr(fb) && !is_func(fb)) {
+      // If body has only one element, flatten it
+      var single = (body.length === 1 && body[0] instanceof Array)
+      var fb = single ? body[0] : body
+      // add _res_=... so return gets the right value
+      if (!is_array(body) && !is_attr(fb) && !is_func(fb)) {
         if (fb[0] === "" && fb.length === 1) return "null"
         var end = fb.length - 1
         fb[end] = ["(","ref","_res_", fb[end]]
@@ -85,7 +88,8 @@ var lispz = function() {
       body = map_ast_to_js(body, ";\n") + "\n;return _res_"
     }
 
-    var header = "_res_=function("+params.slice(1).map(jsify).join(",")+")"
+    var header = "_res_=function("
+      +params.slice(1).map(jsify).join(",")+")"
     var vars = vars_to_js(function_body_to_js)
     return header + "{\n"+vars+"\n"+body+"\n}\n"
   },
@@ -264,12 +268,12 @@ var lispz = function() {
       lines_in_atom = (env.atom.match(/\n/g) || []).length
       location.line += lines_in_atom
       if (lines_in_atom) env.line = location.line
-      var is_parser = function(parser) {
+      var exec_parser = function(parser) {
         if (!parser[0].test(env.atom)) return false
         parser[1](env)
         return true
       }
-      if (!comment(env.atom) && !parsers.some(is_parser) && !empty_words[env.atom]) {
+      if (!comment(env.atom) && !parsers.some(exec_parser) && !empty_words[env.atom]) {
         env.node.push(env.atom);
       }
     }
@@ -462,11 +466,14 @@ var lispz = function() {
   "+,-,*,/,&&,||,==,===,<=,>=,!=,!==,<,>,^,%,|,&,^".split(',').forEach(binop_to_js)
 
   return { compile: compile, parsers: parsers, load: load,
-           macros: macros, cache: cache, http_request: http_request,
-           clone: clone, manifest: manifest, script: script, css: css,
+           macros: macros, cache: cache,
+           http_request: http_request, css: css,
+           clone: clone, manifest: manifest, script: script,
            synonyms: synonyms, globals: globals, slice: slice,
            location: location, path_base: lispz_base_path,
-           set_debug_mode: set_debug_mode, log: log, empty_words: empty_words,
-           add_reference: add_reference, reload: reload, base64, data_uri
+           set_debug_mode: set_debug_mode, log: log,
+           empty_words: empty_words,
+           add_reference: add_reference, reload: reload,
+           base64: base64, data_uri: data_uri, jsify: jsify
           }
 }()
