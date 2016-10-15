@@ -11,8 +11,9 @@
     (stateful.morph! dom-fragment { innerHTML: html })
   ))
 
-  ## all styles in facetz are global - so inject them into the head
-  (ref inject-styles (lambda [style-elements]
+  ## all styles in facetz are global - so inject them into head
+  (ref inject-styles (lambda [html-collection]
+      (ref style-elements (slice html-collection))
       (list.for-each style-elements (lambda [style-element]
         (head-element.appendChild style-element)
       ))
@@ -24,18 +25,19 @@
   ## compile scripts as functions expecting a tag structure
   ## as parameter when an instance of the tag is instantiated
   ## on the page
-  (ref compile-scripts (lambda [script-elements tag-name]
-    (ref combined-code (map script-elements (lambda [script-element]
+  (ref compile-scripts (lambda [html-collection tag-name]
+    (ref script-nodes (slice html-collection))
+    (ref combined-code (map script-nodes (lambda [script-node]
       ## remove from tag template
-      (script-element.parentNode.removeChild script-element)
-      (ref code (script-element.innerHTML))
-      (ref explicit-type (script-element.getAttribute "type"))
+      (script-node.parentNode.removeChild script-node)
+      (ref code script-node.innerHTML)
+      (ref explicit-type (script-node.getAttribute "type"))
       (ref type (or explicit-type "javascript"))
       (ref ext (last (type.split "/")))
       (ref compiler (get compilers type))
       (compiler code (+ tag-name ".facetz." ext))
     )))
-    (new Function tag (combined-code.join "\n"))
+    (new Function "tag" (combined-code.join "\n"))
   ))
 
   ## we don't know this tag - load it from the server...
@@ -47,13 +49,12 @@
   ## for each tag extracted from the template, pull out style and
   ## scripts so that it is pure view. Drop style into head and
   ## compile scripts to use for tag logic.
-  (ref extract-html-css-and-scripts (lambda [tag-doms]
-    (tag-doms.map (lambda [node]
-      (inject-styles (node.getElementsByTagName "style"))
-      (ref script-elements (node.getElementsByTagName "script"))
-      (ref script (compile-scripts script-elements node.tagName))
-      { node script name: node.tagName }
-    ))
+  (ref extract-html-css-and-scripts (lambda [node]
+    (inject-styles (node.getElementsByTagName "style"))
+    (ref script-elements (node.getElementsByTagName "script"))
+    (ref tag-name (node.tagName.toLowerCase))
+    (ref script (compile-scripts script-elements tag-name))
+    { node script name: tag-name }
   ))
 
   ## a container we clone to hold the DOM for each tag
@@ -207,7 +208,7 @@
   (ref templates (document.getElementsByTagName "template"))
   ((slice templates).forEach (lambda [template]
     ## remove template so it is not processed as a facetz instance
-    (compile-tag-defs-in-DOM (dom.node.remove template))
+    (compile-tag-defs-in-DOM template.content)
   ))
 
   ## add a style block to the header
