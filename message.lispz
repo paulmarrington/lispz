@@ -40,8 +40,8 @@
   ))
 
   ### spec: async >> Messaging >> Sources >> (send)
-    Send a message directly to an address so that it is picked up by
-    all observers. Unlike _request>_, _send_
+    Send a message directly to an address so that it is picked
+    up by all observers. Unlike _request>_, _send_
     does not expect the receivers to respond.
   ###
   (ref send (curry [address packet]
@@ -222,7 +222,8 @@
   (global #actor (lambda [id has-listener listener]
     (ref address (+ "actor/" id))
     (cond has-listener (message.listen address listener))
-    (annotate   (lambda [packet] (message.send address packet)) {
+    (ref actor   (lambda [packet] (message.send address packet)))
+    (stateful.morph! actor {
       map:      (lambda [id mapper]
         (message.map      address (symbol-to-string id) mapper))
       filter:   (lambda [id filterer]
@@ -232,7 +233,7 @@
     })
   ))
 
-  (ref message-builder (lambda [address] {
+  (ref message (lambda [address] {
     send:     (=> (send     address @))
     request>: (=> (request> address @))
     listen:   (=> (listen   address @))
@@ -240,11 +241,11 @@
     ready>:   (=> (ready>   address))
   }))
 
-  (ref message (annotate message-builder {
+  (stateful.morph! message {
     send listen dispatch request> clear trace from ready>
     map: message-map filter: message-filter combine-address
     exchange throttle
-  }))
+  })
   (lispz.update! { message })
   (export message)
 )

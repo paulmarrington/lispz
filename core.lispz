@@ -168,14 +168,6 @@ To access external modules, wrap your code in 'using'. Data and functions export
 (macro symbol-to-string [symbol] (#join '' '"' symbol '"'))
 
 (using [fp] (using [stateful]
-  ### ref: (annotate function annotations)
-      e.g. (ref act (annotate (=> ...) { mapper to-string }))
-  ###
-  (global annotate (lambda [func annotations]
-    (ref primary (lispz.globals.stateful.morph! func))
-    (primary.update! annotations)
-  ))
-
   ### ref: (once function) ## lazy evaluation ###
   (global #once (lambda [lazy-expression]
     (ref first-time (=>

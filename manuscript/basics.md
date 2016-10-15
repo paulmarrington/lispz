@@ -261,14 +261,17 @@ Like JavaScript, Lispz function definitions specify a fixed number of arguments.
 Sometimes it is useful to annotate a function reference with meta-data.
 
     (ref my-func (lambda [a b] (* a b)))
-    (annotate my-func { usage: "multiply two numbers" })
+    (stateful.morph! my-func { usage: "multiply two numbers" })
 
-In practice _annotate_ is most used in module definitions.
+In practice annotation is most used in module definitions so that modules can be used as functions while still providing additional functionality.
 
-    (ref my-actor (annotate (lambda 12) {
-      double: (lambda 24)
-    }))
-    (console.log (my-actor) (my-actor.double)) ## displays **12 24**
+    (using [message]
+      (ref to-you (message "/your/address"))
+      ## ...
+      (to-you.send { title: "Hi" body: "ping" })
+      ## is the same as
+      (message.send "/your/address" { title: "Hi" body: "ping" })
+    )
 
 ## Lazy Evaluation
 

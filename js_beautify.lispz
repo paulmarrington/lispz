@@ -18,7 +18,7 @@ https://github.com/beautify-web/js-beautify
     (ref beautified (window.js_beautify no-semis))
     (beautified.replace '/^\s*\/\/#.*$/m' "")
   ))
-  (annotate beautify { build })
+  (stateful.morph! beautify { build })
 
   (net.loader "js-beautify" window.js_beautify beautify)
 )
