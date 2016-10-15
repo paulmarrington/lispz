@@ -5,8 +5,12 @@
          ))
        ))
 ###
-(ref add (lambda [source-type ext compile]
-  (compilers.update! source-type { ext compile })
+(ref add (lambda [ext-src ext-target compile]
+  (ref annotated (stateful.morph! compile {
+    ext: { src: ext-src target: ext-target }
+  }))
+  (compilers.update! ext-src annotated)
+  (compilers.update! (+ "text/" ext-src) annotated)
 ))
 
 ### ref: (compilers.run js)
@@ -14,20 +18,12 @@
 ###
 (ref run (lambda [js] ((new Function js))))
 
-(ref lispz-compiler { compile: (lambda [source name]
+(ref compilers (stateful { run add }))
+
+(add "lispz" "js" (lambda [source name]
     (lispz.compile (+ source "\n") name)
-) ext: "js" })
-
-(ref js-compiler { compile: (lambda [source name]
+))
+(add "js" "js" (lambda [source name]
   (+ source "\n//# sourceURL=" name "\n")
-) ext: "js"})
-
-(ref compilers (stateful {
-  run add
-
-  lispz:              lispz-compiler
-  "text/lispz":       lispz-compiler
-  javascript:         js-compiler
-  "text/javascript":  js-compiler
-}))
+))
 (export compilers)
