@@ -35,7 +35,7 @@
       (ref type (or explicit-type "javascript"))
       (ref ext (last (type.split "/")))
       (ref compiler (get compilers type))
-      (compiler code (+ tag-name ".facetz." ext))
+      (compiler code (+ tag-name ".facetz"))
     )))
     (new Function "tag" (combined-code.join "\n"))
   ))
@@ -43,7 +43,10 @@
   ## we don't know this tag - load it from the server...
   (ref load-tag (lambda [tag-name]
     (ref url (+ tag-name ".facetz.html"))
-    (after (net.http-get url) (compile-tag-defs @))
+    (after (net.http-get url)
+      (compile-tag-defs @)
+      (get tag-defs tag-name)
+    )
   ))
 
   ## for each tag extracted from the template, pull out style and
@@ -74,7 +77,7 @@
   ))
 
   ## fetch a tag definition - cached locally or from the server
-  (ref retrieve-tag-def (lambda (ref tag-name (@.toLowerCase))
+  (ref retrieve-tag-def (lambda [tag-name]
     (cond
       (ref tag-def (get tag-defs tag-name))
         tag-def
@@ -89,9 +92,10 @@
   ## or has a dash in the name: <my-node> or <mynode facetz>
   ## if not loaded
   (ref is-facetz-tag (lambda [node]
+    (ref name (dom.node.name node))
     (or
-      (get tag-defs (node.nodeName.toLowerCase))
-      (isnt (node.nodeName.indexOf "-") -1)
+      (get tag-defs name)
+      (isnt (name.indexOf "-") -1)
       (node.hasAttribute "facetz")
     )
   ))
@@ -116,7 +120,8 @@
   ## into the DOM. Requires recursive pass to instantiate
   ## child tags
   (ref mount-tag (lambda [placeholder]
-    (ref tag-def (retrieve-tag-def placeholder.nodeName))
+    (ref name (dom.node.name placeholder))
+    (ref tag-def (retrieve-tag-def name))
     (when [tag-def]
       (ref instance (dom.node.copy placeholder tag-def.node))
       (ref refs (dict.from-list
@@ -156,8 +161,15 @@
   ))
 
   ## look for tags in the node and mount them
+  ## must be sequential for when tags in same file
   (ref mount-tags (lambda [node]
-    (list.map (find-facetz-tags node) mount-tag)
+    (ref tags (find-facetz-tags node))
+    (ref mount (lambda [idx]
+      (cond (ref tag (get tags idx))
+        (after (mount-tag tag) (mount (+ idx 1)))
+      )
+    ))
+    (mount 0)
   ))
 
   ### ref: (tag.activate nvp)
