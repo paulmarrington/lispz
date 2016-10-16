@@ -46,6 +46,11 @@
   ))
 
   (ref node {
+    ### ref: (dom.node.name element)
+        returns element.nodeName.toLowerCase
+    ###
+    name: (=> (@.nodeName.toLowerCase))
+
     ### ref: (dom.node.create type attributes)
         raw create of a DOM node
         e.g. (ref node (dom.node.create "div" {class: "hidden"}))
