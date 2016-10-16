@@ -180,14 +180,19 @@ var lispz = function() {
     return map_ast_to_js(its, ',')
   },
   list_to_js = function(its) {
-    return (its && its.length) ? map_ast_to_js(slice(arguments), ';\n') : ""
+    return (its && its.length)
+      ? map_ast_to_js(slice(arguments), ';\n')
+      : ""
   },
   // A dictionary can be a symbol table or k-value pair
   dict_to_js = function(kvp) {
     var dict = []; kvp = slice(arguments)
     for (var key, i = 0, l = kvp.length; i < l; i++) {
       if ((key = kvp[i])[kvp[i].length - 1] === ":") {
-        dict.push("'"+jsify(key.slice(0, -1))+"':"+ast_to_js(kvp[++i]));
+        var v = ast_to_js(kvp[++i])
+        var dot = kvp[i + 1], k = key.slice(0, -1)
+        if (dot && dot[0] === ".") v += jsify(kvp[++i])
+        dict.push("'"+jsify(k)+"':"+v);
       } else {
         dict.push("'"+jsify(key)+"':"+ast_to_js(key));
       }
