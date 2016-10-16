@@ -62,7 +62,7 @@ There is often need to merge multiple dictionaries together to create a new comb
 (ref from-list (lambda [list key]
   (ref dictionary (stateful))
   (ref get-key (cond
-    (instance-of "Function" key) key
+    (instance-of Function key) key
     (else) (lambda [item] (get item key))
   ))
   (cond list (list.forEach (lambda [item]
