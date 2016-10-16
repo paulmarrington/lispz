@@ -37,7 +37,7 @@
               (=> (message.send address { key contents: @ }))
             ))
             (ref lispz-editor {
-              open: sender("code-editor/lispz/open" ".lispz")
+              open: (sender "code-editor/lispz/open" ".lispz")
               ready>:   (msg "code-editor/lispz/open").ready>
               focus:    (msg "code-editor/lispz/focus").send
               prepare:  (msg "code-editor/run/prepare").listen
@@ -47,14 +47,14 @@
               contents: (msg "code-editor/lispz/contents").request>
             })
             (ref js-viewer {
-              open: sender("code-editor/js/open" ".js")
+              open: (sender "code-editor/js/open" ".js")
             })
             (ref log-viewer {
-              open:   sender("code-editor/output/open" ".text")
-              append: sender("code-editor/output/append" ".text")
+              open:   (sender "code-editor/output/open" ".text")
+              append: (sender "code-editor/output/append" ".text")
             })
 
-            (ref clear-result-panels (=>
+            (ref clear-result-panel (=>
               (js-viewer.open   "")
               (log-viewer.open  "")
             ))
@@ -65,7 +65,7 @@
               (lispz-editor.open "")
               (lispz-editor.focus)
             )
-            (lispz-editor.prepare clear-results-panel)
+            (lispz-editor.prepare clear-result-panel)
 
             (using [js_beautify compilers]
               (ref compiler (get compilers "lispz"))
@@ -73,7 +73,7 @@
                 (js-viewer.open ".js" (js_beautify @.js))
               ))
               (ref compile-and-show (lambda [source]
-                (clear_result_panels)
+                (clear-result-panel)
                 (ref js (compiler.compile source "Scratchpad"))
                 (js-viewer.open (js_beautify js))
                 js
