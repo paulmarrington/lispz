@@ -131,7 +131,7 @@
       ## find all actors that are not in templates
       (ref actors (nodes-with-actors placeholder))
       ## find named fragments, add body as all if needed
-      (ref named (dict.from-list (dom.node.children placeholder)
+      (ref named (dict.from-list (dom.node.children instance)
         (=> (@.getAttribute "name"))
       ))
       (cond (not named.body) (named.update! { body: placeholder }))

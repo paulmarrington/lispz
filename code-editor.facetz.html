@@ -1,5 +1,6 @@
 <code-editor>
-  <panel name=panel actor=height,toolbar,heading menu=codemirror/menu></panel>
+  <panel name=panel actor=height,toolbar,heading
+  menu=codemirror/menu></panel>
   <style>
     code-editor .CodeMirror {
       position: absolute;
@@ -9,7 +10,7 @@
     }
   </style>
   <script type=text/lispz>
-    (using [codemirror message message dict events]
+    (using [codemirror message dict events]
       (tag.activate {
         height:   (tag.transfer-attribute "height")
         toolbar:  (tag.transfer-attribute "toolbar")

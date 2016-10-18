@@ -25,11 +25,11 @@
   <div class="panel" actor=set-context,set-height>
     <div class="panel-heading" actor=display-heading>
       <bars-menu align=right actor=set-menu/>
-       <tool-bar actor=tool-bar/>
+       <buttons actor=tool-bar/>
        <h3 name=heading class="panel-title" actor=set-heading></h3>
      </div>
     <div name=body class="panel-body" actor=fill-body></div>
-    <div class="panel-footer" actor=set-footer></div>
+    <div name=footer class="panel-footer" actor=set-footer></div>
   </div>
 
   <style>
@@ -128,7 +128,7 @@
         </div>
         <div class="modal-body" actor=body></div>
         <div class="modal-footer">
-          <tool-bar actor=tool-bar/>
+          <buttons actor=tool-bar/>
         </div>
       </div>
     </div>
@@ -310,6 +310,12 @@
   </style>
   <script type=text/lispz>
     (using [message dom]
+    (ref add-right-align-class (lambda [class-name]
+      (lambda [node]
+        (cond (is tag.attributes.align "right")
+          (node.classList.add class-name)
+        )
+      )
       (tag.activate {
         each-item:  (lambda [template]
           (message.listen tag.attributes.name (lambda [items]
@@ -321,12 +327,6 @@
         align-menu: (add-right-align-class "dropdown-menu-right")
       })
     )
-    (ref add-right-align-class (lambda [class-name]
-      (lambda [node]
-        (cond (is tag.attributes.align "right")
-          (node.classList.add class-name)
-        )
-      )
     ))
   </script>
 </bars-menu>

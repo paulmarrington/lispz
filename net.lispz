@@ -61,13 +61,13 @@
   ###
   (global #loader (lambda [filename test-for-loaded exporter]
     (ref export-once (once (exporter)))
-    ((after
+    (after
       (script (+ "ext/" filename ".js") test-for-loaded)
       (export-once)
-    ).catch (=>
-      (console.debug filename ":" @)
-      (export-once)
-    ))
+##    ).catch (=>
+##      (console.debug filename ":" @)
+##      (export-once)
+    )
   ))
   (macro net.loader [file test exporting]
     (#loader file (=> test) (=> (export exporting)))

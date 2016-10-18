@@ -1,4 +1,4 @@
-<markdown>
+<mark-down>
   <panel name=panel actor=height,heading,menu>
     <div name=wrapper class=wrapper></div>
   </panel>
@@ -6,7 +6,9 @@
   </style>
   <script type=text/lispz>
     (using [markdown dom net message dict]
-      (ref markdown-menu (+ "panel/markdown/" tag.attributes.name "/menu"))
+      (ref markdown-menu
+        (+ "panel/markdown/" tag.attributes.name "/menu")
+      )
       (ref markdown-menu-action (+ markdown-menu "/action"))
       tag.activate({
         height:     (tag.transfer-attribute "height")
@@ -16,67 +18,68 @@
       (tag.update! {menu: markdown-menu heading: opts.heading})
       (ref contents-area tag.tags.body)
 
-        ## hamburger menu lists a history of pages followed
-        (ref history (stateful))
-        (message.listen  markdown-menu-action (lambda [packet]
-          ## load an item selected from the hamburger
-          (load packet.item.href)
-        ))
-        (ref open (lambda [md from]
-          (dom.inner-html! contents-area (markdown.compile md))
-          ((dom.select contents-area "a").forEach (lambda [link]
-            (ref href (link.getAttribute "href"))
-            (cond (not (net.external? href)) (do
-              (link.addEventListener "click" (lambda [evt]
-                (load (+ (or from "") href))
-                (evt.preventDefault)
-              ))
+      ## hamburger menu lists a history of pages followed
+      (ref history (stateful))
+      (message.listen  markdown-menu-action (lambda [packet]
+        ## load an item selected from the hamburger
+        (load packet.item.href)
+      ))
+      (ref open (lambda [md from]
+        (dom.inner-html! contents-area (markdown.compile md))
+        ((dom.select contents-area "a").forEach (lambda [link]
+          (ref href (link.getAttribute "href"))
+          (cond (not (net.external? href)) (do
+            (link.addEventListener "click" (lambda [evt]
+              (load (+ (or from "") href))
+              (evt.preventDefault)
             ))
           ))
         ))
-        (ref load (lambda [href]
-          ## Update the hamburger with the latest history update
-          (history.update! href true)
-          (ref menu (dict.map history (lambda [href]
-            (ref title (first ((net.url-actor href).split ".")))
-            (return {topic: markdown-menu-action href title})
-          )))
-          (message.send markdown-menu (menu.reverse))
-          ## then continue loading and displaying
-          ((after (net.http-get href)
-            (open @ (net.url-path href)))
-          .catch (=> (debug markdown)))
-        ))
-        (cond tag.attributes.href (load tag.attributes.href))
-
-        ### spec: Markdown >> Panel
-          Showdown can take markdown text or url and display the
-          HTML created - including most Github extensions.
-
-          In the component HTML section, define a showdown panel as follows.
-          The href is optional, and the panel will start empty without it.
-
-              &lt;showdown name=manual heading="Manual"
-                href="https://cdn.rawgit.com/paulmarrington/lispz/master/README.md"
-              /&gt;
-
-          To load a different markdown document from a server, send a message.
-          The final part of the address is the name attribute to the showdown
-          element above.
-
-              ((message.send "showdown/manual/open") {
-                href: "another-url"
-              })
-
-          Alternatively, pass the markdown directly in a string with the load
-          message.
-
-              ((message.send "showdown/manual/load") {
-                markdown: "# Heading\n*This is markdown*"
-              })
-        ###
-        (message.dispatch (+ "showdown/" tag.attributes.name) { open load })
       ))
+      (ref load (lambda [href]
+        ## Update the hamburger with the latest history update
+        (history.update! href true)
+        (ref menu (dict.map history (lambda [href]
+          (ref title (first ((net.url-actor href).split ".")))
+          (return {topic: markdown-menu-action href title})
+        )))
+        (message.send markdown-menu (menu.reverse))
+        ## then continue loading and displaying
+        ((after (net.http-get href)
+          (open @ (net.url-path href)))
+        .catch (=> (debug markdown)))
+      ))
+      (cond tag.attributes.href (load tag.attributes.href))
+
+      ### spec: Markdown >> Panel
+        Showdown can take markdown text or url and display the
+        HTML created - including most Github extensions.
+
+        In the component HTML section, define a showdown panel as follows.
+        The href is optional, and the panel will start empty without it.
+
+            &lt;showdown name=manual heading="Manual"
+              href="https://cdn.rawgit.com/paulmarrington/lispz/master/README.md"
+            /&gt;
+
+        To load a different markdown document from a server, send a message.
+        The final part of the address is the name attribute to the showdown
+        element above.
+
+            ((message.send "showdown/manual/open") {
+              href: "another-url"
+            })
+
+        Alternatively, pass the markdown directly in a string with the load
+        message.
+
+            ((message.send "showdown/manual/load") {
+              markdown: "# Heading\n*This is markdown*"
+            })
+      ###
+      (message.dispatch
+        (+ "showdown/" tag.attributes.name) { open load }
+      )
     )
   </script>
-</markdown>
+</mark-down>
