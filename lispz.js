@@ -208,7 +208,7 @@ var lispz = function() {
   },
   immediate_to_js = function() {
     var lspz = run_ast(slice(arguments)).join("\n")
-    var js = ast_to_js(parse_to_ast(lspz))
+    var js = ast_to_js(parse_to_ast(lspz, "*immediate*"))
     return js
   },
   immediate_from_ast = function() {
@@ -248,7 +248,8 @@ var lispz = function() {
     }],
     [/^(\)|\}|\])$/, function(env) {
       var f = env.node;
-      (env.node = env.stack.pop()).push(f)
+      try { (env.node = env.stack.pop()).push(f) }
+      catch (e) { console.error( "Missing open bracket", env) }
     }],
     /*
      * Record line number for JS comment. Can't add a new element,
@@ -265,8 +266,8 @@ var lispz = function() {
   comment = function(atom) {
     return atom[0] === "#" && atom[1] === "#" && (atom[2] === '#' || atom[2] == ' ')
   },
-  parse_to_ast = function(source) {
-    var env = { ast: [], stack: [] }
+  parse_to_ast = function(source, name) {
+    var env = { name: name, ast: [], stack: [] }
     env.node = env.ast
     tkre.lastIndex = 0
     while ((env.atom = tkre.exec(source.toString())) && (env.atom = env.atom[1])) {
@@ -283,7 +284,7 @@ var lispz = function() {
       }
     }
     if (env.stack.length != 0) {
-      throw "missing close brace in " + source
+      throw "missing close brace in " + name + ": " + source
     }
     return env.ast
   },
@@ -324,7 +325,7 @@ var lispz = function() {
   compile = function(source, name) {
     var last_module = location
     location = { name:name || "", line:1 }
-    var ast = parse_to_ast(source)
+    var ast = parse_to_ast(source, name)
     location = last_module
 
     var body, vars = vars_to_js(function(){ body = ast.map(ast_to_js) })
