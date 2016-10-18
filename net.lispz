@@ -64,6 +64,7 @@
     (after
       (script (+ "ext/" filename ".js") test-for-loaded)
       (export-once)
+## reduces error accuracy
 ##    ).catch (=>
 ##      (console.debug filename ":" @)
 ##      (export-once)
