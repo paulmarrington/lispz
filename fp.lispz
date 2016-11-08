@@ -2,14 +2,16 @@
   ### spec: Functional Programming >> curry
   ###
   (global curry (lambda [func]
-    (ref self this)
     (ref curried (=>
+      (ref self this)
       (ref args (*arguments))
       (cond (>= args.length func.length)
         (func.apply self args)  ## all done, run it
       (else)
         (=> ## otherwise return a partial function
-          (curried.apply self (args.concat (*arguments 0)))
+          (ref that this)
+          (ref context (cond (is self window) that (else) self))
+          (curried.apply context (args.concat (*arguments 0)))
         )
       )
     ))
