@@ -7,7 +7,10 @@
   ### spec: DOM >> Replace inner html
   Given an element, replace the contents with the html provided as a string.
   ###
-  (ref inner-html! (lambda [el html] (#set! el "innerHTML" html)))
+  (ref inner-html! (lambda [el html]
+    (#set! el "innerHTML" html)
+    el
+  ))
 
   (ref global-styles (lambda [css]
     (ref el (node.create "style" { type: "text/css" }))
@@ -85,6 +88,9 @@
     copy: (lambda [node from]
       (ref new-node (from.cloneNode true))
       (node.parentNode.replaceChild new-node node)
+      (list.for-each (slice node.attributes) (lambda [attr]
+        (new-node.setAttribute attr.name attr.value)
+      ))
       new-node
     )
     ### ref: (dom.node.fill target source)
@@ -132,14 +138,29 @@
     children-with-class: (lambda [parent class-name]
       (slice (parent.getElementsByClassName class-name))
     )
+    ### ref: (dom.node.has-specific-parent test owner node)
+    ###
+    has-specific-parent: (curry [test owner child]
+      (ref check (lambda [parent]
+        (cond
+          (not parent)                 false
+          (test parent)                true
+          (not parent.parentNode)      false
+          (is parent.parentNode owner) false
+          (else)                       (check parent.parentNode)
+        )
+      )) (check child.parentNode)
+    )
     ### ref: (dom.node.has-parent-with-class node class-name)
     ###
-    has-parent-with-class: (lambda [start class-name]
-      (ref check (lambda [node]
-        (cond (node.classList.contains class-name) (do
-          (cond node.parentNode (check node.parentNode))
-        ))
-      )) (check start)
+    has-parent-with-class: (lambda [child class-name]
+      (ref test (lambda [parent]
+        (cond
+          (not parent.classList)                  false
+          (parent.classList.contains class-name)  true
+          (else)                                  false
+        )
+      )) (node.has-specific-parent test document.body child)
     )
   })
   (ref node-cache (stateful))
