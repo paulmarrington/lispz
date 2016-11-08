@@ -41,6 +41,6 @@
 
 (ref map (lambda [list actor] (list.map actor)))
 
-(ref filter (lambda [list actor] (list.filter actor)))
+(ref filter (lambda [array actor] (array.filter actor)))
 
 (export { flatten for-each contains reverse sort filter map slice })
