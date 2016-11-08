@@ -7,21 +7,23 @@
   <script type=text/lispz>
     (using [markdown dom net message dict]
       (ref markdown-menu
-        (+ "panel/markdown/" tag.attributes.name "/menu")
+        (+ "panel/markdown/" (tag.getAttribute "name") "/menu")
       )
       (ref markdown-menu-action (+ markdown-menu "/action"))
-      tag.activate({
+      (tag.activate {
         height:     (tag.transfer-attribute "height")
         heading:    (tag.transfer-attribute "heading")
         menu:       (tag.panel.heading.setAttribute "menu" markdown-menu)
       })
-      (tag.update! {menu: markdown-menu heading: opts.heading})
-      (ref contents-area tag.tags.body)
+      (tag.update! {
+        menu:     markdown-menu
+        heading:  (tag.getAttribute "heading")
+      })
+      (ref contents-area tag.panel.body)
 
       ## hamburger menu lists a history of pages followed
       (ref history (stateful))
       (message.listen  markdown-menu-action (lambda [packet]
-        ## load an item selected from the hamburger
         (load packet.item.href)
       ))
       (ref open (lambda [md from]
@@ -45,11 +47,11 @@
         )))
         (message.send markdown-menu (menu.reverse))
         ## then continue loading and displaying
-        ((after (net.http-get href)
-          (open @ (net.url-path href)))
-        .catch (=> (debug markdown)))
+        (after (net.http-get href)
+          (open @ (net.url-path href)
+        ))
       ))
-      (cond tag.attributes.href (load tag.attributes.href))
+      (cond (ref href (tag.getAttribute "href")) (load href))
 
       ### spec: Markdown >> Panel
         Showdown can take markdown text or url and display the
@@ -78,7 +80,7 @@
             })
       ###
       (message.dispatch
-        (+ "showdown/" tag.attributes.name) { open load }
+        (+ "showdown/" (tag.getAttribute "name")) { open load }
       )
     )
   </script>
