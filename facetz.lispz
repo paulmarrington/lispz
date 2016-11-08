@@ -1,5 +1,6 @@
 (using [list compilers dict net dom]
-  ## tag-defs need only be loaded once then used from the cache - all promises
+  ## tag-defs need only be loaded once then used from the cache
+  ##  - all promises
   (ref tag-defs (stateful))
 
   ## pre-loaded facetz templates may not exist in dev
@@ -8,7 +9,7 @@
   ## convert HTML into a DOM fragment
   (ref html-to-DOM (lambda [html]
     (ref dom-fragment (document.createElement "div"))
-    (stateful.morph! dom-fragment { innerHTML: html })
+    (dom.inner-html! dom-fragment html)
   ))
 
   ## all styles in facetz are global - so inject them into head
@@ -55,7 +56,7 @@
   (ref extract-html-css-and-scripts (lambda [node]
     (inject-styles (node.getElementsByTagName "style"))
     (ref script-elements (node.getElementsByTagName "script"))
-    (ref tag-name (node.tagName.toLowerCase))
+    (ref tag-name (dom.node.name node))
     (ref script (compile-scripts script-elements tag-name))
     { node script name: tag-name }
   ))
@@ -82,7 +83,7 @@
       (ref tag-def (get tag-defs tag-name))
         tag-def
       (ref tag-src (get lispz.facetz tag-name))
-        (compile-tag-defs tag-src)
+        (do (compile-tag-defs tag-src) (get tag-defs tag-name))
       (else)
         (load-tag tag-name)
     )
@@ -96,20 +97,30 @@
     (or
       (get tag-defs name)
       (isnt (name.indexOf "-") -1)
-      (node.hasAttribute "facetz")
+      (and node.hasAttribute (node.hasAttribute "facetz"))
     )
   ))
 
+  ## see if a node has a parent that is a facetz
+  (ref has-facetz-parent-in-node
+    (dom.node.has-specific-parent is-facetz-tag)
+  )
+
   ## find all facetz references that are children of a node
-  (ref find-facetz-tags (lambda [node]
-    (ref all-nodes (slice (node.querySelectorAll "*")))
-    (list.filter all-nodes is-facetz-tag)
+  (ref find-facetz-tags (lambda [parent]
+    (ref all-nodes (slice (parent.querySelectorAll "*")))
+    (list.filter all-nodes (lambda [child]
+      (and
+        (is-facetz-tag child)
+        (not (has-facetz-parent-in-node parent child))
+      )
+    ))
   ))
 
   ## find all actors that are not in templates
   (ref nodes-with-actors (lambda [parent]
       (ref all-actors (dom.select parent "[actor]"))
-      (ref templates-excluded (list.filter all-actors (=>
+      (ref templates-excluded (all-actors.filter (=>
         (not (dom.node.has-parent-with-class @ "template"))
       )))
       (ref has-actor (=> (@.getAttribute "actor")))
@@ -119,45 +130,58 @@
   ## given a tag definition, create an instance to insert
   ## into the DOM. Requires recursive pass to instantiate
   ## child tags
-  (ref mount-tag (lambda [placeholder]
-    (ref name (dom.node.name placeholder))
+  (ref mount-tag (lambda [tag]
+    (ref name (dom.node.name tag))
+    (ref refs    (get-named-components tag))
+    (add-body     refs tag)
     (ref tag-def (retrieve-tag-def name))
     (when [tag-def]
-      (ref instance (dom.node.copy placeholder tag-def.node))
-      (ref refs (dict.from-list
-        (dom.select placeholder "[name]")
-        (=> (@.getAttribute "name"))
-      ))
-      ## find all actors that are not in templates
-      (ref actors (nodes-with-actors placeholder))
-      ## find named fragments, add body as all if needed
-      (ref named (dict.from-list (dom.node.children instance)
-        (=> (@.getAttribute "name"))
-      ))
-      (cond (not named.body) (named.update! { body: placeholder }))
-      ###
-        tag-def:  tag definition from facetz component
-        data:     node list for dynamic tag contents
-        actors:   nodes with actors for activation phase
-        activate: call in component with dict of actor functions
-        fill:     hlf fill node with cloned inner nodes of data
-        html:     hlf set innerHTML from text
-        transfer-attribute: hlf move attr from tag to node
-        use-template: insert items above template
-      ###
-      (stateful.morph! instance {
-        tag-def named actors refs
-        activate-template activate
-        transfer-attribute fill html
-      })
-      ## place directly on tag if name is unique
-      (dict.for-each named (lambda [key value]
-        (cond (not (get instance key)) (instance.update! key value))
-      ))
-      (dom.node.merge-attributes instance tag-def.node)
-      (mount-tags instance) ## recurse through inner facetz
-      (tag-def.script instance)
+      (dom.node.fill tag tag-def.node)
+      (ref actors   (nodes-with-actors tag))
+      (personalise! tag tag-def refs actors)
+      (tag-def.script tag)
+      (mount-tags   tag)
+      (ref named    (get-named-components tag))
+      (add-components-to-tag tag named)
     )
+  ))
+  (ref personalise! (lambda [tag tag-def refs actors]
+    ###
+      tag-def:  tag definition from facetz component
+      refs:     node list for dynamic tag contents
+      actors:   nodes with actors for activation phase
+      activate: call in component with dict of actor functions
+      fill:     hlf fill node with cloned inner nodes of data
+      html:     hlf set innerHTML from text
+      transfer-attribute: hlf move attr from tag to node
+      use-template: insert items above template
+    ###
+    (stateful.morph! tag {
+      tag-def actors refs
+      activate-template activate
+      transfer-attribute fill html
+    })
+  ))
+  (ref get-named-components (lambda [placeholder]
+    (ref named (dom.select placeholder "[name]"))
+    (ref has-facetz-parent
+      (has-facetz-parent-in-node placeholder)
+    )
+    (dict.from-list
+      (filter named (=> (not (has-facetz-parent @))))
+      (=> (@.getAttribute "name"))
+    )
+  ))
+  (ref add-body (lambda [refs placeholder]
+    (cond (not refs.body)
+      (refs.update! { body: (placeholder.cloneNode true) })
+    )
+  ))
+  (ref add-components-to-tag (lambda [tag named]
+    (tag.update! { named })
+    (dict.for-each named (lambda [key value]
+      (cond (not (get tag key)) (tag.update! key value))
+    ))
   ))
 
   ## look for tags in the node and mount them
@@ -171,6 +195,20 @@
     ))
     (mount 0)
   ))
+
+  (ref fill (curry [key node] (ref tag this)
+    (ref contents (get tag.refs (or key "body")))
+    (cond contents (dom.node.fill node contents))
+  ))
+  
+  ### (facetz.implicit-actors.update! {my-actor: (lambda [node])})
+      where this is the tag this actor and element is related to.
+
+      fill-body: fills node with contents from tag instance
+  ###
+  (ref implicit-actors (stateful {
+    fill-body: (fill "body")
+  }))
 
   ### ref: (tag.activate nvp)
       <ul class="a-class" name=a-list actors=list-class>
@@ -189,10 +227,14 @@
   ###
   (ref activate (lambda [actors] (ref tag this)
     (dict.for-each tag.actors (lambda [to-do node]
+      (ref explicit-actors (or actors {}))
       ## convert atoms to a form recognised by js (i.e. - == _)
       (ref names (list.map (to-do.split '/\s*,\s*/') lispz.jsify))
-      (names.for-each (=>
-        (cond (ref actor (get actors to-do)) (actor node))
+      (list.for-each names (lambda [name]
+        (cond
+          (ref act (get explicit-actors name)) (act.call tag node)
+          (ref act (get implicit-actors name)) (act.call tag node)
+        )
       ))
     ))
   ))
@@ -204,15 +246,11 @@
     ))
   ))
   (ref transfer-attribute (curry [key node] (ref tag this)
-    (cond (ref value (get tag.attributes key))
+    (cond (ref value (tag.getAttribute key))
       (node.setAttribute key value)
     (else)
-      (dom.node.remove node)
+      (node.removeAttribute key)
     )
-  ))
-  (ref fill (curry [key node] (ref tag this)
-    (ref contents (get tag.named (or key "body")))
-    (dom.node.fill node contents.childNodes)
   ))
   (ref html (curry [text node] (dom.inner-html! node text)))
 
@@ -229,5 +267,7 @@
   ## last thing is to mount any tags in index.html
   (mount-tags document.body)
 
-  (export { compile-tag-defs mount-tags activate })
+  (export {
+    compile-tag-defs mount-tags activate implicit-actors
+  })
 )
