@@ -117,7 +117,7 @@ To access external modules, wrap your code in 'using'. Data and functions export
 (macro else 'true')
 
 ### spec: basics >> Operators ###
-(macro not [value] (#join '' '!(' value ')'))
+(macro not [value] (#join '' '(_res_=!(' value '))'))
 (macro instance-of [type obj] (#join '' '(' obj ' instanceof ' type ')'))
 
 ### spec: basic >> do
