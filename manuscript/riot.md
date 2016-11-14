@@ -2,7 +2,7 @@
 
 [Riot](http://riotjs.com) is a tiny UI library then provides the best of Web components ([polymer](https://www.polymer-project.org/1.0/)) and [React](https://facebook.github.io/react/) in a package 15% of the size.
 
-In , like web components, each file (of type .riot.html) is a html fragment that also includes style and script elements. Like web components it is based on creating custom tags. This provides clean and readable HTML.
+It, like web components, each file (of type .riot.html) is a html fragment that also includes style and script elements. Like web components it is based on creating custom tags. This provides clean and readable HTML.
 
 The *panel* tags is a Riot wrapper around bootstrap panels.
 
